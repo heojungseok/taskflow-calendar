@@ -149,4 +149,4 @@ MIT License - 학습 및 포트폴리오 목적의 프로젝트입니다.
 ## 연락처
 
 - GitHub: [@heojungseok](https://github.com/heojungseok)
-- Email: your.email@example.com (선택사항)
+- Email: tjrwjdgj@gmail.com
