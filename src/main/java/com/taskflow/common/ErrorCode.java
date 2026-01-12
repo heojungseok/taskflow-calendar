@@ -9,6 +9,7 @@ public enum ErrorCode {
     SCHEDULE_INVALID("SCHEDULE_INVALID", "Start time must be before due time"),
     CALENDAR_SYNC_REQUIRES_DUE_AT("CALENDAR_SYNC_REQUIRES_DUE_AT", "Calendar sync requires due date"),
     TASK_STATUS_TRANSITION_NOT_ALLOWED("TASK_STATUS_TRANSITION_NOT_ALLOWED", "Status transition not allowed"),
+    DUPLICATE_EMAIL("DUPLICATE_EMAIL", "Duplicate email"),
 
     // Not found
     TASK_NOT_FOUND("TASK_NOT_FOUND", "Task not found"),
