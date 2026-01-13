@@ -82,4 +82,60 @@ public class Task {
         return new Task(project, title, description, assignee,
                 startAt, dueAt, calendarSyncEnabled);
     }
+
+    /**
+     * Task 정보 수정
+     */
+    public void update(String title, String description, User assignee,
+                       LocalDateTime startAt, LocalDateTime dueAt,
+                       Boolean calendarSyncEnabled) {
+        if (title != null) {
+            this.title = title;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+        if (assignee != null) {
+            this.assignee = assignee;
+        }
+        if (startAt != null) {
+            this.startAt = startAt;
+        }
+        if (dueAt != null) {
+            this.dueAt = dueAt;
+        }
+        if (calendarSyncEnabled != null) {
+            this.calendarSyncEnabled = calendarSyncEnabled;
+        }
+    }
+
+    /**
+     * Task 상태 변경
+     */
+    public void changeStatus(TaskStatus newStatus) {
+        this.status = newStatus;
+    }
+
+    /**
+     * Soft Delete 처리
+     */
+    public void markAsDeleted() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Calendar Event ID 설정
+     */
+    public void setCalendarEventId(String eventId) {
+        this.calendarEventId = eventId;
+    }
+
+    /**
+     * Calendar 동기화 활성 조건 확인
+     */
+    public boolean isCalendarSyncActive() {
+        return Boolean.TRUE.equals(this.calendarSyncEnabled) && this.dueAt != null;
+    }
+
 }

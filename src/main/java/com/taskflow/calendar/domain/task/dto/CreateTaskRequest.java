@@ -1,0 +1,46 @@
+package com.taskflow.calendar.domain.task.dto;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Getter;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+import java.time.LocalDateTime;
+
+/**
+ * Task 생성 요청 DTO
+ */
+@Getter
+public class CreateTaskRequest {
+
+    @NotBlank(message = "제목은 필수입니다")
+    @Size(max = 200, message = "제목은 200자를 초과할 수 없습니다")
+    private String title;
+
+    private String description;
+
+    private Long assigneeUserId;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime startAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime dueAt;
+
+    private Boolean calendarSyncEnabled;
+
+    // 기본 생성자 (Jackson deserialization용)
+    protected CreateTaskRequest() {}
+
+    // 테스트용 생성자
+    public CreateTaskRequest(String title, String description, Long assigneeUserId,
+                             LocalDateTime startAt, LocalDateTime dueAt,
+                             Boolean calendarSyncEnabled) {
+        this.title = title;
+        this.description = description;
+        this.assigneeUserId = assigneeUserId;
+        this.startAt = startAt;
+        this.dueAt = dueAt;
+        this.calendarSyncEnabled = calendarSyncEnabled;
+    }
+}
