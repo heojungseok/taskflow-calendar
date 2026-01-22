@@ -85,8 +85,14 @@ public class TaskController {
      * DELETE /api/tasks/{taskId}
      */
     @DeleteMapping("/tasks/{taskId}")
-    public ApiResponse<DeleteTaskResponse> deleteTask(@PathVariable Long taskId) {
-        DeleteTaskResponse response = taskService.deleteTask(taskId);
+    public ApiResponse<DeleteTaskResponse> deleteTask(@PathVariable Long taskId, @RequestParam Long requestedByUserId) {
+        DeleteTaskResponse response = taskService.deleteTask(taskId, requestedByUserId);
         return ApiResponse.success(response);
+    }
+
+    @GetMapping("/tasks/{taskId}/history")
+    public ApiResponse<List<TaskHistoryResponse>> getTaskHistory(@PathVariable Long taskId) {
+        List<TaskHistoryResponse> responses = taskService.getTaskHistory(taskId);
+        return ApiResponse.success(responses);
     }
 }

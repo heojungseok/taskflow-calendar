@@ -26,6 +26,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final TaskHistoryRepository historyRepository;
 
     /**
      * Task 생성
@@ -63,6 +64,15 @@ public class TaskService {
         // 6. 저장
         Task savedTask = taskRepository.save(task);
 
+        // 7. 이력 기록 - 생성
+        recordHistory(
+                savedTask,
+                TaskChangeType.CONTENT,
+                null,  // beforeValue: 생성 시에는 null
+                buildTaskSnapshot(savedTask),  // afterValue: 생성된 Task 정보
+                request.getRequestedByUserId()
+        );
+
         // 7. TODO: Outbox 적재 (Week 3에서 구현)
         // if (savedTask.isCalendarSyncActive()) {
         //     calendarOutboxService.enqueueUpsert(savedTask);
@@ -79,6 +89,9 @@ public class TaskService {
         // 1. Task 조회 (deleted=false)
         Task task = taskRepository.findByIdAndDeletedFalse(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
+
+        // 변경 전 스냅샷 저장
+        String beforeSnapshot = buildTaskSnapshot(task);
 
         // 2. Assignee 조회 (변경하는 경우)
         User assignee = null;
@@ -109,7 +122,19 @@ public class TaskService {
                 request.getCalendarSyncEnabled()
         );
 
-        // 6. TODO: Outbox 적재 (Week 3에서 구현)
+        // 변경 후 스냅샷 저장
+        String afterSnapshot = buildTaskSnapshot(task);
+
+        // 6. 이력 기록 - 수정
+        recordHistory(
+                task,
+                TaskChangeType.CONTENT,
+                beforeSnapshot,
+                afterSnapshot,
+                request.getRequestedByUserId()
+        );
+
+        // 7. TODO: Outbox 적재 (Week 3에서 구현)
         // if (task.isCalendarSyncActive()) {
         //     calendarOutboxService.enqueueUpsert(task);
         // } else if (task.getCalendarEventId() != null && !task.isCalendarSyncActive()) {
@@ -130,10 +155,20 @@ public class TaskService {
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
         // 2. 상태 전이 검증
+        TaskStatus oldStatus = task.getStatus();
         TaskStatusPolicy.validateTransition(task.getStatus(), request.getToStatus());
 
         // 3. 상태 변경
         task.changeStatus(request.getToStatus());
+
+        // 4. 이력 기록 - 상태 변경
+        recordHistory(
+                task,
+                TaskChangeType.STATUS,
+                oldStatus.name(),
+                request.getToStatus().name(),
+                request.getRequestedByUserId()
+        );
 
         // 4. TODO: Outbox 적재 (Week 3에서 구현)
         // if (task.isCalendarSyncActive()) {
@@ -179,13 +214,25 @@ public class TaskService {
      * Task 삭제 (Soft Delete)
      */
     @Transactional
-    public DeleteTaskResponse deleteTask(Long taskId) {
+    public DeleteTaskResponse deleteTask(Long taskId, Long requestedByUserId) {
         // 1. Task 조회
         Task task = taskRepository.findByIdAndDeletedFalse(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
-        // 2. Soft Delete 처리
+        // 2. 삭제 전 스냅샷 저장 (추가!)
+        String beforeSnapshot = buildTaskSnapshot(task);
+
+        // 3. Soft Delete 처리
         task.markAsDeleted();
+
+        // 3. 이력 기록 - 삭제
+        recordHistory(
+                task,
+                TaskChangeType.CONTENT,
+                beforeSnapshot,
+                "deleted=true",
+                requestedByUserId
+        );
 
         // 3. TODO: Outbox 적재 (Week 3에서 구현)
         // if (task.getCalendarEventId() != null) {
@@ -193,6 +240,23 @@ public class TaskService {
         // }
 
         return DeleteTaskResponse.of(taskId);
+    }
+
+    /**
+     * Task 이력 조회
+     */
+    public List<TaskHistoryResponse> getTaskHistory(Long taskId) {
+        // 1. Task 존재 확인 (deleted=false)
+        taskRepository.findByIdAndDeletedFalse(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
+
+        // 2. 이력 조회
+        List<TaskHistory> histories = historyRepository.findByTask_IdOrderByCreatedAtDesc(taskId);
+
+        // 3. DTO 변환
+        return histories.stream()
+                .map(TaskHistoryResponse::from)
+                .collect(Collectors.toList());
     }
 
     // ========== Private 검증 메서드들 ==========
@@ -213,5 +277,36 @@ public class TaskService {
         if (Boolean.TRUE.equals(calendarSyncEnabled) && dueAt == null) {
             throw new ValidationException(ErrorCode.CALENDAR_SYNC_REQUIRES_DUE_AT);
         }
+    }
+
+    private void recordHistory(Task task, TaskChangeType changeType, String beforeValue, String afterValue, Long changedByUserId) {
+        User user = userRepository.findById(changedByUserId)
+                .orElseThrow(() -> new UserNotFoundException(changedByUserId));
+
+        TaskHistory history = TaskHistory.builder()
+                .task(task)
+                .changedByUser(user)
+                .changeType(changeType)
+                .beforeValue(beforeValue)
+                .afterValue(afterValue)
+                .build();
+
+        historyRepository.save(history);
+    }
+
+    /**
+     * Task의 현재 상태를 문자열 스냅샷으로 생성
+     */
+    private String buildTaskSnapshot(Task task) {
+        return String.format(
+                "title=%s, description=%s, status=%s, assigneeUserId=%s, startAt=%s, dueAt=%s, calendarSyncEnabled=%s",
+                task.getTitle(),
+                task.getDescription() != null ? task.getDescription() : "null",
+                task.getStatus().name(),
+                task.getAssignee() != null ? task.getAssignee().getId() : "null",
+                task.getStartAt() != null ? task.getStartAt().toString() : "null",
+                task.getDueAt() != null ? task.getDueAt().toString() : "null",
+                task.getCalendarSyncEnabled()
+        );
     }
 }
