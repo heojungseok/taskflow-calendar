@@ -5,6 +5,7 @@ import com.taskflow.calendar.domain.user.exception.DuplicateEmailException;
 import com.taskflow.calendar.domain.user.exception.UserNotFoundException;
 import com.taskflow.common.exception.BusinessException;
 import com.taskflow.common.exception.ResourceNotFoundException;
+import com.taskflow.common.exception.UnauthorizedException;
 import com.taskflow.common.exception.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -96,6 +97,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ErrorCode.DUPLICATE_EMAIL, e.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<?>> handleUnauthorized(UnauthorizedException e) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ErrorCode.UNAUTHORIZED, e.getMessage()));
     }
 
     private HttpStatus determineHttpStatus(ErrorCode errorCode) {

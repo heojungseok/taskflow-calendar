@@ -17,7 +17,8 @@ public enum ErrorCode {
     USER_NOT_FOUND("USER_NOT_FOUND", "User not found"),
 
     // Generic
-    INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "Internal server error");
+    INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "Internal server error"),
+    UNAUTHORIZED("UNAUTHORIZED", "Unauthorized");
 
     private final String code;
     private final String message;

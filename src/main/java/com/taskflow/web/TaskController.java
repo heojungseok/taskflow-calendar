@@ -4,12 +4,15 @@ import com.taskflow.calendar.domain.task.TaskService;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.common.ApiResponse;
+import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
@@ -25,6 +28,10 @@ public class TaskController {
     public ApiResponse<TaskResponse> createTask(
             @PathVariable Long projectId,
             @Valid @RequestBody CreateTaskRequest request) {
+
+        Long requestedByUserId = SecurityContextHelper.getCurrentUserId();
+        log.info("Creating task - userId: {}, projectId: {}, title: {}",
+                requestedByUserId, projectId, request.getTitle());
 
         TaskResponse response = taskService.createTask(projectId, request);
         return ApiResponse.success(response);
@@ -85,7 +92,8 @@ public class TaskController {
      * DELETE /api/tasks/{taskId}
      */
     @DeleteMapping("/tasks/{taskId}")
-    public ApiResponse<DeleteTaskResponse> deleteTask(@PathVariable Long taskId, @RequestParam Long requestedByUserId) {
+    public ApiResponse<DeleteTaskResponse> deleteTask(@PathVariable Long taskId) {
+        Long requestedByUserId = SecurityContextHelper.getCurrentUserId();
         DeleteTaskResponse response = taskService.deleteTask(taskId, requestedByUserId);
         return ApiResponse.success(response);
     }

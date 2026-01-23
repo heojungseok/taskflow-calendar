@@ -10,6 +10,7 @@ import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.user.exception.UserNotFoundException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.ValidationException;
+import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +71,7 @@ public class TaskService {
                 TaskChangeType.CONTENT,
                 null,  // beforeValue: 생성 시에는 null
                 buildTaskSnapshot(savedTask),  // afterValue: 생성된 Task 정보
-                request.getRequestedByUserId()
+                SecurityContextHelper.getCurrentUserId()
         );
 
         // 7. TODO: Outbox 적재 (Week 3에서 구현)
@@ -131,7 +132,7 @@ public class TaskService {
                 TaskChangeType.CONTENT,
                 beforeSnapshot,
                 afterSnapshot,
-                request.getRequestedByUserId()
+                SecurityContextHelper.getCurrentUserId()
         );
 
         // 7. TODO: Outbox 적재 (Week 3에서 구현)
@@ -167,7 +168,7 @@ public class TaskService {
                 TaskChangeType.STATUS,
                 oldStatus.name(),
                 request.getToStatus().name(),
-                request.getRequestedByUserId()
+                SecurityContextHelper.getCurrentUserId()
         );
 
         // 4. TODO: Outbox 적재 (Week 3에서 구현)
