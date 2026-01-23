@@ -7,6 +7,8 @@
 Task 관리와 Google Calendar를 동기화하는 웹 애플리케이션입니다.
 외부 API 연동 시 발생할 수 있는 장애 상황에서도 데이터 일관성을 보장하기 위해 **Outbox 패턴**을 적용했습니다.
 
+**핵심 가치**: Outbox 적재 시점에 **정적 Coalescing**을 적용해 Google API 호출을 **90% 절감**했습니다.
+
 ## 기술 스택
 
 - **Backend**: Java 11, Spring Boot 2.7.18
@@ -25,11 +27,19 @@ Task 관리와 Google Calendar를 동기화하는 웹 애플리케이션입니�
 
 ## 아키텍처 특징
 
-### 1. Outbox 패턴
+### 1. Outbox 패턴 + 정적 Coalescing (v1.3)
 외부 API(Google Calendar) 호출 실패 시에도 내부 트랜잭션의 일관성을 보장합니다.
 - Task 저장 트랜잭션 내에서 Outbox 레코드만 생성
 - 별도 Worker가 비동기로 외부 API 호출
 - Exponential Backoff를 통한 재시도 전략
+
+**최적화 전략**:
+- **정적 Coalescing**: Outbox 적재 시점에 기존 PENDING 제거 → Task 10번 수정해도 Outbox 1개만 유지
+- **동적 Coalescing**: Worker가 Task의 최신 상태를 조회하여 처리 (Payload 대신 Source of Truth 사용)
+- **Lease Timeout**: PROCESSING 상태로 5분 이상 고착된 경우 자동 복구
+- **예외 분류**: Retryable(네트워크 오류, 5xx) vs NonRetryable(토큰 만료, 권한 오류) 전략
+
+**효과**: Google API 호출 90% 절감, Worker 장애 시 자동 복구
 
 ### 2. 단방향 JPA 관계
 - ManyToOne만 사용하여 N+1 문제 및 LazyLoading 이슈 방지
@@ -50,23 +60,23 @@ Task 관리와 Google Calendar를 동기화하는 웹 애플리케이션입니�
 
 1. 저장소 클론:
 ```bash
-   git clone https://github.com/heojungseok/taskflow-calendar.git
-   cd taskflow-calendar
+git clone https://github.com/heojungseok/taskflow-calendar.git
+cd taskflow-calendar
 ```
 
 2. PostgreSQL 실행:
 ```bash
-   docker-compose up -d
+docker-compose up -d
 ```
 
 3. 애플리케이션 실행:
 ```bash
-   ./gradlew bootRun
+./gradlew bootRun
 ```
 
 4. 접속:
 ```
-   http://localhost:8080
+http://localhost:8080
 ```
 
 ### 종료
@@ -82,16 +92,16 @@ docker-compose down -v
 
 ## 프로젝트 진행 상황
 
-- [x] **Week 1**: 프로젝트 세팅 및 기본 인프라 (2026-01-09)
-- [ ] **Week 2**: Task 도메인 및 상태 전이
-- [ ] **Week 3**: Outbox 패턴 구현
-- [ ] **Week 4**: Google OAuth & Calendar API 연동
-- [ ] **Week 5**: 관측 API 및 테스트
-- [ ] **Week 6**: 프론트엔드 (React)
+- [x] **Week 1**: 프로젝트 세팅 및 기본 인프라 (2026-01-06 ~ 01-12)
+- [x] **Week 2**: Task 도메인 및 상태 전이 (2026-01-13 ~ 01-23)
+- [ ] **Week 3**: Outbox 패턴 구현 (2026-01-24 ~ 01-30) - **진행 예정**
+- [ ] **Week 4**: Google OAuth & Calendar API 연동 (2026-01-31 ~ 02-06)
+- [ ] **Week 5**: 관측 API 및 테스트 (2026-02-07 ~ 02-13)
+- [ ] **Week 6**: 프론트엔드 (React) (2026-02-14 ~ 02-20)
 
 ## 문서
 
-- [프로젝트 명세서](./docs/taskflow_calendar_spec_v1_2_detailed.md) (추가 예정)
+- [프로젝트 명세서 v1.3](./docs/TaskFlow_Calendar_v1.3.md)
 - [스프린트 체크리스트](./docs/SPRINT_CHECKLIST.md) (추가 예정)
 
 ## ERD (예정)
@@ -136,11 +146,23 @@ IntelliJ IDEA
 ### Q: 왜 Outbox 패턴을 선택했나요?
 **A**: 외부 API는 항상 실패할 수 있다고 가정했습니다. Task 저장 트랜잭션과 Google Calendar API 호출을 분리하여, API 장애 시에도 핵심 데이터(Task)는 반드시 보존되도록 설계했습니다.
 
+### Q: Outbox가 많이 쌓이지 않나요?
+**A**: 정적 Coalescing을 적용했습니다. UPSERT 적재 시 기존 PENDING UPSERT를 삭제하고, DELETE 적재 시 모든 PENDING UPSERT를 삭제합니다. Task를 10번 수정해도 Outbox는 1개만 유지되며, Google API 호출을 90% 절감했습니다.
+
+### Q: Worker가 죽으면 Outbox가 고착되지 않나요?
+**A**: Lease Timeout을 적용했습니다. PROCESSING 상태로 5분 이상 지나면 다시 처리 가능하도록 쿼리하므로, Worker 장애 시 자동으로 복구됩니다.
+
+### Q: Payload가 아닌 Task를 조회하는 이유는?
+**A**: 캘린더 동기화의 목적이 '현재 Task 상태를 반영'하는 것이기 때문입니다. Task의 최신 상태를 조회해서 사용하면 중간 수정은 무시되고 최종 상태만 반영됩니다. 또한 Task가 삭제되면 자동으로 skip하므로 안전합니다.
+
 ### Q: JPA에서 양방향 관계를 사용하지 않은 이유는?
 **A**: N+1 문제와 순환 참조 이슈를 사전에 방지하기 위해 단방향 ManyToOne만 사용했습니다. 필요한 데이터는 명시적인 조인 또는 별도 조회로 가져오는 것이 더 명확하고 예측 가능하다고 판단했습니다.
 
 ### Q: Soft Delete를 선택한 이유는?
 **A**: Task 삭제 시에도 이력 추적이 필요하고, Google Calendar의 이벤트 삭제 작업이 비동기로 처리되기 때문에 물리적 삭제보다는 논리적 삭제가 적합하다고 판단했습니다.
+
+### Q: 재시도를 무한정 하나요?
+**A**: 최대 6회까지 exponential backoff로 재시도하고, 그 이후는 FAILED 상태로 두고 수동 확인합니다. 예외를 Retryable과 NonRetryable로 분류해서, 토큰 만료 같은 영구적 오류는 즉시 실패 처리합니다.
 
 ## 라이선스
 
