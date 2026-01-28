@@ -1,5 +1,6 @@
 package com.taskflow.calendar.domain.task;
 
+import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
@@ -28,6 +29,7 @@ public class TaskService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final TaskHistoryRepository historyRepository;
+    private final CalendarOutboxService calendarOutboxService;
 
     /**
      * Task 생성
@@ -74,10 +76,10 @@ public class TaskService {
                 SecurityContextHelper.getCurrentUserId()
         );
 
-        // 7. TODO: Outbox 적재 (Week 3에서 구현)
-        // if (savedTask.isCalendarSyncActive()) {
-        //     calendarOutboxService.enqueueUpsert(savedTask);
-        // }
+        // Outbox 적재
+         if (savedTask.isCalendarSyncActive()) {
+             calendarOutboxService.enqueueUpsert(savedTask);
+         }
 
         return TaskResponse.from(savedTask);
     }
@@ -135,13 +137,13 @@ public class TaskService {
                 SecurityContextHelper.getCurrentUserId()
         );
 
-        // 7. TODO: Outbox 적재 (Week 3에서 구현)
-        // if (task.isCalendarSyncActive()) {
-        //     calendarOutboxService.enqueueUpsert(task);
-        // } else if (task.getCalendarEventId() != null && !task.isCalendarSyncActive()) {
-        //     // 동기화 비활성화 시 DELETE
-        //     calendarOutboxService.enqueueDelete(task);
-        // }
+        // 7. Outbox 적재
+         if (task.isCalendarSyncActive()) {
+             calendarOutboxService.enqueueUpsert(task);
+         } else if (task.getCalendarEventId() != null && !task.isCalendarSyncActive()) {
+             // 동기화 비활성화 시 DELETE
+             calendarOutboxService.enqueueDelete(task);
+         }
 
         return TaskResponse.from(task);
     }
@@ -171,10 +173,10 @@ public class TaskService {
                 SecurityContextHelper.getCurrentUserId()
         );
 
-        // 4. TODO: Outbox 적재 (Week 3에서 구현)
-        // if (task.isCalendarSyncActive()) {
-        //     calendarOutboxService.enqueueUpsert(task);  // DONE이면 [DONE] prefix 추가
-        // }
+        // 4. Outbox 적재
+         if (task.isCalendarSyncActive()) {
+             calendarOutboxService.enqueueUpsert(task);  // DONE이면 [DONE] prefix 추가
+         }
 
         return TaskResponse.from(task);
     }
@@ -235,10 +237,8 @@ public class TaskService {
                 requestedByUserId
         );
 
-        // 3. TODO: Outbox 적재 (Week 3에서 구현)
-        // if (task.getCalendarEventId() != null) {
-        //     calendarOutboxService.enqueueDelete(task);
-        // }
+        // 3. Outbox 적재
+        calendarOutboxService.enqueueDelete(task);
 
         return DeleteTaskResponse.of(taskId);
     }

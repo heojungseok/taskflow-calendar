@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .httpBasic(hb -> hb.disable())
                 .formLogin(fl -> fl.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .antMatchers("/api/auth/**").permitAll()
+                        .antMatchers("/api/auth/**", "/api/admin/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

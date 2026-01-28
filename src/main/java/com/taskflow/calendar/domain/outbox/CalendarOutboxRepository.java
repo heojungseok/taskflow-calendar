@@ -14,8 +14,8 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM CalendarOutbox " +
             "where taskId = :taskId " +
-                "AND status = :status " +
-                "AND opType = :opType")
+            "AND status = :status " +
+            "AND opType = :opType")
     int deleteByTaskIdAndStatusAndOpType(@Param("taskId") Long taskId, @Param("status") OutboxStatus status, @Param("opType") OutboxOpType opType);
 
     // 2. PENDING DELETE 존재 여부 체크
@@ -27,16 +27,35 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
     @Query("SELECT o " +
             "FROM CalendarOutbox o " +
             "WHERE (" +
-            "    (o.status = 'PENDING' AND (o.nextRetryAt IS NULL OR o.nextRetryAt <= :now))" +
+            "    (o.status IN ('PENDING', 'FAILED') AND (o.nextRetryAt IS NULL OR o.nextRetryAt <= :now))" +
             "    OR " +
             "    (o.status = 'PROCESSING' AND o.updatedAt < :leaseTimeout)" +
             ")" +
             "AND o.retryCount < :maxRetry " +
             "ORDER BY o.createdAt ASC")
-    List<CalendarOutbox> findProcessable(@Param("now") LocalDateTime now, @Param("leaseTimeout") LocalDateTime leaseTimeout, @Param("maxRetry") int maxRetry
-    );
+    List<CalendarOutbox> findProcessable(@Param("now") LocalDateTime now, @Param("leaseTimeout") LocalDateTime leaseTimeout, @Param("maxRetry") int maxRetry);
+
+    // 조건부 UPDATE 추가
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE CalendarOutbox o " +
+            "SET o.status = 'PROCESSING', o.updatedAt = CURRENT_TIMESTAMP " +
+            "WHERE o.id = :id " +
+            "AND o.status IN ('PENDING', 'FAILED')")
+    int claimForProcessing(@Param("id") Long id);
 
     // 4. Task별 Outbox 이력 조회 (선택)
     // 힌트: findAllBy... 메서드명으로 가능
     List<CalendarOutbox> findAllByTaskIdOrderByCreatedAtDesc(Long taskId);
+
+    /**
+     * 상태별 Outbox 조회 (최신순)
+     * - 관측 API용
+     */
+    List<CalendarOutbox> findAllByStatusOrderByCreatedAtDesc(OutboxStatus status);
+
+    /**
+     * 전체 Outbox 조회 (최신순, 최대 100개)
+     * - 관측 API용 (페이징 없이 최근 100개만)
+     */
+    List<CalendarOutbox> findTop100ByOrderByCreatedAtDesc();
 }

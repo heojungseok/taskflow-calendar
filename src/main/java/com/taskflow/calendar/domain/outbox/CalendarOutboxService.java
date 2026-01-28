@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -44,24 +45,19 @@ public class CalendarOutboxService {
     // 2. DELETE 적재
     @Transactional
     public void enqueueDelete(Task task) {
-        // 1. eventId 미 존재 시 return
-        if (task.getCalendarEventId() == null) {
-            log.warn("Task {} - No CalendarEventId found", task.getId());
-            return;
-        }
-        // 2.PENDING UPSERT 전체 삭제
+        // 1.PENDING UPSERT 전체 삭제
         int deletedUpserts = outboxRepository.deleteByTaskIdAndStatusAndOpType(task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
         if (deletedUpserts > 0) {
             log.debug("Task {} - DELETE 적재 시 {}개 PENDING UPSERT 제거", task.getId(), deletedUpserts);
         }
-        // 3. PENDING DELETE 확인
+        // 2. PENDING DELETE 확인
         boolean exists = outboxRepository.existsByTaskIdAndStatusAndOpType(task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE);
 
         if (exists) {
             return; // 있다면 skip
         }
 
-        // 4. Payload 생성
+        // 3. Payload 생성
         String payload = buildDeletePayload(task);
 
         // 5. DELETE 저장
@@ -97,6 +93,33 @@ public class CalendarOutboxService {
                 .orElseThrow(()-> new IllegalArgumentException("Outbox not found: " + outboxId));
 
         outbox.markAsFailed(errorMessage);
+    }
+
+    @Transactional
+    public boolean claimProcessing(Long outboxId) {
+        int updated = outboxRepository.claimForProcessing(outboxId);
+        return updated == 1;  // ✅ 선점 성공 여부 명확!
+    }
+
+    /**
+     * Outbox 목록 조회 (필터링)
+     */
+    public List<CalendarOutbox> listOutboxes(OutboxStatus status, Long taskId) {
+        if (taskId != null) {
+            return outboxRepository.findAllByTaskIdOrderByCreatedAtDesc(taskId);
+        } else if (status != null) {
+            return outboxRepository.findAllByStatusOrderByCreatedAtDesc(status);
+        } else {
+            return outboxRepository.findTop100ByOrderByCreatedAtDesc();
+        }
+    }
+
+    /**
+     * Outbox 단건 조회
+     */
+    public CalendarOutbox getOutbox(Long outboxId) {
+        return outboxRepository.findById(outboxId)
+                .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
     }
 
     private String buildUpsertPayload(Task task) {
