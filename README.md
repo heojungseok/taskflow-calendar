@@ -133,7 +133,7 @@ docker-compose down -v
 
 - [x] **Week 1**: 프로젝트 세팅 및 기본 인프라 (User, Project, 공통 처리)
 - [x] **Week 2**: Task 도메인 및 상태 전이 (CRUD, History, JWT 인증)
-- [x] **Week 3 (진행 중)**: Outbox 패턴 구현 (Entity/Repository/Service 완료, Worker 예정)
+- [x] **Week 3 (진행 중)**: Outbox 패턴 구현 (Entity/Repository/Service 완료, Worker 완료)
 - [ ] **Week 4**: Google OAuth & Calendar API 연동
 - [ ] **Week 5**: 관측 API 및 테스트
 - [ ] **Week 6**: 프론트엔드 (React)
@@ -142,10 +142,9 @@ docker-compose down -v
 
 ## 문서
 
-- [프로젝트 명세서 v1.3](./TaskFlow_Calendar_v1.3.md)
 - [Week 1 회고](https://www.notion.so/2f1b814ac21b814fbfe7e33d6a6ad308)
 - [Week 2 회고](https://www.notion.so/2f1b814ac21b81f98afdc4b402205b72)
-- [Week 3 회고 (진행 중)](https://www.notion.so/2f2b814ac21b81e09b42c142f1198540)
+- [Week 3 회고](https://www.notion.so/2f2b814ac21b81e09b42c142f1198540)
 
 ## ERD
 ```
