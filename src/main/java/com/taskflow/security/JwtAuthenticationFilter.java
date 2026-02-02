@@ -1,5 +1,6 @@
 package com.taskflow.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -27,14 +29,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        log.info("JWT Authentication Filter");
+        log.info("Request URI: {}", request.getRequestURI());
         // 1. Authorization 헤더에서 토큰 추출
         String token = extractTokenFromHeader(request);
-
+        log.info("JWT Token exists: {}", (token != null));
         // 2. 토큰이 있고 유효하면
         if (token != null && jwtTokenProvider.validateToken(token)) {
             // 3. userId 추출
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
-
+            log.info("JWT User ID: {}", userId);
             // 4. Authentication 객체 생성
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     userId,
@@ -44,6 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // 5. SecurityContext에 설정
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            log.info("Authentication set: {}" , authentication);
         }
 
         // 6. 다음 필터로 전달

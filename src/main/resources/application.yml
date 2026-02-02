@@ -27,3 +27,12 @@ logging:
 jwt:
   secret: taskflow-calendar-secret-key-change-this-in-production-256-bits
   expiration: 86400000  # 24 hours in ms
+
+google:
+  oauth:
+    client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    redirect-uri: http://localhost:8080/api/oauth/google/callback
+    scope: https://www.googleapis.com/auth/calendar.events
+    authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+    token-uri: https://oauth2.googleapis.com/token
