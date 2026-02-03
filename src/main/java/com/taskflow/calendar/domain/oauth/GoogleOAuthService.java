@@ -1,12 +1,18 @@
 package com.taskflow.calendar.domain.oauth;
 
+import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
+import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
+import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
 import com.taskflow.config.GoogleOAuthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,5 +89,54 @@ public class GoogleOAuthService {
             throw new RuntimeException("Failed to exchange code for token", e);
         }
 
+    }
+    /**
+     * Refresh token을 사용해서 새 access token 발급
+     *
+     * @param userId 사용자 ID
+     * @throws NonRetryableIntegrationException refresh token 만료/폐기 시
+     * @throws RetryableIntegrationException 일시적 네트워크 오류 시
+     */
+    public void refreshAccessToken(Long userId) {
+        log.info("Refreshing access token. userId={}", userId);
+
+        // 토큰 조회
+        OAuthGoogleToken token = tokenRepository.findByUserId(userId)
+                .orElseThrow(() -> new NonRetryableIntegrationException("No access token found for userId: " + userId, 0));
+
+        try {
+            // Google API로 갱신 요청
+            GoogleTokenResponse response = requestTokenRefresh(token);
+
+            // 새 토큰으로 업데이트 (낙관적 락 활용)
+            token.updateAccessToken(response.getAccessToken(),
+                    LocalDateTime.now().plusSeconds(response.getExpiresInSeconds()));
+
+            tokenRepository.save(token);
+        } catch (OptimisticLockingFailureException e) {
+            log.info("Token already refreshed by another thread");
+        } catch (HttpResponseException e) {
+            if (e.getStatusCode() == 400 || e.getStatusCode() == 401) {
+                throw new NonRetryableIntegrationException("Refresh token 만료 또는 폐기.", e.getStatusCode(), e);
+            }
+            throw new RetryableIntegrationException("Token refresh 일시적 실패", e);
+        } catch (IOException e) {
+            throw new RetryableIntegrationException("Token refresh 실패", e);
+        }
+
+    }
+
+    /**
+     * Google API에 실제 갱신 요청을 보내는 부분
+     * 테스트에서 모킹 대상
+     */
+    protected GoogleTokenResponse requestTokenRefresh(OAuthGoogleToken token) throws IOException {
+        return new GoogleRefreshTokenRequest(
+                new NetHttpTransport(),
+                JacksonFactory.getDefaultInstance(),
+                token.getRefreshToken(),
+                properties.getClientId(),
+                properties.getClientSecret()
+        ).execute();
     }
 }

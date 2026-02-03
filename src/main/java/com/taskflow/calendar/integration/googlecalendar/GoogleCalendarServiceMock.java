@@ -34,7 +34,7 @@ public class GoogleCalendarServiceMock implements GoogleCalendarService {
         // 10% 확률로 NonRetryable 예외 테스트
         if (random.nextInt(100) < 10) {
             log.error("[MOCK] Simulating NonRetryable error (401 Unauthorized)");
-            throw new NonRetryableIntegrationException("Mock 401 Unauthorized - Token expired");
+            throw new NonRetryableIntegrationException("Mock 401 Unauthorized - Token expired", 0);
         }
 
         // 5% 확률로 Retryable 예외 테스트

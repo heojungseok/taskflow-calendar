@@ -9,7 +9,19 @@ package com.taskflow.calendar.integration.googlecalendar.exception;
  */
 public class NonRetryableIntegrationException extends RuntimeException {
 
-    public NonRetryableIntegrationException(String message) {super(message);}
+    private final int statusCode;
 
-    public NonRetryableIntegrationException(String message, Throwable cause) {super(message, cause);}
+    public NonRetryableIntegrationException(String message, int statusCode) {
+        super(message);
+        this.statusCode = statusCode;
+    }
+
+    public NonRetryableIntegrationException(String message, int statusCode, Throwable cause) {
+        super(message, cause);
+        this.statusCode = statusCode;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
 }

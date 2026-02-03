@@ -78,4 +78,10 @@ public class OAuthGoogleToken {
     public boolean isExpired() {
         return expiryAt.isBefore(LocalDateTime.now().plusSeconds(60));
     }
+
+    public boolean isExpiringSoon(int minutesBefore) {
+        return LocalDateTime.now()
+                .plusMinutes(minutesBefore)
+                .isAfter(expiryAt);
+    }
 }

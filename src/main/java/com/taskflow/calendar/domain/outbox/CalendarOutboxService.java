@@ -122,6 +122,21 @@ public class CalendarOutboxService {
                 .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
     }
 
+    /**
+     * Outbox payload에서 userId 추출
+     * payload 구조: { "meta": { "requestedByUserId": 1 } }
+     */
+    public Long extractUserIdFromPayload(CalendarOutbox outbox) {
+        try {
+            Map<String, Object> payload = objectMapper.readValue(outbox.getPayload(), Map.class);
+            Map<String, Object> meta = (Map<String, Object>) payload.get("meta");
+            Number userId = (Number) meta.get("requestedByUserId");
+            return userId.longValue();
+        } catch (Exception e) {
+            throw new IllegalStateException("Outbox payload에서 userId 추출 실패. outboxId=" + outbox.getId(), e);
+        }
+    }
+
     private String buildUpsertPayload(Task task) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("version", 1);

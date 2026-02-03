@@ -1,5 +1,6 @@
 package com.taskflow.calendar.worker;
 
+import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
@@ -29,6 +30,7 @@ public class CalendarOutboxWorker {
     private final CalendarOutboxRepository outboxRepository;
     private final CalendarOutboxService outboxService;
     private final GoogleCalendarService googleCalendarService;
+    private final GoogleOAuthService googleOAuthService;
 
     private static final int MAX_RETRY = 6;
     private static final int LEASE_TIMEOUT_MINUTES = 5;
@@ -90,17 +92,45 @@ public class CalendarOutboxWorker {
             outboxService.markForRetry(outbox.getId(), e.getMessage());
 
         } catch (NonRetryableIntegrationException e) {
-            // 재시도 불가능한 예외 (401, 403, 400 등)
-            log.error("[Worker] NonRetryable error on Outbox {}: {}",
-                    outbox.getId(), e.getMessage());
-            outboxService.markFailed(outbox.getId(), e.getMessage());
-
+            if (e.getStatusCode() == 401) {
+                handleTokenRefreshAndRetry(outbox, e);
+            } else {
+                log.error("[Worker] NonRetryable error on Outbox {}: {}",
+                        outbox.getId(), e.getMessage());
+                outboxService.markFailed(outbox.getId(), e.getMessage());
+            }
         } catch (Exception e) {
             // 예상치 못한 예외 → Retryable로 처리
             log.error("[Worker] Unexpected error on Outbox {}: {}",
                     outbox.getId(), e.getMessage(), e);
             outboxService.markForRetry(outbox.getId(),
                     "Unexpected error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 401 발생 시 토큰 갱신 후 재시도 대상으로 남김
+     * - 갱신 성공 → markForRetry (다음 polling에서 재시도)
+     * - 갱신 실패 → markFailed (수동 확인 필요)
+     */
+    private void handleTokenRefreshAndRetry(CalendarOutbox outbox, NonRetryableIntegrationException e) {
+        try {
+            Long userId = outboxService.extractUserIdFromPayload(outbox);
+            log.warn("[Worker] 401 detected on Outbox {}. Attempting token refresh for userId={}",
+                    outbox.getId(), userId);
+
+            googleOAuthService.refreshAccessToken(userId);
+
+            // 갱신 성공 → 재시도 대상으로 남김
+            outboxService.markForRetry(outbox.getId(), "Token refreshed, will retry");
+            log.info("[Worker] Token refreshed successfully. Outbox {} will be retried", outbox.getId());
+
+        } catch (Exception refreshException) {
+            // 갱신 실패 → FAILED
+            log.error("[Worker] Token refresh failed for Outbox {}: {}",
+                    outbox.getId(), refreshException.getMessage());
+            outboxService.markFailed(outbox.getId(),
+                    "Token refresh failed: " + refreshException.getMessage());
         }
     }
 }
