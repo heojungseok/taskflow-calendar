@@ -27,19 +27,26 @@ public class CalendarOutboxService {
     // 1. UPSERT 적재
     @Transactional
     public void enqueueUpsert(Task task) {
-        // 1. 삭제 로직
-        int deleted = outboxRepository.deleteByTaskIdAndStatusAndOpType(task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
-        if (deleted > 0) {
-            log.debug("Task {} - Coalescing: {}개 PENDING UPSERT 제거", task.getId(), deleted);
+        // ✅ Rule A-1: PENDING DELETE 제거 (도메인 충돌 해소)
+        int deletedDeletes = outboxRepository.deleteByTaskIdAndStatusAndOpType(
+                task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE);
+        if (deletedDeletes > 0) {
+            log.debug("Task {} - UPSERT 적재 시 {}개 PENDING DELETE 제거 (충돌 해소)",
+                    task.getId(), deletedDeletes);
         }
-        // 2. payload 작성
+
+        // ✅ Rule A-2: PENDING UPSERT 제거 (최신 1개만 유지)
+        int deletedUpserts = outboxRepository.deleteByTaskIdAndStatusAndOpType(
+                task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
+        if (deletedUpserts > 0) {
+            log.debug("Task {} - Coalescing: {}개 PENDING UPSERT 제거",
+                    task.getId(), deletedUpserts);
+        }
+
+        // 새 UPSERT 적재
         String payload = buildUpsertPayload(task);
-
-        // 3. Outbox 저장
         CalendarOutbox outbox = CalendarOutbox.forUpsert(task.getId(), payload);
-
         outboxRepository.save(outbox);
-
     }
 
     // 2. DELETE 적재
