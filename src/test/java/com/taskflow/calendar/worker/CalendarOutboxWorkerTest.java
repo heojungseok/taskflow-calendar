@@ -1,11 +1,7 @@
 package com.taskflow.calendar.worker;
 
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
-import com.taskflow.calendar.domain.outbox.CalendarOutbox;
-import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
-import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
-import com.taskflow.calendar.domain.outbox.OutboxOpType;
-import com.taskflow.calendar.domain.outbox.OutboxStatus;
+import com.taskflow.calendar.domain.outbox.*;
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarService;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -89,7 +86,9 @@ class CalendarOutboxWorkerTest {
                 .thenReturn(List.of(outbox));
 
         // claimProcessing → 항상 성공 (공통)
-        when(outboxService.claimProcessing(OUTBOX_ID)).thenReturn(true);
+        LocalDateTime leaseTimeout = LocalDateTime.now()
+                .minusMinutes(OutboxPolicy.LEASE_TIMEOUT_MINUTES.value());
+        when(outboxService.claimProcessing(OUTBOX_ID, leaseTimeout)).thenReturn(true);
     }
 
     // =========================================================

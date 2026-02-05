@@ -4,12 +4,12 @@ import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
+import com.taskflow.calendar.domain.outbox.OutboxPolicy;
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarService;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -32,14 +32,11 @@ public class CalendarOutboxWorker {
     private final GoogleCalendarService googleCalendarService;
     private final GoogleOAuthService googleOAuthService;
 
-    private static final int MAX_RETRY = 6;
-    private static final int LEASE_TIMEOUT_MINUTES = 5;
-
-    @Scheduled(fixedDelay = 60000)  // 15초 설정
+//    @Scheduled(fixedDelay = 60000)  // 60초 설정
     public void pollAndProcess() {
         try {
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime leaseTimeout = now.minusMinutes(LEASE_TIMEOUT_MINUTES);
+            LocalDateTime leaseTimeout = now.minusMinutes(OutboxPolicy.LEASE_TIMEOUT_MINUTES.value());
 
             log.info("[Worker] Polling at {}, leaseTimeout={}", now, leaseTimeout);
 
@@ -47,7 +44,7 @@ public class CalendarOutboxWorker {
             List<CalendarOutbox> processableOutboxes = outboxRepository.findProcessable(
                     now,
                     leaseTimeout,
-                    MAX_RETRY
+                    OutboxPolicy.MAX_RETRY.value()
             );
 
             if (processableOutboxes.isEmpty()) {
@@ -59,7 +56,23 @@ public class CalendarOutboxWorker {
 
             // 2. 각 Outbox 처리
             for (CalendarOutbox outbox : processableOutboxes) {
-                processOne(outbox);
+                try {
+                    // Lock 시도 (조건부 UPDATE로 원자적 선점)
+                    boolean claimed = outboxService.claimProcessing(outbox.getId(), leaseTimeout);
+
+                    if (!claimed) {
+                        log.debug("[Worker] Outbox {} already claimed by another worker", outbox.getId());
+                        return;
+                    }
+
+                    log.info("[Worker] Processing Outbox {} - OpType: {}, TaskId: {}, RetryCount: {}",
+                            outbox.getId(), outbox.getOpType(), outbox.getTaskId(), outbox.getRetryCount());
+
+                    processOne(outbox);
+
+                } catch (Exception e) {
+                    log.error("[Worker] Unexpected error processing Outbox {}", outbox.getId(), e);
+                }
             }
         } catch (Exception e) {
             log.error("[Worker] Fatal error in polling cycle: {}", e.getMessage(), e);
@@ -68,20 +81,11 @@ public class CalendarOutboxWorker {
 
     private void processOne(CalendarOutbox outbox) {
         try {
-            // 1. Lock 시도 (조건부 UPDATE로 원자적 선점)
-            boolean locked = outboxService.claimProcessing(outbox.getId());
-            if (!locked) {
-                log.debug("[Worker] Outbox {} already claimed by another worker", outbox.getId());
-                return;
-            }
 
-            log.info("[Worker] Processing Outbox {} - OpType: {}, TaskId: {}, RetryCount: {}",
-                    outbox.getId(), outbox.getOpType(), outbox.getTaskId(), outbox.getRetryCount());
-
-            // 2. Google Calendar API 호출 (내부에서 Task 최신 상태 조회)
+            // 1. Google Calendar API 호출 (내부에서 Task 최신 상태 조회)
             googleCalendarService.handle(outbox);
 
-            // 3. 성공 처리
+            // 2. 성공 처리
             outboxService.markSuccess(outbox.getId());
             log.info("[Worker] Successfully processed Outbox {}", outbox.getId());
 

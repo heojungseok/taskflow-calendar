@@ -40,8 +40,11 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
     @Query("UPDATE CalendarOutbox o " +
             "SET o.status = 'PROCESSING', o.updatedAt = CURRENT_TIMESTAMP " +
             "WHERE o.id = :id " +
-            "AND o.status IN ('PENDING', 'FAILED')")
-    int claimForProcessing(@Param("id") Long id);
+            "AND (o.status IN ('PENDING', 'FAILED')" +
+            "   OR " +
+            "   (o.status = 'PROCESSING' AND o.updatedAt < :leaseTimeout) " +
+            ")")
+    int claimForProcessing(@Param("id") Long id, @Param("leaseTimeout") LocalDateTime leaseTimeout);
 
     // 4. Task별 Outbox 이력 조회 (선택)
     // 힌트: findAllBy... 메서드명으로 가능

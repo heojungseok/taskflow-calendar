@@ -1,5 +1,6 @@
 package com.taskflow.calendar.domain.outbox;
 
+import com.taskflow.calendar.domain.outbox.exception.InvalidOutboxStateTransitionException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -99,21 +100,46 @@ public class CalendarOutbox {
         this.status = OutboxStatus.PROCESSING;
     }
 
+    /**
+     * SUCCESS 마킹 (상태 전이 검증 포함)
+     */
     public void markAsSuccess() {
+        validateCurrentlyProcessing();
+
         this.status = OutboxStatus.SUCCESS;
+        this.lastError = null;
+        this.nextRetryAt = null;
     }
 
+    /**
+     * 재시도 마킹 (상태 전이 검증 포함)
+     */
     public void markForRetry(String errorMessage, LocalDateTime nextRetry) {
+        validateCurrentlyProcessing();
+
         this.status = OutboxStatus.FAILED;
         this.retryCount++;
         this.lastError = errorMessage;
         this.nextRetryAt = nextRetry;
     }
 
+    /**
+     * 실패 마킹
+     */
     public void markAsFailed(String errorMessage) {
+        validateCurrentlyProcessing();
+
         this.status = OutboxStatus.FAILED;
         this.lastError = errorMessage;
         this.nextRetryAt = null;
+    }
+
+    private void validateCurrentlyProcessing() {
+        if (this.status != OutboxStatus.PROCESSING) {
+            throw new InvalidOutboxStateTransitionException(
+                    String.format("Cannot transition from %s (expected: PROCESSING)", this.status)
+            );
+        }
     }
 }
 

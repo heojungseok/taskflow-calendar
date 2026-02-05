@@ -13,6 +13,7 @@ import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.ValidationException;
 import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -89,9 +91,13 @@ public class TaskService {
      */
     @Transactional
     public TaskResponse updateTask(Long taskId, UpdateTaskRequest request) {
+        log.info("=== updateTask START ===");
+        log.info("Request: title={}", request.getTitle());
         // 1. Task 조회 (deleted=false)
         Task task = taskRepository.findByIdAndDeletedFalse(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
+
+        log.info("Task BEFORE: task_id={}, title={}, deleted={}", task.getId(), task.getTitle(), task.getDeleted());
 
         // 변경 전 스냅샷 저장
         String beforeSnapshot = buildTaskSnapshot(task);
@@ -124,6 +130,13 @@ public class TaskService {
                 request.getDueAt(),
                 request.getCalendarSyncEnabled()
         );
+        log.info("Task AFTER: task_id={}, title={}, deleted={}", task.getId(), task.getTitle(), task.getDeleted());
+        // ✅ 명시적 save + flush
+        taskRepository.saveAndFlush(task);  // ← saveAndFlush로 변경
+        log.info("Task saved and flushed");
+
+        Task reloaded = taskRepository.findById(taskId).orElseThrow();
+        log.info("Task reloaded from DB: task_id={}, title={}, deleted={}", reloaded.getId(), reloaded.getTitle(), reloaded.getDeleted());
 
         // 변경 후 스냅샷 저장
         String afterSnapshot = buildTaskSnapshot(task);
@@ -138,13 +151,20 @@ public class TaskService {
         );
 
         // 7. Outbox 적재
+        try {
          if (task.isCalendarSyncActive()) {
+             log.info("Enqueuing UPSERT. taskId={}", taskId);
              calendarOutboxService.enqueueUpsert(task);
          } else if (task.getCalendarEventId() != null && !task.isCalendarSyncActive()) {
              // 동기화 비활성화 시 DELETE
+             log.info("Enqueuing DELETE. taskId={}", taskId);
              calendarOutboxService.enqueueDelete(task);
          }
-
+        } catch (Exception e) {
+            log.error("Failed to enqueue outbox", e);
+            throw e;  // 예외 전파
+        }
+        log.info("=== updateTask END ===");
         return TaskResponse.from(task);
     }
 
@@ -163,6 +183,8 @@ public class TaskService {
 
         // 3. 상태 변경
         task.changeStatus(request.getToStatus());
+
+        taskRepository.saveAndFlush(task);
 
         // 4. 이력 기록 - 상태 변경
         recordHistory(

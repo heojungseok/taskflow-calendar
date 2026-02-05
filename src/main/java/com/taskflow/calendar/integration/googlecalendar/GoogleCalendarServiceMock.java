@@ -9,7 +9,6 @@ import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIn
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
