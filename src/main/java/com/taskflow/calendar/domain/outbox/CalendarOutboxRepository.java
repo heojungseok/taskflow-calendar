@@ -11,7 +11,7 @@ import java.util.List;
 public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, Long> {
     // 1. 정적 Coalescing용 DELETE
     // 힌트: @Modifying, @Query 필요
-    @Modifying(clearAutomatically = true)
+    @Modifying
     @Query("DELETE FROM CalendarOutbox " +
             "where taskId = :taskId " +
             "AND status = :status " +
@@ -36,7 +36,7 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
     List<CalendarOutbox> findProcessable(@Param("now") LocalDateTime now, @Param("leaseTimeout") LocalDateTime leaseTimeout, @Param("maxRetry") int maxRetry);
 
     // 조건부 UPDATE 추가
-    @Modifying(clearAutomatically = true)
+    @Modifying
     @Query("UPDATE CalendarOutbox o " +
             "SET o.status = 'PROCESSING', o.updatedAt = CURRENT_TIMESTAMP " +
             "WHERE o.id = :id " +
