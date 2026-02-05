@@ -35,7 +35,7 @@ public class CalendarOutboxWorker {
     private static final int MAX_RETRY = 6;
     private static final int LEASE_TIMEOUT_MINUTES = 5;
 
-    @Scheduled(fixedDelay = 15000)  // 15초 설정
+    @Scheduled(fixedDelay = 60000)  // 15초 설정
     public void pollAndProcess() {
         try {
             LocalDateTime now = LocalDateTime.now();

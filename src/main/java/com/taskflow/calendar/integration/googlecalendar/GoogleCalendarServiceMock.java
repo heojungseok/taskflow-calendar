@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 import java.util.Random;
 
-@Service
+// @Service  // ← Mock 비활성화: 실제 GoogleCalendarServiceImpl 사용
 @RequiredArgsConstructor
 @Slf4j
 public class GoogleCalendarServiceMock implements GoogleCalendarService {
