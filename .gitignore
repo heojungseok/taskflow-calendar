@@ -66,3 +66,5 @@ postgres-data/
 ### Test Coverage Reports ###
 .jacoco/
 jacoco.exec
+
+.claude/
