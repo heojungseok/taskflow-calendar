@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -121,6 +122,20 @@ public class CalendarOutboxService {
         } else {
             return outboxRepository.findTop100ByOrderByCreatedAtDesc();
         }
+    }
+
+    /**
+     * Task별 최신 Outbox 조회
+     */
+    public Optional<CalendarOutbox> findLatestByTaskId(Long taskId) {
+        return outboxRepository.findTopByTaskIdOrderByCreatedAtDesc(taskId);
+    }
+
+    /**
+     * Task별 마지막 SUCCESS Outbox 조회
+     */
+    public Optional<CalendarOutbox> findLastSuccessByTaskId(Long taskId) {
+        return outboxRepository.findTopByTaskIdAndStatusOrderByUpdatedAtDesc(taskId, OutboxStatus.SUCCESS);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.taskflow.calendar.domain.task;
 
+import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
@@ -261,6 +262,22 @@ public class TaskService {
         return histories.stream()
                 .map(TaskHistoryResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Task 캘린더 동기화 상태 조회
+     * GET /api/tasks/{taskId}/calendar-sync
+     */
+    public CalendarSyncStatusResponse getCalendarSyncStatus(Long taskId) {
+        Task task = taskRepository.findByIdAndDeletedFalse(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
+
+        CalendarOutbox latestOutbox = calendarOutboxService.findLatestByTaskId(taskId)
+                .orElse(null);
+        CalendarOutbox lastSuccessOutbox = calendarOutboxService.findLastSuccessByTaskId(taskId)
+                .orElse(null);
+
+        return CalendarSyncStatusResponse.of(task, latestOutbox, lastSuccessOutbox);
     }
 
     // ========== Private 검증 메서드들 ==========
