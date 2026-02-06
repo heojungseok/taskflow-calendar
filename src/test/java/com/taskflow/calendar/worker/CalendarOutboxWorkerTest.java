@@ -80,15 +80,6 @@ class CalendarOutboxWorkerTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        // findProcessable → outbox 반환 (공통)
-        when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                .thenReturn(List.of(outbox));
-
-        // claimProcessing → 항상 성공 (공통)
-        LocalDateTime leaseTimeout = LocalDateTime.now()
-                .minusMinutes(OutboxPolicy.LEASE_TIMEOUT_MINUTES.value());
-        when(outboxService.claimProcessing(OUTBOX_ID, leaseTimeout)).thenReturn(true);
     }
 
     // =========================================================
@@ -102,6 +93,9 @@ class CalendarOutboxWorkerTest {
         @DisplayName("토큰 갱신 성공 시 markForRetry 호출됨")
         void 토큰갱신_성공_markForRetry호출() {
             // given
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of(outbox));
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
             doThrow(new NonRetryableIntegrationException("Unauthorized", 401))
                     .when(googleCalendarService).handle(outbox);
             when(outboxService.extractUserIdFromPayload(outbox))
@@ -120,6 +114,9 @@ class CalendarOutboxWorkerTest {
         @DisplayName("토큰 갱신 실패 시 markFailed 호출됨")
         void 토큰갱신_실패_markFailed호출() {
             // given
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of(outbox));
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
             doThrow(new NonRetryableIntegrationException("Unauthorized", 401))
                     .when(googleCalendarService).handle(outbox);
             when(outboxService.extractUserIdFromPayload(outbox))
@@ -141,6 +138,9 @@ class CalendarOutboxWorkerTest {
         @DisplayName("payload 파싱 실패 시 markFailed 호출됨")
         void payload파싱_실패_markFailed호출() {
             // given
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of(outbox));
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
             doThrow(new NonRetryableIntegrationException("Unauthorized", 401))
                     .when(googleCalendarService).handle(outbox);
             doThrow(new IllegalStateException("userId 추출 실패"))
@@ -168,6 +168,9 @@ class CalendarOutboxWorkerTest {
         @DisplayName("400 발생 시 토큰 갱신 없이 markFailed 호출됨")
         void statusCode400_갱신없이_markFailed호출() {
             // given
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of(outbox));
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
             doThrow(new NonRetryableIntegrationException("Bad Request", 400))
                     .when(googleCalendarService).handle(outbox);
 
@@ -179,6 +182,110 @@ class CalendarOutboxWorkerTest {
             verify(outboxService, never()).extractUserIdFromPayload(any());
             verify(outboxService).markFailed(OUTBOX_ID, "Bad Request");
             verify(outboxService, never()).markForRetry(anyLong(), anyString());
+        }
+    }
+
+    // =========================================================
+    // Lease Timeout & Race Condition 테스트
+    // =========================================================
+    @Nested
+    @DisplayName("Lease Timeout & 동시성 검증")
+    class LeaseTimeoutAndRaceConditionTest {
+
+        @Test
+        @DisplayName("Lease timeout 초과 후 재선점 가능")
+        void lease_timeout_후_재선점() {
+            // given: PROCESSING 상태이나 updatedAt이 lease timeout 초과
+            CalendarOutbox staleOutbox = CalendarOutbox.builder()
+                    .taskId(TASK_ID)
+                    .opType(OutboxOpType.UPSERT)
+                    .payload(VALID_PAYLOAD)
+                    .status(OutboxStatus.PROCESSING)
+                    .retryCount(0)
+                    .build();
+
+            // Reflection으로 updatedAt을 10분 전으로 설정 (lease timeout = 5분)
+            try {
+                var field = CalendarOutbox.class.getDeclaredField("updatedAt");
+                field.setAccessible(true);
+                field.set(staleOutbox, LocalDateTime.now().minusMinutes(10));
+
+                var idField = CalendarOutbox.class.getDeclaredField("id");
+                idField.setAccessible(true);
+                idField.set(staleOutbox, OUTBOX_ID);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            // findProcessable이 stale outbox 반환
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of(staleOutbox));
+
+            // claimProcessing 성공 (lease timeout 체크 통과)
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
+
+            // when
+            worker.pollAndProcess();
+
+            // then: 재선점 후 처리됨
+            verify(outboxService).claimProcessing(eq(OUTBOX_ID), any());
+            verify(googleCalendarService).handle(staleOutbox);
+            verify(outboxService).markSuccess(OUTBOX_ID);
+        }
+
+        @Test
+        @DisplayName("claimProcessing 실패 시 처리 skip")
+        void claimProcessing_실패_skip() {
+            // given: 다른 Worker가 이미 선점
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of(outbox));
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(false);
+
+            // when
+            worker.pollAndProcess();
+
+            // then: GoogleCalendarService 호출 안 됨
+            verify(outboxService).claimProcessing(eq(OUTBOX_ID), any());
+            verify(googleCalendarService, never()).handle(any());
+            verify(outboxService, never()).markSuccess(anyLong());
+            verify(outboxService, never()).markFailed(anyLong(), anyString());
+        }
+
+        @Test
+        @DisplayName("PROCESSING 상태에서 다른 Worker 선점 불가 (updatedAt 최신)")
+        void PROCESSING_상태_선점불가() {
+            // given: PROCESSING 상태이며 updatedAt이 최신 (lease timeout 미초과)
+            CalendarOutbox processingOutbox = CalendarOutbox.builder()
+                    .taskId(TASK_ID)
+                    .opType(OutboxOpType.UPSERT)
+                    .payload(VALID_PAYLOAD)
+                    .status(OutboxStatus.PROCESSING)
+                    .retryCount(0)
+                    .build();
+
+            // updatedAt을 1분 전으로 설정 (lease timeout 5분 미초과)
+            try {
+                var field = CalendarOutbox.class.getDeclaredField("updatedAt");
+                field.setAccessible(true);
+                field.set(processingOutbox, LocalDateTime.now().minusMinutes(1));
+
+                var idField = CalendarOutbox.class.getDeclaredField("id");
+                idField.setAccessible(true);
+                idField.set(processingOutbox, OUTBOX_ID);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            // findProcessable이 비어있음 (lease timeout 미초과로 필터링됨)
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of()); // 빈 리스트
+
+            // when
+            worker.pollAndProcess();
+
+            // then: 처리 안 됨
+            verify(outboxService, never()).claimProcessing(anyLong(), any());
+            verify(googleCalendarService, never()).handle(any());
         }
     }
 }
