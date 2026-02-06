@@ -51,6 +51,11 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
     List<CalendarOutbox> findAllByTaskIdOrderByCreatedAtDesc(Long taskId);
 
     /**
+     * Task ID + 상태별 Outbox 조회 (최신순)
+     */
+    List<CalendarOutbox> findAllByTaskIdAndStatusOrderByCreatedAtDesc(Long taskId, OutboxStatus status);
+
+    /**
      * 상태별 Outbox 조회 (최신순)
      * - 관측 API용
      */

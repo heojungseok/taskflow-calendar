@@ -112,7 +112,9 @@ public class CalendarOutboxService {
      * Outbox 목록 조회 (필터링)
      */
     public List<CalendarOutbox> listOutboxes(OutboxStatus status, Long taskId) {
-        if (taskId != null) {
+        if (taskId != null && status != null) {
+            return outboxRepository.findAllByTaskIdAndStatusOrderByCreatedAtDesc(taskId, status);
+        } else if (taskId != null) {
             return outboxRepository.findAllByTaskIdOrderByCreatedAtDesc(taskId);
         } else if (status != null) {
             return outboxRepository.findAllByStatusOrderByCreatedAtDesc(status);
