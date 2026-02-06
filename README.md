@@ -9,8 +9,9 @@ Task 관리와 Google Calendar를 동기화하는 웹 애플리케이션입니�
 
 ### 핵심 가치
 - **안정성**: 외부 API 장애 시에도 내부 데이터 일관성 보장 (Outbox 패턴)
-- **효율성**: 정적 Coalescing으로 Google API 호출 90% 절감
+- **효율성**: 정적 Coalescing으로 불필요한 API 호출 및 DB 부하 90% 절감
 - **복원력**: Lease Timeout으로 Worker 장애 시 자동 복구 (5분)
+- **정확성**: 도메인 충돌 방지 (UPSERT ↔ DELETE 동시 존재 차단)
 
 ## 기술 스택
 
@@ -22,6 +23,7 @@ Task 관리와 Google Calendar를 동기화하는 웹 애플리케이션입니�
 
 ### Architecture & Pattern
 - **Outbox Pattern**: 외부 API 연동 안정성 보장
+- **정적 Coalescing (4 Rules)**: API 호출 최적화 + 도메인 충돌 방지
 - **DDD (Domain-Driven Design)**: Rich Domain Model, Static Factory Method
 - **Soft Delete**: 데이터 보존 및 복구 가능성
 - **Tell, Don't Ask**: Entity 캡슐화 원칙
@@ -34,16 +36,18 @@ Task 관리와 Google Calendar를 동기화하는 웹 애플리케이션입니�
 
 - ✅ Task CRUD 및 상태 전이 관리 (TaskStatusPolicy)
 - ✅ Task 변경 이력 추적 (TaskHistory)
-- ✅ Google Calendar 단방향 동기화 (예정)
+- ✅ Google Calendar OAuth 2.0 인증 (완료)
+- ✅ Google Calendar 단방향 동기화 (완료)
 - ✅ Outbox 패턴을 통한 외부 API 안정성 보장
-- ✅ 정적 Coalescing (API 호출 90% 절감)
+- ✅ 정적 Coalescing (4 Rules: A-1, A-2, B-1, B-2)
 - ✅ Exponential Backoff 재시도 전략
 - ✅ Lease Timeout (Worker 자동 복구)
 - ✅ JWT 기반 인증/인가
+- ✅ Token 자동 갱신 (401 감지 시)
 
 ## 아키텍처 특징
 
-### 1. Outbox 패턴 + 정적 Coalescing ⭐
+### 1. Outbox 패턴 + 정적 Coalescing (4 Rules) ⭐
 외부 API(Google Calendar) 호출 실패 시에도 내부 트랜잭션의 일관성을 보장합니다.
 
 **기본 Outbox 패턴:**
@@ -51,14 +55,34 @@ Task 관리와 Google Calendar를 동기화하는 웹 애플리케이션입니�
 - 별도 Worker가 비동기로 외부 API 호출
 - Exponential Backoff를 통한 재시도 전략 (maxRetry=6)
 
-**정적 Coalescing 최적화:**
-- Outbox 적재 시점에 불필요한 PENDING 제거
-- Task 10회 수정 → Outbox 1개 유지
+**정적 Coalescing 최적화 (4개 규칙):**
+
+| Rule | 적재 시점 | 대상 | 목적 |
+|------|----------|------|------|
+| **A-1** | UPSERT | PENDING DELETE 삭제 | 도메인 충돌 해소 |
+| **A-2** | UPSERT | PENDING UPSERT 삭제 | 최신 1개만 유지 |
+| **B-1** | DELETE | PENDING UPSERT 삭제 | 도메인 충돌 해소 + 효율성 |
+| **B-2** | DELETE | PENDING DELETE 중복 방지 | 효율성 |
+
+**효과:**
+- Task 10회 수정 → Outbox 1개 유지 (나머지 9개 삭제)
 - **Google API 호출 90% 절감**
+- **DB 저장 공간 90% 절감**
+- **Worker 처리 부하 90% 절감**
+
+**도메인 충돌 방지:**
+- Rule A-1: DELETE 후 UPSERT 시나리오에서 충돌 제거
+- Rule B-1: UPSERT 후 DELETE 시나리오에서 충돌 제거
+- 예: DELETE와 UPSERT가 동시에 PENDING 상태로 존재하는 문제 차단
 
 **Lease Timeout:**
 - PROCESSING 상태로 5분 이상 지나면 자동 재처리
 - Worker 장애 시 수동 개입 없이 자동 복구
+
+**Race Condition 방어:**
+- `deleteByTaskIdAndStatusAndOpType()`는 `status = PENDING`만 대상
+- PROCESSING 상태는 자동 제외되어 Worker 처리 중인 작업 보호
+- 중복 처리나 데이터 손실 없음
 
 ### 2. DDD (Domain-Driven Design) 적용
 **Rich Domain Model:**
@@ -133,18 +157,19 @@ docker-compose down -v
 
 - [x] **Week 1**: 프로젝트 세팅 및 기본 인프라 (User, Project, 공통 처리)
 - [x] **Week 2**: Task 도메인 및 상태 전이 (CRUD, History, JWT 인증)
-- [x] **Week 3 (진행 중)**: Outbox 패턴 구현 (Entity/Repository/Service 완료, Worker 완료)
-- [ ] **Week 4**: Google OAuth & Calendar API 연동
-- [ ] **Week 5**: 관측 API 및 테스트
+- [x] **Week 3**: Outbox 패턴 구현 (Entity/Repository/Service/Worker 완료)
+- [x] **Week 4**: Google OAuth & Calendar API 연동 (완료)
+- [ ] **Week 5 (진행 중)**: 관측 API, 정적 Coalescing 테스트, 문서화
 - [ ] **Week 6**: 프론트엔드 (React)
 
-**현재 진행률**: 40% (2.4/6 Weeks)
+**현재 진행률**: 67% (4/6 Weeks)
 
 ## 문서
 
 - [Week 1 회고](https://www.notion.so/2f1b814ac21b814fbfe7e33d6a6ad308)
 - [Week 2 회고](https://www.notion.so/2f1b814ac21b81f98afdc4b402205b72)
 - [Week 3 회고](https://www.notion.so/2f2b814ac21b81e09b42c142f1198540)
+- [Week 4 회고](https://www.notion.so/Week-4-Google-OAuth-Calendar-API-2fbb814ac21b8178be7dd9936ae6aa78)
 
 ## ERD
 ```
@@ -169,12 +194,12 @@ users (1) ─── (1) oauth_google_tokens
 ### Authentication
 - `POST /api/auth/login` - JWT 로그인
 
-### Google Calendar Integration (예정)
+### Google Calendar Integration
 - `GET /api/oauth/google/authorize` - OAuth 인증 URL
 - `GET /api/oauth/google/callback` - OAuth 콜백
 - `GET /api/integrations/google-calendar/status` - 연동 상태
 
-### Observability (예정)
+### Observability
 - `GET /api/tasks/{taskId}/calendar-sync` - 동기화 상태
 - `GET /api/admin/calendar-outbox` - Outbox 목록 (디버깅)
 
@@ -193,7 +218,13 @@ IntelliJ IDEA
 **A**: 외부 API는 항상 실패할 수 있다고 가정했습니다. Task 저장 트랜잭션과 Google Calendar API 호출을 분리하여, API 장애 시에도 핵심 데이터(Task)는 반드시 보존되도록 설계했습니다.
 
 ### Q: Outbox가 많이 쌓이지 않나요?
-**A**: 정적 Coalescing을 적용했습니다. UPSERT 적재 시 기존 PENDING UPSERT를 삭제하고, DELETE 적재 시 모든 PENDING UPSERT를 삭제합니다. Task를 10번 수정해도 Outbox는 1개만 유지되며, Google API 호출을 90% 절감했습니다.
+**A**: 정적 Coalescing을 적용했습니다. 4개 규칙(A-1, A-2, B-1, B-2)으로 불필요한 Outbox를 적재 시점에 삭제합니다. Task를 10번 수정해도 Outbox는 1개만 유지되며, DB 공간과 Worker 부하를 90% 절감했습니다.
+
+### Q: DELETE와 UPSERT가 동시에 존재하면 어떻게 되나요?
+**A**: 도메인 충돌이 발생하므로 정적 Coalescing이 이를 방지합니다. UPSERT 적재 시 PENDING DELETE를 삭제하고(Rule A-1), DELETE 적재 시 PENDING UPSERT를 삭제합니다(Rule B-1). 따라서 항상 하나의 명확한 의도만 PENDING 상태로 유지됩니다.
+
+### Q: 정적 Coalescing 중 Worker가 처리하면 어떻게 되나요?
+**A**: PROCESSING 상태는 삭제 대상에서 자동 제외됩니다. `deleteByTaskIdAndStatusAndOpType()`에 `status = PENDING` 조건이 있어서 Worker가 선점한 Outbox는 보호됩니다. Race Condition 걱정 없이 안전하게 동작합니다.
 
 ### Q: Worker가 죽으면 Outbox가 고착되지 않나요?
 **A**: Lease Timeout을 적용했습니다. PROCESSING 상태로 5분 이상 지나면 다시 처리 가능하도록 쿼리하므로, Worker 장애 시 자동으로 복구됩니다.
@@ -210,13 +241,19 @@ IntelliJ IDEA
 ### Q: Entity에 비즈니스 로직을 넣는 이유는?
 **A**: Tell, Don't Ask 원칙을 따르기 위해서입니다. `outbox.markAsSuccess()`처럼 Entity에게 '명령'하면, 내부 로직(lastError 초기화 등)은 Entity가 알아서 처리합니다. 이렇게 하면 캡슐화되고 실수가 줄어듭니다.
 
+### Q: 정적 Coalescing과 동적 Coalescing의 차이는?
+**A**: 정적은 '적재 시점'에 불필요한 Outbox를 DB에서 삭제해서 공간과 처리 부하를 줄입니다. 동적은 '처리 시점'에 Task 최신 상태를 조회해서 중간 변경을 무시하고 최종 상태만 반영합니다. 둘 다 API 호출은 1번이지만, 정적은 DB 효율성을 추가로 확보합니다.
+
 ## 성과 지표
 
 | 항목 | 최적화 전 | 최적화 후 | 개선율 |
 |------|----------|----------|--------|
 | Google API 호출 | Task 수정 10회 = API 10회 | Task 수정 10회 = API 1회 | **90% 절감** |
+| DB 저장 공간 (Outbox) | Task 수정 10회 = 10개 | Task 수정 10회 = 1개 | **90% 절감** |
+| Worker 처리 부하 | Outbox 10개 조회/처리 | Outbox 1개 조회/처리 | **90% 절감** |
 | N+1 쿼리 | TaskHistory 조회 시 101회 | @EntityGraph 적용 후 1회 | **99% 절감** |
 | Worker 복구 | 수동 개입 필요 | Lease Timeout 자동 복구 | **무중단** |
+| 도메인 충돌 | UPSERT ↔ DELETE 동시 존재 가능 | 정적 Coalescing으로 차단 | **100% 방지** |
 
 ## 라이선스
 
