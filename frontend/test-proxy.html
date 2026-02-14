@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proxy 테스트 - TaskFlow Calendar</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #4CAF50;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      display: none;
+    }
+    .success {
+      border-left-color: #4CAF50;
+      background: #e8f5e9;
+    }
+    .error {
+      border-left-color: #f44336;
+      background: #ffebee;
+    }
+    .info {
+      margin: 15px 0;
+      padding: 10px;
+      background: #e3f2fd;
+      border-left: 4px solid #2196F3;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 TaskFlow Calendar - Proxy 헬스 체크</h1>
+
+    <div class="info">
+      <strong>환경 정보:</strong><br>
+      - 프론트엔드: http://localhost:3000<br>
+      - 백엔드: http://localhost:8080<br>
+      - Proxy 설정: /api/* → http://localhost:8080
+    </div>
+
+    <button onclick="testBackendDirect()">백엔드 직접 호출</button>
+    <button onclick="testBackendViaProxy()">Proxy를 통한 호출</button>
+    <button onclick="testAll()">전체 테스트</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const resultDiv = document.getElementById('result');
+
+    function showResult(message, isSuccess = true) {
+      resultDiv.style.display = 'block';
+      resultDiv.className = isSuccess ? 'success' : 'error';
+      resultDiv.textContent = message;
+    }
+
+    async function testBackendDirect() {
+      try {
+        showResult('백엔드 직접 호출 중...', true);
+        const response = await fetch('http://localhost:8080/actuator/health');
+        const data = await response.json();
+        showResult(
+          `✅ 백엔드 직접 호출 성공!\n\n` +
+          `상태: ${response.status}\n` +
+          `응답: ${JSON.stringify(data, null, 2)}`,
+          true
+        );
+      } catch (error) {
+        showResult(
+          `❌ 백엔드 직접 호출 실패\n\n` +
+          `에러: ${error.message}`,
+          false
+        );
+      }
+    }
+
+    async function testBackendViaProxy() {
+      try {
+        showResult('Proxy를 통한 백엔드 호출 중...', true);
+        const response = await fetch('/api/actuator/health');
+        const data = await response.json();
+        showResult(
+          `✅ Proxy를 통한 호출 성공!\n\n` +
+          `상태: ${response.status}\n` +
+          `응답: ${JSON.stringify(data, null, 2)}\n\n` +
+          `🎉 Vite Proxy가 정상 작동합니다!`,
+          true
+        );
+      } catch (error) {
+        showResult(
+          `❌ Proxy를 통한 호출 실패\n\n` +
+          `에러: ${error.message}`,
+          false
+        );
+      }
+    }
+
+    async function testAll() {
+      try {
+        showResult('전체 테스트 진행 중...', true);
+
+        // 1. 백엔드 직접 호출
+        const directResponse = await fetch('http://localhost:8080/actuator/health');
+        const directData = await directResponse.json();
+
+        // 2. Proxy를 통한 호출
+        const proxyResponse = await fetch('/api/actuator/health');
+        const proxyData = await proxyResponse.json();
+
+        showResult(
+          `✅ 전체 테스트 통과!\n\n` +
+          `[백엔드 직접 호출]\n` +
+          `상태: ${directResponse.status}\n` +
+          `응답: ${JSON.stringify(directData, null, 2)}\n\n` +
+          `[Proxy를 통한 호출]\n` +
+          `상태: ${proxyResponse.status}\n` +
+          `응답: ${JSON.stringify(proxyData, null, 2)}\n\n` +
+          `🎉 프론트엔드 ↔ 백엔드 통신이 정상적으로 작동합니다!`,
+          true
+        );
+      } catch (error) {
+        showResult(
+          `❌ 테스트 실패\n\n` +
+          `에러: ${error.message}`,
+          false
+        );
+      }
+    }
+
+    // 페이지 로드 시 자동으로 전체 테스트 실행
+    window.addEventListener('load', () => {
+      setTimeout(testAll, 500);
+    });
+  </script>
+</body>
+</html>
