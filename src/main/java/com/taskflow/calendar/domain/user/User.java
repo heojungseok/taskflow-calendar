@@ -51,10 +51,20 @@ public class User {
     public static User createGoogleUser(String email, String name) {
         User user = new User();
         user.email = email;
-        user.name = name;
+        user.name = name != null && !name.isBlank() ? name : extractNameFromEmail(email);
         user.provider = Provider.GOOGLE;
         user.password = null;
         return user;
+    }
+
+    /**
+     * 이메일에서 이름 추출 (@ 앞부분)
+     */
+    private static String extractNameFromEmail(String email) {
+        if (email == null || !email.contains("@")) {
+            return "User";
+        }
+        return email.substring(0, email.indexOf("@"));
     }
 
     /**

@@ -96,8 +96,9 @@ public class GoogleOAuthController {
         } catch (Exception e) {
             log.error("OAuth callback failed", e);
 
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown OAuth error";
             String errorUrl = "http://localhost:3000/oauth/callback?error=" +
-                    URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+                    URLEncoder.encode(errorMessage, StandardCharsets.UTF_8);
 
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(errorUrl))
