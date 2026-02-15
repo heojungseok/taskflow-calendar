@@ -23,6 +23,13 @@ public class User {
     @Column(nullable = false, length = 50)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Provider provider = Provider.GOOGLE;
+
+    @Column(length = 255)
+    private String password;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -38,6 +45,22 @@ public class User {
         this.name = name;
     }
 
+    /**
+     * Google OAuth 회원가입 (MVP)
+     */
+    public static User createGoogleUser(String email, String name) {
+        User user = new User();
+        user.email = email;
+        user.name = name;
+        user.provider = Provider.GOOGLE;
+        user.password = null;
+        return user;
+    }
+
+    /**
+     * 일반 회원가입 (추후 확장)
+     */
+    @Deprecated
     public static User of(String email, String name) {
         return new User(email, name);
     }

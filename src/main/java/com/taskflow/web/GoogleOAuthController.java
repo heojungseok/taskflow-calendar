@@ -1,13 +1,13 @@
 package com.taskflow.web;
 
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
+import com.taskflow.calendar.domain.oauth.OAuthStateStore;
 import com.taskflow.calendar.domain.oauth.dto.AuthorizeUrlResponse;
+import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.config.GoogleOAuthProperties;
-import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +16,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.UUID;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
+/**
+ * Google OAuth 2.0 인증 Controller
+ * MVP: Google 로그인으로 회원가입/로그인 통합
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/oauth/google")
@@ -26,16 +32,17 @@ public class GoogleOAuthController {
 
     private final GoogleOAuthProperties properties;
     private final GoogleOAuthService googleOAuthService;
+    private final OAuthStateStore stateStore;
 
+    /**
+     * Google OAuth 인증 URL 생성 (공개 엔드포인트)
+     */
     @GetMapping("/authorize")
     public ApiResponse<AuthorizeUrlResponse> getAuthorizeUrl() {
-        // ✅ JWT 있는 시점에 userId 가져오기
-        Long userId = SecurityContextHelper.getCurrentUserId();
-        // ✅ state에 userId 포함
-        String randomPart = UUID.randomUUID().toString();
-        String state = userId + "_" + randomPart;
+        // MVP: state에 userId 포함 안 함 (UUID만)
+        String state = stateStore.generateState();
 
-        log.info("Generating authorize URL. userId={}, state={}", userId, state);
+        log.info("Generating authorize URL. state={}", state);
 
         String authorizeUrl = UriComponentsBuilder
                 .fromHttpUrl(properties.getAuthorizationUri())
@@ -44,83 +51,57 @@ public class GoogleOAuthController {
                 .queryParam("response_type", "code")
                 .queryParam("scope", properties.getScope())
                 .queryParam("state", state)
-                .queryParam("access_type", "offline") // refresh_token 받기 위한 필수 값
-                .queryParam("prompt", "consent") // 매번 동의 화면 (테스트용)
+                .queryParam("access_type", "offline")
+                .queryParam("prompt", "consent")
                 .toUriString();
 
-        return  ApiResponse.success(new AuthorizeUrlResponse(authorizeUrl));
+        return ApiResponse.success(new AuthorizeUrlResponse(authorizeUrl));
     }
 
+    /**
+     * Google OAuth 콜백 (공개 엔드포인트)
+     * User 조회/생성 + JWT 발급 + 프론트엔드 리다이렉트
+     */
     @GetMapping("/callback")
-    public ResponseEntity<String> handleCallback(@RequestParam("state") String state, @RequestParam("code") String code) {
-        log.info("OAuth callback received. code exists={}, state={}", code != null, state);
+    public ResponseEntity<Void> handleCallback(
+            @RequestParam("state") String state,
+            @RequestParam("code") String code
+    ) {
+        log.info("OAuth callback received. state={}", state);
 
         try {
-
-            // ✅ state에서 userId 추출
-            String[] parts = state.split("_", 2);
-            if (parts.length < 2) {
-                throw new IllegalArgumentException("Invalid state format");
+            // 1️⃣ State 검증 (CSRF 방어)
+            if (!stateStore.validateState(state)) {
+                throw new IllegalArgumentException("Invalid or expired OAuth state");
             }
 
-            Long userId = Long.parseLong(parts[0]);
-            log.info("Processing OAuth callback. userId={}", userId);
+            // 2️⃣ Google Token + UserInfo 획득
+            GoogleOAuthResult result = googleOAuthService.exchangeCodeAndGetUserInfo(code);
 
-            googleOAuthService.exchangeCodeForToken(code, userId);
+            // 3️⃣ User 조회/생성 + JWT 발급
+            String jwt = googleOAuthService.loginOrRegister(result);
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("<html>")
-                    .append("<head>")
-                    .append("<title>Google 연동 성공</title>")
-                    .append("<style>")
-                    .append("body { font-family: Arial; text-align: center; padding: 50px; }")
-                    .append("h1 { color: #4285f4; }")
-                    .append("</style>")
-                    .append("</head>")
-                    .append("<body>")
-                    .append("<h1>✅ Google Calendar 연동 성공!</h1>")
-                    .append("<p>창을 닫고 애플리케이션으로 돌아가세요.</p>")
-                    .append("</body>")
-                    .append("</html>");
+            // 4️⃣ 프론트엔드로 리다이렉트 (JWT 전달)
+            String redirectUrl = String.format(
+                    "http://localhost:3000/oauth/callback?token=%s",
+                    jwt
+            );
 
-            String successHtml = sb.toString();
+            log.info("OAuth login successful. Redirecting to frontend");
 
-            return ResponseEntity.ok()
-                    .header("Content-Type", "text/html; charset=UTF-8")
-                    .body(successHtml);
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(redirectUrl))
+                    .build();
+
         } catch (Exception e) {
             log.error("OAuth callback failed", e);
 
-            String errorHtml = String.format(
-                    "<html>" +
-                            "<head>" +
-                            "    <title>Google 연동 실패</title>" +
-                            "    <style>" +
-                            "        body { font-family: Arial; text-align: center; padding: 50px; }" +
-                            "        h1 { color: #ea4335; }" +
-                            "    </style>" +
-                            "</head>" +
-                            "<body>" +
-                            "    <h1>❌ Google Calendar 연동 실패</h1>" +
-                            "    <p>오류: %s</p>" +
-                            "    <p>다시 시도해주세요.</p>" +
-                            "</body>" +
-                            "</html>", escapeHtml(e.getMessage())
-            );
+            String errorUrl = "http://localhost:3000/oauth/callback?error=" +
+                    URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
 
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
-                    .body(errorHtml);
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(errorUrl))
+                    .build();
         }
-    }
-
-    private String escapeHtml(String input) {
-        if (input == null) return "";
-        return input
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#39;");
     }
 }

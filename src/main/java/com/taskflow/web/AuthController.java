@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * MVP에서는 비활성화
+ * 추후 LOCAL 인증 (이메일/패스워드) 추가 시 복구
+ */
+@Deprecated
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -19,11 +24,12 @@ public class AuthController {
         this.authService = authService;
     }
 
+    /**
+     * MVP에서는 사용 안 함 - Google OAuth로 로그인
+     */
+    @Deprecated
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
-        // TODO: authService.login() 호출
-        LoginResponse loginResponse = authService.login(request);
-        // TODO: ApiResponse.success() 반환
-        return ApiResponse.success(loginResponse);
+        throw new UnsupportedOperationException("Use Google OAuth for login");
     }
 }

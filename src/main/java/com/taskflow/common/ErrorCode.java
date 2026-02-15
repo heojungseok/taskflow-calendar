@@ -16,6 +16,10 @@ public enum ErrorCode {
     PROJECT_NOT_FOUND("PROJECT_NOT_FOUND", "Project not found"),
     USER_NOT_FOUND("USER_NOT_FOUND", "User not found"),
 
+    // OAuth
+    EMAIL_NOT_VERIFIED("EMAIL_NOT_VERIFIED", "Google 이메일 인증이 필요합니다"),
+    INVALID_OAUTH_STATE("INVALID_OAUTH_STATE", "OAuth 상태가 유효하지 않습니다"),
+
     // Generic
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "Internal server error"),
     UNAUTHORIZED("UNAUTHORIZED", "Unauthorized");

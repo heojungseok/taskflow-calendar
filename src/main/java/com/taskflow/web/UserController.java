@@ -19,14 +19,15 @@ public class UserController {
 
     private final UserService userService;
 
+    /**
+     * MVP에서는 비활성화 - Google OAuth로 자동 회원가입
+     */
+    @Deprecated
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> createUser(
             @Valid @RequestBody CreateUserRequest request
     ) {
-        UserResponse user = userService.createUser(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(user));
+        throw new UnsupportedOperationException("Use Google OAuth for sign-up");
     }
 
     @GetMapping

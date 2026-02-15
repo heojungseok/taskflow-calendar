@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import Login from './pages/Login';
+import OAuthCallback from './pages/OAuthCallback';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -9,8 +10,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route
-          path="/"
+          path="/tasks"
           element={
             isAuthenticated ? (
               <div className="p-4">
@@ -22,6 +24,7 @@ function App() {
             )
           }
         />
+        <Route path="/" element={<Navigate to="/tasks" replace />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,15 +1,19 @@
 package com.taskflow.calendar.domain.oauth;
 
-import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
-import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
+import com.taskflow.calendar.domain.user.User;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
 import com.taskflow.config.GoogleOAuthProperties;
+import com.taskflow.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -28,6 +32,8 @@ public class GoogleOAuthService {
 
     private final GoogleOAuthProperties properties;
     private final OAuthGoogleTokenRepository tokenRepository;
+    private final UserRepository userRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public void exchangeCodeForToken(String code, Long userId) {
         log.info("Exchanging code for token. userId={}", userId);
@@ -138,5 +144,115 @@ public class GoogleOAuthService {
                 properties.getClientId(),
                 properties.getClientSecret()
         ).execute();
+    }
+
+    /**
+     * MVP: Code → Token + ID Token 파싱 (이메일/이름 추출)
+     */
+    public GoogleOAuthResult exchangeCodeAndGetUserInfo(String code) {
+        log.info("Exchanging code for token and extracting user info");
+
+        try {
+            GoogleAuthorizationCodeTokenRequest request = new GoogleAuthorizationCodeTokenRequest(
+                    new NetHttpTransport(),
+                    JacksonFactory.getDefaultInstance(),
+                    properties.getTokenUri(),
+                    properties.getClientId(),
+                    properties.getClientSecret(),
+                    code,
+                    properties.getRedirectUri()
+            );
+
+            GoogleTokenResponse response = request.execute();
+
+            // ID Token에서 이메일/이름 추출
+            GoogleIdToken idToken = response.parseIdToken();
+            GoogleIdToken.Payload payload = idToken.getPayload();
+
+            String email = payload.getEmail();
+            Boolean emailVerified = payload.getEmailVerified();
+            String name = (String) payload.get("name");
+
+            log.info("User info extracted. email={}, name={}, emailVerified={}", email, name, emailVerified);
+
+            if (emailVerified == null || !emailVerified) {
+                throw new IllegalStateException("Email not verified by Google");
+            }
+
+            return new GoogleOAuthResult(
+                    email,
+                    name,
+                    response.getAccessToken(),
+                    response.getRefreshToken(),
+                    response.getExpiresInSeconds(),
+                    response.getScope()
+            );
+
+        } catch (IOException e) {
+            log.error("Failed to exchange code for token", e);
+            throw new RuntimeException("Google OAuth failed", e);
+        }
+    }
+
+    /**
+     * MVP: User 조회/생성 + JWT 발급
+     */
+    public String loginOrRegister(GoogleOAuthResult result) {
+        log.info("Processing login or register. email={}", result.getEmail());
+
+        // 1️⃣ User 조회 (email)
+        Optional<User> userOpt = userRepository.findByEmail(result.getEmail());
+
+        User user;
+        if (userOpt.isPresent()) {
+            user = userOpt.get();
+            log.info("Existing user logged in. userId={}, email={}", user.getId(), user.getEmail());
+        } else {
+            // 회원가입
+            user = User.createGoogleUser(result.getEmail(), result.getName());
+            user = userRepository.save(user);
+            log.info("New user registered. userId={}, email={}", user.getId(), user.getEmail());
+        }
+
+        // 2️⃣ OAuthGoogleToken 저장/업데이트
+        saveOrUpdateToken(user.getId(), result);
+
+        // 3️⃣ JWT 발급
+        String jwt = jwtTokenProvider.generateToken(user.getId());
+        log.info("JWT issued. userId={}", user.getId());
+
+        return jwt;
+    }
+
+    /**
+     * OAuthGoogleToken 저장/업데이트 (공통 로직)
+     */
+    private void saveOrUpdateToken(Long userId, GoogleOAuthResult result) {
+        LocalDateTime expiryAt = LocalDateTime.now().plusSeconds(result.getExpiresInSeconds());
+        Optional<OAuthGoogleToken> existingToken = tokenRepository.findByUserId(userId);
+
+        if (existingToken.isPresent()) {
+            OAuthGoogleToken token = existingToken.get();
+            token.updateTokens(
+                    result.getAccessToken(),
+                    result.getRefreshToken(),
+                    expiryAt,
+                    result.getScope()
+            );
+            log.info("Updated existing OAuth token. userId={}", userId);
+        } else {
+            if (result.getRefreshToken() == null) {
+                throw new IllegalArgumentException("Refresh token required for initial authentication");
+            }
+            OAuthGoogleToken token = OAuthGoogleToken.create(
+                    userId,
+                    result.getAccessToken(),
+                    result.getRefreshToken(),
+                    expiryAt,
+                    result.getScope()
+            );
+            tokenRepository.save(token);
+            log.info("Created new OAuth token. userId={}", userId);
+        }
     }
 }

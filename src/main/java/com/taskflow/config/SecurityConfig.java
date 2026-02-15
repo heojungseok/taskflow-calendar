@@ -33,8 +33,12 @@ public class SecurityConfig {
                 .httpBasic(hb -> hb.disable())
                 .formLogin(fl -> fl.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .antMatchers("/api/users", "/api/auth/**", "/api/admin/**",
-                                "/api/oauth/google/callback", "/api/test/**").permitAll()
+                        // MVP: Google OAuth 엔드포인트만 공개
+                        .antMatchers(
+                                "/api/oauth/google/**",  // authorize + callback
+                                "/api/admin/**",         // 관리자 (디버깅)
+                                "/api/test/**"           // 테스트
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
