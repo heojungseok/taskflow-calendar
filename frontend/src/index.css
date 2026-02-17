@@ -1,3 +1,55 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* ── 전역 기본값 ───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text',
+    'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0a0a0f;
+  color: #e8e8ed;
+}
+
+body {
+  background-color: #0a0a0f;
+  color: #e8e8ed;
+  min-height: 100vh;
+}
+
+/* ── 스크롤바 ─────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e1e2a;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a2a3a;
+}
+
+/* ── datetime-local input ─────────────────────────────── */
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+/* ── 선택 영역 ────────────────────────────────────────── */
+::selection {
+  background-color: rgba(59, 91, 255, 0.3);
+  color: #e8e8ed;
+}
+
+/* ── 트랜지션 최소화 (깜빡임 방지) ───────────────────── */
+*, *::before, *::after {
+  transition-property: color, background-color, border-color, opacity, transform;
+  transition-duration: 120ms;
+  transition-timing-function: ease;
+}

@@ -1,475 +1,280 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { tasksApi } from '@/api/endpoints/tasks';
 import type { TaskStatus, TaskUpdateRequest, OutboxStatus } from '@/types/task';
+import { cx, clsx } from '@/styles/cx';
 
-// ===== 상수 =====
+// ── 상수 ──────────────────────────────────────────────────
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
-  REQUESTED: '요청됨',
-  IN_PROGRESS: '진행 중',
-  DONE: '완료',
-  BLOCKED: '차단됨',
-};
-
-const STATUS_COLOR: Record<TaskStatus, string> = {
-  REQUESTED: 'bg-gray-100 text-gray-700',
-  IN_PROGRESS: 'bg-blue-100 text-blue-700',
-  DONE: 'bg-green-100 text-green-700',
-  BLOCKED: 'bg-red-100 text-red-700',
+  REQUESTED: '요청됨', IN_PROGRESS: '진행 중', DONE: '완료', BLOCKED: '차단됨',
 };
 
 const ALLOWED_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
-  REQUESTED: ['IN_PROGRESS', 'BLOCKED'],
-  IN_PROGRESS: ['DONE', 'BLOCKED'],
-  BLOCKED: ['IN_PROGRESS'],
-  DONE: [],
+  REQUESTED: ['IN_PROGRESS', 'BLOCKED'], IN_PROGRESS: ['DONE', 'BLOCKED'],
+  BLOCKED: ['IN_PROGRESS'], DONE: [],
 };
 
 const CHANGE_TYPE_LABEL: Record<string, string> = {
-  STATUS: '상태 변경',
-  ASSIGNEE: '담당자 변경',
-  SCHEDULE: '일정 변경',
-  CONTENT: '내용 변경',
+  STATUS: '상태 변경', ASSIGNEE: '담당자 변경', SCHEDULE: '일정 변경', CONTENT: '내용 변경',
 };
 
 const OUTBOX_STATUS_LABEL: Record<OutboxStatus, string> = {
-  PENDING: '대기 중',
-  PROCESSING: '처리 중',
-  SUCCESS: '성공',
-  FAILED: '실패',
+  PENDING: '대기 중', PROCESSING: '처리 중', SUCCESS: '성공', FAILED: '실패',
 };
 
-const OUTBOX_STATUS_COLOR: Record<OutboxStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  PROCESSING: 'bg-blue-100 text-blue-700',
-  SUCCESS: 'bg-green-100 text-green-700',
-  FAILED: 'bg-red-100 text-red-700',
+const OUTBOX_BADGE: Record<OutboxStatus, string> = {
+  PENDING:    'bg-[#1a1a20] text-[#9090a8] border border-[#252530]',
+  PROCESSING: 'bg-[#1a2040] text-[#6b8cff] border border-[#2a3558]',
+  SUCCESS:    'bg-[#0f2820] text-[#3dd68c] border border-[#1a4030]',
+  FAILED:     'bg-[#2a1018] text-[#ff6b6b] border border-[#3d1520]',
 };
 
-// ===== 유틸 =====
+// ── 유틸 ──────────────────────────────────────────────────
 
-function formatDateTime(iso: string | null | undefined): string {
-  if (!iso) return '-';
-  return new Date(iso).toLocaleString('ko-KR', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  });
+const fmt = (iso?: string | null) => iso
+  ? new Date(iso).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  : '—';
+
+const toLocal = (iso?: string | null) => iso?.slice(0, 16) ?? '';
+
+// ── 섹션 컴포넌트 ─────────────────────────────────────────
+
+function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={cx.card}>
+      <button className="w-full flex items-center justify-between" onClick={() => setOpen(v => !v)}>
+        <span className={cx.text.subheading}>{title}</span>
+        {open ? <ChevronUp size={13} className="text-[#686884]" /> : <ChevronDown size={13} className="text-[#686884]" />}
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+            <div className="pt-4">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
-// datetime-local input용 (초 없이 "yyyy-MM-ddTHH:mm")
-function toDateTimeLocal(iso: string | null | undefined): string {
-  if (!iso) return '';
-  return iso.slice(0, 16); // "yyyy-MM-ddTHH:mm:ss" → "yyyy-MM-ddTHH:mm"
-}
+// ── 수정 폼 ───────────────────────────────────────────────
 
-// ===== 수정 폼 =====
-
-interface EditFormProps {
-  initialTitle: string;
-  initialDescription: string | null;
-  initialDueAt: string | null;
-  initialCalendarSync: boolean;
-  onSubmit: (data: TaskUpdateRequest) => void;
-  onCancel: () => void;
-  isPending: boolean;
-  isError: boolean;
-}
-
-function EditForm({
-  initialTitle,
-  initialDescription,
-  initialDueAt,
-  initialCalendarSync,
-  onSubmit,
-  onCancel,
-  isPending,
-  isError,
-}: EditFormProps) {
+function EditForm({ initialTitle, initialDescription, initialDueAt, initialCalendarSync, onSubmit, onCancel, isPending, isError }: {
+  initialTitle: string; initialDescription: string | null; initialDueAt: string | null;
+  initialCalendarSync: boolean; onSubmit: (d: TaskUpdateRequest) => void;
+  onCancel: () => void; isPending: boolean; isError: boolean;
+}) {
   const [title, setTitle] = useState(initialTitle);
-  const [description, setDescription] = useState(initialDescription ?? '');
-  const [dueAt, setDueAt] = useState(toDateTimeLocal(initialDueAt));
-  const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(initialCalendarSync);
-  const [titleError, setTitleError] = useState('');
-  const [dueAtError, setDueAtError] = useState('');
+  const [desc, setDesc] = useState(initialDescription ?? '');
+  const [dueAt, setDueAt] = useState(toLocal(initialDueAt));
+  const [calSync, setCalSync] = useState(initialCalendarSync);
+  const [titleErr, setTitleErr] = useState('');
+  const [dueErr, setDueErr] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    let valid = true;
-
-    if (!title.trim()) {
-      setTitleError('제목을 입력해주세요.');
-      valid = false;
-    }
-
-    if (calendarSyncEnabled && !dueAt) {
-      setDueAtError('캘린더 동기화를 사용하려면 마감일이 필요합니다.');
-      valid = false;
-    }
-
-    if (!valid) return;
-
-    onSubmit({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      dueAt: dueAt ? `${dueAt}:00` : undefined,
-      calendarSyncEnabled,
-    });
+    let ok = true;
+    if (!title.trim()) { setTitleErr('제목을 입력해주세요.'); ok = false; }
+    if (calSync && !dueAt) { setDueErr('캘린더 동기화에는 마감일이 필요합니다.'); ok = false; }
+    if (!ok) return;
+    onSubmit({ title: title.trim(), description: desc.trim() || undefined, dueAt: dueAt ? `${dueAt}:00` : undefined, calendarSyncEnabled: calSync });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* 제목 */}
+    <form onSubmit={submit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          제목 <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => { setTitle(e.target.value); setTitleError(''); }}
-          className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            titleError ? 'border-red-400' : 'border-gray-300'
-          }`}
-        />
-        {titleError && <p className="mt-1 text-xs text-red-500">{titleError}</p>}
+        <label className={cx.text.label}>제목</label>
+        <input type="text" value={title} onChange={(e) => { setTitle(e.target.value); setTitleErr(''); }} className={clsx(cx.input, titleErr && cx.inputError)} />
+        {titleErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{titleErr}</p>}
       </div>
-
-      {/* 설명 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        />
+        <label className={cx.text.label}>설명</label>
+        <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} className={cx.textarea} />
       </div>
-
-      {/* 마감일 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">마감일</label>
-        <input
-          type="datetime-local"
-          value={dueAt}
-          onChange={(e) => { setDueAt(e.target.value); setDueAtError(''); }}
-          className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            dueAtError ? 'border-red-400' : 'border-gray-300'
-          }`}
-        />
-        {dueAtError && <p className="mt-1 text-xs text-red-500">{dueAtError}</p>}
+        <label className={cx.text.label}>마감일</label>
+        <input type="datetime-local" value={dueAt} onChange={(e) => { setDueAt(e.target.value); setDueErr(''); }} className={clsx(cx.input, dueErr && cx.inputError)} />
+        {dueErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{dueErr}</p>}
       </div>
-
-      {/* 캘린더 동기화 */}
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="editCalendarSync"
-          checked={calendarSyncEnabled}
-          onChange={(e) => { setCalendarSyncEnabled(e.target.checked); setDueAtError(''); }}
-          className="w-4 h-4 accent-blue-600"
-        />
-        <label htmlFor="editCalendarSync" className="text-sm text-gray-700">
-          Google Calendar 동기화
-        </label>
+        <input type="checkbox" id="editSync" checked={calSync} onChange={(e) => { setCalSync(e.target.checked); setDueErr(''); }} className="w-3.5 h-3.5 rounded accent-[#3b5bff]" />
+        <label htmlFor="editSync" className={cx.text.body}>Google Calendar 동기화</label>
       </div>
-
-      {isError && (
-        <div className="p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-          수정에 실패했습니다. 다시 시도해주세요.
-        </div>
-      )}
-
+      {isError && <div className={cx.errorBox}>수정에 실패했습니다.</div>}
       <div className="flex gap-2 pt-1">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {isPending ? '저장 중...' : '저장'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isPending}
-          className="px-4 py-2 text-sm border border-gray-300 text-gray-600 rounded hover:bg-gray-50 disabled:opacity-50"
-        >
-          취소
-        </button>
+        <button type="submit" disabled={isPending} className={cx.btn.primary}>{isPending ? '저장 중...' : '저장'}</button>
+        <button type="button" onClick={onCancel} disabled={isPending} className={cx.btn.secondary}>취소</button>
       </div>
     </form>
   );
 }
 
-// ===== 메인 페이지 =====
+// ── 메인 ──────────────────────────────────────────────────
 
 export default function TaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const taskIdNum = Number(taskId);
+  const tid = Number(taskId);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Task 조회
-  const {
-    data: task,
-    isLoading: taskLoading,
-    isError: taskError,
-  } = useQuery({
-    queryKey: ['task', taskIdNum],
-    queryFn: () => tasksApi.getTask(taskIdNum),
-    enabled: !!taskIdNum,
-  });
+  const { data: task, isLoading, isError } = useQuery({ queryKey: ['task', tid], queryFn: () => tasksApi.getTask(tid), enabled: !!tid });
+  const { data: syncStatus } = useQuery({ queryKey: ['task-sync', tid], queryFn: () => tasksApi.getSyncStatus(tid), enabled: !!tid });
+  const { data: history } = useQuery({ queryKey: ['task-history', tid], queryFn: () => tasksApi.getHistory(tid), enabled: !!tid });
 
-  // 캘린더 동기화 상태 조회
-  const { data: syncStatus } = useQuery({
-    queryKey: ['task-sync', taskIdNum],
-    queryFn: () => tasksApi.getSyncStatus(taskIdNum),
-    enabled: !!taskIdNum,
-  });
-
-  // 변경 이력 조회
-  const { data: history } = useQuery({
-    queryKey: ['task-history', taskIdNum],
-    queryFn: () => tasksApi.getHistory(taskIdNum),
-    enabled: !!taskIdNum,
-  });
-
-  // Task 수정
   const updateMutation = useMutation({
-    mutationFn: (data: TaskUpdateRequest) => tasksApi.updateTask(taskIdNum, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task', taskIdNum] });
-      queryClient.invalidateQueries({ queryKey: ['task-sync', taskIdNum] });
-      setIsEditing(false);
-    },
+    mutationFn: (d: TaskUpdateRequest) => tasksApi.updateTask(tid, d),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['task', tid] }); queryClient.invalidateQueries({ queryKey: ['task-sync', tid] }); setIsEditing(false); },
   });
 
-  // 상태 전이
   const changeStatusMutation = useMutation({
-    mutationFn: (toStatus: TaskStatus) => tasksApi.changeStatus(taskIdNum, toStatus),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task', taskIdNum] });
-      queryClient.invalidateQueries({ queryKey: ['task-history', taskIdNum] });
-    },
+    mutationFn: (to: TaskStatus) => tasksApi.changeStatus(tid, to),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['task', tid] }); queryClient.invalidateQueries({ queryKey: ['task-history', tid] }); },
   });
 
-  // 삭제
   const deleteMutation = useMutation({
-    mutationFn: () => tasksApi.deleteTask(taskIdNum),
-    onSuccess: () => {
-      // 삭제 후 목록으로 이동 (projectId는 task에서 꺼냄)
-      navigate(`/projects/${task?.projectId}/tasks`);
-    },
+    mutationFn: () => tasksApi.deleteTask(tid),
+    onSuccess: () => navigate(`/projects/${task?.projectId}/tasks`),
   });
 
-  const handleDelete = () => {
-    if (!window.confirm('Task를 삭제하시겠습니까?')) return;
-    deleteMutation.mutate();
-  };
+  if (isLoading) return <div className="flex items-center justify-center h-40"><span className={cx.text.meta}>로딩 중...</span></div>;
+  if (isError || !task) return <div className={cx.errorBox}>Task를 불러오지 못했습니다.</div>;
 
-  // ===== 렌더링 =====
-
-  if (taskLoading) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <span className="text-gray-500">불러오는 중...</span>
-      </div>
-    );
-  }
-
-  if (taskError || !task) {
-    return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700">
-        Task를 불러오지 못했습니다.
-      </div>
-    );
-  }
-
-  const nextStatuses = ALLOWED_TRANSITIONS[task.status];
+  const next = ALLOWED_TRANSITIONS[task.status];
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <motion.div className="max-w-2xl mx-auto space-y-2" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
 
       {/* 뒤로가기 */}
-      <button
-        onClick={() => navigate(`/projects/${task.projectId}/tasks`)}
-        className="text-sm text-gray-400 hover:text-gray-600"
-      >
-        ← Task 목록
+      <button onClick={() => navigate(`/projects/${task.projectId}/tasks`)} className={clsx(cx.btn.ghost, 'flex items-center gap-1 mb-3')}>
+        ← 목록
       </button>
 
-      {/* Task 기본 정보 */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            {!isEditing && (
-              <>
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">{task.title}</h2>
-                <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLOR[task.status]}`}>
+      {/* 기본 정보 */}
+      <Section title="기본 정보">
+        {!isEditing ? (
+          <div>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-[15px] font-semibold text-[#e8e8ed] leading-snug mb-2">{task.title}</h2>
+                <motion.span key={task.status} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.15 }}
+                  className={clsx(cx.badge.base, cx.badge[task.status])}>
                   {STATUS_LABEL[task.status]}
-                </span>
-              </>
-            )}
-          </div>
-          {!isEditing && (
-            <div className="flex gap-2 ml-4">
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded px-3 py-1"
-              >
-                수정
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-                className="text-sm text-red-500 hover:text-red-700 border border-red-300 rounded px-3 py-1 disabled:opacity-50"
-              >
-                삭제
-              </button>
-            </div>
-          )}
-        </div>
-
-        {isEditing ? (
-          <EditForm
-            initialTitle={task.title}
-            initialDescription={task.description}
-            initialDueAt={task.dueAt}
-            initialCalendarSync={task.calendarSyncEnabled}
-            onSubmit={(data) => updateMutation.mutate(data)}
-            onCancel={() => setIsEditing(false)}
-            isPending={updateMutation.isPending}
-            isError={updateMutation.isError}
-          />
-        ) : (
-          <div className="space-y-3 mt-4">
-            {task.description && (
-              <div>
-                <p className="text-xs text-gray-400 mb-1">설명</p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.description}</p>
+                </motion.span>
               </div>
-            )}
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">마감일</p>
-                <p className="text-gray-700">{formatDateTime(task.dueAt)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">생성일</p>
-                <p className="text-gray-700">{formatDateTime(task.createdAt)}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 상태 전이 버튼 */}
-        {!isEditing && nextStatuses.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-400 mb-2">상태 변경</p>
-            <div className="flex gap-2 flex-wrap">
-              {nextStatuses.map((next) => (
-                <button
-                  key={next}
-                  onClick={() => changeStatusMutation.mutate(next)}
-                  disabled={changeStatusMutation.isPending}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-                >
-                  → {STATUS_LABEL[next]}
+              <div className="flex gap-1.5 flex-shrink-0 ml-4">
+                <button onClick={() => setIsEditing(true)} className={cx.btn.secondary}>수정</button>
+                <button onClick={() => { if (!window.confirm('삭제하시겠습니까?')) return; deleteMutation.mutate(); }}
+                  disabled={deleteMutation.isPending}
+                  className="px-3 py-1.5 text-xs font-medium border border-[#2a1018] text-[#ff6b6b]/60 hover:text-[#ff6b6b] hover:border-[#3d1520] rounded transition-all duration-150 disabled:opacity-40">
+                  삭제
                 </button>
-              ))}
+              </div>
             </div>
+
+            {task.description && (
+              <p className={clsx(cx.text.body, 'whitespace-pre-wrap mb-4 leading-relaxed')}>{task.description}</p>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <p className={clsx(cx.text.meta, 'mb-1 flex items-center gap-1')}><Clock size={10} /> 마감일</p>
+                <p className={cx.text.body}>{fmt(task.dueAt)}</p>
+              </div>
+              <div>
+                <p className={clsx(cx.text.meta, 'mb-1')}>생성일</p>
+                <p className={cx.text.body}>{fmt(task.createdAt)}</p>
+              </div>
+            </div>
+
+            {next.length > 0 && (
+              <div className={clsx(cx.divider, 'pt-3')}>
+                <p className={clsx(cx.text.meta, 'mb-2')}>상태 변경</p>
+                <div className="flex gap-1.5">
+                  {next.map((s) => (
+                    <button key={s} onClick={() => changeStatusMutation.mutate(s)} disabled={changeStatusMutation.isPending} className={cx.btn.statusTransition}>
+                      → {STATUS_LABEL[s]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* 캘린더 동기화 상태 */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-base font-semibold text-gray-800 mb-4">캘린더 동기화</h3>
-
-        {!task.calendarSyncEnabled ? (
-          <p className="text-sm text-gray-400">동기화 비활성화 상태입니다.</p>
         ) : (
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-gray-400 w-24">동기화 상태</p>
-              {syncStatus?.lastOutboxStatus ? (
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${OUTBOX_STATUS_COLOR[syncStatus.lastOutboxStatus]}`}>
-                  {OUTBOX_STATUS_LABEL[syncStatus.lastOutboxStatus]}
-                </span>
-              ) : (
-                <span className="text-gray-400">없음</span>
-              )}
-            </div>
+          <EditForm
+            initialTitle={task.title} initialDescription={task.description}
+            initialDueAt={task.dueAt} initialCalendarSync={task.calendarSyncEnabled}
+            onSubmit={(d) => updateMutation.mutate(d)} onCancel={() => setIsEditing(false)}
+            isPending={updateMutation.isPending} isError={updateMutation.isError}
+          />
+        )}
+      </Section>
 
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-gray-400 w-24">캘린더 이벤트</p>
-              <p className="text-gray-700">
-                {task.calendarEventId ? (
-                  <span className="text-green-600">연동됨 ({task.calendarEventId.slice(0, 12)}...)</span>
-                ) : (
-                  <span className="text-yellow-600">미연동</span>
-                )}
+      {/* 캘린더 동기화 */}
+      <Section title="캘린더 동기화" defaultOpen={task.calendarSyncEnabled}>
+        {!task.calendarSyncEnabled ? (
+          <p className={cx.text.meta}>동기화 비활성화 상태입니다.</p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <p className={clsx(cx.text.meta, 'w-20')}>상태</p>
+              {syncStatus?.lastOutboxStatus
+                ? <span className={clsx(cx.badge.base, OUTBOX_BADGE[syncStatus.lastOutboxStatus])}>{OUTBOX_STATUS_LABEL[syncStatus.lastOutboxStatus]}</span>
+                : <span className={cx.text.meta}>—</span>}
+            </div>
+            <div className="flex items-center gap-4">
+              <p className={clsx(cx.text.meta, 'w-20 flex items-center gap-1')}><Calendar size={10} /> 이벤트</p>
+              <p className={cx.text.body}>
+                {task.calendarEventId
+                  ? <span className="text-[#3dd68c]">연동됨 ({task.calendarEventId.slice(0, 12)}...)</span>
+                  : <span className="text-[#8080a0]">미연동</span>}
               </p>
             </div>
-
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-gray-400 w-24">마지막 성공</p>
-              <p className="text-gray-700">{formatDateTime(syncStatus?.lastSyncedAt)}</p>
+            <div className="flex items-center gap-4">
+              <p className={clsx(cx.text.meta, 'w-20')}>마지막 성공</p>
+              <p className={cx.text.body}>{fmt(syncStatus?.lastSyncedAt)}</p>
             </div>
-
             {syncStatus?.lastOutboxStatus === 'FAILED' && syncStatus.lastOutboxError && (
-              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                <p className="font-medium mb-1">오류 내용</p>
-                <p className="font-mono break-all">{syncStatus.lastOutboxError}</p>
+              <div className={clsx(cx.errorBox, 'mt-2')}>
+                <p className="font-medium mb-1">오류</p>
+                <p className="font-mono break-all text-[11px]">{syncStatus.lastOutboxError}</p>
               </div>
             )}
           </div>
         )}
-      </div>
+      </Section>
 
       {/* 변경 이력 */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-base font-semibold text-gray-800 mb-4">변경 이력</h3>
-
+      <Section title="변경 이력" defaultOpen={false}>
         {!history || history.length === 0 ? (
-          <p className="text-sm text-gray-400">변경 이력이 없습니다.</p>
+          <p className={cx.text.meta}>변경 이력이 없습니다.</p>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {history.map((h, idx) => (
-              <div key={idx} className="py-3 first:pt-0 last:pb-0">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">
-                    {CHANGE_TYPE_LABEL[h.changeType] ?? h.changeType}
-                  </span>
-                  <span className="text-xs text-gray-400">{formatDateTime(h.createdAt)}</span>
+          <div className="space-y-3">
+            {history.map((h, i) => (
+              <div key={i} className={clsx(i > 0 && clsx(cx.divider, 'pt-3'))}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className={cx.text.body}>{CHANGE_TYPE_LABEL[h.changeType] ?? h.changeType}</span>
+                  <span className={cx.text.meta}>{fmt(h.createdAt)}</span>
                 </div>
-                {h.beforeValue || h.afterValue ? (
-                  <div className="flex items-start gap-2 mt-1 mb-1 text-xs">
-                    <span
-                      className="flex-1 px-2 py-1 rounded break-all"
-                      style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}
-                    >
-                      {h.beforeValue ?? '-'}
-                    </span>
-                    <span className="flex-shrink-0 mt-1" style={{ color: '#9ca3af' }}>→</span>
-                    <span
-                      className="flex-1 px-2 py-1 rounded font-medium break-all"
-                      style={{ backgroundColor: '#eff6ff', color: '#1d4ed8' }}
-                    >
-                      {h.afterValue ?? '-'}
-                    </span>
+                {(h.beforeValue || h.afterValue) && (
+                  <div className="flex items-center gap-2 mb-1.5 font-mono">
+                    <span className="flex-1 px-2 py-1 rounded text-[11px] bg-[#0d0d14] text-[#8080a0] break-all border border-[#1a1a24]">{h.beforeValue ?? '—'}</span>
+                    <span className="text-[#5a5a7a] flex-shrink-0 text-xs">→</span>
+                    <span className="flex-1 px-2 py-1 rounded text-[11px] bg-[#0d1020] text-[#8aabff] break-all border border-[#1a2040]">{h.afterValue ?? '—'}</span>
                   </div>
-                ) : null}
-                <p className="text-xs text-gray-400">{h.changedByUserName}</p>
+                )}
+                <p className={cx.text.meta}>{h.changedByUserName}</p>
               </div>
             ))}
           </div>
         )}
-      </div>
-
-    </div>
+      </Section>
+    </motion.div>
   );
 }

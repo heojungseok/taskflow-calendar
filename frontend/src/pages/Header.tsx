@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
+import { cx, clsx } from '@/styles/cx';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -11,41 +12,43 @@ export default function Header() {
     navigate('/login');
   };
 
-  const isActive = (path: string) =>
-    location.pathname.startsWith(path)
-      ? 'text-blue-600 font-medium'
-      : 'text-gray-600 hover:text-gray-900';
+  const navItem = (path: string, label: string) => {
+    const active = location.pathname.startsWith(path);
+    return (
+      <button
+        onClick={() => navigate(path)}
+        className={clsx(
+          'text-xs font-medium tracking-wide transition-colors duration-150',
+          active ? 'text-[#c8c8d4]' : 'text-[#4a4a5a] hover:text-[#7a7a90]',
+        )}
+      >
+        {label}
+      </button>
+    );
+  };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-6">
-        <span
-          className="font-bold text-blue-600 text-lg cursor-pointer"
+    <header className={`${cx.header} flex items-center justify-between`}>
+      <div className="flex items-center gap-5">
+        {/* 로고 */}
+        <button
           onClick={() => navigate('/projects')}
+          className="text-xs font-semibold tracking-[0.12em] text-[#3b5bff] uppercase"
         >
           TaskFlow
-        </span>
+        </button>
 
-        <nav className="flex items-center gap-4 text-sm">
-          <button
-            onClick={() => navigate('/projects')}
-            className={isActive('/projects')}
-          >
-            프로젝트
-          </button>
-          <button
-            onClick={() => navigate('/admin/outbox')}
-            className={isActive('/admin')}
-          >
-            Outbox 모니터
-          </button>
+        {/* 구분선 */}
+        <span className="w-px h-3.5 bg-[#1e1e2a]" />
+
+        {/* 네비게이션 */}
+        <nav className="flex items-center gap-4">
+          {navItem('/projects', '프로젝트')}
+          {navItem('/admin/outbox', 'Outbox')}
         </nav>
       </div>
 
-      <button
-        onClick={handleLogout}
-        className="text-sm text-gray-500 hover:text-gray-700"
-      >
+      <button onClick={handleLogout} className={cx.btn.ghost}>
         로그아웃
       </button>
     </header>
