@@ -16,8 +16,9 @@ export default function OAuthCallback() {
     const error = searchParams.get('error');
 
     if (token) {
-      // JWT 저장 (userId는 임시로 0 설정, 실제로는 JWT 파싱 필요)
-      login(token, 0);
+      // JWT payload에서 userId 추출
+      const userId = parseUserIdFromJwt(token);
+      login(token, userId);
       console.log('OAuth login successful, redirecting to /tasks');
       navigate('/tasks');
     } else if (error) {
@@ -38,4 +39,20 @@ export default function OAuthCallback() {
       </div>
     </div>
   );
+}
+
+/**
+ * JWT payload에서 userId(sub) 추출
+ * JWT 구조: header.payload.signature (Base64URL 인코딩)
+ */
+function parseUserIdFromJwt(token: string): number {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+    return Number(payload.sub) || 0;
+  } catch {
+    console.error('Failed to parse JWT payload');
+    return 0;
+  }
 }

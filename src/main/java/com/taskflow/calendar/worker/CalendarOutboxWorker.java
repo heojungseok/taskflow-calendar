@@ -62,7 +62,7 @@ public class CalendarOutboxWorker {
 
                     if (!claimed) {
                         log.debug("[Worker] Outbox {} already claimed by another worker", outbox.getId());
-                        return;
+                        continue;
                     }
 
                     log.info("[Worker] Processing Outbox {} - OpType: {}, TaskId: {}, RetryCount: {}",
