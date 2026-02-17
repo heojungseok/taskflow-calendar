@@ -3,6 +3,8 @@ import Login from './pages/Login';
 import OAuthCallback from './pages/OAuthCallback';
 import ProjectsPage from './pages/ProjectsPage';
 import TaskListPage from './pages/TaskListPage';
+import TaskDetailPage from './pages/TaskDetailPage';
+import OutboxPage from './pages/OutboxPage';
 import Header from './pages/Header';
 import { useAuthStore } from './store/authStore';
 
@@ -36,9 +38,8 @@ function App() {
         <Route element={<AuthLayout />}>
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId/tasks" element={<TaskListPage />} />
-          {/* 다음 단계에서 추가 예정 */}
-          {/* <Route path="/tasks/:taskId" element={<TaskDetailPage />} /> */}
-          {/* <Route path="/admin/outbox" element={<OutboxPage />} /> */}
+          <Route path="/tasks/:taskId" element={<TaskDetailPage />} />
+          <Route path="/admin/outbox" element={<OutboxPage />} />
         </Route>
 
         {/* 루트 리다이렉트 */}
