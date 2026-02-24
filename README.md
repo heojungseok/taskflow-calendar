@@ -50,6 +50,9 @@ Task 관리와 Google Calendar를 동기화하는 웹 애플리케이션입니�
 ### 1. Outbox 패턴 + 정적 Coalescing (4 Rules) ⭐
 외부 API(Google Calendar) 호출 실패 시에도 내부 트랜잭션의 일관성을 보장합니다.
 
+<img src="docs/images/outbox-architecture-v3.svg" width="900"
+alt="Outbox Pattern Architecture — TaskFlow Calendar"/>
+
 **기본 Outbox 패턴:**
 - Task 저장 트랜잭션 내에서 Outbox 레코드만 생성
 - 별도 Worker가 비동기로 외부 API 호출
@@ -157,12 +160,9 @@ docker-compose down -v
 
 - [x] **Week 1**: 프로젝트 세팅 및 기본 인프라 (User, Project, 공통 처리)
 - [x] **Week 2**: Task 도메인 및 상태 전이 (CRUD, History, JWT 인증)
-- [x] **Week 3**: Outbox 패턴 구현 (Entity/Repository/Service/Worker 완료)
-- [x] **Week 4**: Google OAuth & Calendar API 연동 (완료)
-- [ ] **Week 5 (진행 중)**: 관측 API, 정적 Coalescing 테스트, 문서화
-- [ ] **Week 6**: 프론트엔드 (React)
-
-**현재 진행률**: 67% (4/6 Weeks)
+- [x] **Week 3**: Outbox 패턴 구현 (Entity/Repository/Service/Worker)
+- [x] **Week 4**: Google OAuth & Calendar API 연동
+- [x] **Week 5**: 관측 API, 정적 Coalescing 테스트, 문서화, 프론트엔드 (React)
 
 ## 문서
 
@@ -170,6 +170,7 @@ docker-compose down -v
 - [Week 2 회고](https://www.notion.so/2f1b814ac21b81f98afdc4b402205b72)
 - [Week 3 회고](https://www.notion.so/2f2b814ac21b81e09b42c142f1198540)
 - [Week 4 회고](https://www.notion.so/Week-4-Google-OAuth-Calendar-API-2fbb814ac21b8178be7dd9936ae6aa78)
+- [Week 5 회고](https://www.notion.so/Week-5-UI-30ab814ac21b814d803ecd4f43240c38)
 
 ## ERD
 ```

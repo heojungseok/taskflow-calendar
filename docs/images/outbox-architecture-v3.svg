@@ -1,0 +1,412 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 640" width="1040" height="640"
+     font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+
+    <!-- ── Background ── -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#f4f6f8"/>
+      <stop offset="50%"  stop-color="#eef1f5"/>
+      <stop offset="100%" stop-color="#e8ecf2"/>
+    </linearGradient>
+
+    <!-- Neutral blobs (silver/gray tones only) -->
+    <radialGradient id="blob1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#c8d0dc" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#c8d0dc" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#dde2ea" stop-opacity="0.50"/>
+      <stop offset="100%" stop-color="#dde2ea" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob3" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#b8c4d4" stop-opacity="0.40"/>
+      <stop offset="100%" stop-color="#b8c4d4" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Glass surfaces -->
+    <linearGradient id="glass-card" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.52"/>
+    </linearGradient>
+    <linearGradient id="glass-accent" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#fff8f6" stop-opacity="0.68"/>
+    </linearGradient>
+    <linearGradient id="glass-zone" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.10"/>
+    </linearGradient>
+    <linearGradient id="glass-worker" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#f6f7ff" stop-opacity="0.80"/>
+      <stop offset="100%" stop-color="#eff0ff" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="glass-db" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#fffcf8" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#fff8ee" stop-opacity="0.58"/>
+    </linearGradient>
+    <linearGradient id="glass-bottom" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.50"/>
+    </linearGradient>
+
+    <!-- Sheen highlight on top edge -->
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="25%"  stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="75%"  stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Shadows -->
+    <filter id="shadow-card" x="-10%" y="-10%" width="120%" height="135%">
+      <feDropShadow dx="0" dy="3" stdDeviation="7"  flood-color="#8a9ab0" flood-opacity="0.18"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#ffffff"  flood-opacity="0.90"/>
+    </filter>
+    <filter id="shadow-accent" x="-12%" y="-18%" width="124%" height="155%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#e05a10" flood-opacity="0.14"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="2"  flood-color="#ffffff"  flood-opacity="0.90"/>
+    </filter>
+    <filter id="shadow-zone" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#8a9ab0" flood-opacity="0.12"/>
+    </filter>
+
+    <!-- Arrows -->
+    <marker id="arr-dark"   markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#3a4a5a"/>
+    </marker>
+    <marker id="arr-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#e05a10"/>
+    </marker>
+    <marker id="arr-muted"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#8a9ab0"/>
+    </marker>
+    <marker id="arr-red"    markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#c0392b"/>
+    </marker>
+    <marker id="arr-amber"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#b08030"/>
+    </marker>
+
+  </defs>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- BACKGROUND + BLOBS                         -->
+  <!-- ══════════════════════════════════════════ -->
+  <rect width="1040" height="640" fill="url(#bg)" rx="16"/>
+
+  <!-- Neutral color blobs only -->
+  <ellipse cx="160"  cy="160" rx="280" ry="200" fill="url(#blob2)"/>
+  <ellipse cx="900"  cy="130" rx="240" ry="180" fill="url(#blob1)"/>
+  <ellipse cx="560"  cy="500" rx="300" ry="160" fill="url(#blob3)"/>
+  <ellipse cx="80"   cy="540" rx="200" ry="130" fill="url(#blob2)" opacity="0.6"/>
+  <ellipse cx="980"  cy="480" rx="180" ry="140" fill="url(#blob1)" opacity="0.5"/>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TITLE                                      -->
+  <!-- ══════════════════════════════════════════ -->
+  <text x="520" y="42" text-anchor="middle" font-size="18" font-weight="700"
+        fill="#1a2535" letter-spacing="0.2">TaskFlow Calendar — Outbox Pattern Architecture</text>
+  <text x="520" y="62" text-anchor="middle" font-size="11.5" fill="#6a7a8a">
+    Task 저장 안정성 · 비동기 Google Calendar 동기화 · 정적 Coalescing
+  </text>
+  <line x1="200" y1="73" x2="840" y2="73" stroke="#c8d4e0" stroke-width="1"/>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- ZONE PANELS                                -->
+  <!-- ══════════════════════════════════════════ -->
+
+  <!-- Client zone -->
+  <rect x="24"  y="86" width="148" height="400" rx="14"
+        fill="url(#glass-zone)" stroke="#ffffff" stroke-width="1.4" filter="url(#shadow-zone)"/>
+  <rect x="24"  y="86" width="148" height="24"  rx="14" fill="#ffffff" opacity="0.3"/>
+  <rect x="24"  y="97" width="148" height="13"  fill="#ffffff" opacity="0.3"/>
+  <text x="98"  y="104" text-anchor="middle" font-size="9" font-weight="700"
+        fill="#4a5a6a" letter-spacing="2" opacity="0.8">CLIENT</text>
+
+  <!-- Spring Boot zone -->
+  <rect x="186" y="86" width="468" height="400" rx="14"
+        fill="url(#glass-zone)" stroke="#ffffff" stroke-width="1.4" filter="url(#shadow-zone)"/>
+  <rect x="186" y="86" width="468" height="24"  rx="14" fill="#ffffff" opacity="0.3"/>
+  <rect x="186" y="97" width="468" height="13"  fill="#ffffff" opacity="0.3"/>
+  <text x="420" y="104" text-anchor="middle" font-size="9" font-weight="700"
+        fill="#4a5a6a" letter-spacing="2" opacity="0.8">SPRING BOOT</text>
+
+  <!-- Database zone -->
+  <rect x="668" y="86" width="160" height="400" rx="14"
+        fill="url(#glass-zone)" stroke="#ffffff" stroke-width="1.4" filter="url(#shadow-zone)"/>
+  <rect x="668" y="86" width="160" height="24"  rx="14" fill="#ffffff" opacity="0.3"/>
+  <rect x="668" y="97" width="160" height="13"  fill="#ffffff" opacity="0.3"/>
+  <text x="748" y="104" text-anchor="middle" font-size="9" font-weight="700"
+        fill="#4a5a6a" letter-spacing="2" opacity="0.8">DATABASE</text>
+
+  <!-- External zone -->
+  <rect x="842" y="86" width="174" height="400" rx="14"
+        fill="url(#glass-zone)" stroke="#ffffff" stroke-width="1.4" filter="url(#shadow-zone)"/>
+  <rect x="842" y="86" width="174" height="24"  rx="14" fill="#ffffff" opacity="0.3"/>
+  <rect x="842" y="97" width="174" height="13"  fill="#ffffff" opacity="0.3"/>
+  <text x="929" y="104" text-anchor="middle" font-size="9" font-weight="700"
+        fill="#4a5a6a" letter-spacing="2" opacity="0.8">EXTERNAL</text>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- ROW BADGES                                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <rect x="38"  y="116" width="110" height="20" rx="6" fill="#e05a10" opacity="0.13"/>
+  <text x="93"  y="130" text-anchor="middle" font-size="9" font-weight="700"
+        fill="#e05a10" letter-spacing="1">① WRITE PATH</text>
+
+  <rect x="38"  y="288" width="110" height="20" rx="6" fill="#3a4a5a" opacity="0.08"/>
+  <text x="93"  y="302" text-anchor="middle" font-size="9" font-weight="700"
+        fill="#3a4a5a" letter-spacing="1" opacity="0.55">② WORKER PATH</text>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- WRITE PATH CARDS                           -->
+  <!-- ══════════════════════════════════════════ -->
+
+  <!-- React App -->
+  <rect x="38"  y="146" width="120" height="80" rx="12"
+        fill="url(#glass-card)" stroke="#ffffff" stroke-width="1.4" filter="url(#shadow-card)"/>
+  <rect x="38"  y="146" width="120" height="2"  rx="1" fill="url(#sheen)"/>
+  <text x="98"  y="174" text-anchor="middle" font-size="12" font-weight="700" fill="#1a2535">React App</text>
+  <text x="98"  y="191" text-anchor="middle" font-size="9.5" fill="#6a7a8a">TypeScript</text>
+  <text x="98"  y="206" text-anchor="middle" font-size="9.5" fill="#6a7a8a">Zustand · JWT</text>
+
+  <!-- @Transactional dashed boundary -->
+  <rect x="196" y="137" width="352" height="97" rx="12" fill="none"
+        stroke="#e05a10" stroke-width="1.4" stroke-dasharray="6,3" opacity="0.45"/>
+  <rect x="306" y="133" width="134" height="15" rx="5" fill="#eef1f5"/>
+  <text x="373" y="144" text-anchor="middle" font-size="8.5" font-weight="700"
+        fill="#e05a10">@Transactional 경계</text>
+
+  <!-- TaskService (accent) -->
+  <rect x="200" y="146" width="160" height="80" rx="12"
+        fill="url(#glass-accent)" stroke="#e05a10" stroke-width="1.8" filter="url(#shadow-accent)"/>
+  <rect x="200" y="146" width="160" height="2"  rx="1" fill="url(#sheen)"/>
+  <rect x="200" y="158" width="4"   height="56" rx="2" fill="#e05a10" opacity="0.75"/>
+  <text x="280" y="174" text-anchor="middle" font-size="12"  font-weight="700" fill="#1a2535">TaskService</text>
+  <text x="280" y="190" text-anchor="middle" font-size="9.5" font-weight="600" fill="#e05a10">① Task 저장</text>
+  <text x="280" y="205" text-anchor="middle" font-size="9.5" fill="#6a7a8a">② Outbox 적재만</text>
+  <text x="280" y="218" text-anchor="middle" font-size="8.5" fill="#9aabb8">Google API 호출 ✗</text>
+
+  <!-- OutboxService (accent) -->
+  <rect x="374" y="146" width="166" height="80" rx="12"
+        fill="url(#glass-accent)" stroke="#e05a10" stroke-width="1.8" filter="url(#shadow-accent)"/>
+  <rect x="374" y="146" width="166" height="2"  rx="1" fill="url(#sheen)"/>
+  <rect x="374" y="158" width="4"   height="56" rx="2" fill="#e05a10" opacity="0.75"/>
+  <text x="457" y="174" text-anchor="middle" font-size="12"  font-weight="700" fill="#1a2535">OutboxService</text>
+  <text x="457" y="190" text-anchor="middle" font-size="9.5" font-weight="600" fill="#e05a10">⚡ 정적 Coalescing</text>
+  <text x="457" y="205" text-anchor="middle" font-size="9.5" fill="#6a7a8a">A-1, A-2, B-1, B-2</text>
+  <text x="457" y="218" text-anchor="middle" font-size="8.5" fill="#9aabb8">enqueue Upsert / Delete</text>
+
+  <!-- tasks DB -->
+  <rect x="678" y="146" width="140" height="80" rx="12"
+        fill="url(#glass-db)" stroke="#c0a060" stroke-width="1.4" filter="url(#shadow-card)"/>
+  <rect x="678" y="146" width="140" height="2"  rx="1" fill="url(#sheen)" opacity="0.8"/>
+  <rect x="678" y="158" width="4"   height="56" rx="2" fill="#c0a060" opacity="0.7"/>
+  <text x="748" y="174" text-anchor="middle" font-size="12"  font-weight="700" fill="#1a2535">tasks</text>
+  <text x="748" y="190" text-anchor="middle" font-size="9.5" fill="#6a7a8a">status · dueAt</text>
+  <text x="748" y="205" text-anchor="middle" font-size="9.5" fill="#6a7a8a">calendarEventId</text>
+  <text x="748" y="218" text-anchor="middle" font-size="8.5" fill="#9aabb8">calendarSyncEnabled</text>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- calendar_outbox (tall, spans both rows)    -->
+  <!-- ══════════════════════════════════════════ -->
+  <rect x="678" y="246" width="140" height="152" rx="12"
+        fill="url(#glass-db)" stroke="#c0a060" stroke-width="2" filter="url(#shadow-card)"/>
+  <rect x="678" y="246" width="140" height="2"   rx="1" fill="url(#sheen)" opacity="0.8"/>
+  <rect x="678" y="258" width="4"   height="128" rx="2" fill="#c0a060" opacity="0.7"/>
+  <text x="748" y="268" text-anchor="middle" font-size="11"  font-weight="700" fill="#1a2535">calendar_outbox</text>
+  <line x1="686" y1="276" x2="810" y2="276" stroke="#d8c8a8" stroke-width="1" opacity="0.7"/>
+  <!-- Status pills -->
+  <rect x="700" y="281" width="96"  height="17" rx="8.5" fill="#fbbf24" opacity="0.22"/>
+  <text x="748" y="294" text-anchor="middle" font-size="9.5" font-weight="700" fill="#92640a">PENDING</text>
+  <rect x="700" y="302" width="96"  height="17" rx="8.5" fill="#94a3b8" opacity="0.18"/>
+  <text x="748" y="315" text-anchor="middle" font-size="9.5" font-weight="600" fill="#4a5e72">PROCESSING</text>
+  <rect x="700" y="323" width="96"  height="17" rx="8.5" fill="#4ade80" opacity="0.18"/>
+  <text x="748" y="336" text-anchor="middle" font-size="9.5" font-weight="600" fill="#166534">SUCCESS</text>
+  <rect x="700" y="344" width="96"  height="17" rx="8.5" fill="#f87171" opacity="0.18"/>
+  <text x="748" y="357" text-anchor="middle" font-size="9.5" font-weight="600" fill="#991b1b">FAILED</text>
+  <line x1="686" y1="367" x2="810" y2="367" stroke="#d8c8a8" stroke-width="1" opacity="0.7"/>
+  <text x="748" y="381" text-anchor="middle" font-size="8.5" fill="#8a9ab0">UPSERT | DELETE</text>
+  <text x="748" y="393" text-anchor="middle" font-size="8.5" fill="#8a9ab0">retry_count · payload</text>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- WORKER PATH CARDS                          -->
+  <!-- ══════════════════════════════════════════ -->
+
+  <!-- OutboxWorker -->
+  <rect x="200" y="318" width="160" height="108" rx="12"
+        fill="url(#glass-worker)" stroke="#8890c8" stroke-width="1.4" filter="url(#shadow-card)"/>
+  <rect x="200" y="318" width="160" height="2"   rx="1" fill="url(#sheen)" opacity="0.8"/>
+  <rect x="200" y="330" width="4"   height="84"  rx="2" fill="#8890c8" opacity="0.65"/>
+  <text x="280" y="340" text-anchor="middle" font-size="12"  font-weight="700" fill="#1a2535">OutboxWorker</text>
+  <text x="280" y="356" text-anchor="middle" font-size="9.5" fill="#6a7a8a">@Scheduled(5s)</text>
+  <text x="280" y="372" text-anchor="middle" font-size="9"   fill="#5a6a7a">① Poll PENDING / FAILED</text>
+  <text x="280" y="386" text-anchor="middle" font-size="9"   fill="#5a6a7a">② claimForProcessing</text>
+  <text x="280" y="399" text-anchor="middle" font-size="9"   fill="#8a9ab0">   (원자적 UPDATE 선점)</text>
+  <text x="280" y="413" text-anchor="middle" font-size="9"   fill="#5a6a7a">③ handle → 성공 / 재시도</text>
+
+  <!-- CalendarService -->
+  <rect x="374" y="318" width="166" height="108" rx="12"
+        fill="url(#glass-worker)" stroke="#8890c8" stroke-width="1.4" filter="url(#shadow-card)"/>
+  <rect x="374" y="318" width="166" height="2"   rx="1" fill="url(#sheen)" opacity="0.8"/>
+  <rect x="374" y="330" width="4"   height="84"  rx="2" fill="#8890c8" opacity="0.65"/>
+  <text x="457" y="340" text-anchor="middle" font-size="12"  font-weight="700" fill="#1a2535">CalendarService</text>
+  <text x="457" y="356" text-anchor="middle" font-size="9.5" font-weight="600" fill="#8890c8">Task 최신 상태 조회</text>
+  <text x="457" y="370" text-anchor="middle" font-size="8.5" fill="#8a9ab0">(Source of Truth)</text>
+  <line x1="382" y1="377" x2="532" y2="377" stroke="#d0d8e8" stroke-width="1" opacity="0.7"/>
+  <text x="457" y="391" text-anchor="middle" font-size="9"   fill="#5a6a7a">UPSERT → create / update</text>
+  <text x="457" y="405" text-anchor="middle" font-size="9"   fill="#5a6a7a">DELETE → delete</text>
+  <text x="457" y="419" text-anchor="middle" font-size="8.5" fill="#8a9ab0">eventId=null → no-op</text>
+
+  <!-- Google Calendar API -->
+  <rect x="852" y="318" width="154" height="108" rx="12"
+        fill="url(#glass-card)" stroke="#c0ccd8" stroke-width="1.4" filter="url(#shadow-card)"/>
+  <rect x="852" y="318" width="154" height="2"   rx="1" fill="url(#sheen)"/>
+  <rect x="852" y="330" width="4"   height="84"  rx="2" fill="#4a90d8" opacity="0.50"/>
+  <text x="929" y="348" text-anchor="middle" font-size="12"  font-weight="700" fill="#1a2535">Google</text>
+  <text x="929" y="363" text-anchor="middle" font-size="12"  font-weight="700" fill="#1a2535">Calendar API</text>
+  <line x1="860" y1="371" x2="998" y2="371" stroke="#d0d8e4" stroke-width="1" opacity="0.7"/>
+  <text x="929" y="385" text-anchor="middle" font-size="9.5" fill="#6a7a8a">createEvent</text>
+  <text x="929" y="399" text-anchor="middle" font-size="9.5" fill="#6a7a8a">updateEvent</text>
+  <text x="929" y="413" text-anchor="middle" font-size="9.5" fill="#6a7a8a">deleteEvent</text>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- BOTTOM PANELS                              -->
+  <!-- ══════════════════════════════════════════ -->
+
+  <!-- Coalescing rules -->
+  <rect x="24"  y="506" width="630" height="96" rx="12"
+        fill="url(#glass-bottom)" stroke="#e05a10" stroke-width="1.4" filter="url(#shadow-card)" opacity="0.97"/>
+  <rect x="24"  y="506" width="630" height="2"  rx="1" fill="url(#sheen)"/>
+  <rect x="24"  y="518" width="5"   height="72" rx="2.5" fill="#e05a10" opacity="0.80"/>
+  <text x="46"  y="525" font-size="10" font-weight="700" fill="#e05a10">
+    ⚡  정적 Coalescing Rules — enqueue 시점 즉시 적용
+  </text>
+  <line x1="32" y1="532" x2="646" y2="532" stroke="#e0d0c8" stroke-width="1"/>
+
+  <text x="46"  y="548" font-size="9.5" fill="#1a2535"><tspan font-weight="700">A-1</tspan>  UPSERT 적재 시 →  PENDING DELETE 제거</text>
+  <text x="370" y="548" font-size="9.5" fill="#6a7a8a">충돌 방지 (DELETE 먼저 실행되면 이벤트가 사라짐)</text>
+
+  <text x="46"  y="564" font-size="9.5" fill="#1a2535"><tspan font-weight="700">A-2</tspan>  UPSERT 적재 시 →  PENDING UPSERT 제거</text>
+  <text x="370" y="564" font-size="9.5" fill="#6a7a8a">최신 1개만 유지 · DB 공간 절약</text>
+
+  <text x="46"  y="580" font-size="9.5" fill="#1a2535"><tspan font-weight="700">B-1</tspan>  DELETE 적재 시  →  PENDING UPSERT 전체 제거</text>
+  <text x="370" y="580" font-size="9.5" fill="#6a7a8a">충돌 방지 + 불필요한 API 호출 제거</text>
+
+  <text x="46"  y="596" font-size="9.5" fill="#1a2535"><tspan font-weight="700">B-2</tspan>  DELETE 적재 시  →  PENDING DELETE 중복 방지</text>
+  <text x="370" y="596" font-size="9.5" fill="#6a7a8a">DELETE는 멱등 · 1개로 충분</text>
+
+  <!-- Backoff policy -->
+  <rect x="668" y="506" width="348" height="96" rx="12"
+        fill="url(#glass-bottom)" stroke="#c0ccd8" stroke-width="1.4" filter="url(#shadow-card)" opacity="0.97"/>
+  <rect x="668" y="506" width="348" height="2"  rx="1" fill="url(#sheen)"/>
+  <rect x="668" y="518" width="5"   height="72" rx="2.5" fill="#8890c8" opacity="0.75"/>
+  <text x="690" y="525" font-size="10" font-weight="700" fill="#3a4870">
+    Backoff 재시도 정책 (max 6회)
+  </text>
+  <line x1="676" y1="532" x2="1008" y2="532" stroke="#d0d8e4" stroke-width="1"/>
+  <text x="690" y="548" font-size="9.5" fill="#1a2535">retry 0 → +1min    ·    retry 1 → +5min    ·    retry 2 → +15min</text>
+  <text x="690" y="564" font-size="9.5" fill="#1a2535">retry 3 → +1hr     ·    retry 4 → +6hr     ·    retry 5 → +24hr</text>
+  <text x="690" y="580" font-size="9"   fill="#6a7a8a">Lease timeout 5min — PROCESSING 고착 방지 (Worker 재기동 시 자동 복구)</text>
+  <text x="690" y="596" font-size="9"   fill="#6a7a8a">401 발생 시 → refresh_token으로 access_token 자동 갱신 후 재시도</text>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- ARROWS                                     -->
+  <!-- ══════════════════════════════════════════ -->
+
+  <!--
+    Strategy: 모든 화살표 라벨은 카드 위/아래 여백에 배치.
+    라벨 배경 rect로 텍스트 가독성 확보.
+    화살표는 카드 가장자리 정확한 지점에서 출발/도착.
+  -->
+
+  <!-- ① Client → TaskService : REST -->
+  <line x1="158" y1="186" x2="198" y2="186"
+        stroke="#3a4a5a" stroke-width="1.8" marker-end="url(#arr-dark)"/>
+  <rect x="155" y="173" width="30" height="13" rx="3" fill="#eef1f5"/>
+  <text x="170" y="183" text-anchor="middle" font-size="8.5" font-weight="600" fill="#3a4a5a">REST</text>
+
+  <!-- ② TaskService → OutboxService : 내부 호출 -->
+  <line x1="360" y1="186" x2="372" y2="186"
+        stroke="#e05a10" stroke-width="1.8" marker-end="url(#arr-orange)"/>
+
+  <!-- ③ TaskService → tasks DB : Task 저장 (goes above cards at y=138) -->
+  <path d="M 280 146 L 280 128 L 748 128 L 748 144"
+        stroke="#b08030" stroke-width="1.5" fill="none" stroke-dasharray="5,3"
+        marker-end="url(#arr-amber)"/>
+  <rect x="470" y="120" width="56" height="13" rx="3" fill="#eef1f5"/>
+  <text x="498" y="130" text-anchor="middle" font-size="8.5" font-weight="600" fill="#8a6020">Task 저장</text>
+
+  <!-- ④ OutboxService → calendar_outbox : INSERT (goes right then down) -->
+  <path d="M 540 186 L 620 186 L 620 305 L 676 305"
+        stroke="#e05a10" stroke-width="1.8" fill="none" marker-end="url(#arr-orange)"/>
+  <rect x="592" y="237" width="48" height="13" rx="3" fill="#eef1f5"/>
+  <text x="616" y="247" text-anchor="middle" font-size="8.5" font-weight="600" fill="#e05a10">INSERT</text>
+
+  <!-- ⑤ calendar_outbox → OutboxWorker : poll 5s (goes left at y=372) -->
+  <path d="M 678 372 L 640 372 L 640 372 L 362 372"
+        stroke="#8a9ab0" stroke-width="1.8" fill="none" stroke-dasharray="6,3"
+        marker-end="url(#arr-muted)"/>
+  <rect x="488" y="362" width="48" height="13" rx="3" fill="#eef1f5"/>
+  <text x="512" y="372" text-anchor="middle" font-size="8.5" font-weight="600" fill="#6a7a8a">poll 5s</text>
+
+  <!-- ⑥ OutboxWorker → CalendarService -->
+  <line x1="360" y1="372" x2="372" y2="372"
+        stroke="#3a4a5a" stroke-width="1.8" marker-end="url(#arr-dark)"/>
+
+  <!-- ⑦ CalendarService → tasks DB : 최신 상태 조회 (arc up) -->
+  <path d="M 457 318 L 457 262 L 660 262 L 676 220"
+        stroke="#b08030" stroke-width="1.4" fill="none" stroke-dasharray="4,3"
+        marker-end="url(#arr-amber)" opacity="0.8"/>
+  <rect x="494" y="254" width="72" height="13" rx="3" fill="#eef1f5" opacity="0.95"/>
+  <text x="530" y="264" text-anchor="middle" font-size="8.5" fill="#8a6020">최신 상태 조회</text>
+
+  <!-- ⑧ CalendarService → Google Calendar API : API 호출 -->
+  <line x1="540" y1="372" x2="850" y2="372"
+        stroke="#3a4a5a" stroke-width="1.8" marker-end="url(#arr-dark)"/>
+  <rect x="658" y="362" width="52" height="13" rx="3" fill="#eef1f5"/>
+  <text x="684" y="372" text-anchor="middle" font-size="8.5" font-weight="600" fill="#3a4a5a">API 호출</text>
+
+  <!-- ⑨ Worker → Backoff : 실패 시 재시도 (down then right) -->
+  <path d="M 280 426 L 280 470 L 640 470 L 640 506"
+        stroke="#c0392b" stroke-width="1.4" fill="none" stroke-dasharray="4,3"
+        marker-end="url(#arr-red)" opacity="0.7"/>
+  <rect x="298" y="462" width="72" height="13" rx="3" fill="#eef1f5" opacity="0.95"/>
+  <text x="334" y="472" text-anchor="middle" font-size="8.5" fill="#c0392b">실패 시 재시도</text>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- LEGEND                                     -->
+  <!-- ══════════════════════════════════════════ -->
+  <rect x="852" y="146" width="154" height="148" rx="12"
+        fill="url(#glass-card)" stroke="#c0ccd8" stroke-width="1.2" filter="url(#shadow-card)"/>
+  <rect x="852" y="146" width="154" height="2"   rx="1" fill="url(#sheen)"/>
+  <text x="929" y="164" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1a2535">Legend</text>
+  <line x1="862" y1="171" x2="998" y2="171" stroke="#d8e0e8" stroke-width="1"/>
+
+  <line x1="866" y1="185" x2="894" y2="185" stroke="#3a4a5a" stroke-width="2"   marker-end="url(#arr-dark)"/>
+  <text x="900"  y="189" font-size="9" fill="#6a7a8a">내부 호출</text>
+
+  <line x1="866" y1="203" x2="894" y2="203" stroke="#e05a10" stroke-width="2"   marker-end="url(#arr-orange)"/>
+  <text x="900"  y="207" font-size="9" fill="#6a7a8a">Outbox 경로</text>
+
+  <line x1="866" y1="221" x2="894" y2="221" stroke="#b08030" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-amber)"/>
+  <text x="900"  y="225" font-size="9" fill="#6a7a8a">DB 읽기/쓰기</text>
+
+  <line x1="866" y1="239" x2="894" y2="239" stroke="#8a9ab0" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr-muted)"/>
+  <text x="900"  y="243" font-size="9" fill="#6a7a8a">비동기 poll</text>
+
+  <line x1="866" y1="257" x2="894" y2="257" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#arr-red)" opacity="0.75"/>
+  <text x="900"  y="261" font-size="9" fill="#6a7a8a">실패 / 재시도</text>
+
+  <line x1="862" y1="270" x2="998" y2="270" stroke="#d8e0e8" stroke-width="1"/>
+  <text x="929"  y="283" text-anchor="middle" font-size="8" fill="#9aabb8">PROCESSING 상태는</text>
+  <text x="929"  y="295" text-anchor="middle" font-size="8" fill="#9aabb8">Coalescing 삭제 제외</text>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- FOOTER                                     -->
+  <!-- ══════════════════════════════════════════ -->
+  <text x="520" y="624" text-anchor="middle" font-size="9" fill="#8a9ab0">
+    Write Path (동기 · 같은 트랜잭션)  ·  Worker Path (비동기 · @Scheduled)  ·  정적 + 동적 Coalescing으로 Google API 호출 90% 절감
+  </text>
+
+</svg>
