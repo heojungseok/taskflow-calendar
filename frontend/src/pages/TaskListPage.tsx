@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Calendar, Clock } from 'lucide-react';
+import { Plus, Calendar, Clock, Sparkles } from 'lucide-react';
 import { tasksApi } from '@/api/endpoints/tasks';
 import { projectsApi } from '@/api/endpoints/projects';
 import type { Task, TaskStatus, TaskCreateRequest } from '@/types/task';
+import type { ProjectWeeklySummary } from '@/types/project';
 import { cx, clsx } from '@/styles/cx';
 
 // ── 상수 ──────────────────────────────────────────────────
@@ -191,6 +192,7 @@ export default function TaskListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [changingId, setChangingId] = useState<number | null>(null);
+  const [summary, setSummary] = useState<ProjectWeeklySummary | null>(null);
 
   const { data: project } = useQuery({ queryKey: ['project', pid], queryFn: () => projectsApi.getProject(pid), enabled: !!pid });
   const { data: tasks, isLoading, isError } = useQuery({
@@ -199,20 +201,46 @@ export default function TaskListPage() {
     enabled: !!pid,
   });
 
+  useEffect(() => {
+    setSummary(null);
+  }, [pid]);
+
+  const summaryMutation = useMutation({
+    mutationFn: () => projectsApi.generateWeeklySummary(pid),
+    onSuccess: (data) => {
+      setSummary(data);
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: (d: TaskCreateRequest) => tasksApi.createTask(pid, d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks', pid] }); setIsModalOpen(false); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
+      setSummary(null);
+      summaryMutation.reset();
+      setIsModalOpen(false);
+    },
   });
 
   const changeStatusMutation = useMutation({
     mutationFn: ({ id, to }: { id: number; to: TaskStatus }) => tasksApi.changeStatus(id, to),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks', pid] }); setChangingId(null); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
+      setSummary(null);
+      summaryMutation.reset();
+      setChangingId(null);
+    },
     onError: () => setChangingId(null),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => tasksApi.deleteTask(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks', pid] }); setDeletingId(null); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
+      setSummary(null);
+      summaryMutation.reset();
+      setDeletingId(null);
+    },
     onError: () => setDeletingId(null),
   });
 
@@ -238,6 +266,85 @@ export default function TaskListPage() {
         <button onClick={() => setIsModalOpen(true)} className={cx.btn.primary}>
           <span className="flex items-center gap-1.5"><Plus size={12} strokeWidth={2.5} />새 Task</span>
         </button>
+      </div>
+
+      <div className={clsx(cx.card, 'mb-5')}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} strokeWidth={2} className="text-[#6ea8fe]" />
+              <p className={cx.text.cardTitle}>이번 주 요약</p>
+            </div>
+            <p className={clsx(cx.text.meta, 'mt-2')}>
+              현재 프로젝트 Task를 기반으로 이번 주 핵심 업무를 정리합니다. 버튼을 누를 때마다 새로 생성됩니다.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              summaryMutation.reset();
+              summaryMutation.mutate();
+            }}
+            disabled={summaryMutation.isPending}
+            className={cx.btn.primary}
+          >
+            {summaryMutation.isPending ? '생성 중...' : summary ? '다시 생성' : '요약 생성'}
+          </button>
+        </div>
+
+        {summaryMutation.isError && (
+          <div className={clsx(cx.errorBox, 'mt-4')}>
+            요약 생성에 실패했습니다. `GEMINI_API_KEY` 설정과 서버 로그를 확인해주세요.
+          </div>
+        )}
+
+        {summary ? (
+          <div className="mt-4 space-y-4">
+            <div className="rounded-[10px] border border-[#252535] bg-[#101018] p-4">
+              <p className="text-[13px] leading-6 text-[#e8e8ed]">{summary.summary}</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#8a8aa6]">
+                <span>{summary.weekStart} ~ {summary.weekEnd}</span>
+                <span>입력 Task {summary.includedTaskCount} / 전체 {summary.totalTaskCount}</span>
+                <span>{new Date(summary.generatedAt).toLocaleString('ko-KR')}</span>
+              </div>
+            </div>
+
+            {summary.highlights.length > 0 && (
+              <div>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8ea7ff]">Highlights</p>
+                <ul className="space-y-2">
+                  {summary.highlights.map((item) => (
+                    <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {summary.risks.length > 0 && (
+              <div>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#ff9f7a]">Risks</p>
+                <ul className="space-y-2">
+                  {summary.risks.map((item) => (
+                    <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {summary.nextActions.length > 0 && (
+              <div>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#7dd3a7]">Next Actions</p>
+                <ul className="space-y-2">
+                  {summary.nextActions.map((item) => (
+                    <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className={clsx(cx.text.meta, 'mt-4')}>아직 생성된 요약이 없습니다.</p>
+        )}
       </div>
 
       {/* 필터 */}

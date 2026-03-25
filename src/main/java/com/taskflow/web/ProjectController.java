@@ -3,6 +3,8 @@ package com.taskflow.web;
 import com.taskflow.calendar.domain.project.ProjectService;
 import com.taskflow.calendar.domain.project.dto.CreateProjectRequest;
 import com.taskflow.calendar.domain.project.dto.ProjectResponse;
+import com.taskflow.calendar.domain.summary.ProjectWeeklySummaryService;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import com.taskflow.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final ProjectWeeklySummaryService projectWeeklySummaryService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(
@@ -41,5 +44,13 @@ public class ProjectController {
     ) {
         ProjectResponse project = projectService.getProjectById(projectId);
         return ResponseEntity.ok(ApiResponse.success(project));
+    }
+
+    @PostMapping("/{projectId}/weekly-summary")
+    public ResponseEntity<ApiResponse<WeeklySummaryResponse>> generateWeeklySummary(
+            @PathVariable Long projectId
+    ) {
+        WeeklySummaryResponse summary = projectWeeklySummaryService.generateWeeklySummary(projectId);
+        return ResponseEntity.ok(ApiResponse.success(summary));
     }
 }

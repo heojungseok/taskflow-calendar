@@ -36,3 +36,10 @@ google:
     scope: openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.events
     authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
     token-uri: https://oauth2.googleapis.com/token
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
+  base-url: https://generativelanguage.googleapis.com/v1beta
+  timeout-seconds: 20
+  temperature: 0.2

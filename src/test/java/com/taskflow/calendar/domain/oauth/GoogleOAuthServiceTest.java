@@ -4,15 +4,15 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpResponseException;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.GoogleOAuthProperties;
+import com.taskflow.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
@@ -32,6 +32,12 @@ class GoogleOAuthServiceTest {
     @Mock
     private GoogleOAuthProperties properties;  // ← 추가
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private JwtTokenProvider jwtTokenProvider;
+
     private GoogleOAuthService service;        // ← @Spy 제거
 
     private static final Long USER_ID = 4L;
@@ -40,7 +46,7 @@ class GoogleOAuthServiceTest {
     @BeforeEach
     void setUp() {
         // 수동 생성 → @RequiredArgsConstructor 생성자 직접 호출
-        service = Mockito.spy(new GoogleOAuthService(properties, tokenRepository));
+        service = Mockito.spy(new GoogleOAuthService(properties, tokenRepository, userRepository, jwtTokenProvider));
         token = OAuthGoogleToken.create(
                 USER_ID,
                 "old-access-token",
