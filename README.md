@@ -137,19 +137,30 @@ cd taskflow-calendar
 docker-compose up -d
 ```
 
-3. 애플리케이션 실행:
+3. `.env` 파일 설정:
+```bash
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GEMINI_API_KEY=your_gemini_api_key
+# 선택
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+4. 애플리케이션 실행:
 ```bash
 ./gradlew bootRun
 ```
 
-LLM 요약 기능을 쓰려면 환경 변수도 함께 설정합니다.
+`bootRun`은 `build.gradle` 설정으로 `.env`를 자동 로드합니다.
+다만 IDE 실행이나 다른 방식으로 실행하면 `.env`가 자동 반영되지 않을 수 있으므로,
+그 경우에는 아래처럼 직접 export가 필요합니다.
 ```bash
 export GEMINI_API_KEY=your_api_key
-# 선택
-export GEMINI_MODEL=gemini-2.5-flash
+export GOOGLE_CLIENT_ID=your_google_client_id
+export GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
-4. 접속:
+5. 접속:
 ```
 http://localhost:8080
 ```
@@ -215,6 +226,14 @@ users (1) ─── (1) oauth_google_tokens
 
 ### LLM Summary
 - `POST /api/projects/{projectId}/weekly-summary` - 프로젝트 주간 업무 요약 생성
+
+## 주간 요약 동작 방식
+
+- 주간 요약은 `동기화된 일정` / `미동기화 일정` 2개 섹션으로 나뉘어 생성됩니다.
+- 분류는 단순 `calendarEventId` 존재 여부가 아니라 최신 Outbox 상태까지 반영해 판정합니다.
+- 요약 문장은 Task 제목보다 `description`의 목적, 제약, 리스크, 산출물 정보를 우선 반영합니다.
+- `startAt`은 실제 캘린더 시작 시점, `dueAt`은 마감/종료 시점으로 분리해 사용합니다.
+- Gemini 무료 티어 quota를 초과하면 요약 생성이 실패할 수 있습니다.
 
 ## 개발 환경
 ```

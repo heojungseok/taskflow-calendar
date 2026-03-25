@@ -23,7 +23,10 @@ frontend/src/
 │   ├── layout/           # 레이아웃 컴포넌트
 │   └── features/         # 기능별 컴포넌트
 ├── pages/            # 페이지 컴포넌트
-│   └── Login.tsx         # 로그인 페이지
+│   ├── Login.tsx         # 로그인 페이지
+│   ├── ProjectListPage.tsx
+│   ├── TaskListPage.tsx  # Task 목록 + 상세 모달 + 주간 요약
+│   └── OAuthCallback.tsx
 ├── hooks/            # 커스텀 훅
 ├── store/            # Zustand 스토어
 │   └── authStore.ts      # 인증 상태 관리
@@ -74,10 +77,11 @@ axios.get('/api/tasks/1')
 
 ## 인증 플로우
 
-1. **로그인**: `/login` 페이지에서 이메일/비밀번호 입력
-2. **JWT 저장**: `localStorage`에 토큰 저장
-3. **자동 인증**: Axios 인터셉터가 모든 요청에 JWT 헤더 추가
-4. **401 처리**: 토큰 만료 시 자동 로그아웃 및 `/login`으로 리다이렉트
+1. **Google OAuth 진입**: 백엔드에서 OAuth URL을 받아 Google 로그인 페이지로 이동
+2. **콜백 처리**: `/oauth/callback`에서 JWT를 전달받아 저장
+3. **JWT 저장**: `localStorage`에 토큰 저장
+4. **자동 인증**: Axios 인터셉터가 모든 요청에 JWT 헤더 추가
+5. **401 처리**: 토큰 만료 시 자동 로그아웃 및 `/login`으로 리다이렉트
 
 ## 상태 관리
 
@@ -90,23 +94,25 @@ axios.get('/api/tasks/1')
 - JWT 토큰 및 사용자 ID 관리
 - 인증 상태 (`isAuthenticated`) 전역 관리
 
-## 구현 예정 기능
+## 구현 현황
 
-### Week 5 (우선순위)
+### 완료
 - [x] 프로젝트 초기화
 - [x] 인증 기반 구축
+- [x] 프로젝트 목록/선택
+- [x] Task CRUD (목록/생성/수정/삭제)
+- [x] 상태 전이 UI
+- [x] Task 동기화 상태 조회
+- [x] Google OAuth 연동 UI
+- [x] Task 상세 모달
+- [x] 프로젝트 주간 요약 UI
+
+### 이후 후보
 - [ ] Outbox 관측 화면
-- [ ] Task 동기화 상태 조회
-
-### Week 6
-- [ ] Task CRUD (목록/생성/수정/삭제)
-- [ ] 상태 전이 UI
-- [ ] Task 이력 조회
-
-### Week 7+
 - [ ] 보드(칸반) 뷰
 - [ ] 캘린더 뷰
-- [ ] Google OAuth 연동 UI
+- [ ] 요약 실패 원인 세분화 UI
+- [ ] Gemini quota 초과 시 fallback 요약
 
 ## API 엔드포인트 예시
 
@@ -143,6 +149,17 @@ await tasksApi.deleteTask(taskId);
 
 // 상태 변경
 const task = await tasksApi.changeStatus(taskId, 'IN_PROGRESS');
+```
+
+### 프로젝트 주간 요약
+```typescript
+import { projectsApi } from '@/api/endpoints/projects';
+
+const summary = await projectsApi.generateWeeklySummary(projectId);
+// {
+//   synced: { summary, highlights, risks, nextActions, ... },
+//   unsynced: { summary, highlights, risks, nextActions, ... },
+// }
 ```
 
 ### Calendar 동기화
@@ -185,7 +202,15 @@ cat tsconfig.app.json
 
 ## 다음 단계
 
-1. Outbox 모니터링 화면 구현 (`/admin/outbox`)
-2. Task 목록/생성/수정/삭제 UI 구현
-3. Calendar 동기화 상태 뱃지 추가
-4. Google OAuth 팝업 연동
+1. Gemini quota 초과/키 미설정/기타 실패를 구분해서 노출
+2. Outbox 모니터링 화면 구현 (`/admin/outbox`)
+3. 보드(칸반) 뷰 / 캘린더 뷰 확장
+4. 요약 fallback 또는 재시도 전략 연결
+
+## 주간 요약 UX
+
+- Task 목록 화면에서 프로젝트 단위 주간 요약을 생성할 수 있습니다.
+- 요약은 `동기화된 일정` / `미동기화 일정` 2개 섹션으로 나뉘어 표시됩니다.
+- Task 카드를 누르면 페이지 이동 대신 상세 모달이 열립니다.
+- 상세 모달에서 제목, 설명, 시작일, 마감일, 상태를 수정할 수 있습니다.
+- 상세 모달을 닫아도 목록 화면의 요약 결과는 유지됩니다.
