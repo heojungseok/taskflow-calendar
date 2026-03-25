@@ -28,6 +28,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class GoogleCalendarServiceImpl implements GoogleCalendarService {
+    private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
 
     private final GoogleCalendarClient googleCalendarClient;
     private final TaskRepository taskRepository;
@@ -130,7 +131,7 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
     /**
      * Task → CalendarEventDto 변환
      * - DONE 상태면 제목에 [DONE] prefix
-     * - 시간: dueAt - 1시간 ~ dueAt
+     * - 시간: startAt(없으면 dueAt-1시간) ~ dueAt
      */
     private CalendarEventDto buildEventFromTask(Task task) {
         String title = task.getTitle();
@@ -141,7 +142,9 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
         }
 
         LocalDateTime endAt = task.getDueAt();
-        LocalDateTime startAt = endAt.minusHours(1);
+        LocalDateTime startAt = task.getStartAt() != null
+                ? task.getStartAt()
+                : endAt.minusHours(DEFAULT_EVENT_DURATION_HOURS);
 
         return CalendarEventDto.builder()
                 .title(title)
