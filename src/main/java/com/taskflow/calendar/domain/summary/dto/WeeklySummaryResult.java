@@ -32,11 +32,18 @@ public class WeeklySummaryResult {
     }
 
     public static WeeklySummaryResult empty() {
-        return new WeeklySummaryResult(
+        return empty(
                 "이번 주에 요약할 Task가 없습니다.",
+                List.of("새 Task를 추가하거나 마감일을 설정해보세요.")
+        );
+    }
+
+    public static WeeklySummaryResult empty(String summary, List<String> nextActions) {
+        return new WeeklySummaryResult(
+                summary,
                 Collections.emptyList(),
                 Collections.emptyList(),
-                List.of("새 Task를 추가하거나 마감일을 설정해보세요."),
+                nextActions,
                 "local-empty-state"
         );
     }

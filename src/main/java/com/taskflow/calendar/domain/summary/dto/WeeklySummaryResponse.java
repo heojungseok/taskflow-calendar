@@ -5,7 +5,6 @@ import com.taskflow.calendar.domain.project.Project;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class WeeklySummaryResponse {
 
@@ -22,12 +21,10 @@ public class WeeklySummaryResponse {
     private final LocalDateTime generatedAt;
 
     private final int totalTaskCount;
-    private final int includedTaskCount;
-    private final String summary;
-    private final List<String> highlights;
-    private final List<String> risks;
-    private final List<String> nextActions;
-    private final String model;
+    private final int syncedTaskCount;
+    private final int unsyncedTaskCount;
+    private final WeeklySummarySectionResponse synced;
+    private final WeeklySummarySectionResponse unsynced;
 
     private WeeklySummaryResponse(Long projectId,
                                   String projectName,
@@ -35,24 +32,20 @@ public class WeeklySummaryResponse {
                                   LocalDate weekEnd,
                                   LocalDateTime generatedAt,
                                   int totalTaskCount,
-                                  int includedTaskCount,
-                                  String summary,
-                                  List<String> highlights,
-                                  List<String> risks,
-                                  List<String> nextActions,
-                                  String model) {
+                                  int syncedTaskCount,
+                                  int unsyncedTaskCount,
+                                  WeeklySummarySectionResponse synced,
+                                  WeeklySummarySectionResponse unsynced) {
         this.projectId = projectId;
         this.projectName = projectName;
         this.weekStart = weekStart;
         this.weekEnd = weekEnd;
         this.generatedAt = generatedAt;
         this.totalTaskCount = totalTaskCount;
-        this.includedTaskCount = includedTaskCount;
-        this.summary = summary;
-        this.highlights = highlights;
-        this.risks = risks;
-        this.nextActions = nextActions;
-        this.model = model;
+        this.syncedTaskCount = syncedTaskCount;
+        this.unsyncedTaskCount = unsyncedTaskCount;
+        this.synced = synced;
+        this.unsynced = unsynced;
     }
 
     public static WeeklySummaryResponse of(Project project,
@@ -60,8 +53,10 @@ public class WeeklySummaryResponse {
                                            LocalDate weekEnd,
                                            LocalDateTime generatedAt,
                                            int totalTaskCount,
-                                           int includedTaskCount,
-                                           WeeklySummaryResult result) {
+                                           int syncedTaskCount,
+                                           int unsyncedTaskCount,
+                                           WeeklySummarySectionResponse synced,
+                                           WeeklySummarySectionResponse unsynced) {
         return new WeeklySummaryResponse(
                 project.getId(),
                 project.getName(),
@@ -69,12 +64,10 @@ public class WeeklySummaryResponse {
                 weekEnd,
                 generatedAt,
                 totalTaskCount,
-                includedTaskCount,
-                result.getSummary(),
-                result.getHighlights(),
-                result.getRisks(),
-                result.getNextActions(),
-                result.getModel()
+                syncedTaskCount,
+                unsyncedTaskCount,
+                synced,
+                unsynced
         );
     }
 
@@ -102,27 +95,19 @@ public class WeeklySummaryResponse {
         return totalTaskCount;
     }
 
-    public int getIncludedTaskCount() {
-        return includedTaskCount;
+    public int getSyncedTaskCount() {
+        return syncedTaskCount;
     }
 
-    public String getSummary() {
-        return summary;
+    public int getUnsyncedTaskCount() {
+        return unsyncedTaskCount;
     }
 
-    public List<String> getHighlights() {
-        return highlights;
+    public WeeklySummarySectionResponse getSynced() {
+        return synced;
     }
 
-    public List<String> getRisks() {
-        return risks;
-    }
-
-    public List<String> getNextActions() {
-        return nextActions;
-    }
-
-    public String getModel() {
-        return model;
+    public WeeklySummarySectionResponse getUnsynced() {
+        return unsynced;
     }
 }

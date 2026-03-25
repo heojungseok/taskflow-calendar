@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -22,6 +21,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,13 +41,16 @@ class ProjectWeeklySummaryServiceTest {
     @Mock
     private WeeklySummaryGenerator weeklySummaryGenerator;
 
+    @Mock
+    private TaskSyncStateResolver taskSyncStateResolver;
+
     private ProjectWeeklySummaryService service;
 
     private Project project;
 
     @BeforeEach
     void setUp() {
-        service = new ProjectWeeklySummaryService(projectRepository, taskRepository, weeklySummaryGenerator);
+        service = new ProjectWeeklySummaryService(projectRepository, taskRepository, weeklySummaryGenerator, taskSyncStateResolver);
         project = Project.of("TaskFlow");
     }
 
@@ -67,47 +70,108 @@ class ProjectWeeklySummaryServiceTest {
 
         WeeklySummaryResponse response = service.generateWeeklySummary(1L);
 
-        assertEquals("이번 주에 요약할 Task가 없습니다.", response.getSummary());
+        assertEquals("이번 주에 Google Calendar에 반영된 일정이 없습니다.", response.getSynced().getSummary());
+        assertEquals("이번 주에 아직 Google Calendar에 반영되지 않은 일정은 없습니다.", response.getUnsynced().getSummary());
         assertEquals(0, response.getTotalTaskCount());
-        assertEquals(0, response.getIncludedTaskCount());
-        assertEquals("local-empty-state", response.getModel());
-        verify(weeklySummaryGenerator, never()).generate(any(), any(), any(), any(), anyInt());
+        assertEquals(0, response.getSyncedTaskCount());
+        assertEquals(0, response.getUnsyncedTaskCount());
+        assertEquals("local-empty-state", response.getSynced().getModel());
+        verify(weeklySummaryGenerator, never()).generate(any(), any(), any(), any(), anyInt(), any());
     }
 
     @Test
-    @DisplayName("generateWeeklySummary_Task있음_LLM생성결과반환")
-    void generateWeeklySummary_withTasks_returnsGeneratedSummary() {
-        Task first = task("API 설계", TaskStatus.IN_PROGRESS, LocalDateTime.now().plusDays(1));
-        Task second = task("문서 정리", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(3));
+    @DisplayName("generateWeeklySummary_동기화여부별로분리하여요약반환")
+    void generateWeeklySummary_withTasks_returnsGroupedSummary() {
+        Task syncedTask = task("API 설계", TaskStatus.IN_PROGRESS, LocalDateTime.now().plusDays(1), true, "evt-123");
+        Task unsyncedTask = task("문서 정리", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(3), false, null);
 
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
-        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(first, second));
-        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(2)))
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(syncedTask, unsyncedTask));
+        when(taskSyncStateResolver.resolve(syncedTask))
+                .thenReturn(snapshot(syncedTask, TaskSyncState.SYNCED));
+        when(taskSyncStateResolver.resolve(unsyncedTask))
+                .thenReturn(snapshot(unsyncedTask, TaskSyncState.SYNC_DISABLED));
+        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(1), eq(SummaryBucket.SYNCED)))
                 .thenReturn(WeeklySummaryResult.of(
-                        "이번 주에는 API 설계를 마무리하고 문서를 정리하는 것이 핵심입니다.",
+                        "이번 주에는 캘린더에 반영된 API 설계 일정을 중심으로 진행합니다.",
                         List.of("API 설계 마무리"),
-                        List.of("문서 정리가 지연되면 일정 공유가 늦어질 수 있습니다."),
+                        List.of("API 설계 일정이 밀리면 후속 일정이 지연될 수 있습니다."),
                         List.of("API 설계 검토를 완료하세요."),
+                        "gemini-2.5-flash"
+                ));
+        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(1), eq(SummaryBucket.UNSYNCED)))
+                .thenReturn(WeeklySummaryResult.of(
+                        "이번 주에는 아직 캘린더에 반영되지 않은 문서 정리 Task가 남아 있습니다.",
+                        List.of("문서 정리 일정 확정 필요"),
+                        List.of("문서 정리가 누락되면 공유 일정이 불명확해질 수 있습니다."),
+                        List.of("문서 정리 일정을 캘린더에 반영하세요."),
                         "gemini-2.5-flash"
                 ));
 
         WeeklySummaryResponse response = service.generateWeeklySummary(1L);
 
-        ArgumentCaptor<List<Task>> taskCaptor = ArgumentCaptor.forClass(List.class);
-        verify(weeklySummaryGenerator).generate(eq(project), taskCaptor.capture(), any(), any(), eq(2));
+        verify(weeklySummaryGenerator).generate(
+                eq(project),
+                argThat(tasks -> tasks.size() == 1 && "API 설계".equals(tasks.get(0).getTask().getTitle())),
+                any(),
+                any(),
+                eq(1),
+                eq(SummaryBucket.SYNCED)
+        );
+        verify(weeklySummaryGenerator).generate(
+                eq(project),
+                argThat(tasks -> tasks.size() == 1 && "문서 정리".equals(tasks.get(0).getTask().getTitle())),
+                any(),
+                any(),
+                eq(1),
+                eq(SummaryBucket.UNSYNCED)
+        );
 
-        assertEquals(2, taskCaptor.getValue().size());
-        assertEquals("이번 주에는 API 설계를 마무리하고 문서를 정리하는 것이 핵심입니다.", response.getSummary());
         assertEquals(2, response.getTotalTaskCount());
-        assertEquals(2, response.getIncludedTaskCount());
-        assertEquals("gemini-2.5-flash", response.getModel());
+        assertEquals(1, response.getSyncedTaskCount());
+        assertEquals(1, response.getUnsyncedTaskCount());
+        assertEquals("이번 주에는 캘린더에 반영된 API 설계 일정을 중심으로 진행합니다.", response.getSynced().getSummary());
+        assertEquals("이번 주에는 아직 캘린더에 반영되지 않은 문서 정리 Task가 남아 있습니다.", response.getUnsynced().getSummary());
     }
 
-    private Task task(String title, TaskStatus status, LocalDateTime dueAt) {
-        Task task = Task.createTask(project, title, "설명", null, null, dueAt, false);
+    @Test
+    @DisplayName("generateWeeklySummary_이벤트아이디없으면_미동기화로분류")
+    void generateWeeklySummary_withoutEventId_goesToUnsynced() {
+        Task pendingSyncTask = task("캘린더 대기", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), true, null);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(pendingSyncTask));
+        when(taskSyncStateResolver.resolve(pendingSyncTask))
+                .thenReturn(snapshot(pendingSyncTask, TaskSyncState.PENDING_SYNC));
+        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(1), eq(SummaryBucket.UNSYNCED)))
+                .thenReturn(WeeklySummaryResult.of(
+                        "캘린더 반영 대기 중인 Task가 있습니다.",
+                        List.of(),
+                        List.of("일정 누락 가능성이 있습니다."),
+                        List.of("캘린더 동기화 상태를 확인하세요."),
+                        "gemini-2.5-flash"
+                ));
+
+        WeeklySummaryResponse response = service.generateWeeklySummary(1L);
+
+        verify(weeklySummaryGenerator, never()).generate(eq(project), any(), any(), any(), anyInt(), eq(SummaryBucket.SYNCED));
+        verify(weeklySummaryGenerator).generate(eq(project), any(), any(), any(), eq(1), eq(SummaryBucket.UNSYNCED));
+        assertEquals(0, response.getSyncedTaskCount());
+        assertEquals(1, response.getUnsyncedTaskCount());
+    }
+
+    private Task task(String title, TaskStatus status, LocalDateTime dueAt, boolean calendarSyncEnabled, String eventId) {
+        Task task = Task.createTask(project, title, "설명", null, null, dueAt, calendarSyncEnabled);
         if (status != TaskStatus.REQUESTED) {
             task.changeStatus(status);
         }
+        if (eventId != null) {
+            task.setCalendarEventId(eventId);
+        }
         return task;
+    }
+
+    private SummaryTaskSnapshot snapshot(Task task, TaskSyncState syncState) {
+        return SummaryTaskSnapshot.of(task, syncState, null, null, null);
     }
 }

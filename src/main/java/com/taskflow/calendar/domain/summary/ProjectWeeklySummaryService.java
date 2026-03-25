@@ -4,6 +4,7 @@ import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
@@ -25,11 +26,18 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ProjectWeeklySummaryService {
 
-    private static final int MAX_TASKS_FOR_SUMMARY = 30;
+    private static final int MAX_TASKS_PER_SECTION = 15;
+    private static final List<String> HIGH_PRIORITY_DESCRIPTION_KEYWORDS = List.of(
+            "긴급", "urgent", "asap", "즉시", "오늘", "차단", "blocked", "장애", "incident", "배포", "release"
+    );
+    private static final List<String> RISK_DESCRIPTION_KEYWORDS = List.of(
+            "리스크", "risk", "실패", "failure", "누락", "지연", "retry", "의존", "dependency"
+    );
 
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final WeeklySummaryGenerator weeklySummaryGenerator;
+    private final TaskSyncStateResolver taskSyncStateResolver;
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId) {
         Project project = projectRepository.findById(projectId)
@@ -40,30 +48,30 @@ public class ProjectWeeklySummaryService {
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate weekEnd = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
         LocalDateTime generatedAt = LocalDateTime.now();
-
-        if (allTasks.isEmpty()) {
-            return WeeklySummaryResponse.of(
-                    project,
-                    weekStart,
-                    weekEnd,
-                    generatedAt,
-                    0,
-                    0,
-                    WeeklySummaryResult.empty()
-            );
-        }
-
-        List<Task> includedTasks = allTasks.stream()
+        List<SummaryTaskSnapshot> prioritizedTasks = allTasks.stream()
+                .map(taskSyncStateResolver::resolve)
                 .sorted(taskPriorityComparator(today))
-                .limit(MAX_TASKS_FOR_SUMMARY)
+                .collect(Collectors.toList());
+        List<SummaryTaskSnapshot> syncedTasks = prioritizedTasks.stream()
+                .filter(snapshot -> snapshot.getSyncState().isSynced())
+                .collect(Collectors.toList());
+        List<SummaryTaskSnapshot> unsyncedTasks = prioritizedTasks.stream()
+                .filter(snapshot -> !snapshot.getSyncState().isSynced())
                 .collect(Collectors.toList());
 
-        WeeklySummaryResult result = weeklySummaryGenerator.generate(
+        WeeklySummarySectionResponse synced = buildSection(
                 project,
-                includedTasks,
+                syncedTasks,
                 weekStart,
                 weekEnd,
-                allTasks.size()
+                SummaryBucket.SYNCED
+        );
+        WeeklySummarySectionResponse unsynced = buildSection(
+                project,
+                unsyncedTasks,
+                weekStart,
+                weekEnd,
+                SummaryBucket.UNSYNCED
         );
 
         return WeeklySummaryResponse.of(
@@ -72,17 +80,48 @@ public class ProjectWeeklySummaryService {
                 weekEnd,
                 generatedAt,
                 allTasks.size(),
-                includedTasks.size(),
-                result
+                syncedTasks.size(),
+                unsyncedTasks.size(),
+                synced,
+                unsynced
         );
     }
 
-    private Comparator<Task> taskPriorityComparator(LocalDate today) {
+    private WeeklySummarySectionResponse buildSection(Project project,
+                                                      List<SummaryTaskSnapshot> tasks,
+                                                      LocalDate weekStart,
+                                                      LocalDate weekEnd,
+                                                      SummaryBucket bucket) {
+        if (tasks.isEmpty()) {
+            return WeeklySummarySectionResponse.of(
+                    0,
+                    0,
+                    WeeklySummaryResult.empty(bucket.getEmptySummary(), bucket.getEmptyNextActions())
+            );
+        }
+
+        List<SummaryTaskSnapshot> includedTasks = tasks.stream()
+                .limit(MAX_TASKS_PER_SECTION)
+                .collect(Collectors.toList());
+
+        WeeklySummaryResult result = weeklySummaryGenerator.generate(
+                project,
+                includedTasks,
+                weekStart,
+                weekEnd,
+                tasks.size(),
+                bucket
+        );
+
+        return WeeklySummarySectionResponse.of(tasks.size(), includedTasks.size(), result);
+    }
+
+    private Comparator<SummaryTaskSnapshot> taskPriorityComparator(LocalDate today) {
         return Comparator
-                .comparingInt((Task task) -> taskPriority(task, today))
+                .comparingInt((SummaryTaskSnapshot snapshot) -> taskPriority(snapshot.getTask(), today))
                 .reversed()
-                .thenComparing(Task::getDueAt, Comparator.nullsLast(Comparator.naturalOrder()))
-                .thenComparing(Task::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()));
+                .thenComparing(snapshot -> snapshot.getTask().getDueAt(), Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(snapshot -> snapshot.getTask().getCreatedAt(), Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     private int taskPriority(Task task, LocalDate today) {
@@ -118,6 +157,31 @@ public class ProjectWeeklySummaryService {
             score += 5;
         }
 
+        score += descriptionPriority(task.getDescription());
+
         return score;
+    }
+
+    private int descriptionPriority(String description) {
+        if (description == null || description.isBlank()) {
+            return 0;
+        }
+
+        String normalized = description.toLowerCase();
+        int score = 0;
+
+        for (String keyword : HIGH_PRIORITY_DESCRIPTION_KEYWORDS) {
+            if (normalized.contains(keyword)) {
+                score += 8;
+            }
+        }
+
+        for (String keyword : RISK_DESCRIPTION_KEYWORDS) {
+            if (normalized.contains(keyword)) {
+                score += 5;
+            }
+        }
+
+        return Math.min(score, 30);
     }
 }

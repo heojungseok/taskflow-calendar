@@ -26,7 +26,7 @@ export const projectsApi = {
     const response = await apiClient.post<ApiResponse<ProjectWeeklySummary>>(
       `/projects/${projectId}/weekly-summary`,
       undefined,
-      { timeout: 30000 }
+      { timeout: 60000 }
     );
     return response.data.data;
   },

@@ -6,7 +6,7 @@ import { Plus, Calendar, Clock, Sparkles } from 'lucide-react';
 import { tasksApi } from '@/api/endpoints/tasks';
 import { projectsApi } from '@/api/endpoints/projects';
 import type { Task, TaskStatus, TaskCreateRequest } from '@/types/task';
-import type { ProjectWeeklySummary } from '@/types/project';
+import type { ProjectWeeklySummary, ProjectWeeklySummarySection } from '@/types/project';
 import { cx, clsx } from '@/styles/cx';
 
 // ── 상수 ──────────────────────────────────────────────────
@@ -180,6 +180,64 @@ function CreateModal({ onClose, onSubmit, isPending, isError }: CreateModalProps
   );
 }
 
+interface SummarySectionProps {
+  title: string;
+  description: string;
+  section: ProjectWeeklySummarySection;
+  accentClass: string;
+}
+
+function SummarySectionCard({ title, description, section, accentClass }: SummarySectionProps) {
+  return (
+    <div className="rounded-[12px] border border-[#252535] bg-[#101018] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className={clsx('text-[11px] font-medium uppercase tracking-[0.16em]', accentClass)}>{title}</p>
+          <p className={clsx(cx.text.meta, 'mt-2')}>{description}</p>
+        </div>
+        <span className="rounded-[999px] border border-[#252535] bg-[#14141d] px-2.5 py-1 text-[11px] text-[#9ea0b8]">
+          입력 {section.includedTaskCount} / 전체 {section.totalTaskCount}
+        </span>
+      </div>
+
+      <p className="mt-4 text-[13px] leading-6 text-[#e8e8ed]">{section.summary}</p>
+
+      {section.highlights.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8ea7ff]">핵심 포인트</p>
+          <ul className="space-y-2">
+            {section.highlights.map((item) => (
+              <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {section.risks.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#ff9f7a]">주의</p>
+          <ul className="space-y-2">
+            {section.risks.map((item) => (
+              <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {section.nextActions.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#7dd3a7]">고려 사항</p>
+          <ul className="space-y-2">
+            {section.nextActions.map((item) => (
+              <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── 메인 ──────────────────────────────────────────────────
 
 export default function TaskListPage() {
@@ -276,7 +334,7 @@ export default function TaskListPage() {
               <p className={cx.text.cardTitle}>이번 주 요약</p>
             </div>
             <p className={clsx(cx.text.meta, 'mt-2')}>
-              현재 프로젝트 Task를 기반으로 이번 주 핵심 업무를 정리합니다. 버튼을 누를 때마다 새로 생성됩니다.
+              현재 프로젝트 Task를 Google Calendar 반영 여부로 나눠 이번 주 흐름을 정리합니다. 버튼을 누를 때마다 새로 생성됩니다.
             </p>
           </div>
 
@@ -300,47 +358,28 @@ export default function TaskListPage() {
 
         {summary ? (
           <div className="mt-4 space-y-4">
-            <div className="rounded-[10px] border border-[#252535] bg-[#101018] p-4">
-              <p className="text-[13px] leading-6 text-[#e8e8ed]">{summary.summary}</p>
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#8a8aa6]">
-                <span>{summary.weekStart} ~ {summary.weekEnd}</span>
-                <span>입력 Task {summary.includedTaskCount} / 전체 {summary.totalTaskCount}</span>
-                <span>{new Date(summary.generatedAt).toLocaleString('ko-KR')}</span>
-              </div>
+            <div className="flex flex-wrap gap-2 text-[11px] text-[#8a8aa6]">
+              <span>{summary.weekStart} ~ {summary.weekEnd}</span>
+              <span>전체 {summary.totalTaskCount}</span>
+              <span>동기화 {summary.syncedTaskCount}</span>
+              <span>미동기화 {summary.unsyncedTaskCount}</span>
+              <span>{new Date(summary.generatedAt).toLocaleString('ko-KR')}</span>
             </div>
 
-            {summary.highlights.length > 0 && (
-              <div>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8ea7ff]">Highlights</p>
-                <ul className="space-y-2">
-                  {summary.highlights.map((item) => (
-                    <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {summary.risks.length > 0 && (
-              <div>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#ff9f7a]">Risks</p>
-                <ul className="space-y-2">
-                  {summary.risks.map((item) => (
-                    <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {summary.nextActions.length > 0 && (
-              <div>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#7dd3a7]">Next Actions</p>
-                <ul className="space-y-2">
-                  {summary.nextActions.map((item) => (
-                    <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <SummarySectionCard
+                title="동기화된 일정"
+                description="Google Calendar에 이미 반영된 Task 흐름입니다."
+                section={summary.synced}
+                accentClass="text-[#8ea7ff]"
+              />
+              <SummarySectionCard
+                title="미동기화 일정"
+                description="아직 Google Calendar에 반영되지 않았거나 반영 여부가 불확실한 일정 흐름입니다."
+                section={summary.unsynced}
+                accentClass="text-[#ffb482]"
+              />
+            </div>
           </div>
         ) : (
           <p className={clsx(cx.text.meta, 'mt-4')}>아직 생성된 요약이 없습니다.</p>

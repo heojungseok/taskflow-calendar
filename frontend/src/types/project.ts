@@ -15,6 +15,14 @@ export interface ProjectWeeklySummary {
   weekEnd: string;
   generatedAt: string;
   totalTaskCount: number;
+  syncedTaskCount: number;
+  unsyncedTaskCount: number;
+  synced: ProjectWeeklySummarySection;
+  unsynced: ProjectWeeklySummarySection;
+}
+
+export interface ProjectWeeklySummarySection {
+  totalTaskCount: number;
   includedTaskCount: number;
   summary: string;
   highlights: string[];
