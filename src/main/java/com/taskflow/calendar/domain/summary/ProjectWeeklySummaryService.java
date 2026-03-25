@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 public class ProjectWeeklySummaryService {
 
     private static final int MAX_TASKS_PER_SECTION = 15;
+    private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
     private static final List<String> HIGH_PRIORITY_DESCRIPTION_KEYWORDS = List.of(
             "긴급", "urgent", "asap", "즉시", "오늘", "차단", "blocked", "장애", "incident", "배포", "release"
     );
@@ -120,21 +121,13 @@ public class ProjectWeeklySummaryService {
         return Comparator
                 .comparingInt((SummaryTaskSnapshot snapshot) -> taskPriority(snapshot.getTask(), today))
                 .reversed()
-                .thenComparing(snapshot -> snapshot.getTask().getDueAt(), Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(snapshot -> effectiveEventEndAt(snapshot.getTask()), Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(snapshot -> snapshot.getTask().getCreatedAt(), Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     private int taskPriority(Task task, LocalDate today) {
         int score = 0;
-
-        if (task.getDueAt() != null) {
-            LocalDate dueDate = task.getDueAt().toLocalDate();
-            if (dueDate.isBefore(today) && task.getStatus() != TaskStatus.DONE) {
-                score += 100;
-            } else if (!dueDate.isAfter(today.plusDays(7))) {
-                score += 60;
-            }
-        }
+        score += schedulePriority(task, today);
 
         switch (task.getStatus()) {
             case IN_PROGRESS:
@@ -160,6 +153,57 @@ public class ProjectWeeklySummaryService {
         score += descriptionPriority(task.getDescription());
 
         return score;
+    }
+
+    private int schedulePriority(Task task, LocalDate today) {
+        int score = 0;
+        LocalDateTime deadlineAt = task.getDueAt();
+
+        if (deadlineAt != null) {
+            LocalDate deadlineDate = deadlineAt.toLocalDate();
+            if (deadlineDate.isBefore(today) && task.getStatus() != TaskStatus.DONE) {
+                score += 100;
+            } else if (!deadlineDate.isAfter(today.plusDays(7))) {
+                score += 35;
+            }
+        }
+
+        LocalDateTime eventStartAt = effectiveEventStartAt(task);
+        LocalDateTime eventEndAt = effectiveEventEndAt(task);
+
+        if (eventStartAt != null && eventEndAt != null) {
+            LocalDateTime windowStart = today.atStartOfDay();
+            LocalDateTime windowEndExclusive = today.plusDays(8).atStartOfDay();
+
+            if (overlaps(eventStartAt, eventEndAt, windowStart, windowEndExclusive)) {
+                score += 45;
+            } else if (!eventStartAt.isAfter(today.plusDays(14).atStartOfDay())) {
+                score += 20;
+            }
+        }
+
+        return score;
+    }
+
+    private LocalDateTime effectiveEventStartAt(Task task) {
+        if (task.getStartAt() != null) {
+            return task.getStartAt();
+        }
+        if (task.getDueAt() != null) {
+            return task.getDueAt().minusHours(DEFAULT_EVENT_DURATION_HOURS);
+        }
+        return null;
+    }
+
+    private LocalDateTime effectiveEventEndAt(Task task) {
+        return task.getDueAt();
+    }
+
+    private boolean overlaps(LocalDateTime startAt,
+                             LocalDateTime endAt,
+                             LocalDateTime windowStart,
+                             LocalDateTime windowEndExclusive) {
+        return startAt.isBefore(windowEndExclusive) && endAt.isAfter(windowStart);
     }
 
     private int descriptionPriority(String description) {

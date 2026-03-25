@@ -160,6 +160,51 @@ class ProjectWeeklySummaryServiceTest {
         assertEquals(1, response.getUnsyncedTaskCount());
     }
 
+    @Test
+    @DisplayName("generateWeeklySummary_startAt기반이벤트는_dueAt이멀어도우선반영")
+    void generateWeeklySummary_eventWindowPriority_withStartAt() {
+        Task rangedTask = Task.createTask(
+                project,
+                "이번주 착수-장기 일정",
+                "이번 주 착수하지만 마감은 다음 달 일정",
+                null,
+                LocalDateTime.now().plusDays(1),
+                LocalDateTime.now().plusDays(20),
+                false
+        );
+        Task noStartTask = Task.createTask(
+                project,
+                "마감만 먼 일정",
+                "이번 주 이벤트 신호가 없는 일정",
+                null,
+                null,
+                LocalDateTime.now().plusDays(20),
+                false
+        );
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(noStartTask, rangedTask));
+        when(taskSyncStateResolver.resolve(rangedTask))
+                .thenReturn(snapshot(rangedTask, TaskSyncState.SYNC_DISABLED));
+        when(taskSyncStateResolver.resolve(noStartTask))
+                .thenReturn(snapshot(noStartTask, TaskSyncState.SYNC_DISABLED));
+        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(2), eq(SummaryBucket.UNSYNCED)))
+                .thenReturn(WeeklySummaryResult.of("요약", List.of(), List.of(), List.of(), "gemini-2.5-flash"));
+
+        service.generateWeeklySummary(1L);
+
+        verify(weeklySummaryGenerator).generate(
+                eq(project),
+                argThat(tasks -> tasks.size() == 2
+                        && "이번주 착수-장기 일정".equals(tasks.get(0).getTask().getTitle())
+                        && "마감만 먼 일정".equals(tasks.get(1).getTask().getTitle())),
+                any(),
+                any(),
+                eq(2),
+                eq(SummaryBucket.UNSYNCED)
+        );
+    }
+
     private Task task(String title, TaskStatus status, LocalDateTime dueAt, boolean calendarSyncEnabled, String eventId) {
         Task task = Task.createTask(project, title, "설명", null, null, dueAt, calendarSyncEnabled);
         if (status != TaskStatus.REQUESTED) {

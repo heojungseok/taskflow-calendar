@@ -21,6 +21,7 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 @Slf4j
 public class CalendarOutboxService {
+    private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
 
     private final CalendarOutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
@@ -171,7 +172,7 @@ public class CalendarOutboxService {
         event.put("eventId", task.getCalendarEventId());
         event.put("title", formatTitle(task));
         event.put("description", task.getDescription());
-        event.put("startAt", task.getDueAt().minusHours(1).toString());
+        event.put("startAt", resolveEventStartAt(task).toString());
         event.put("endAt", task.getDueAt().toString());
         payload.put("event", event);
 
@@ -216,6 +217,13 @@ public class CalendarOutboxService {
             return "[DONE] " + task.getTitle();
         }
         return task.getTitle();
+    }
+
+    private LocalDateTime resolveEventStartAt(Task task) {
+        if (task.getStartAt() != null) {
+            return task.getStartAt();
+        }
+        return task.getDueAt().minusHours(DEFAULT_EVENT_DURATION_HOURS);
     }
 
     private LocalDateTime calculateNextRetry(int retryCount) {

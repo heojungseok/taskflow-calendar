@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TaskService {
+    private static final int DEFAULT_SYNC_EVENT_DURATION_HOURS = 1;
 
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
@@ -50,8 +51,14 @@ public class TaskService {
                     .orElseThrow(() -> new UserNotFoundException(request.getAssigneeUserId()));
         }
 
+        LocalDateTime normalizedStartAt = normalizeSyncStartAt(
+                request.getCalendarSyncEnabled(),
+                request.getStartAt(),
+                request.getDueAt()
+        );
+
         // 3. 일정 검증
-        validateSchedule(request.getStartAt(), request.getDueAt());
+        validateSchedule(normalizedStartAt, request.getDueAt());
 
         // 4. 캘린더 동기화 검증
         validateCalendarSync(request.getCalendarSyncEnabled(), request.getDueAt());
@@ -62,7 +69,7 @@ public class TaskService {
                 request.getTitle(),
                 request.getDescription(),
                 assignee,
-                request.getStartAt(),
+                normalizedStartAt,
                 request.getDueAt(),
                 request.getCalendarSyncEnabled()
         );
@@ -108,14 +115,16 @@ public class TaskService {
         }
 
         // 3. 일정 검증 (startAt 또는 dueAt 변경 시)
-        LocalDateTime newStartAt = request.getStartAt() != null ? request.getStartAt() : task.getStartAt();
+        LocalDateTime newStartAtRaw = request.getStartAt() != null ? request.getStartAt() : task.getStartAt();
         LocalDateTime newDueAt = request.getDueAt() != null ? request.getDueAt() : task.getDueAt();
-        validateSchedule(newStartAt, newDueAt);
 
         // 4. 캘린더 동기화 검증 (변경 시)
         Boolean newCalendarSyncEnabled = request.getCalendarSyncEnabled() != null
                 ? request.getCalendarSyncEnabled()
                 : task.getCalendarSyncEnabled();
+        LocalDateTime normalizedStartAt = normalizeSyncStartAt(newCalendarSyncEnabled, newStartAtRaw, newDueAt);
+        validateSchedule(normalizedStartAt, newDueAt);
+
         LocalDateTime finalDueAt = request.getDueAt() != null ? request.getDueAt() : task.getDueAt();
         validateCalendarSync(newCalendarSyncEnabled, finalDueAt);
 
@@ -124,7 +133,7 @@ public class TaskService {
                 request.getTitle(),
                 request.getDescription(),
                 assignee,
-                request.getStartAt(),
+                normalizedStartAt,
                 request.getDueAt(),
                 request.getCalendarSyncEnabled()
         );
@@ -298,6 +307,19 @@ public class TaskService {
         if (Boolean.TRUE.equals(calendarSyncEnabled) && dueAt == null) {
             throw new ValidationException(ErrorCode.CALENDAR_SYNC_REQUIRES_DUE_AT);
         }
+    }
+
+    private LocalDateTime normalizeSyncStartAt(Boolean calendarSyncEnabled, LocalDateTime startAt, LocalDateTime dueAt) {
+        if (!Boolean.TRUE.equals(calendarSyncEnabled)) {
+            return startAt;
+        }
+        if (startAt != null) {
+            return startAt;
+        }
+        if (dueAt == null) {
+            return null;
+        }
+        return dueAt.minusHours(DEFAULT_SYNC_EVENT_DURATION_HOURS);
     }
 
     private void recordHistory(Task task, TaskChangeType changeType, String beforeValue, String afterValue, Long changedByUserId) {

@@ -65,25 +65,35 @@ function Section({ title, children, defaultOpen = true }: { title: string; child
 
 // ── 수정 폼 ───────────────────────────────────────────────
 
-function EditForm({ initialTitle, initialDescription, initialDueAt, initialCalendarSync, onSubmit, onCancel, isPending, isError }: {
-  initialTitle: string; initialDescription: string | null; initialDueAt: string | null;
+function EditForm({ initialTitle, initialDescription, initialStartAt, initialDueAt, initialCalendarSync, onSubmit, onCancel, isPending, isError }: {
+  initialTitle: string; initialDescription: string | null; initialStartAt: string | null; initialDueAt: string | null;
   initialCalendarSync: boolean; onSubmit: (d: TaskUpdateRequest) => void;
   onCancel: () => void; isPending: boolean; isError: boolean;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [desc, setDesc] = useState(initialDescription ?? '');
+  const [startAt, setStartAt] = useState(toLocal(initialStartAt));
   const [dueAt, setDueAt] = useState(toLocal(initialDueAt));
   const [calSync, setCalSync] = useState(initialCalendarSync);
   const [titleErr, setTitleErr] = useState('');
+  const [startErr, setStartErr] = useState('');
   const [dueErr, setDueErr] = useState('');
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     let ok = true;
     if (!title.trim()) { setTitleErr('제목을 입력해주세요.'); ok = false; }
+    if (calSync && !startAt) { setStartErr('캘린더 동기화에는 시작일이 필요합니다.'); ok = false; }
     if (calSync && !dueAt) { setDueErr('캘린더 동기화에는 마감일이 필요합니다.'); ok = false; }
+    if (startAt && dueAt && startAt > dueAt) { setDueErr('시작일은 마감일보다 늦을 수 없습니다.'); ok = false; }
     if (!ok) return;
-    onSubmit({ title: title.trim(), description: desc.trim() || undefined, dueAt: dueAt ? `${dueAt}:00` : undefined, calendarSyncEnabled: calSync });
+    onSubmit({
+      title: title.trim(),
+      description: desc.trim() || undefined,
+      startAt: startAt ? `${startAt}:00` : undefined,
+      dueAt: dueAt ? `${dueAt}:00` : undefined,
+      calendarSyncEnabled: calSync,
+    });
   };
 
   return (
@@ -98,12 +108,17 @@ function EditForm({ initialTitle, initialDescription, initialDueAt, initialCalen
         <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} className={cx.textarea} />
       </div>
       <div>
+        <label className={cx.text.label}>시작일</label>
+        <input type="datetime-local" value={startAt} onChange={(e) => { setStartAt(e.target.value); setStartErr(''); }} className={clsx(cx.input, startErr && cx.inputError)} />
+        {startErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{startErr}</p>}
+      </div>
+      <div>
         <label className={cx.text.label}>마감일</label>
         <input type="datetime-local" value={dueAt} onChange={(e) => { setDueAt(e.target.value); setDueErr(''); }} className={clsx(cx.input, dueErr && cx.inputError)} />
         {dueErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{dueErr}</p>}
       </div>
       <div className="flex items-center gap-2">
-        <input type="checkbox" id="editSync" checked={calSync} onChange={(e) => { setCalSync(e.target.checked); setDueErr(''); }} className="w-3.5 h-3.5 rounded accent-[#3b5bff]" />
+        <input type="checkbox" id="editSync" checked={calSync} onChange={(e) => { setCalSync(e.target.checked); setStartErr(''); setDueErr(''); }} className="w-3.5 h-3.5 rounded accent-[#3b5bff]" />
         <label htmlFor="editSync" className={cx.text.body}>Google Calendar 동기화</label>
       </div>
       {isError && <div className={cx.errorBox}>수정에 실패했습니다.</div>}
@@ -184,6 +199,10 @@ export default function TaskDetailPage() {
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
+                <p className={clsx(cx.text.meta, 'mb-1 flex items-center gap-1')}><Clock size={10} /> 시작일</p>
+                <p className={cx.text.body}>{fmt(task.startAt)}</p>
+              </div>
+              <div>
                 <p className={clsx(cx.text.meta, 'mb-1 flex items-center gap-1')}><Clock size={10} /> 마감일</p>
                 <p className={cx.text.body}>{fmt(task.dueAt)}</p>
               </div>
@@ -209,6 +228,7 @@ export default function TaskDetailPage() {
         ) : (
           <EditForm
             initialTitle={task.title} initialDescription={task.description}
+            initialStartAt={task.startAt}
             initialDueAt={task.dueAt} initialCalendarSync={task.calendarSyncEnabled}
             onSubmit={(d) => updateMutation.mutate(d)} onCancel={() => setIsEditing(false)}
             isPending={updateMutation.isPending} isError={updateMutation.isError}

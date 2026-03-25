@@ -123,20 +123,25 @@ interface CreateModalProps {
 function CreateModal({ onClose, onSubmit, isPending, isError }: CreateModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [startAt, setStartAt] = useState('');
   const [dueAt, setDueAt] = useState('');
   const [calendarSync, setCalendarSync] = useState(false);
   const [titleErr, setTitleErr] = useState('');
+  const [startErr, setStartErr] = useState('');
   const [dueErr, setDueErr] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     let ok = true;
     if (!title.trim()) { setTitleErr('제목을 입력해주세요.'); ok = false; }
+    if (calendarSync && !startAt) { setStartErr('캘린더 동기화에는 시작일이 필요합니다.'); ok = false; }
     if (calendarSync && !dueAt) { setDueErr('캘린더 동기화에는 마감일이 필요합니다.'); ok = false; }
+    if (startAt && dueAt && startAt > dueAt) { setDueErr('시작일은 마감일보다 늦을 수 없습니다.'); ok = false; }
     if (!ok) return;
     onSubmit({
       title: title.trim(),
       description: description.trim() || undefined,
+      startAt: startAt ? `${startAt}:00` : undefined,
       dueAt: dueAt ? `${dueAt}:00` : undefined,
       calendarSyncEnabled: calendarSync || undefined,
     });
@@ -159,13 +164,19 @@ function CreateModal({ onClose, onSubmit, isPending, isError }: CreateModalProps
               placeholder="선택 사항" rows={2} className={cx.textarea} />
           </div>
           <div>
+            <label className={cx.text.label}>시작일</label>
+            <input type="datetime-local" value={startAt} onChange={(e) => { setStartAt(e.target.value); setStartErr(''); }}
+              className={clsx(cx.input, startErr && cx.inputError)} />
+            {startErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{startErr}</p>}
+          </div>
+          <div>
             <label className={cx.text.label}>마감일</label>
             <input type="datetime-local" value={dueAt} onChange={(e) => { setDueAt(e.target.value); setDueErr(''); }}
               className={clsx(cx.input, dueErr && cx.inputError)} />
             {dueErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{dueErr}</p>}
           </div>
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="calSync" checked={calendarSync} onChange={(e) => { setCalendarSync(e.target.checked); setDueErr(''); }}
+            <input type="checkbox" id="calSync" checked={calendarSync} onChange={(e) => { setCalendarSync(e.target.checked); setStartErr(''); setDueErr(''); }}
               className="w-3.5 h-3.5 rounded accent-[#3b5bff]" />
             <label htmlFor="calSync" className={cx.text.body}>Google Calendar 동기화</label>
           </div>

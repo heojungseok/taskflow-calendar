@@ -31,6 +31,7 @@ import java.util.Locale;
 @Component
 @RequiredArgsConstructor
 public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
+    private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
 
     private final GeminiProperties properties;
     private final ObjectMapper objectMapper;
@@ -161,10 +162,11 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     + "4. nextActions는 이번 주 바로 실행할 행동 0~3개를 적는다.\n"
                     + "5. 제목보다 description에 담긴 목적, 제약, 산출물, 위험 신호를 우선 반영한다.\n"
                     + "6. descriptionSignals(urgency/risk/dependency/deliverable)을 판단 근거로 반드시 활용한다.\n"
-                    + "7. 모든 문장은 반드시 이 그룹의 Task만 기준으로 작성한다.\n"
-                    + "8. " + bucket.getPromptFocus() + "\n"
-                    + "9. 제공된 Task 외 정보는 쓰지 않는다.\n"
-                    + "10. 이번 주에 뚜렷한 우선 업무가 없으면 그 사실을 명확히 적는다.\n\n"
+                    + "7. eventStartAt/eventEndAt로 이번 주 교집합을 우선 판단하고 deadlineAt은 마감 위험 판단에 활용한다.\n"
+                    + "8. 모든 문장은 반드시 이 그룹의 Task만 기준으로 작성한다.\n"
+                    + "9. " + bucket.getPromptFocus() + "\n"
+                    + "10. 제공된 Task 외 정보는 쓰지 않는다.\n"
+                    + "11. 이번 주에 뚜렷한 우선 업무가 없으면 그 사실을 명확히 적는다.\n\n"
                     + "Task 데이터(JSON):\n"
                     + taskPayload;
         } catch (IOException e) {
@@ -185,10 +187,11 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             item.put("assigneeName", task.getAssignee() != null ? task.getAssignee().getName() : null);
             item.put("startAt", task.getStartAt());
             item.put("dueAt", task.getDueAt());
+            item.put("deadlineAt", task.getDueAt());
             item.put("calendarSyncEnabled", task.getCalendarSyncEnabled());
             item.put("calendarEventId", task.getCalendarEventId());
-            item.put("calendarEventStartAt", calendarEventStartAt(task));
-            item.put("calendarEventEndAt", task.getDueAt());
+            item.put("eventStartAt", effectiveEventStartAt(task));
+            item.put("eventEndAt", effectiveEventEndAt(task));
             item.put("isCalendarSynced", isCalendarSynced(task));
             item.put("syncState", snapshot.getSyncState().name());
             item.put("syncStateDescription", snapshot.getSyncState().getDescription());
@@ -197,18 +200,26 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             item.put("lastOutboxError", snapshot.getLatestOutboxError());
             item.put("descriptionSignals", descriptionSignals(task.getDescription()));
             item.put("isOverdue", isOverdue(task));
-            item.put("isDueThisWeek", isDueThisWeek(task, weekStart, weekEnd));
+            item.put("isDeadlineThisWeek", isDeadlineThisWeek(task, weekStart, weekEnd));
+            item.put("isEventOverlappingThisWeek", isEventOverlappingThisWeek(task, weekStart, weekEnd));
             payload.add(item);
         }
 
         return payload;
     }
 
-    private Object calendarEventStartAt(Task task) {
-        if (task.getDueAt() == null) {
-            return null;
+    private Object effectiveEventStartAt(Task task) {
+        if (task.getStartAt() != null) {
+            return task.getStartAt();
         }
-        return task.getDueAt().minusHours(1);
+        if (task.getDueAt() != null) {
+            return task.getDueAt().minusHours(DEFAULT_EVENT_DURATION_HOURS);
+        }
+        return null;
+    }
+
+    private Object effectiveEventEndAt(Task task) {
+        return task.getDueAt();
     }
 
     private boolean isCalendarSynced(Task task) {
@@ -269,13 +280,29 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 && task.getStatus() != TaskStatus.DONE;
     }
 
-    private boolean isDueThisWeek(Task task, LocalDate weekStart, LocalDate weekEnd) {
+    private boolean isDeadlineThisWeek(Task task, LocalDate weekStart, LocalDate weekEnd) {
         if (task.getDueAt() == null) {
             return false;
         }
 
         LocalDate dueDate = task.getDueAt().toLocalDate();
         return !dueDate.isBefore(weekStart) && !dueDate.isAfter(weekEnd);
+    }
+
+    private boolean isEventOverlappingThisWeek(Task task, LocalDate weekStart, LocalDate weekEnd) {
+        if (task.getDueAt() == null) {
+            return false;
+        }
+
+        if (task.getStartAt() != null && task.getStartAt().isAfter(task.getDueAt())) {
+            return false;
+        }
+
+        LocalDate eventStartDate = task.getStartAt() != null
+                ? task.getStartAt().toLocalDate()
+                : task.getDueAt().minusHours(DEFAULT_EVENT_DURATION_HOURS).toLocalDate();
+        LocalDate eventEndDate = task.getDueAt().toLocalDate();
+        return !eventStartDate.isAfter(weekEnd) && !eventEndDate.isBefore(weekStart);
     }
 
     private Map<TaskStatus, Long> statusCounts(List<SummaryTaskSnapshot> tasks) {

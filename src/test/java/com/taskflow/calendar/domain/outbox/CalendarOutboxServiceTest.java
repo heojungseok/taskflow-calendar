@@ -266,6 +266,57 @@ class CalendarOutboxServiceTest {
         }
 
         @Test
+        @DisplayName("startAt이 있으면 event.startAt에 그대로 반영")
+        void startAt_존재시_eventStartAt_우선사용() throws Exception {
+            // given
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.save(any())).thenReturn(null);
+
+            LocalDateTime startAt = LocalDateTime.now().plusDays(3).withHour(9).withMinute(0).withSecond(0).withNano(0);
+            LocalDateTime dueAt = startAt.plusHours(2);
+            Task rangedTask = createTask(3L, "Ranged Task", TaskStatus.REQUESTED, startAt, dueAt, true, "event-789");
+
+            // when
+            outboxService.enqueueUpsert(rangedTask);
+
+            // then
+            verify(outboxRepository).save(argThat(outbox -> {
+                try {
+                    Map<String, Object> payload = objectMapper.readValue(outbox.getPayload(), Map.class);
+                    Map<String, Object> event = (Map<String, Object>) payload.get("event");
+                    return startAt.toString().equals(event.get("startAt"));
+                } catch (Exception e) {
+                    return false;
+                }
+            }));
+        }
+
+        @Test
+        @DisplayName("startAt이 없으면 dueAt-1시간을 event.startAt으로 사용")
+        void startAt_없으면_dueAt기반_fallback() throws Exception {
+            // given
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.save(any())).thenReturn(null);
+
+            LocalDateTime dueAt = LocalDateTime.now().plusDays(4).withHour(18).withMinute(0).withSecond(0).withNano(0);
+            Task noStartTask = createTask(4L, "Fallback Task", TaskStatus.REQUESTED, null, dueAt, true, "event-999");
+
+            // when
+            outboxService.enqueueUpsert(noStartTask);
+
+            // then
+            verify(outboxRepository).save(argThat(outbox -> {
+                try {
+                    Map<String, Object> payload = objectMapper.readValue(outbox.getPayload(), Map.class);
+                    Map<String, Object> event = (Map<String, Object>) payload.get("event");
+                    return dueAt.minusHours(1).toString().equals(event.get("startAt"));
+                } catch (Exception e) {
+                    return false;
+                }
+            }));
+        }
+
+        @Test
         @DisplayName("extractUserIdFromPayload: userId 추출 성공")
         void userId_추출_성공() throws Exception {
             // given
@@ -299,11 +350,16 @@ class CalendarOutboxServiceTest {
     // =========================================================
     private Task createTask(Long id, String title, TaskStatus status,
                            LocalDateTime dueAt, Boolean syncEnabled, String eventId) throws Exception {
+        return createTask(id, title, status, dueAt.minusHours(1), dueAt, syncEnabled, eventId);
+    }
+
+    private Task createTask(Long id, String title, TaskStatus status,
+                           LocalDateTime startAt, LocalDateTime dueAt, Boolean syncEnabled, String eventId) throws Exception {
         Project project = mock(Project.class);
         User user = mock(User.class);
 
         Task task = Task.createTask(project, title, "Description",
-                user, dueAt.minusHours(1), dueAt, syncEnabled);
+                user, startAt, dueAt, syncEnabled);
 
         // Reflection으로 private 필드 설정
         setField(task, "id", id);
