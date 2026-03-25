@@ -205,6 +205,38 @@ class ProjectWeeklySummaryServiceTest {
         );
     }
 
+    @Test
+    @DisplayName("generateWeeklySummary_최근수정설명Task는_우선순위정렬에가산된다")
+    void generateWeeklySummary_recentUpdatePriorityBoost() throws Exception {
+        Task recentDescribed = task("최근 수정 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(9), true, "evt-a");
+        Task staleDescribed = task("기존 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(9), true, "evt-b");
+
+        setField(recentDescribed, "description", "리스크와 의존성이 있는 최신 수정 설명");
+        setField(staleDescribed, "description", "리스크와 의존성이 있는 기존 설명");
+        setField(recentDescribed, "updatedAt", LocalDateTime.now().minusHours(1));
+        setField(staleDescribed, "updatedAt", LocalDateTime.now().minusHours(48));
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(staleDescribed, recentDescribed));
+        when(taskSyncStateResolver.resolve(recentDescribed)).thenReturn(snapshot(recentDescribed, TaskSyncState.SYNCED));
+        when(taskSyncStateResolver.resolve(staleDescribed)).thenReturn(snapshot(staleDescribed, TaskSyncState.SYNCED));
+        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(2), eq(SummaryBucket.SYNCED)))
+                .thenReturn(WeeklySummaryResult.of("요약", List.of(), List.of(), List.of(), "gemini-2.5-flash"));
+
+        service.generateWeeklySummary(1L);
+
+        verify(weeklySummaryGenerator).generate(
+                eq(project),
+                argThat(tasks -> tasks.size() == 2
+                        && "최근 수정 일정".equals(tasks.get(0).getTask().getTitle())
+                        && "기존 일정".equals(tasks.get(1).getTask().getTitle())),
+                any(),
+                any(),
+                eq(2),
+                eq(SummaryBucket.SYNCED)
+        );
+    }
+
     private Task task(String title, TaskStatus status, LocalDateTime dueAt, boolean calendarSyncEnabled, String eventId) {
         Task task = Task.createTask(project, title, "설명", null, null, dueAt, calendarSyncEnabled);
         if (status != TaskStatus.REQUESTED) {
@@ -218,5 +250,11 @@ class ProjectWeeklySummaryServiceTest {
 
     private SummaryTaskSnapshot snapshot(Task task, TaskSyncState syncState) {
         return SummaryTaskSnapshot.of(task, syncState, null, null, null);
+    }
+
+    private void setField(Object target, String fieldName, Object value) throws Exception {
+        var field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }

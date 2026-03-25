@@ -28,6 +28,7 @@ public class ProjectWeeklySummaryService {
 
     private static final int MAX_TASKS_PER_SECTION = 15;
     private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
+    private static final int RECENT_UPDATE_HOURS = 24;
     private static final List<String> HIGH_PRIORITY_DESCRIPTION_KEYWORDS = List.of(
             "긴급", "urgent", "asap", "즉시", "오늘", "차단", "blocked", "장애", "incident", "배포", "release"
     );
@@ -151,6 +152,7 @@ public class ProjectWeeklySummaryService {
         }
 
         score += descriptionPriority(task.getDescription());
+        score += recentlyUpdatedPriority(task);
 
         return score;
     }
@@ -228,4 +230,20 @@ public class ProjectWeeklySummaryService {
 
         return Math.min(score, 30);
     }
+
+    private int recentlyUpdatedPriority(Task task) {
+        if (task.getUpdatedAt() == null) {
+            return 0;
+        }
+        if (task.getDescription() == null || task.getDescription().isBlank()) {
+            return 0;
+        }
+
+        LocalDateTime threshold = LocalDateTime.now().minusHours(RECENT_UPDATE_HOURS);
+        if (task.getUpdatedAt().isAfter(threshold)) {
+            return 25;
+        }
+        return 0;
+    }
+
 }

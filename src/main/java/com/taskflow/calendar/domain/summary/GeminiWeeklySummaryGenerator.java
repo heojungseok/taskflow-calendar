@@ -32,6 +32,7 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
+    private static final int RECENT_UPDATE_HOURS = 24;
 
     private final GeminiProperties properties;
     private final ObjectMapper objectMapper;
@@ -142,6 +143,10 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     .writeValueAsString(taskPayload(tasks, weekStart, weekEnd));
 
             Map<TaskStatus, Long> statusCounts = statusCounts(tasks);
+            long withDescriptionCount = tasks.stream()
+                    .filter(snapshot -> hasDescription(snapshot.getTask().getDescription()))
+                    .count();
+            long withoutDescriptionCount = tasks.size() - withDescriptionCount;
 
             return "프로젝트명: " + project.getName() + "\n"
                     + "요약 그룹: " + bucket.getDisplayName() + "\n"
@@ -154,7 +159,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     + "상태 집계: REQUESTED=" + statusCounts.get(TaskStatus.REQUESTED)
                     + ", IN_PROGRESS=" + statusCounts.get(TaskStatus.IN_PROGRESS)
                     + ", BLOCKED=" + statusCounts.get(TaskStatus.BLOCKED)
-                    + ", DONE=" + statusCounts.get(TaskStatus.DONE) + "\n\n"
+                    + ", DONE=" + statusCounts.get(TaskStatus.DONE) + "\n"
+                    + "설명 집계: 설명 있음=" + withDescriptionCount
+                    + ", 설명 없음=" + withoutDescriptionCount + "\n\n"
                     + "요청 사항:\n"
                     + "1. summary는 2~4문장으로 이번 주 핵심 흐름을 정리한다.\n"
                     + "2. highlights는 중요한 업무 0~3개를 짧게 정리한다.\n"
@@ -163,10 +170,14 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     + "5. 제목보다 description에 담긴 목적, 제약, 산출물, 위험 신호를 우선 반영한다.\n"
                     + "6. descriptionSignals(urgency/risk/dependency/deliverable)을 판단 근거로 반드시 활용한다.\n"
                     + "7. eventStartAt/eventEndAt로 이번 주 교집합을 우선 판단하고 deadlineAt은 마감 위험 판단에 활용한다.\n"
-                    + "8. 모든 문장은 반드시 이 그룹의 Task만 기준으로 작성한다.\n"
-                    + "9. " + bucket.getPromptFocus() + "\n"
-                    + "10. 제공된 Task 외 정보는 쓰지 않는다.\n"
-                    + "11. 이번 주에 뚜렷한 우선 업무가 없으면 그 사실을 명확히 적는다.\n\n"
+                    + "8. descriptionProvided=true 인 Task는 description 내용이 실제 문장에 반영되도록 작성한다.\n"
+                    + "9. descriptionProvided=false 인 Task는 title/status/eventStartAt/eventEndAt/deadlineAt만 근거로 요약한다.\n"
+                    + "10. priorityReferenceScore.total이 높은 Task를 우선순위 판단의 기준으로 참조한다.\n"
+                    + "11. recentlyUpdated=true 이고 descriptionProvided=true 인 Task가 있으면 최소 1회는 문장에 반영한다.\n"
+                    + "12. 모든 문장은 반드시 이 그룹의 Task만 기준으로 작성한다.\n"
+                    + "13. " + bucket.getPromptFocus() + "\n"
+                    + "14. 제공된 Task 외 정보는 쓰지 않는다.\n"
+                    + "15. 이번 주에 뚜렷한 우선 업무가 없으면 그 사실을 명확히 적는다.\n\n"
                     + "Task 데이터(JSON):\n"
                     + taskPayload;
         } catch (IOException e) {
@@ -183,7 +194,11 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             item.put("id", task.getId());
             item.put("title", task.getTitle());
             item.put("description", task.getDescription());
+            item.put("descriptionProvided", hasDescription(task.getDescription()));
+            item.put("summaryBasis", summaryBasis(task));
             item.put("status", task.getStatus().name());
+            item.put("updatedAt", task.getUpdatedAt());
+            item.put("recentlyUpdated", isRecentlyUpdated(task));
             item.put("assigneeName", task.getAssignee() != null ? task.getAssignee().getName() : null);
             item.put("startAt", task.getStartAt());
             item.put("dueAt", task.getDueAt());
@@ -199,6 +214,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             item.put("lastOutboxOpType", enumName(snapshot.getLatestOutboxOpType()));
             item.put("lastOutboxError", snapshot.getLatestOutboxError());
             item.put("descriptionSignals", descriptionSignals(task.getDescription()));
+            item.put("priorityReferenceScore", priorityReferenceScore(task, weekStart, weekEnd));
             item.put("isOverdue", isOverdue(task));
             item.put("isDeadlineThisWeek", isDeadlineThisWeek(task, weekStart, weekEnd));
             item.put("isEventOverlappingThisWeek", isEventOverlappingThisWeek(task, weekStart, weekEnd));
@@ -206,6 +222,83 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         }
 
         return payload;
+    }
+
+    private String summaryBasis(Task task) {
+        return hasDescription(task.getDescription()) ? "DESCRIPTION" : "TITLE_STATUS_FALLBACK";
+    }
+
+    private boolean hasDescription(String description) {
+        return description != null && !description.isBlank();
+    }
+
+    private boolean isRecentlyUpdated(Task task) {
+        if (task.getUpdatedAt() == null) {
+            return false;
+        }
+        return task.getUpdatedAt().isAfter(java.time.LocalDateTime.now().minusHours(RECENT_UPDATE_HOURS));
+    }
+
+    private Map<String, Object> priorityReferenceScore(Task task, LocalDate weekStart, LocalDate weekEnd) {
+        int descriptionScore = descriptionSignalScore(task.getDescription());
+        int statusScore = statusPriorityScore(task.getStatus());
+        int scheduleScore = schedulePriorityScore(task, weekStart, weekEnd);
+        int syncScore = Boolean.TRUE.equals(task.getCalendarSyncEnabled()) ? 5 : 0;
+
+        Map<String, Object> score = new LinkedHashMap<>();
+        score.put("total", descriptionScore + statusScore + scheduleScore + syncScore);
+        score.put("description", descriptionScore);
+        score.put("status", statusScore);
+        score.put("schedule", scheduleScore);
+        score.put("sync", syncScore);
+        return score;
+    }
+
+    private int descriptionSignalScore(String description) {
+        if (!hasDescription(description)) {
+            return 0;
+        }
+        String normalized = description.toLowerCase(Locale.ROOT);
+        int score = 0;
+        score += findKeywordHits(normalized, URGENCY_KEYWORDS).size() * 8;
+        score += findKeywordHits(normalized, RISK_KEYWORDS).size() * 5;
+        score += findKeywordHits(normalized, DEPENDENCY_KEYWORDS).size() * 4;
+        score += findKeywordHits(normalized, DELIVERABLE_KEYWORDS).size() * 3;
+        return Math.min(score, 30);
+    }
+
+    private int statusPriorityScore(TaskStatus status) {
+        if (status == null) {
+            return 0;
+        }
+        switch (status) {
+            case IN_PROGRESS:
+                return 30;
+            case REQUESTED:
+                return 20;
+            case BLOCKED:
+                return 10;
+            case DONE:
+                return -20;
+            default:
+                return 0;
+        }
+    }
+
+    private int schedulePriorityScore(Task task, LocalDate weekStart, LocalDate weekEnd) {
+        int score = 0;
+
+        if (isEventOverlappingThisWeek(task, weekStart, weekEnd)) {
+            score += 45;
+        }
+        if (isDeadlineThisWeek(task, weekStart, weekEnd)) {
+            score += 35;
+        }
+        if (isOverdue(task)) {
+            score += 20;
+        }
+
+        return score;
     }
 
     private Object effectiveEventStartAt(Task task) {

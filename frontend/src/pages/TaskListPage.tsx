@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, Clock, Sparkles } from 'lucide-react';
 import { tasksApi } from '@/api/endpoints/tasks';
 import { projectsApi } from '@/api/endpoints/projects';
-import type { Task, TaskStatus, TaskCreateRequest } from '@/types/task';
+import type { Task, TaskStatus, TaskCreateRequest, TaskUpdateRequest, TaskHistory, OutboxStatus } from '@/types/task';
 import type { ProjectWeeklySummary, ProjectWeeklySummarySection } from '@/types/project';
 import { cx, clsx } from '@/styles/cx';
 
@@ -32,6 +32,33 @@ const STATUS_FILTERS = [
   { label: '완료',     value: 'DONE' },
   { label: '차단됨',   value: 'BLOCKED' },
 ];
+
+const CHANGE_TYPE_LABEL: Record<string, string> = {
+  STATUS: '상태 변경',
+  ASSIGNEE: '담당자 변경',
+  SCHEDULE: '일정 변경',
+  CONTENT: '내용 변경',
+};
+
+const OUTBOX_STATUS_LABEL: Record<OutboxStatus, string> = {
+  PENDING: '대기 중',
+  PROCESSING: '처리 중',
+  SUCCESS: '성공',
+  FAILED: '실패',
+};
+
+const OUTBOX_BADGE: Record<OutboxStatus, string> = {
+  PENDING: 'bg-[#1a1a20] text-[#9090a8] border border-[#252530]',
+  PROCESSING: 'bg-[#1a2040] text-[#6b8cff] border border-[#2a3558]',
+  SUCCESS: 'bg-[#0f2820] text-[#3dd68c] border border-[#1a4030]',
+  FAILED: 'bg-[#2a1018] text-[#ff6b6b] border border-[#3d1520]',
+};
+
+const fmt = (iso?: string | null) => iso
+  ? new Date(iso).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  : '—';
+
+const toLocal = (iso?: string | null) => iso?.slice(0, 16) ?? '';
 
 // ── Task 카드 ─────────────────────────────────────────────
 
@@ -193,22 +220,15 @@ function CreateModal({ onClose, onSubmit, isPending, isError }: CreateModalProps
 
 interface SummarySectionProps {
   title: string;
-  description: string;
   section: ProjectWeeklySummarySection;
   accentClass: string;
 }
 
-function SummarySectionCard({ title, description, section, accentClass }: SummarySectionProps) {
+function SummarySectionCard({ title, section, accentClass }: SummarySectionProps) {
   return (
     <div className="rounded-[12px] border border-[#252535] bg-[#101018] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className={clsx('text-[11px] font-medium uppercase tracking-[0.16em]', accentClass)}>{title}</p>
-          <p className={clsx(cx.text.meta, 'mt-2')}>{description}</p>
-        </div>
-        <span className="rounded-[999px] border border-[#252535] bg-[#14141d] px-2.5 py-1 text-[11px] text-[#9ea0b8]">
-          입력 {section.includedTaskCount} / 전체 {section.totalTaskCount}
-        </span>
+      <div>
+        <p className={clsx('text-[11px] font-medium uppercase tracking-[0.16em]', accentClass)}>{title}</p>
       </div>
 
       <p className="mt-4 text-[13px] leading-6 text-[#e8e8ed]">{section.summary}</p>
@@ -249,6 +269,290 @@ function SummarySectionCard({ title, description, section, accentClass }: Summar
   );
 }
 
+interface TaskDetailModalProps {
+  taskId: number;
+  onClose: () => void;
+  onTaskUpdated: () => void;
+  onStatusChange: (id: number, to: TaskStatus) => void;
+  onDelete: (id: number) => void;
+  changingId: number | null;
+  deletingId: number | null;
+}
+
+function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDelete, changingId, deletingId }: TaskDetailModalProps) {
+  const queryClient = useQueryClient();
+  const { data: task, isLoading, isError } = useQuery({
+    queryKey: ['task', taskId],
+    queryFn: () => tasksApi.getTask(taskId),
+    enabled: !!taskId,
+  });
+  const { data: syncStatus } = useQuery({
+    queryKey: ['task-sync', taskId],
+    queryFn: () => tasksApi.getSyncStatus(taskId),
+    enabled: !!taskId,
+  });
+  const { data: history } = useQuery({
+    queryKey: ['task-history', taskId],
+    queryFn: () => tasksApi.getHistory(taskId),
+    enabled: !!taskId,
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editStartAt, setEditStartAt] = useState('');
+  const [editDueAt, setEditDueAt] = useState('');
+  const [editTitleError, setEditTitleError] = useState('');
+  const [editStartError, setEditStartError] = useState('');
+  const [editDueError, setEditDueError] = useState('');
+
+  useEffect(() => {
+    if (!task) return;
+    setEditTitle(task.title);
+    setEditDescription(task.description ?? '');
+    setEditStartAt(toLocal(task.startAt));
+    setEditDueAt(toLocal(task.dueAt));
+    setEditTitleError('');
+    setEditStartError('');
+    setEditDueError('');
+    setIsEditing(false);
+  }, [task?.id, task?.title, task?.description, task?.startAt, task?.dueAt]);
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: TaskUpdateRequest) => tasksApi.updateTask(taskId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task-history', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task-sync', taskId] });
+      onTaskUpdated();
+      setIsEditing(false);
+    },
+  });
+
+  const next = task ? ALLOWED_TRANSITIONS[task.status] : [];
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[1px] px-3 py-6 sm:px-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.14 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="mx-auto max-h-full w-full max-w-2xl overflow-y-auto rounded-[14px] border border-[#2a2a3a] bg-[#0f0f17] p-5"
+        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+        transition={{ duration: 0.14 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <p className={cx.text.subheading}>Task 상세</p>
+          <button type="button" onClick={onClose} className={cx.btn.secondary}>닫기</button>
+        </div>
+
+        {isLoading && <div className={cx.text.meta}>로딩 중...</div>}
+        {isError && <div className={cx.errorBox}>Task 상세를 불러오지 못했습니다.</div>}
+
+        {task && (
+          <div className="space-y-4">
+            <div className={cx.card}>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-[15px] font-semibold text-[#ececf2]">{task.title}</h3>
+                {!isEditing ? (
+                  <button type="button" onClick={() => setIsEditing(true)} className={cx.btn.secondary}>수정</button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditTitle(task.title);
+                      setEditDescription(task.description ?? '');
+                      setEditStartAt(toLocal(task.startAt));
+                      setEditDueAt(toLocal(task.dueAt));
+                      setEditTitleError('');
+                      setEditStartError('');
+                      setEditDueError('');
+                    }}
+                    className={cx.btn.secondary}
+                  >
+                    취소
+                  </button>
+                )}
+              </div>
+              <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                <span className={clsx(cx.badge.base, cx.badge[task.status])}>{STATUS_LABEL[task.status]}</span>
+                {task.calendarSyncEnabled && (
+                  <span className={clsx(
+                    cx.badge.base,
+                    task.calendarEventId
+                      ? 'bg-[#1a1530] text-[#a78bfa] border border-[#2d2050]'
+                      : 'bg-[#1a1a20] text-[#8080a0] border border-[#252530]',
+                  )}>
+                    <Calendar size={9} strokeWidth={2} />
+                    {task.calendarEventId ? '동기화' : '대기'}
+                  </span>
+                )}
+              </div>
+
+              {isEditing ? (
+                <form
+                  className="mb-4 space-y-3"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    let valid = true;
+                    if (!editTitle.trim()) {
+                      setEditTitleError('제목을 입력해주세요.');
+                      valid = false;
+                    }
+                    if (task.calendarSyncEnabled && !editStartAt) {
+                      setEditStartError('캘린더 동기화에는 시작일이 필요합니다.');
+                      valid = false;
+                    }
+                    if (task.calendarSyncEnabled && !editDueAt) {
+                      setEditDueError('캘린더 동기화에는 마감일이 필요합니다.');
+                      valid = false;
+                    }
+                    if (editStartAt && editDueAt && editStartAt > editDueAt) {
+                      setEditDueError('시작일은 마감일보다 늦을 수 없습니다.');
+                      valid = false;
+                    }
+                    if (!valid) {
+                      return;
+                    }
+                    updateMutation.mutate({
+                      title: editTitle.trim(),
+                      description: editDescription.trim() || undefined,
+                      startAt: editStartAt ? `${editStartAt}:00` : undefined,
+                      dueAt: editDueAt ? `${editDueAt}:00` : undefined,
+                    });
+                  }}
+                >
+                  <div>
+                    <label className={cx.text.label}>제목</label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => { setEditTitle(e.target.value); setEditTitleError(''); }}
+                      className={clsx(cx.input, editTitleError && cx.inputError)}
+                    />
+                    {editTitleError && <p className="mt-1 text-[11px] text-[#ff6b6b]">{editTitleError}</p>}
+                  </div>
+                  <div>
+                    <label className={cx.text.label}>설명</label>
+                    <textarea
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      rows={4}
+                      className={cx.textarea}
+                    />
+                  </div>
+                  <div>
+                    <label className={cx.text.label}>시작일</label>
+                    <input
+                      type="datetime-local"
+                      value={editStartAt}
+                      onChange={(e) => { setEditStartAt(e.target.value); setEditStartError(''); setEditDueError(''); }}
+                      className={clsx(cx.input, editStartError && cx.inputError)}
+                    />
+                    {editStartError && <p className="mt-1 text-[11px] text-[#ff6b6b]">{editStartError}</p>}
+                  </div>
+                  <div>
+                    <label className={cx.text.label}>마감일</label>
+                    <input
+                      type="datetime-local"
+                      value={editDueAt}
+                      onChange={(e) => { setEditDueAt(e.target.value); setEditDueError(''); }}
+                      className={clsx(cx.input, editDueError && cx.inputError)}
+                    />
+                    {editDueError && <p className="mt-1 text-[11px] text-[#ff6b6b]">{editDueError}</p>}
+                  </div>
+                  {updateMutation.isError && <div className={cx.errorBox}>수정에 실패했습니다.</div>}
+                  <div className="flex justify-end">
+                    <button type="submit" disabled={updateMutation.isPending} className={cx.btn.primary}>
+                      {updateMutation.isPending ? '저장 중...' : '저장'}
+                    </button>
+                  </div>
+                </form>
+              ) : task.description ? (
+                <p className="mb-4 whitespace-pre-wrap text-[13px] leading-6 text-[#d8d8e6]">{task.description}</p>
+              ) : (
+                <p className={clsx(cx.text.meta, 'mb-4')}>설명이 없습니다.</p>
+              )}
+
+              <div className="grid gap-2 text-[12px] text-[#b8b8c8] sm:grid-cols-2">
+                <p>시작일: {fmt(task.startAt)}</p>
+                <p>마감일: {fmt(task.dueAt)}</p>
+                <p>생성일: {fmt(task.createdAt)}</p>
+                <p>수정일: {fmt(task.updatedAt)}</p>
+              </div>
+
+              <div className={clsx(cx.divider, 'mt-4 pt-3 flex flex-wrap items-center gap-1.5')}>
+                {next.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => onStatusChange(task.id, s)}
+                    disabled={changingId === task.id}
+                    className={cx.btn.statusTransition}
+                  >
+                    → {STATUS_LABEL[s]}
+                  </button>
+                ))}
+                <button
+                  onClick={() => onDelete(task.id)}
+                  disabled={deletingId === task.id}
+                  className={cx.btn.danger}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+
+            <div className={cx.card}>
+              <p className={clsx(cx.text.subheading, 'mb-3')}>캘린더 동기화</p>
+              {!task.calendarSyncEnabled ? (
+                <p className={cx.text.meta}>동기화 비활성화 상태입니다.</p>
+              ) : (
+                <div className="space-y-2 text-[12px] text-[#c8c8d8]">
+                  <div className="flex items-center gap-2">
+                    <span className={cx.text.meta}>상태</span>
+                    {syncStatus?.lastOutboxStatus
+                      ? <span className={clsx(cx.badge.base, OUTBOX_BADGE[syncStatus.lastOutboxStatus])}>{OUTBOX_STATUS_LABEL[syncStatus.lastOutboxStatus]}</span>
+                      : <span className={cx.text.meta}>—</span>}
+                  </div>
+                  <p>마지막 성공: {fmt(syncStatus?.lastSyncedAt)}</p>
+                  {syncStatus?.lastOutboxError && <p className="text-[#ff9f9f]">오류: {syncStatus.lastOutboxError}</p>}
+                </div>
+              )}
+            </div>
+
+            <div className={cx.card}>
+              <p className={clsx(cx.text.subheading, 'mb-3')}>변경 이력</p>
+              {!history || history.length === 0 ? (
+                <p className={cx.text.meta}>변경 이력이 없습니다.</p>
+              ) : (
+                <div className="space-y-3">
+                  {history.slice(0, 8).map((h: TaskHistory, i: number) => (
+                    <div key={`${h.createdAt}-${i}`} className={clsx(i > 0 && clsx(cx.divider, 'pt-3'))}>
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-[12px] text-[#d8d8e6]">{CHANGE_TYPE_LABEL[h.changeType] ?? h.changeType}</span>
+                        <span className={cx.text.meta}>{fmt(h.createdAt)}</span>
+                      </div>
+                      <p className={cx.text.meta}>{h.changedByUserName}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── 메인 ──────────────────────────────────────────────────
 
 export default function TaskListPage() {
@@ -261,7 +565,9 @@ export default function TaskListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [changingId, setChangingId] = useState<number | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [summary, setSummary] = useState<ProjectWeeklySummary | null>(null);
+  const [shouldAutoRefreshSummary, setShouldAutoRefreshSummary] = useState(false);
 
   const { data: project } = useQuery({ queryKey: ['project', pid], queryFn: () => projectsApi.getProject(pid), enabled: !!pid });
   const { data: tasks, isLoading, isError } = useQuery({
@@ -278,25 +584,43 @@ export default function TaskListPage() {
     mutationFn: () => projectsApi.generateWeeklySummary(pid),
     onSuccess: (data) => {
       setSummary(data);
+      setShouldAutoRefreshSummary(false);
     },
   });
+
+  useEffect(() => {
+    if (!shouldAutoRefreshSummary) return;
+    if (summaryMutation.isPending) return;
+    summaryMutation.mutate();
+  }, [shouldAutoRefreshSummary, summaryMutation]);
 
   const createMutation = useMutation({
     mutationFn: (d: TaskCreateRequest) => tasksApi.createTask(pid, d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
-      setSummary(null);
-      summaryMutation.reset();
+      if (summary) {
+        setShouldAutoRefreshSummary(true);
+      } else {
+        setSummary(null);
+        summaryMutation.reset();
+      }
       setIsModalOpen(false);
     },
   });
 
   const changeStatusMutation = useMutation({
     mutationFn: ({ id, to }: { id: number; to: TaskStatus }) => tasksApi.changeStatus(id, to),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
-      setSummary(null);
-      summaryMutation.reset();
+      queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['task-history', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['task-sync', variables.id] });
+      if (summary) {
+        setShouldAutoRefreshSummary(true);
+      } else {
+        setSummary(null);
+        summaryMutation.reset();
+      }
       setChangingId(null);
     },
     onError: () => setChangingId(null),
@@ -304,11 +628,18 @@ export default function TaskListPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => tasksApi.deleteTask(id),
-    onSuccess: () => {
+    onSuccess: (_data, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
-      setSummary(null);
-      summaryMutation.reset();
+      if (summary) {
+        setShouldAutoRefreshSummary(true);
+      } else {
+        setSummary(null);
+        summaryMutation.reset();
+      }
       setDeletingId(null);
+      if (selectedTaskId === deletedId) {
+        setSelectedTaskId(null);
+      }
     },
     onError: () => setDeletingId(null),
   });
@@ -380,13 +711,11 @@ export default function TaskListPage() {
             <div className="grid gap-4 lg:grid-cols-2">
               <SummarySectionCard
                 title="동기화된 일정"
-                description="Google Calendar에 이미 반영된 Task 흐름입니다."
                 section={summary.synced}
                 accentClass="text-[#8ea7ff]"
               />
               <SummarySectionCard
                 title="미동기화 일정"
-                description="아직 Google Calendar에 반영되지 않았거나 반영 여부가 불확실한 일정 흐름입니다."
                 section={summary.unsynced}
                 accentClass="text-[#ffb482]"
               />
@@ -432,7 +761,7 @@ export default function TaskListPage() {
                   task={task}
                   onStatusChange={(id, to) => { setChangingId(id); changeStatusMutation.mutate({ id, to }); }}
                   onDelete={(id) => { if (!window.confirm('삭제하시겠습니까?')) return; setDeletingId(id); deleteMutation.mutate(id); }}
-                  onClickDetail={(id) => navigate(`/tasks/${id}`)}
+                  onClickDetail={(id) => setSelectedTaskId(id)}
                   isChanging={changingId === task.id}
                   isDeleting={deletingId === task.id}
                 />
@@ -449,6 +778,35 @@ export default function TaskListPage() {
             onSubmit={(d) => createMutation.mutate(d)}
             isPending={createMutation.isPending}
             isError={createMutation.isError}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedTaskId && (
+          <TaskDetailModal
+            taskId={selectedTaskId}
+            onClose={() => setSelectedTaskId(null)}
+            onTaskUpdated={() => {
+              queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
+              if (summary) {
+                setShouldAutoRefreshSummary(true);
+              } else {
+                setSummary(null);
+                summaryMutation.reset();
+              }
+            }}
+            onStatusChange={(id, to) => {
+              setChangingId(id);
+              changeStatusMutation.mutate({ id, to });
+            }}
+            onDelete={(id) => {
+              if (!window.confirm('삭제하시겠습니까?')) return;
+              setDeletingId(id);
+              deleteMutation.mutate(id);
+            }}
+            changingId={changingId}
+            deletingId={deletingId}
           />
         )}
       </AnimatePresence>
