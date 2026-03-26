@@ -142,6 +142,8 @@ docker-compose up -d
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GEMINI_API_KEY=your_gemini_api_key
+WEEKLY_SUMMARY_CACHE_ENABLED=true
+REDIS_URL=rediss://default:your_upstash_token@your-upstash-host:6379
 # 선택
 GEMINI_MODEL=gemini-2.5-flash
 ```

@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, Clock, Sparkles } from 'lucide-react';
+import axios, { AxiosError } from 'axios';
 import { tasksApi } from '@/api/endpoints/tasks';
 import { projectsApi } from '@/api/endpoints/projects';
+import type { ApiResponse } from '@/api/types';
 import type { Task, TaskStatus, TaskCreateRequest, TaskUpdateRequest, TaskHistory, OutboxStatus } from '@/types/task';
 import type { ProjectWeeklySummary, ProjectWeeklySummarySection } from '@/types/project';
 import { cx, clsx } from '@/styles/cx';
@@ -59,6 +61,88 @@ const fmt = (iso?: string | null) => iso
   : '—';
 
 const toLocal = (iso?: string | null) => iso?.slice(0, 16) ?? '';
+
+type SummaryApiError = AxiosError<ApiResponse<never>>;
+
+function getSummaryError(error: unknown) {
+  if (!axios.isAxiosError<ApiResponse<never>>(error)) {
+    return null;
+  }
+
+  return error.response?.data.error ?? null;
+}
+
+function getSummaryErrorPresentation(error: unknown) {
+  const apiError = getSummaryError(error);
+  if (!apiError) {
+    return {
+      title: '요약 생성에 실패했습니다.',
+      message: '잠시 후 다시 시도하고, 문제가 반복되면 서버 로그를 확인해주세요.',
+      tone: 'error',
+    } as const;
+  }
+
+  switch (apiError.code) {
+    case 'LLM_QUOTA_EXCEEDED':
+      return {
+        title: '오늘 요약 호출 한도를 초과했습니다.',
+        message: '즉시 다시 생성하기보다 저장된 요약이 있다면 그 결과를 우선 확인해주세요.',
+        tone: 'warning',
+      } as const;
+    case 'LLM_API_KEY_MISSING':
+    case 'LLM_CONFIG_INVALID':
+      return {
+        title: '서버 설정 문제로 요약을 생성할 수 없습니다.',
+        message: '재시도보다 관리자 설정 확인이 먼저 필요합니다.',
+        tone: 'error',
+      } as const;
+    case 'LLM_UPSTREAM_TEMPORARY_FAILURE':
+      return {
+        title: '일시적으로 요약 생성에 실패했습니다.',
+        message: '잠시 후 다시 시도해주세요.',
+        tone: 'warning',
+      } as const;
+    case 'LLM_INVALID_RESPONSE':
+      return {
+        title: '요약 응답 형식이 올바르지 않습니다.',
+        message: '서버 로그를 확인해주세요.',
+        tone: 'error',
+      } as const;
+    default:
+      return {
+        title: '요약 생성에 실패했습니다.',
+        message: apiError.message,
+        tone: 'error',
+      } as const;
+  }
+}
+
+function getCacheBadge(summary: ProjectWeeklySummary | null) {
+  if (!summary) {
+    return null;
+  }
+
+  switch (summary.cacheStatus) {
+    case 'CACHE_HIT':
+      return {
+        label: '캐시 응답',
+        className: 'bg-[#1a2040] text-[#8ea7ff] border border-[#2a3558]',
+        message: '같은 입력으로 생성된 저장본을 반환했습니다.',
+      };
+    case 'STALE_FALLBACK':
+      return {
+        label: '저장된 요약',
+        className: 'bg-[#2b2412] text-[#ffcf7a] border border-[#4a3b14]',
+        message: '최신 호출 대신 마지막 성공 요약을 보여주고 있습니다.',
+      };
+    default:
+      return {
+        label: '실시간 생성',
+        className: 'bg-[#0f2820] text-[#7dd3a7] border border-[#1a4030]',
+        message: '현재 Task 상태 기준으로 새로 생성했습니다.',
+      };
+  }
+}
 
 // ── Task 카드 ─────────────────────────────────────────────
 
@@ -580,13 +664,15 @@ export default function TaskListPage() {
     setSummary(null);
   }, [pid]);
 
-  const summaryMutation = useMutation({
+  const summaryMutation = useMutation<ProjectWeeklySummary, SummaryApiError>({
     mutationFn: () => projectsApi.generateWeeklySummary(pid),
     onSuccess: (data) => {
       setSummary(data);
       setShouldAutoRefreshSummary(false);
     },
   });
+  const summaryError = getSummaryErrorPresentation(summaryMutation.error);
+  const cacheBadge = getCacheBadge(summary);
 
   useEffect(() => {
     if (!shouldAutoRefreshSummary) return;
@@ -693,8 +779,16 @@ export default function TaskListPage() {
         </div>
 
         {summaryMutation.isError && (
-          <div className={clsx(cx.errorBox, 'mt-4')}>
-            요약 생성에 실패했습니다. `GEMINI_API_KEY` 설정과 서버 로그를 확인해주세요.
+          <div
+            className={clsx(
+              'mt-4 rounded-[10px] border px-3 py-3 text-[12px]',
+              summaryError?.tone === 'warning'
+                ? 'border-[#4a3b14] bg-[#20190c] text-[#ffcf7a]'
+                : cx.errorBox
+            )}
+          >
+            <p className="font-medium">{summaryError?.title}</p>
+            <p className="mt-1 opacity-90">{summaryError?.message}</p>
           </div>
         )}
 
@@ -706,7 +800,18 @@ export default function TaskListPage() {
               <span>동기화 {summary.syncedTaskCount}</span>
               <span>미동기화 {summary.unsyncedTaskCount}</span>
               <span>{new Date(summary.generatedAt).toLocaleString('ko-KR')}</span>
+              {cacheBadge && (
+                <span className={clsx('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium', cacheBadge.className)}>
+                  {cacheBadge.label}
+                </span>
+              )}
             </div>
+
+            {cacheBadge && (
+              <div className="rounded-[10px] border border-[#252535] bg-[#0d0d14] px-3 py-2 text-[12px] text-[#b8b8c8]">
+                {cacheBadge.message}
+              </div>
+            )}
 
             <div className="grid gap-4 lg:grid-cols-2">
               <SummarySectionCard

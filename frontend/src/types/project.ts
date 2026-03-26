@@ -14,6 +14,7 @@ export interface ProjectWeeklySummary {
   weekStart: string;
   weekEnd: string;
   generatedAt: string;
+  cacheStatus: 'LIVE' | 'CACHE_HIT' | 'STALE_FALLBACK';
   totalTaskCount: number;
   syncedTaskCount: number;
   unsyncedTaskCount: number;
