@@ -1,5 +1,8 @@
 package com.taskflow.calendar.domain.summary.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 public class WeeklySummarySectionResponse {
@@ -12,13 +15,14 @@ public class WeeklySummarySectionResponse {
     private final List<String> nextActions;
     private final String model;
 
-    private WeeklySummarySectionResponse(int totalTaskCount,
-                                         int includedTaskCount,
-                                         String summary,
-                                         List<String> highlights,
-                                         List<String> risks,
-                                         List<String> nextActions,
-                                         String model) {
+    @JsonCreator
+    private WeeklySummarySectionResponse(@JsonProperty("totalTaskCount") int totalTaskCount,
+                                         @JsonProperty("includedTaskCount") int includedTaskCount,
+                                         @JsonProperty("summary") String summary,
+                                         @JsonProperty("highlights") List<String> highlights,
+                                         @JsonProperty("risks") List<String> risks,
+                                         @JsonProperty("nextActions") List<String> nextActions,
+                                         @JsonProperty("model") String model) {
         this.totalTaskCount = totalTaskCount;
         this.includedTaskCount = includedTaskCount;
         this.summary = summary;

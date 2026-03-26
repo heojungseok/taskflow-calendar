@@ -3,11 +3,15 @@ package com.taskflow.calendar.domain.summary;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
+import com.taskflow.config.GeminiProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,13 +48,25 @@ class ProjectWeeklySummaryServiceTest {
     @Mock
     private TaskSyncStateResolver taskSyncStateResolver;
 
+    @Mock
+    private WeeklySummaryCacheService weeklySummaryCacheService;
+
     private ProjectWeeklySummaryService service;
 
     private Project project;
 
     @BeforeEach
     void setUp() {
-        service = new ProjectWeeklySummaryService(projectRepository, taskRepository, weeklySummaryGenerator, taskSyncStateResolver);
+        GeminiProperties geminiProperties = new GeminiProperties();
+        geminiProperties.setModel("gemini-2.5-flash");
+        service = new ProjectWeeklySummaryService(
+                projectRepository,
+                taskRepository,
+                weeklySummaryGenerator,
+                taskSyncStateResolver,
+                weeklySummaryCacheService,
+                geminiProperties
+        );
         project = Project.of("TaskFlow");
     }
 
@@ -76,7 +92,8 @@ class ProjectWeeklySummaryServiceTest {
         assertEquals(0, response.getSyncedTaskCount());
         assertEquals(0, response.getUnsyncedTaskCount());
         assertEquals("local-empty-state", response.getSynced().getModel());
-        verify(weeklySummaryGenerator, never()).generate(any(), any(), any(), any(), anyInt(), any());
+        assertEquals(WeeklySummaryCacheStatus.LIVE, response.getCacheStatus());
+        verify(weeklySummaryGenerator, never()).generate(any(), any(), anyInt(), any(), anyInt(), any(), any());
     }
 
     @Test
@@ -91,40 +108,41 @@ class ProjectWeeklySummaryServiceTest {
                 .thenReturn(snapshot(syncedTask, TaskSyncState.SYNCED));
         when(taskSyncStateResolver.resolve(unsyncedTask))
                 .thenReturn(snapshot(unsyncedTask, TaskSyncState.SYNC_DISABLED));
-        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(1), eq(SummaryBucket.SYNCED)))
-                .thenReturn(WeeklySummaryResult.of(
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                argThat(tasks -> tasks.size() == 1 && "API 설계".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                argThat(tasks -> tasks.size() == 1 && "문서 정리".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        )).thenReturn(WeeklySummarySectionsResult.of(
+                WeeklySummaryResult.of(
                         "이번 주에는 캘린더에 반영된 API 설계 일정을 중심으로 진행합니다.",
                         List.of("API 설계 마무리"),
                         List.of("API 설계 일정이 밀리면 후속 일정이 지연될 수 있습니다."),
                         List.of("API 설계 검토를 완료하세요."),
                         "gemini-2.5-flash"
-                ));
-        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(1), eq(SummaryBucket.UNSYNCED)))
-                .thenReturn(WeeklySummaryResult.of(
+                ),
+                WeeklySummaryResult.of(
                         "이번 주에는 아직 캘린더에 반영되지 않은 문서 정리 Task가 남아 있습니다.",
                         List.of("문서 정리 일정 확정 필요"),
                         List.of("문서 정리가 누락되면 공유 일정이 불명확해질 수 있습니다."),
                         List.of("문서 정리 일정을 캘린더에 반영하세요."),
                         "gemini-2.5-flash"
-                ));
+                )
+        ));
 
         WeeklySummaryResponse response = service.generateWeeklySummary(1L);
 
         verify(weeklySummaryGenerator).generate(
                 eq(project),
                 argThat(tasks -> tasks.size() == 1 && "API 설계".equals(tasks.get(0).getTask().getTitle())),
-                any(),
-                any(),
                 eq(1),
-                eq(SummaryBucket.SYNCED)
-        );
-        verify(weeklySummaryGenerator).generate(
-                eq(project),
                 argThat(tasks -> tasks.size() == 1 && "문서 정리".equals(tasks.get(0).getTask().getTitle())),
-                any(),
-                any(),
                 eq(1),
-                eq(SummaryBucket.UNSYNCED)
+                any(),
+                any()
         );
 
         assertEquals(2, response.getTotalTaskCount());
@@ -132,6 +150,7 @@ class ProjectWeeklySummaryServiceTest {
         assertEquals(1, response.getUnsyncedTaskCount());
         assertEquals("이번 주에는 캘린더에 반영된 API 설계 일정을 중심으로 진행합니다.", response.getSynced().getSummary());
         assertEquals("이번 주에는 아직 캘린더에 반영되지 않은 문서 정리 Task가 남아 있습니다.", response.getUnsynced().getSummary());
+        assertEquals(WeeklySummaryCacheStatus.LIVE, response.getCacheStatus());
     }
 
     @Test
@@ -143,19 +162,36 @@ class ProjectWeeklySummaryServiceTest {
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(pendingSyncTask));
         when(taskSyncStateResolver.resolve(pendingSyncTask))
                 .thenReturn(snapshot(pendingSyncTask, TaskSyncState.PENDING_SYNC));
-        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(1), eq(SummaryBucket.UNSYNCED)))
-                .thenReturn(WeeklySummaryResult.of(
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                argThat(tasks -> tasks.size() == 1 && "캘린더 대기".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        )).thenReturn(WeeklySummarySectionsResult.of(
+                null,
+                WeeklySummaryResult.of(
                         "캘린더 반영 대기 중인 Task가 있습니다.",
                         List.of(),
                         List.of("일정 누락 가능성이 있습니다."),
                         List.of("캘린더 동기화 상태를 확인하세요."),
                         "gemini-2.5-flash"
-                ));
+                )
+        ));
 
         WeeklySummaryResponse response = service.generateWeeklySummary(1L);
 
-        verify(weeklySummaryGenerator, never()).generate(eq(project), any(), any(), any(), anyInt(), eq(SummaryBucket.SYNCED));
-        verify(weeklySummaryGenerator).generate(eq(project), any(), any(), any(), eq(1), eq(SummaryBucket.UNSYNCED));
+        verify(weeklySummaryGenerator).generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                argThat(tasks -> tasks.size() == 1 && "캘린더 대기".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        );
         assertEquals(0, response.getSyncedTaskCount());
         assertEquals(1, response.getUnsyncedTaskCount());
     }
@@ -188,20 +224,31 @@ class ProjectWeeklySummaryServiceTest {
                 .thenReturn(snapshot(rangedTask, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(noStartTask))
                 .thenReturn(snapshot(noStartTask, TaskSyncState.SYNC_DISABLED));
-        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(2), eq(SummaryBucket.UNSYNCED)))
-                .thenReturn(WeeklySummaryResult.of("요약", List.of(), List.of(), List.of(), "gemini-2.5-flash"));
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                any(),
+                eq(2),
+                any(),
+                any()
+        )).thenReturn(WeeklySummarySectionsResult.of(
+                null,
+                WeeklySummaryResult.of("요약", List.of(), List.of(), List.of(), "gemini-2.5-flash")
+        ));
 
         service.generateWeeklySummary(1L);
 
         verify(weeklySummaryGenerator).generate(
                 eq(project),
+                argThat(List::isEmpty),
+                eq(0),
                 argThat(tasks -> tasks.size() == 2
                         && "이번주 착수-장기 일정".equals(tasks.get(0).getTask().getTitle())
                         && "마감만 먼 일정".equals(tasks.get(1).getTask().getTitle())),
-                any(),
-                any(),
                 eq(2),
-                eq(SummaryBucket.UNSYNCED)
+                any(),
+                any()
         );
     }
 
@@ -220,8 +267,18 @@ class ProjectWeeklySummaryServiceTest {
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(staleDescribed, recentDescribed));
         when(taskSyncStateResolver.resolve(recentDescribed)).thenReturn(snapshot(recentDescribed, TaskSyncState.SYNCED));
         when(taskSyncStateResolver.resolve(staleDescribed)).thenReturn(snapshot(staleDescribed, TaskSyncState.SYNCED));
-        when(weeklySummaryGenerator.generate(eq(project), any(), any(), any(), eq(2), eq(SummaryBucket.SYNCED)))
-                .thenReturn(WeeklySummaryResult.of("요약", List.of(), List.of(), List.of(), "gemini-2.5-flash"));
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                any(),
+                eq(2),
+                argThat(List::isEmpty),
+                eq(0),
+                any(),
+                any()
+        )).thenReturn(WeeklySummarySectionsResult.of(
+                WeeklySummaryResult.of("요약", List.of(), List.of(), List.of(), "gemini-2.5-flash"),
+                null
+        ));
 
         service.generateWeeklySummary(1L);
 
@@ -230,11 +287,66 @@ class ProjectWeeklySummaryServiceTest {
                 argThat(tasks -> tasks.size() == 2
                         && "최근 수정 일정".equals(tasks.get(0).getTask().getTitle())
                         && "기존 일정".equals(tasks.get(1).getTask().getTitle())),
-                any(),
-                any(),
                 eq(2),
-                eq(SummaryBucket.SYNCED)
+                argThat(List::isEmpty),
+                eq(0),
+                any(),
+                any()
         );
+    }
+
+    @Test
+    @DisplayName("generateWeeklySummary_동일입력이면_캐시응답반환")
+    void generateWeeklySummary_cacheHit_returnsCachedResponse() {
+        Task cachedTask = task("캐시된 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
+        WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(cachedTask));
+        when(taskSyncStateResolver.resolve(cachedTask)).thenReturn(snapshot(cachedTask, TaskSyncState.SYNC_DISABLED));
+        when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:"))))
+                .thenReturn(Optional.of(cachedResponse));
+
+        WeeklySummaryResponse response = service.generateWeeklySummary(1L);
+
+        assertEquals(WeeklySummaryCacheStatus.CACHE_HIT, response.getCacheStatus());
+        verify(weeklySummaryGenerator, never()).generate(any(), any(), anyInt(), any(), anyInt(), any(), any());
+    }
+
+    @Test
+    @DisplayName("generateWeeklySummary_quota실패시_최신캐시로fallback")
+    void generateWeeklySummary_quotaExceeded_returnsStaleFallback() {
+        Task task = task("Quota 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
+        WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
+        when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
+        when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:"))))
+                .thenReturn(Optional.empty());
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:latest:"))))
+                .thenReturn(Optional.of(cachedResponse));
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                argThat(tasks -> tasks.size() == 1 && "Quota 일정".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        ))
+                .thenThrow(new WeeklySummaryGenerationException(
+                        com.taskflow.common.ErrorCode.LLM_QUOTA_EXCEEDED,
+                        "quota exceeded",
+                        true
+                ));
+
+        WeeklySummaryResponse response = service.generateWeeklySummary(1L);
+
+        assertEquals(WeeklySummaryCacheStatus.STALE_FALLBACK, response.getCacheStatus());
+        assertEquals("캐시 요약", response.getUnsynced().getSummary());
     }
 
     private Task task(String title, TaskStatus status, LocalDateTime dueAt, boolean calendarSyncEnabled, String eventId) {
@@ -250,6 +362,27 @@ class ProjectWeeklySummaryServiceTest {
 
     private SummaryTaskSnapshot snapshot(Task task, TaskSyncState syncState) {
         return SummaryTaskSnapshot.of(task, syncState, null, null, null);
+    }
+
+    private WeeklySummaryResponse cachedResponse(WeeklySummaryCacheStatus cacheStatus) {
+        return WeeklySummaryResponse.of(
+                project,
+                java.time.LocalDate.now(),
+                java.time.LocalDate.now().plusDays(6),
+                LocalDateTime.now().minusHours(1),
+                cacheStatus,
+                1,
+                0,
+                1,
+                WeeklySummarySectionResponse.of(0, 0, WeeklySummaryResult.empty("빈 동기화", List.of())),
+                WeeklySummarySectionResponse.of(1, 1, WeeklySummaryResult.of(
+                        "캐시 요약",
+                        List.of("캐시 포인트"),
+                        List.of(),
+                        List.of("캐시 행동"),
+                        "gemini-2.5-flash"
+                ))
+        );
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {

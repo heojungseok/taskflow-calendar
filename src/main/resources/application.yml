@@ -43,3 +43,9 @@ gemini:
   base-url: https://generativelanguage.googleapis.com/v1beta
   timeout-seconds: 20
   temperature: 0.2
+
+summary:
+  cache:
+    enabled: ${WEEKLY_SUMMARY_CACHE_ENABLED:true}
+    redis-url: ${REDIS_URL:}
+    ttl-seconds: ${WEEKLY_SUMMARY_CACHE_TTL_SECONDS:604800}

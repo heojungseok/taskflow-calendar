@@ -3,24 +3,33 @@ package com.taskflow.calendar.domain.summary;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
+import com.taskflow.config.GeminiProperties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -40,6 +49,8 @@ public class ProjectWeeklySummaryService {
     private final TaskRepository taskRepository;
     private final WeeklySummaryGenerator weeklySummaryGenerator;
     private final TaskSyncStateResolver taskSyncStateResolver;
+    private final WeeklySummaryCacheService weeklySummaryCacheService;
+    private final GeminiProperties geminiProperties;
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId) {
         Project project = projectRepository.findById(projectId)
@@ -61,19 +72,90 @@ public class ProjectWeeklySummaryService {
                 .filter(snapshot -> !snapshot.getSyncState().isSynced())
                 .collect(Collectors.toList());
 
-        WeeklySummarySectionResponse synced = buildSection(
+        String modelName = geminiProperties.getModel();
+        String fingerprint = summaryFingerprint(project, weekStart, weekEnd, prioritizedTasks, modelName);
+        String exactCacheKey = exactCacheKey(projectId, weekStart, weekEnd, modelName, fingerprint);
+        String latestCacheKey = latestCacheKey(projectId, weekStart, weekEnd, modelName);
+
+        if (weeklySummaryCacheService.isEnabled()) {
+            WeeklySummaryResponse cached = weeklySummaryCacheService.find(exactCacheKey)
+                    .map(response -> response.withCacheStatus(WeeklySummaryCacheStatus.CACHE_HIT))
+                    .orElse(null);
+            if (cached != null) {
+                log.info("Weekly summary cache hit. projectId={}, weekStart={}, cacheKey={}",
+                        projectId, weekStart, exactCacheKey);
+                return cached;
+            }
+        }
+
+        try {
+            WeeklySummaryResponse liveResponse = buildResponse(
+                    project,
+                    weekStart,
+                    weekEnd,
+                    generatedAt,
+                    syncedTasks,
+                    unsyncedTasks,
+                    WeeklySummaryCacheStatus.LIVE
+            );
+
+            if (weeklySummaryCacheService.isEnabled()) {
+                weeklySummaryCacheService.save(exactCacheKey, latestCacheKey, liveResponse);
+                log.info("Weekly summary cache stored. projectId={}, weekStart={}, cacheKey={}",
+                        projectId, weekStart, exactCacheKey);
+            }
+
+            return liveResponse;
+        } catch (WeeklySummaryGenerationException e) {
+            if (weeklySummaryCacheService.isEnabled() && e.isFallbackEligible()) {
+                WeeklySummaryResponse fallback = readLatestCachedResponse(latestCacheKey);
+                if (fallback != null) {
+                    log.warn("Weekly summary stale fallback served. projectId={}, errorCode={}, latestCacheKey={}",
+                            projectId, e.getErrorCode().getCode(), latestCacheKey);
+                    return fallback.withCacheStatus(WeeklySummaryCacheStatus.STALE_FALLBACK);
+                }
+            }
+            throw e;
+        }
+    }
+
+    private WeeklySummaryResponse buildResponse(Project project,
+                                                LocalDate weekStart,
+                                                LocalDate weekEnd,
+                                                LocalDateTime generatedAt,
+                                                List<SummaryTaskSnapshot> syncedTasks,
+                                                List<SummaryTaskSnapshot> unsyncedTasks,
+                                                WeeklySummaryCacheStatus cacheStatus) {
+        List<SummaryTaskSnapshot> syncedIncludedTasks = syncedTasks.stream()
+                .limit(MAX_TASKS_PER_SECTION)
+                .collect(Collectors.toList());
+        List<SummaryTaskSnapshot> unsyncedIncludedTasks = unsyncedTasks.stream()
+                .limit(MAX_TASKS_PER_SECTION)
+                .collect(Collectors.toList());
+
+        WeeklySummarySectionsResult generatedSections = shouldCallGenerator(syncedTasks, unsyncedTasks)
+                ? weeklySummaryGenerator.generate(
                 project,
-                syncedTasks,
+                syncedIncludedTasks,
+                syncedTasks.size(),
+                unsyncedIncludedTasks,
+                unsyncedTasks.size(),
                 weekStart,
-                weekEnd,
-                SummaryBucket.SYNCED
+                weekEnd
+        )
+                : WeeklySummarySectionsResult.of(null, null);
+
+        WeeklySummarySectionResponse synced = buildSection(
+                syncedTasks,
+                syncedIncludedTasks,
+                SummaryBucket.SYNCED,
+                generatedSections.getSynced()
         );
         WeeklySummarySectionResponse unsynced = buildSection(
-                project,
                 unsyncedTasks,
-                weekStart,
-                weekEnd,
-                SummaryBucket.UNSYNCED
+                unsyncedIncludedTasks,
+                SummaryBucket.UNSYNCED,
+                generatedSections.getUnsynced()
         );
 
         return WeeklySummaryResponse.of(
@@ -81,7 +163,8 @@ public class ProjectWeeklySummaryService {
                 weekStart,
                 weekEnd,
                 generatedAt,
-                allTasks.size(),
+                cacheStatus,
+                syncedTasks.size() + unsyncedTasks.size(),
                 syncedTasks.size(),
                 unsyncedTasks.size(),
                 synced,
@@ -89,12 +172,19 @@ public class ProjectWeeklySummaryService {
         );
     }
 
-    private WeeklySummarySectionResponse buildSection(Project project,
-                                                      List<SummaryTaskSnapshot> tasks,
-                                                      LocalDate weekStart,
-                                                      LocalDate weekEnd,
-                                                      SummaryBucket bucket) {
-        if (tasks.isEmpty()) {
+    private boolean shouldCallGenerator(List<SummaryTaskSnapshot> syncedTasks, List<SummaryTaskSnapshot> unsyncedTasks) {
+        return !syncedTasks.isEmpty() || !unsyncedTasks.isEmpty();
+    }
+
+    private WeeklySummaryResponse readLatestCachedResponse(String latestCacheKey) {
+        return weeklySummaryCacheService.find(latestCacheKey).orElse(null);
+    }
+
+    private WeeklySummarySectionResponse buildSection(List<SummaryTaskSnapshot> allTasks,
+                                                      List<SummaryTaskSnapshot> includedTasks,
+                                                      SummaryBucket bucket,
+                                                      WeeklySummaryResult result) {
+        if (allTasks.isEmpty()) {
             return WeeklySummarySectionResponse.of(
                     0,
                     0,
@@ -102,20 +192,11 @@ public class ProjectWeeklySummaryService {
             );
         }
 
-        List<SummaryTaskSnapshot> includedTasks = tasks.stream()
-                .limit(MAX_TASKS_PER_SECTION)
-                .collect(Collectors.toList());
-
-        WeeklySummaryResult result = weeklySummaryGenerator.generate(
-                project,
-                includedTasks,
-                weekStart,
-                weekEnd,
-                tasks.size(),
-                bucket
+        return WeeklySummarySectionResponse.of(
+                allTasks.size(),
+                includedTasks.size(),
+                Objects.requireNonNull(result, "Weekly summary result must not be null for non-empty section")
         );
-
-        return WeeklySummarySectionResponse.of(tasks.size(), includedTasks.size(), result);
     }
 
     private Comparator<SummaryTaskSnapshot> taskPriorityComparator(LocalDate today) {
@@ -244,6 +325,67 @@ public class ProjectWeeklySummaryService {
             return 25;
         }
         return 0;
+    }
+
+    private String summaryFingerprint(Project project,
+                                      LocalDate weekStart,
+                                      LocalDate weekEnd,
+                                      List<SummaryTaskSnapshot> prioritizedTasks,
+                                      String modelName) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            updateDigest(digest, project.getId());
+            updateDigest(digest, weekStart);
+            updateDigest(digest, weekEnd);
+            updateDigest(digest, modelName);
+
+            for (SummaryTaskSnapshot snapshot : prioritizedTasks) {
+                Task task = snapshot.getTask();
+                updateDigest(digest, task.getId());
+                updateDigest(digest, task.getTitle());
+                updateDigest(digest, task.getDescription());
+                updateDigest(digest, task.getStatus());
+                updateDigest(digest, task.getStartAt());
+                updateDigest(digest, task.getDueAt());
+                updateDigest(digest, task.getUpdatedAt());
+                updateDigest(digest, task.getCalendarSyncEnabled());
+                updateDigest(digest, task.getCalendarEventId());
+                updateDigest(digest, snapshot.getSyncState());
+                updateDigest(digest, snapshot.getLatestOutboxStatus());
+                updateDigest(digest, snapshot.getLatestOutboxOpType());
+                updateDigest(digest, snapshot.getLatestOutboxError());
+            }
+
+            byte[] hashed = digest.digest();
+            StringBuilder hex = new StringBuilder(hashed.length * 2);
+            for (byte value : hashed) {
+                hex.append(String.format("%02x", value));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
+    }
+
+    private void updateDigest(MessageDigest digest, Object value) {
+        String normalized = Objects.toString(value, "<null>");
+        digest.update(normalized.getBytes(StandardCharsets.UTF_8));
+        digest.update((byte) 0);
+    }
+
+    private String exactCacheKey(Long projectId,
+                                 LocalDate weekStart,
+                                 LocalDate weekEnd,
+                                 String modelName,
+                                 String fingerprint) {
+        return "weekly-summary:v1:exact:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName + ":" + fingerprint;
+    }
+
+    private String latestCacheKey(Long projectId,
+                                  LocalDate weekStart,
+                                  LocalDate weekEnd,
+                                  String modelName) {
+        return "weekly-summary:v1:latest:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName;
     }
 
 }

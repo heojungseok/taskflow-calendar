@@ -4,6 +4,8 @@ import com.taskflow.calendar.domain.project.ProjectService;
 import com.taskflow.calendar.domain.project.dto.CreateProjectRequest;
 import com.taskflow.calendar.domain.project.dto.ProjectResponse;
 import com.taskflow.calendar.domain.summary.ProjectWeeklySummaryService;
+import com.taskflow.calendar.domain.summary.WeeklySummaryCacheService;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheHealthResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import com.taskflow.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final ProjectWeeklySummaryService projectWeeklySummaryService;
+    private final WeeklySummaryCacheService weeklySummaryCacheService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(
@@ -52,5 +55,12 @@ public class ProjectController {
     ) {
         WeeklySummaryResponse summary = projectWeeklySummaryService.generateWeeklySummary(projectId);
         return ResponseEntity.ok(ApiResponse.success(summary));
+    }
+
+    @GetMapping("/weekly-summary/cache-health")
+    public ResponseEntity<ApiResponse<WeeklySummaryCacheHealthResponse>> checkWeeklySummaryCacheHealth() {
+        WeeklySummaryCacheHealthResponse health = weeklySummaryCacheService.healthCheck();
+        HttpStatus status = health.isHealthy() ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE;
+        return ResponseEntity.status(status).body(ApiResponse.success(health));
     }
 }
