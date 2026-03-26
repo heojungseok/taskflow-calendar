@@ -1,14 +1,17 @@
 package com.taskflow.web;
 
+import com.taskflow.common.ApiResponse;
+import com.taskflow.common.ErrorCode;
+import com.taskflow.common.exception.BusinessException;
 import com.taskflow.calendar.domain.project.ProjectService;
 import com.taskflow.calendar.domain.project.dto.CreateProjectRequest;
 import com.taskflow.calendar.domain.project.dto.ProjectResponse;
 import com.taskflow.calendar.domain.summary.ProjectWeeklySummaryService;
-import com.taskflow.calendar.domain.summary.WeeklySummaryCacheService;
+import com.taskflow.calendar.domain.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheHealthResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
-import com.taskflow.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +27,8 @@ public class ProjectController {
     private final ProjectService projectService;
     private final ProjectWeeklySummaryService projectWeeklySummaryService;
     private final WeeklySummaryCacheService weeklySummaryCacheService;
+    @Value("${summary.force-live-enabled:false}")
+    private boolean forceLiveEnabled;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(
@@ -51,9 +56,16 @@ public class ProjectController {
 
     @PostMapping("/{projectId}/weekly-summary")
     public ResponseEntity<ApiResponse<WeeklySummaryResponse>> generateWeeklySummary(
-            @PathVariable Long projectId
+            @PathVariable Long projectId,
+            @RequestParam(defaultValue = "false") boolean forceLive
     ) {
-        WeeklySummaryResponse summary = projectWeeklySummaryService.generateWeeklySummary(projectId);
+        if (forceLive && !forceLiveEnabled) {
+            throw new BusinessException(
+                    ErrorCode.WEEKLY_SUMMARY_FORCE_LIVE_DISABLED,
+                    "forceLive is disabled for this environment."
+            );
+        }
+        WeeklySummaryResponse summary = projectWeeklySummaryService.generateWeeklySummary(projectId, forceLive);
         return ResponseEntity.ok(ApiResponse.success(summary));
     }
 

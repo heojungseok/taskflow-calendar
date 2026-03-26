@@ -45,6 +45,7 @@ gemini:
   temperature: 0.2
 
 summary:
+  force-live-enabled: ${WEEKLY_SUMMARY_FORCE_LIVE_ENABLED:false}
   cache:
     enabled: ${WEEKLY_SUMMARY_CACHE_ENABLED:true}
     redis-url: ${REDIS_URL:}

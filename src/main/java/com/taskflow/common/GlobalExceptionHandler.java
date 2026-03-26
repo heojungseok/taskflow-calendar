@@ -114,7 +114,9 @@ public class GlobalExceptionHandler {
             case SCHEDULE_INVALID:
             case CALENDAR_SYNC_REQUIRES_DUE_AT:
                 return HttpStatus.BAD_REQUEST;
-            case LLM_QUOTA_EXCEEDED:
+            case LLM_RATE_LIMITED_TEMPORARY:
+            case LLM_QUOTA_EXHAUSTED:
+            case LLM_429_UNKNOWN:
                 return HttpStatus.TOO_MANY_REQUESTS;
             case LLM_API_KEY_MISSING:
             case LLM_CONFIG_INVALID:
@@ -122,6 +124,8 @@ public class GlobalExceptionHandler {
                 return HttpStatus.SERVICE_UNAVAILABLE;
             case LLM_INVALID_RESPONSE:
                 return HttpStatus.BAD_GATEWAY;
+            case WEEKLY_SUMMARY_FORCE_LIVE_DISABLED:
+                return HttpStatus.FORBIDDEN;
             default:
                 return HttpStatus.BAD_REQUEST;
         }

@@ -21,11 +21,14 @@ public enum ErrorCode {
     INVALID_OAUTH_STATE("INVALID_OAUTH_STATE", "OAuth 상태가 유효하지 않습니다"),
 
     // Weekly summary / LLM
-    LLM_QUOTA_EXCEEDED("LLM_QUOTA_EXCEEDED", "Gemini quota exceeded"),
+    LLM_RATE_LIMITED_TEMPORARY("LLM_RATE_LIMITED_TEMPORARY", "Gemini rate limit is temporary"),
+    LLM_QUOTA_EXHAUSTED("LLM_QUOTA_EXHAUSTED", "Gemini quota exhausted"),
+    LLM_429_UNKNOWN("LLM_429_UNKNOWN", "Gemini 429 classification unknown"),
     LLM_API_KEY_MISSING("LLM_API_KEY_MISSING", "Gemini API key is not configured"),
     LLM_CONFIG_INVALID("LLM_CONFIG_INVALID", "Gemini configuration is invalid"),
     LLM_UPSTREAM_TEMPORARY_FAILURE("LLM_UPSTREAM_TEMPORARY_FAILURE", "Gemini temporary failure"),
     LLM_INVALID_RESPONSE("LLM_INVALID_RESPONSE", "Gemini response was invalid"),
+    WEEKLY_SUMMARY_FORCE_LIVE_DISABLED("WEEKLY_SUMMARY_FORCE_LIVE_DISABLED", "forceLive is disabled"),
 
     // Generic
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "Internal server error"),
