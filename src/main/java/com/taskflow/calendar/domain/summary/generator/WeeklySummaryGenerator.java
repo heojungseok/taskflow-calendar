@@ -1,6 +1,7 @@
-package com.taskflow.calendar.domain.summary;
+package com.taskflow.calendar.domain.summary.generator;
 
 import com.taskflow.calendar.domain.project.Project;
+import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
 
 import java.time.LocalDate;

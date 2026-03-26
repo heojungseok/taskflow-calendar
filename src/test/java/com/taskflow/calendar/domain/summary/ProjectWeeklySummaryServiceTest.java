@@ -3,11 +3,14 @@ package com.taskflow.calendar.domain.summary;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
+import com.taskflow.calendar.domain.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
+import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationException;
+import com.taskflow.calendar.domain.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
@@ -315,8 +318,45 @@ class ProjectWeeklySummaryServiceTest {
     }
 
     @Test
-    @DisplayName("generateWeeklySummary_quota실패시_최신캐시로fallback")
-    void generateWeeklySummary_quotaExceeded_returnsStaleFallback() {
+    @DisplayName("generateWeeklySummary_forceLive면_exact캐시를조회하지않고_live생성")
+    void generateWeeklySummary_forceLive_skipsExactCacheRead() {
+        Task liveTask = task("라이브 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(liveTask));
+        when(taskSyncStateResolver.resolve(liveTask)).thenReturn(snapshot(liveTask, TaskSyncState.SYNC_DISABLED));
+        when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                argThat(tasks -> tasks.size() == 1 && "라이브 일정".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        )).thenReturn(WeeklySummarySectionsResult.of(
+                null,
+                WeeklySummaryResult.of("라이브 요약", List.of(), List.of(), List.of(), "gemini-2.5-flash")
+        ));
+
+        WeeklySummaryResponse response = service.generateWeeklySummary(1L, true);
+
+        assertEquals(WeeklySummaryCacheStatus.LIVE, response.getCacheStatus());
+        verify(weeklySummaryCacheService, never()).find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:")));
+        verify(weeklySummaryGenerator).generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                argThat(tasks -> tasks.size() == 1 && "라이브 일정".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        );
+    }
+
+    @Test
+    @DisplayName("generateWeeklySummary_quota소진시_최신캐시로fallback")
+    void generateWeeklySummary_quotaExhausted_returnsStaleFallback() {
         Task task = task("Quota 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
         WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
 
@@ -338,7 +378,7 @@ class ProjectWeeklySummaryServiceTest {
                 any()
         ))
                 .thenThrow(new WeeklySummaryGenerationException(
-                        com.taskflow.common.ErrorCode.LLM_QUOTA_EXCEEDED,
+                        com.taskflow.common.ErrorCode.LLM_QUOTA_EXHAUSTED,
                         "quota exceeded",
                         true
                 ));
@@ -347,6 +387,103 @@ class ProjectWeeklySummaryServiceTest {
 
         assertEquals(WeeklySummaryCacheStatus.STALE_FALLBACK, response.getCacheStatus());
         assertEquals("캐시 요약", response.getUnsynced().getSummary());
+    }
+
+    @Test
+    @DisplayName("generateWeeklySummary_임시rateLimit시_최신캐시로fallback")
+    void generateWeeklySummary_temporaryRateLimit_returnsStaleFallback() {
+        Task task = task("Rate limit 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
+        WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
+        when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
+        when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:"))))
+                .thenReturn(Optional.empty());
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:latest:"))))
+                .thenReturn(Optional.of(cachedResponse));
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                argThat(tasks -> tasks.size() == 1 && "Rate limit 일정".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        ))
+                .thenThrow(new WeeklySummaryGenerationException(
+                        com.taskflow.common.ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
+                        "rate limited",
+                        true
+                ));
+
+        WeeklySummaryResponse response = service.generateWeeklySummary(1L);
+
+        assertEquals(WeeklySummaryCacheStatus.STALE_FALLBACK, response.getCacheStatus());
+        assertEquals("캐시 요약", response.getUnsynced().getSummary());
+    }
+
+    @Test
+    @DisplayName("generateWeeklySummary_unknown429시_최신캐시로fallback")
+    void generateWeeklySummary_unknown429_returnsStaleFallback() {
+        Task task = task("Unknown 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
+        WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
+        when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
+        when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:"))))
+                .thenReturn(Optional.empty());
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:latest:"))))
+                .thenReturn(Optional.of(cachedResponse));
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                argThat(tasks -> tasks.size() == 1 && "Unknown 일정".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        ))
+                .thenThrow(new WeeklySummaryGenerationException(
+                        com.taskflow.common.ErrorCode.LLM_429_UNKNOWN,
+                        "429 unknown",
+                        true
+                ));
+
+        WeeklySummaryResponse response = service.generateWeeklySummary(1L);
+
+        assertEquals(WeeklySummaryCacheStatus.STALE_FALLBACK, response.getCacheStatus());
+        assertEquals("캐시 요약", response.getUnsynced().getSummary());
+    }
+
+    @Test
+    @DisplayName("generateWeeklySummary_forceLive면_429실패시_latest캐시fallback을사용하지않는다")
+    void generateWeeklySummary_forceLive_doesNotUseLatestFallback() {
+        Task task = task("Force live 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
+        when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
+        when(weeklySummaryGenerator.generate(
+                eq(project),
+                argThat(List::isEmpty),
+                eq(0),
+                argThat(tasks -> tasks.size() == 1 && "Force live 일정".equals(tasks.get(0).getTask().getTitle())),
+                eq(1),
+                any(),
+                any()
+        ))
+                .thenThrow(new WeeklySummaryGenerationException(
+                        com.taskflow.common.ErrorCode.LLM_429_UNKNOWN,
+                        "429 unknown",
+                        true
+                ));
+
+        assertThrows(WeeklySummaryGenerationException.class, () -> service.generateWeeklySummary(1L, true));
+        verify(weeklySummaryCacheService, never()).find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:latest:")));
     }
 
     private Task task(String title, TaskStatus status, LocalDateTime dueAt, boolean calendarSyncEnabled, String eventId) {

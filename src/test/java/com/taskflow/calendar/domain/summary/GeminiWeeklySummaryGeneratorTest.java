@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
+import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationException;
+import com.taskflow.calendar.domain.summary.generator.GeminiWeeklySummaryGenerator;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.common.ErrorCode;
@@ -19,8 +21,10 @@ import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -177,7 +181,184 @@ class GeminiWeeklySummaryGeneratorTest {
     }
 
     @Test
-    @DisplayName("classifyUpstreamFailure_실패로그에관측metrics를남긴다")
+    @DisplayName("prepareRequest_partialCoverage면대표subset가이드를추가한다")
+    void prepareRequest_addsCoverageGuidanceWhenCoverageIsPartial() throws Exception {
+        LocalDate weekStart = LocalDate.of(2026, 3, 23);
+        LocalDate weekEnd = LocalDate.of(2026, 3, 29);
+
+        Object prepared = invokePrivate(
+                generator,
+                "prepareRequest",
+                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                project,
+                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                3,
+                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                1,
+                weekStart,
+                weekEnd
+        );
+
+        JsonNode request = preparedRequestBody(prepared);
+        JsonNode instructions = request.path("contents").get(0).path("parts").get(0).path("text");
+
+        assertTrue(instructions.asText().contains("대표 subset"));
+        assertTrue(instructions.asText().contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
+        JsonNode syncedSection = userPromptPayload(request).path("synced");
+        assertEquals(3, syncedSection.path("totalTaskCount").asInt());
+        assertEquals(1, syncedSection.path("includedTaskCount").asInt());
+        assertEquals("첫 문장은 전체 일정 흐름을 요약하고, 이후 문장에서 대표 일정과 리스크를 연결한다.",
+                syncedSection.path("summaryLeadHint").asText());
+        assertEquals("전체 경향은 참고만 하고, 세부 근거는 포함된 우선순위 task만 사용한다.",
+                syncedSection.path("coverageHint").asText());
+
+        JsonNode unsyncedSection = userPromptPayload(request).path("unsynced");
+        assertEquals("첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.",
+                unsyncedSection.path("summaryLeadHint").asText());
+        assertTrue(unsyncedSection.path("coverageHint").isMissingNode());
+    }
+
+    @Test
+    @DisplayName("prepareRequest_fullCoverage면대표subset가이드를추가하지않는다")
+    void prepareRequest_omitsCoverageGuidanceWhenCoverageIsFull() throws Exception {
+        LocalDate weekStart = LocalDate.of(2026, 3, 23);
+        LocalDate weekEnd = LocalDate.of(2026, 3, 29);
+
+        Object prepared = invokePrivate(
+                generator,
+                "prepareRequest",
+                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                project,
+                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                1,
+                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                1,
+                weekStart,
+                weekEnd
+        );
+
+        JsonNode request = preparedRequestBody(prepared);
+        assertFalse(request.path("contents").get(0).path("parts").get(0).path("text").asText().contains("대표 subset"));
+
+        JsonNode payload = userPromptPayload(request);
+        assertTrue(payload.path("synced").path("coverageHint").isMissingNode());
+        assertTrue(payload.path("unsynced").path("coverageHint").isMissingNode());
+        assertEquals("첫 문장은 이번 주 일정 전반을 요약하고, 이후 문장에서 주요 일정과 리스크를 연결한다.",
+                payload.path("synced").path("summaryLeadHint").asText());
+        assertEquals("첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.",
+                payload.path("unsynced").path("summaryLeadHint").asText());
+    }
+
+    @Test
+    @DisplayName("prepareRequest_unsynced가partialCoverage면전체경향우선힌트를넣는다")
+    void prepareRequest_addsUnsyncedLeadHintWhenUnsyncedCoverageIsPartial() throws Exception {
+        LocalDate weekStart = LocalDate.of(2026, 3, 23);
+        LocalDate weekEnd = LocalDate.of(2026, 3, 29);
+
+        Object prepared = invokePrivate(
+                generator,
+                "prepareRequest",
+                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                project,
+                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                1,
+                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                4,
+                weekStart,
+                weekEnd
+        );
+
+        JsonNode payload = userPromptPayload(preparedRequestBody(prepared));
+        JsonNode unsyncedSection = payload.path("unsynced");
+
+        assertEquals("첫 문장은 전체 미동기화 업무의 공통 흐름이나 누락 위험을 요약하고, 이후 문장에서 대표 task를 예시로 든다.",
+                unsyncedSection.path("summaryLeadHint").asText());
+        assertEquals("전체 경향은 참고만 하고, 세부 근거는 포함된 우선순위 task만 사용한다.",
+                unsyncedSection.path("coverageHint").asText());
+    }
+
+    @Test
+    @DisplayName("classifyUpstreamFailure_retryAfter헤더가있으면_임시rateLimit로분류한다")
+    void classifyUpstreamFailure_retryAfterClassifiesTemporaryRateLimit() throws Exception {
+        LocalDate weekStart = LocalDate.of(2026, 3, 23);
+        LocalDate weekEnd = LocalDate.of(2026, 3, 29);
+        Object prepared = invokePrivate(
+                generator,
+                "prepareRequest",
+                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                project,
+                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                1,
+                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                1,
+                weekStart,
+                weekEnd
+        );
+        Object metrics = invokeGetter(prepared, "getMetrics");
+
+        Object exception = invokePrivate(
+                generator,
+                "classifyUpstreamFailure",
+                new Class[]{Project.class, LocalDate.class, LocalDate.class, int.class, Map.class, String.class, long.class, metrics.getClass()},
+                project,
+                weekStart,
+                weekEnd,
+                429,
+                Map.of("Retry-After", List.of("120")),
+                "{\"error\":{\"message\":\"Too many requests\"}}",
+                700L,
+                metrics
+        );
+
+        WeeklySummaryGenerationException generationException = assertInstanceOf(WeeklySummaryGenerationException.class, exception);
+        assertEquals(ErrorCode.LLM_RATE_LIMITED_TEMPORARY, generationException.getErrorCode());
+        assertEquals("HEADER", generationException.getClassificationSource());
+        assertEquals("120", generationException.getRetryAfter());
+        assertTrue(generationException.isFallbackEligible());
+    }
+
+    @Test
+    @DisplayName("classifyUpstreamFailure_reason이dailyLimit이면_quota소진으로분류한다")
+    void classifyUpstreamFailure_dailyLimitReasonClassifiesQuotaExhausted() throws Exception {
+        LocalDate weekStart = LocalDate.of(2026, 3, 23);
+        LocalDate weekEnd = LocalDate.of(2026, 3, 29);
+        Object prepared = invokePrivate(
+                generator,
+                "prepareRequest",
+                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                project,
+                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                1,
+                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                1,
+                weekStart,
+                weekEnd
+        );
+        Object metrics = invokeGetter(prepared, "getMetrics");
+
+        Object exception = invokePrivate(
+                generator,
+                "classifyUpstreamFailure",
+                new Class[]{Project.class, LocalDate.class, LocalDate.class, int.class, Map.class, String.class, long.class, metrics.getClass()},
+                project,
+                weekStart,
+                weekEnd,
+                429,
+                Map.of(),
+                "{\"error\":{\"status\":\"RESOURCE_EXHAUSTED\",\"message\":\"Daily limit reached\",\"details\":[{\"reason\":\"dailyLimitExceeded\"}]}}",
+                700L,
+                metrics
+        );
+
+        WeeklySummaryGenerationException generationException = assertInstanceOf(WeeklySummaryGenerationException.class, exception);
+        assertEquals(ErrorCode.LLM_QUOTA_EXHAUSTED, generationException.getErrorCode());
+        assertEquals("BODY", generationException.getClassificationSource());
+        assertEquals("RESOURCE_EXHAUSTED", generationException.getUpstreamStatus());
+        assertTrue(generationException.getUpstreamReasonHints().contains("dailyLimitExceeded"));
+    }
+
+    @Test
+    @DisplayName("classifyUpstreamFailure_근거가없으면_unknown429로분류하고실패로그에관측metrics를남긴다")
     void classifyUpstreamFailure_logsMetricsOnFailure(CapturedOutput output) throws Exception {
         LocalDate weekStart = LocalDate.of(2026, 3, 23);
         LocalDate weekEnd = LocalDate.of(2026, 3, 29);
@@ -198,24 +379,27 @@ class GeminiWeeklySummaryGeneratorTest {
         Object exception = invokePrivate(
                 generator,
                 "classifyUpstreamFailure",
-                new Class[]{Project.class, LocalDate.class, LocalDate.class, int.class, String.class, long.class, metrics.getClass()},
+                new Class[]{Project.class, LocalDate.class, LocalDate.class, int.class, Map.class, String.class, long.class, metrics.getClass()},
                 project,
                 weekStart,
                 weekEnd,
                 429,
-                "{\"error\":\"quota exceeded\"}",
+                Map.of(),
+                "{\"error\":{\"message\":\"request rejected\"}}",
                 700L,
                 metrics
         );
 
         WeeklySummaryGenerationException generationException = assertInstanceOf(WeeklySummaryGenerationException.class, exception);
-        assertEquals(ErrorCode.LLM_QUOTA_EXCEEDED, generationException.getErrorCode());
+        assertEquals(ErrorCode.LLM_429_UNKNOWN, generationException.getErrorCode());
+        assertEquals("UNKNOWN", generationException.getClassificationSource());
         assertTrue(output.getOut().contains("Gemini summary request failed."));
         assertTrue(output.getOut().contains("requestBodyLength="));
         assertTrue(output.getOut().contains("promptInputFingerprint="));
         assertTrue(output.getOut().contains("syncedDescBriefChars="));
         assertTrue(output.getOut().contains("unsyncedDescBriefChars="));
-        assertTrue(output.getOut().contains("errorCode=LLM_QUOTA_EXCEEDED"));
+        assertTrue(output.getOut().contains("errorCode=LLM_429_UNKNOWN"));
+        assertTrue(output.getOut().contains("classificationSource=UNKNOWN"));
     }
 
     @Test
@@ -267,6 +451,17 @@ class GeminiWeeklySummaryGeneratorTest {
 
     private SummaryTaskSnapshot snapshot(Task task, TaskSyncState syncState) {
         return SummaryTaskSnapshot.of(task, syncState, null, null, null);
+    }
+
+    private JsonNode preparedRequestBody(Object prepared) throws Exception {
+        String requestBody = (String) invokeGetter(prepared, "getRequestBody");
+        return objectMapper.readTree(requestBody);
+    }
+
+    private JsonNode userPromptPayload(JsonNode preparedRequestBody) throws Exception {
+        String promptText = preparedRequestBody.path("contents").get(0).path("parts").get(0).path("text").asText();
+        String jsonPayload = promptText.substring(promptText.indexOf('\n') + 1);
+        return objectMapper.readTree(jsonPayload);
     }
 
     private Object invokeGetter(Object target, String methodName) throws Exception {

@@ -1,4 +1,4 @@
-package com.taskflow.calendar.domain.summary;
+package com.taskflow.calendar.domain.summary.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.ClientOptions;

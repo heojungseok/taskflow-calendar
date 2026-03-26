@@ -1,13 +1,14 @@
-package com.taskflow.calendar.domain.summary;
+package com.taskflow.calendar.domain.summary.generator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.taskflow.calendar.domain.outbox.OutboxStatus;
 import com.taskflow.calendar.domain.project.Project;
+import com.taskflow.calendar.domain.summary.SummaryBucket;
+import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
+import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.calendar.domain.task.Task;
-import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiProperties;
 import com.taskflow.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -24,55 +25,25 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
-    private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
-    private static final int RECENT_UPDATE_HOURS = 24;
-    private static final Pattern SENTENCE_SPLIT_PATTERN = Pattern.compile("(?<=[.!?])\\s+|\\n+");
-
-    private static final List<String> URGENCY_KEYWORDS = List.of(
-            "긴급", "urgent", "asap", "즉시", "오늘", "오늘 안", "today", "critical", "반드시"
-    );
-    private static final List<String> RISK_KEYWORDS = List.of(
-            "리스크", "risk", "실패", "failure", "누락", "지연", "문제", "오류", "retry", "차단", "blocked"
-    );
-    private static final List<String> DEPENDENCY_KEYWORDS = List.of(
-            "의존", "dependency", "승인", "검토", "외부", "협업", "대기"
-    );
-    private static final List<String> DELIVERABLE_KEYWORDS = List.of(
-            "발표", "문서", "체크리스트", "보고", "정리", "캡처", "데모", "산출물", "공유"
-    );
-    private static final List<String> CONFIG_KEYWORDS = List.of(
-            "oauth", "redirect uri", "api key", "gemini", "환경 변수", "env", "config", "설정"
-    );
-    private static final List<String> DEMO_KEYWORDS = List.of(
-            "sprint review", "review", "데모", "화면 캡처", "캡처"
-    );
-    private static final List<String> DOC_KEYWORDS = List.of(
-            "문서", "체크리스트", "가이드", "정리", "공유", "보고"
-    );
-    private static final List<String> PRESERVED_KEYWORDS = List.of(
-            "Google OAuth", "Gemini API key", "OAuth", "API key", "배포", "Sprint Review", "체크리스트", "캡처", "데모"
-    );
-
     private final GeminiProperties properties;
     private final ObjectMapper objectMapper;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     @Override
     public WeeklySummarySectionsResult generate(Project project,
@@ -112,7 +83,16 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             long latencyMs = System.currentTimeMillis() - startedAt;
 
             if (response.statusCode() >= 400) {
-                throw classifyUpstreamFailure(project, weekStart, weekEnd, response.statusCode(), response.body(), latencyMs, preparedRequest.getMetrics());
+                throw classifyUpstreamFailure(
+                        project,
+                        weekStart,
+                        weekEnd,
+                        response.statusCode(),
+                        response.headers().map(),
+                        response.body(),
+                        latencyMs,
+                        preparedRequest.getMetrics()
+                );
             }
 
             JsonNode root = objectMapper.readTree(response.body());
@@ -232,20 +212,38 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         payload.put("today", LocalDate.now());
         payload.put("weekStart", weekStart);
         payload.put("weekEnd", weekEnd);
-        payload.put("instructions", List.of(
-                "이번 주 관점으로만 요약한다.",
-                "synced는 캘린더에 반영된 일정 흐름과 일정상 위험에 집중한다.",
-                "unsynced는 캘린더 미반영 업무의 누락 위험과 반영 필요성에 집중한다.",
-                "summary는 2~4문장, highlights/risks/nextActions는 각 0~3개만 작성한다.",
-                "리스크와 차단 상태는 risks에 분명히 반영한다.",
-                "nextActions는 바로 실행 가능한 행동만 적는다.",
-                "Task 원문 description 대신 descBrief와 descSignals를 우선 근거로 사용한다."
+        payload.put("instructions", promptInstructions(
+                syncedTasks,
+                syncedTotalTaskCount,
+                unsyncedTasks,
+                unsyncedTotalTaskCount
         ));
         payload.put("synced", sectionPayload(SummaryBucket.SYNCED, syncedTasks, syncedTotalTaskCount, weekStart, weekEnd));
         payload.put("unsynced", sectionPayload(SummaryBucket.UNSYNCED, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd));
 
-        return "아래 JSON 입력을 기반으로 synced와 unsynced 두 섹션을 모두 반환하라.\n"
+        return "입력 JSON을 바탕으로 synced와 unsynced 두 섹션만 반환하라.\n"
                 + objectMapper.writeValueAsString(payload);
+    }
+
+    private List<String> promptInstructions(List<SummaryTaskSnapshot> syncedTasks,
+                                            int syncedTotalTaskCount,
+                                            List<SummaryTaskSnapshot> unsyncedTasks,
+                                            int unsyncedTotalTaskCount) {
+        List<String> instructions = new ArrayList<>();
+        instructions.add("이번 주 기준으로만 요약한다.");
+        instructions.add("synced는 일정 흐름과 일정상 리스크 중심으로 쓴다.");
+        instructions.add("unsynced는 누락 위험과 반영 필요성 중심으로 쓴다.");
+        instructions.add("summary는 2~4문장, highlights/risks/nextActions는 각 0~3개만 작성한다.");
+        instructions.add("리스크와 차단 상태는 risks에, 바로 할 일은 nextActions에 적는다.");
+        instructions.add("summary는 자연스럽게 쓰되, 구체 근거와 액션은 제공된 tasks 안에서만 사용한다.");
+        instructions.add("summary의 첫 문장은 섹션 전체 경향을 먼저 요약하고, 다음 문장에서 대표 task를 연결한다.");
+
+        if (hasPartialCoverage(syncedTasks, syncedTotalTaskCount)
+                || hasPartialCoverage(unsyncedTasks, unsyncedTotalTaskCount)) {
+            instructions.add("includedTaskCount가 totalTaskCount보다 작으면, 제공된 tasks는 우선순위 대표 subset으로 이해하고 전체를 다 본 것처럼 단정하지 않는다.");
+        }
+
+        return instructions;
     }
 
     private Map<String, Object> sectionPayload(SummaryBucket bucket,
@@ -254,250 +252,53 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                                                LocalDate weekStart,
                                                LocalDate weekEnd) {
         Map<String, Object> section = new LinkedHashMap<>();
-        section.put("label", bucket.getDisplayName());
         section.put("focus", bucket.getPromptFocus());
         section.put("totalTaskCount", totalTaskCount);
         section.put("includedTaskCount", tasks.size());
+        section.put("summaryLeadHint", summaryLeadHint(bucket, tasks, totalTaskCount));
+        if (hasPartialCoverage(tasks, totalTaskCount)) {
+            section.put("coverageHint", "전체 경향은 참고만 하고, 세부 근거는 포함된 우선순위 task만 사용한다.");
+        }
         section.put("tasks", taskPayload(tasks, weekStart, weekEnd));
         return section;
+    }
+
+    private String summaryLeadHint(SummaryBucket bucket,
+                                   List<SummaryTaskSnapshot> tasks,
+                                   int totalTaskCount) {
+        boolean partialCoverage = hasPartialCoverage(tasks, totalTaskCount);
+        if (bucket == SummaryBucket.UNSYNCED) {
+            if (partialCoverage) {
+                return "첫 문장은 전체 미동기화 업무의 공통 흐름이나 누락 위험을 요약하고, 이후 문장에서 대표 task를 예시로 든다.";
+            }
+            return "첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.";
+        }
+        if (partialCoverage) {
+            return "첫 문장은 전체 일정 흐름을 요약하고, 이후 문장에서 대표 일정과 리스크를 연결한다.";
+        }
+        return "첫 문장은 이번 주 일정 전반을 요약하고, 이후 문장에서 주요 일정과 리스크를 연결한다.";
+    }
+
+    private boolean hasPartialCoverage(List<SummaryTaskSnapshot> tasks, int totalTaskCount) {
+        return totalTaskCount > 0 && tasks.size() < totalTaskCount;
     }
 
     private List<Map<String, Object>> taskPayload(List<SummaryTaskSnapshot> tasks, LocalDate weekStart, LocalDate weekEnd) {
         List<Map<String, Object>> payload = new ArrayList<>();
 
         for (SummaryTaskSnapshot snapshot : tasks) {
-            Task task = snapshot.getTask();
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("id", task.getId());
-            item.put("title", task.getTitle());
-            item.put("status", task.getStatus().name());
-            item.put("startAt", task.getStartAt());
-            item.put("dueAt", task.getDueAt());
-            item.put("updatedAt", task.getUpdatedAt());
-            item.put("recentlyUpdated", isRecentlyUpdated(task));
-            item.put("calendarSyncEnabled", task.getCalendarSyncEnabled());
-            item.put("syncState", snapshot.getSyncState().name());
-            item.put("lastOutboxStatus", enumName(snapshot.getLatestOutboxStatus()));
-            item.put("lastOutboxError", snapshot.getLatestOutboxError());
-            item.put("isOverdue", isOverdue(task));
-            item.put("isDeadlineThisWeek", isDeadlineThisWeek(task, weekStart, weekEnd));
-            item.put("isEventOverlappingThisWeek", isEventOverlappingThisWeek(task, weekStart, weekEnd));
-            item.put("descBrief", compressDescription(task));
-            item.put("descSignals", descriptionSignals(task.getDescription()));
-            payload.add(item);
+            payload.add(promptTaskSupport.toPromptTaskPayload(snapshot, weekStart, weekEnd));
         }
 
         return payload;
     }
 
     private String compressDescription(Task task) {
-        String description = task.getDescription();
-        if (description == null || description.isBlank()) {
-            return null;
-        }
-
-        int maxChars = maxDescriptionLength(task.getStatus());
-        int maxSentences = allowSecondSentence(task, description) ? 2 : 1;
-        List<SentenceCandidate> candidates = sentenceCandidates(description);
-
-        if (candidates.isEmpty()) {
-            return truncate(description, maxChars);
-        }
-
-        List<SentenceCandidate> selected = candidates.stream()
-                .sorted(Comparator.comparingInt(SentenceCandidate::getScore).reversed()
-                        .thenComparingInt(SentenceCandidate::getIndex))
-                .limit(maxSentences)
-                .sorted(Comparator.comparingInt(SentenceCandidate::getIndex))
-                .collect(java.util.stream.Collectors.toList());
-
-        String combined = selected.stream()
-                .map(SentenceCandidate::getSentence)
-                .collect(java.util.stream.Collectors.joining(" "));
-        String normalized = normalizeWhitespace(combined);
-        if (normalized.isBlank()) {
-            normalized = normalizeWhitespace(description);
-        }
-        return truncate(normalized, maxChars);
-    }
-
-    private int maxDescriptionLength(TaskStatus status) {
-        if (status == TaskStatus.BLOCKED || status == TaskStatus.IN_PROGRESS) {
-            return 140;
-        }
-        if (status == TaskStatus.DONE) {
-            return 80;
-        }
-        return 120;
-    }
-
-    private boolean allowSecondSentence(Task task, String description) {
-        if (task.getStatus() != TaskStatus.BLOCKED && task.getStatus() != TaskStatus.IN_PROGRESS) {
-            return false;
-        }
-        return descriptionSignals(description).size() >= 2;
-    }
-
-    private List<SentenceCandidate> sentenceCandidates(String description) {
-        String normalized = normalizeWhitespace(description);
-        if (normalized.isBlank()) {
-            return List.of();
-        }
-
-        String[] rawSentences = SENTENCE_SPLIT_PATTERN.split(normalized);
-        List<SentenceCandidate> candidates = new ArrayList<>();
-        int index = 0;
-        for (String rawSentence : rawSentences) {
-            String sentence = normalizeWhitespace(rawSentence);
-            if (sentence.isBlank()) {
-                continue;
-            }
-            candidates.add(new SentenceCandidate(index++, sentence, scoreSentence(sentence)));
-        }
-
-        if (candidates.isEmpty()) {
-            candidates.add(new SentenceCandidate(0, normalized, scoreSentence(normalized)));
-        }
-        return candidates;
-    }
-
-    private int scoreSentence(String sentence) {
-        String normalized = sentence.toLowerCase(Locale.ROOT);
-        int score = 0;
-
-        score += containsAny(normalized, RISK_KEYWORDS) ? 50 : 0;
-        score += containsAny(normalized, URGENCY_KEYWORDS) ? 40 : 0;
-        score += containsAny(normalized, DELIVERABLE_KEYWORDS) ? 30 : 0;
-        score += containsAny(normalized, DEPENDENCY_KEYWORDS) ? 25 : 0;
-        score += countHits(normalized, CONFIG_KEYWORDS) * 30;
-        score += containsAny(normalized, DEMO_KEYWORDS) ? 18 : 0;
-        score += containsAny(normalized, DOC_KEYWORDS) ? 15 : 0;
-        score += countHits(normalized, PRESERVED_KEYWORDS) * 25;
-        score += containsScheduleSignal(normalized) ? 15 : 0;
-
-        return score;
-    }
-
-    private boolean containsScheduleSignal(String normalized) {
-        return normalized.contains("월") || normalized.contains("화") || normalized.contains("수")
-                || normalized.contains("목") || normalized.contains("금") || normalized.contains("토")
-                || normalized.contains("일") || normalized.contains("마감") || normalized.contains("오전")
-                || normalized.contains("오후") || normalized.contains("배포");
-    }
-
-    private boolean containsAny(String normalized, List<String> keywords) {
-        for (String keyword : keywords) {
-            if (normalized.contains(keyword.toLowerCase(Locale.ROOT))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private int countHits(String normalized, List<String> keywords) {
-        int hits = 0;
-        for (String keyword : keywords) {
-            if (normalized.contains(keyword.toLowerCase(Locale.ROOT))) {
-                hits++;
-            }
-        }
-        return hits;
-    }
-
-    private String normalizeWhitespace(String value) {
-        return value == null ? "" : value.replaceAll("\\s+", " ").trim();
-    }
-
-    private String truncate(String value, int maxChars) {
-        String normalized = normalizeWhitespace(value);
-        if (normalized.length() <= maxChars) {
-            return normalized;
-        }
-
-        int end = maxChars;
-        while (end > 0 && !Character.isWhitespace(normalized.charAt(end - 1))) {
-            end--;
-        }
-        if (end < maxChars / 2) {
-            end = maxChars;
-        }
-
-        return normalized.substring(0, end).trim();
+        return promptTaskSupport.compressDescription(task);
     }
 
     private List<String> descriptionSignals(String description) {
-        if (description == null || description.isBlank()) {
-            return List.of();
-        }
-
-        String normalized = description.toLowerCase(Locale.ROOT);
-        Set<String> signals = new LinkedHashSet<>();
-
-        if (containsAny(normalized, URGENCY_KEYWORDS)) {
-            signals.add("urgent");
-        }
-        if (containsAny(normalized, RISK_KEYWORDS)) {
-            signals.add("risk");
-        }
-        if (containsAny(normalized, DEPENDENCY_KEYWORDS)) {
-            signals.add("dependency");
-        }
-        if (containsAny(normalized, DELIVERABLE_KEYWORDS)) {
-            signals.add("deliverable");
-        }
-        if (containsAny(normalized, CONFIG_KEYWORDS)) {
-            signals.add("config");
-        }
-        if (containsAny(normalized, DEMO_KEYWORDS)) {
-            signals.add("demo");
-        }
-        if (containsAny(normalized, DOC_KEYWORDS)) {
-            signals.add("doc");
-        }
-
-        return List.copyOf(signals);
-    }
-
-    private String enumName(OutboxStatus status) {
-        return status != null ? status.name() : null;
-    }
-
-    private boolean isRecentlyUpdated(Task task) {
-        if (task.getUpdatedAt() == null) {
-            return false;
-        }
-        return task.getUpdatedAt().isAfter(LocalDateTime.now().minusHours(RECENT_UPDATE_HOURS));
-    }
-
-    private boolean isOverdue(Task task) {
-        return task.getDueAt() != null
-                && task.getDueAt().toLocalDate().isBefore(LocalDate.now())
-                && task.getStatus() != TaskStatus.DONE;
-    }
-
-    private boolean isDeadlineThisWeek(Task task, LocalDate weekStart, LocalDate weekEnd) {
-        if (task.getDueAt() == null) {
-            return false;
-        }
-
-        LocalDate dueDate = task.getDueAt().toLocalDate();
-        return !dueDate.isBefore(weekStart) && !dueDate.isAfter(weekEnd);
-    }
-
-    private boolean isEventOverlappingThisWeek(Task task, LocalDate weekStart, LocalDate weekEnd) {
-        if (task.getDueAt() == null) {
-            return false;
-        }
-
-        if (task.getStartAt() != null && task.getStartAt().isAfter(task.getDueAt())) {
-            return false;
-        }
-
-        LocalDate eventStartDate = task.getStartAt() != null
-                ? task.getStartAt().toLocalDate()
-                : task.getDueAt().minusHours(DEFAULT_EVENT_DURATION_HOURS).toLocalDate();
-        LocalDate eventEndDate = task.getDueAt().toLocalDate();
-        return !eventStartDate.isAfter(weekEnd) && !eventEndDate.isBefore(weekStart);
+        return promptTaskSupport.descriptionSignals(description);
     }
 
     private Map<String, Object> responseJsonSchema() {
@@ -634,17 +435,27 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                                                                     LocalDate weekStart,
                                                                     LocalDate weekEnd,
                                                                     int statusCode,
+                                                                    Map<String, List<String>> responseHeaders,
                                                                     String responseBody,
                                                                     long latencyMs,
                                                                     PromptMetrics metrics) {
         ErrorCode errorCode;
         boolean fallbackEligible;
         String message;
+        String classificationSource = null;
+        String retryAfter = firstHeaderValueIgnoreCase(responseHeaders, "Retry-After");
+        String upstreamStatus = null;
+        List<String> reasonHints = List.of();
 
         if (statusCode == 429) {
-            errorCode = ErrorCode.LLM_QUOTA_EXCEEDED;
+            Classified429 classified429 = classify429(responseHeaders, responseBody);
+            errorCode = classified429.errorCode();
             fallbackEligible = true;
-            message = "Gemini quota exceeded";
+            message = classified429.message();
+            classificationSource = classified429.classificationSource();
+            retryAfter = classified429.retryAfter();
+            upstreamStatus = classified429.upstreamStatus();
+            reasonHints = classified429.reasonHints();
         } else if (statusCode == 400 || statusCode == 404) {
             errorCode = ErrorCode.LLM_CONFIG_INVALID;
             fallbackEligible = false;
@@ -659,7 +470,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             message = "Gemini request failed";
         }
 
-        log.warn("Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, body={}",
+        log.warn("Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}, body={}",
                 project.getId(),
                 properties.getModel(),
                 weekStart,
@@ -673,13 +484,263 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 metrics.getUnsyncedIncludedTaskCount(),
                 metrics.getSyncedDescBriefChars(),
                 metrics.getUnsyncedDescBriefChars(),
+                classificationSource != null ? classificationSource : "UNKNOWN",
+                retryAfter,
+                upstreamStatus,
+                reasonHints,
                 abbreviate(responseBody));
 
         return new WeeklySummaryGenerationException(
                 errorCode,
                 message + ": " + abbreviate(responseBody),
-                fallbackEligible
+                fallbackEligible,
+                classificationSource,
+                retryAfter,
+                upstreamStatus,
+                reasonHints
         );
+    }
+
+    private Classified429 classify429(Map<String, List<String>> responseHeaders, String responseBody) {
+        String retryAfter = firstHeaderValueIgnoreCase(responseHeaders, "Retry-After");
+        if (retryAfter != null && !retryAfter.isBlank()) {
+            return new Classified429(
+                    ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
+                    "Gemini rate limit is temporary",
+                    "HEADER",
+                    retryAfter,
+                    null,
+                    List.of("retry-after")
+            );
+        }
+
+        ParsedUpstream429 parsed = parseUpstream429(responseBody);
+        if (containsQuotaHint(parsed.reasonHints(), parsed.message(), parsed.upstreamStatus())) {
+            return new Classified429(
+                    ErrorCode.LLM_QUOTA_EXHAUSTED,
+                    "Gemini quota exhausted",
+                    "BODY",
+                    retryAfter,
+                    parsed.upstreamStatus(),
+                    parsed.reasonHints()
+            );
+        }
+        if (containsRateLimitHint(parsed.reasonHints(), parsed.message(), parsed.upstreamStatus())) {
+            return new Classified429(
+                    ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
+                    "Gemini rate limit is temporary",
+                    "BODY",
+                    retryAfter,
+                    parsed.upstreamStatus(),
+                    parsed.reasonHints()
+            );
+        }
+
+        String normalizedMessage = normalizeHintText(parsed.message().isBlank() ? responseBody : parsed.message());
+        if (containsQuotaKeyword(normalizedMessage)) {
+            return new Classified429(
+                    ErrorCode.LLM_QUOTA_EXHAUSTED,
+                    "Gemini quota exhausted",
+                    "MESSAGE",
+                    retryAfter,
+                    parsed.upstreamStatus(),
+                    parsed.reasonHints()
+            );
+        }
+        if (containsRateLimitKeyword(normalizedMessage)) {
+            return new Classified429(
+                    ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
+                    "Gemini rate limit is temporary",
+                    "MESSAGE",
+                    retryAfter,
+                    parsed.upstreamStatus(),
+                    parsed.reasonHints()
+            );
+        }
+
+        return new Classified429(
+                ErrorCode.LLM_429_UNKNOWN,
+                "Gemini 429 classification unknown",
+                "UNKNOWN",
+                retryAfter,
+                parsed.upstreamStatus(),
+                parsed.reasonHints()
+        );
+    }
+
+    private ParsedUpstream429 parseUpstream429(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return new ParsedUpstream429("", null, List.of());
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode errorNode = root.path("error");
+            String message = firstNonBlank(
+                    errorNode.path("message").asText(null),
+                    root.path("message").asText(null),
+                    responseBody
+            );
+            String upstreamStatus = firstNonBlank(
+                    errorNode.path("status").asText(null),
+                    root.path("status").asText(null)
+            );
+            List<String> reasonHints = extractReasonHints(errorNode);
+            return new ParsedUpstream429(message == null ? "" : message, upstreamStatus, reasonHints);
+        } catch (IOException e) {
+            return new ParsedUpstream429(responseBody, null, List.of());
+        }
+    }
+
+    private List<String> extractReasonHints(JsonNode errorNode) {
+        if (errorNode == null || errorNode.isMissingNode() || errorNode.isNull()) {
+            return List.of();
+        }
+
+        Set<String> hints = new LinkedHashSet<>();
+        collectReasonHints(errorNode.path("details"), hints);
+        collectReasonHints(errorNode.path("errors"), hints);
+        collectReasonHints(errorNode.path("violations"), hints);
+        return List.copyOf(hints);
+    }
+
+    private void collectReasonHints(JsonNode node, Set<String> hints) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return;
+        }
+
+        if (node.isArray()) {
+            for (JsonNode item : node) {
+                collectReasonHints(item, hints);
+            }
+            return;
+        }
+
+        if (!node.isObject()) {
+            return;
+        }
+
+        addHintValue(hints, node.path("reason").asText(null));
+        addHintValue(hints, node.path("errorType").asText(null));
+        addHintValue(hints, node.path("@type").asText(null));
+        collectReasonHints(node.path("metadata"), hints);
+        collectReasonHints(node.path("violations"), hints);
+    }
+
+    private void addHintValue(Set<String> hints, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        hints.add(value);
+    }
+
+    private boolean containsQuotaHint(List<String> reasonHints, String message, String upstreamStatus) {
+        if (containsQuotaKeyword(normalizeHintText(upstreamStatus))) {
+            return true;
+        }
+        for (String hint : reasonHints) {
+            if (containsQuotaKeyword(normalizeHintText(hint))) {
+                return true;
+            }
+        }
+        return containsQuotaKeyword(normalizeHintText(message));
+    }
+
+    private boolean containsRateLimitHint(List<String> reasonHints, String message, String upstreamStatus) {
+        if (containsRateLimitKeyword(normalizeHintText(upstreamStatus))) {
+            return true;
+        }
+        for (String hint : reasonHints) {
+            if (containsRateLimitKeyword(normalizeHintText(hint))) {
+                return true;
+            }
+        }
+        return containsRateLimitKeyword(normalizeHintText(message));
+    }
+
+    private boolean containsQuotaKeyword(String normalized) {
+        return containsAnyKeyword(normalized,
+                "quotaexceeded",
+                "dailylimitexceeded",
+                "daily limit",
+                "daily quota",
+                "current quota",
+                "quota exhausted",
+                "insufficient quota",
+                "billing",
+                "billable",
+                "resource exhausted");
+    }
+
+    private boolean containsRateLimitKeyword(String normalized) {
+        return containsAnyKeyword(normalized,
+                "ratelimitexceeded",
+                "rate limit",
+                "too many requests",
+                "retry later",
+                "try again later",
+                "per minute",
+                "retrydelay",
+                "retry delay",
+                "retry after");
+    }
+
+    private boolean containsAnyKeyword(String normalized, String... keywords) {
+        if (normalized == null || normalized.isBlank()) {
+            return false;
+        }
+        for (String keyword : keywords) {
+            if (normalized.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeHintText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toLowerCase(Locale.ROOT)
+                .replace('_', ' ')
+                .replace('-', ' ')
+                .trim();
+    }
+
+    private String firstHeaderValueIgnoreCase(Map<String, List<String>> responseHeaders, String headerName) {
+        if (responseHeaders == null || responseHeaders.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<String, List<String>> entry : responseHeaders.entrySet()) {
+            if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(headerName)) {
+                return firstNonBlank(entry.getValue());
+            }
+        }
+        return null;
+    }
+
+    private String firstNonBlank(Collection<String> values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private void logUsage(Project project,
@@ -726,10 +787,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     private int totalDescBriefChars(List<SummaryTaskSnapshot> tasks) {
         int total = 0;
         for (SummaryTaskSnapshot snapshot : tasks) {
-            String descBrief = compressDescription(snapshot.getTask());
-            if (descBrief != null) {
-                total += descBrief.length();
-            }
+            total += promptTaskSupport.descBriefChars(snapshot.getTask());
         }
         return total;
     }
@@ -756,30 +814,6 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             return value;
         }
         return value.substring(0, 300) + "...";
-    }
-
-    private static final class SentenceCandidate {
-        private final int index;
-        private final String sentence;
-        private final int score;
-
-        private SentenceCandidate(int index, String sentence, int score) {
-            this.index = index;
-            this.sentence = sentence;
-            this.score = score;
-        }
-
-        private int getIndex() {
-            return index;
-        }
-
-        private String getSentence() {
-            return sentence;
-        }
-
-        private int getScore() {
-            return score;
-        }
     }
 
     static final class PromptMetrics {
@@ -844,6 +878,77 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
         private PromptMetrics getMetrics() {
             return metrics;
+        }
+    }
+
+    private static final class ParsedUpstream429 {
+        private final String message;
+        private final String upstreamStatus;
+        private final List<String> reasonHints;
+
+        private ParsedUpstream429(String message, String upstreamStatus, List<String> reasonHints) {
+            this.message = message;
+            this.upstreamStatus = upstreamStatus;
+            this.reasonHints = reasonHints;
+        }
+
+        private String message() {
+            return message;
+        }
+
+        private String upstreamStatus() {
+            return upstreamStatus;
+        }
+
+        private List<String> reasonHints() {
+            return reasonHints;
+        }
+    }
+
+    private static final class Classified429 {
+        private final ErrorCode errorCode;
+        private final String message;
+        private final String classificationSource;
+        private final String retryAfter;
+        private final String upstreamStatus;
+        private final List<String> reasonHints;
+
+        private Classified429(ErrorCode errorCode,
+                              String message,
+                              String classificationSource,
+                              String retryAfter,
+                              String upstreamStatus,
+                              List<String> reasonHints) {
+            this.errorCode = errorCode;
+            this.message = message;
+            this.classificationSource = classificationSource;
+            this.retryAfter = retryAfter;
+            this.upstreamStatus = upstreamStatus;
+            this.reasonHints = reasonHints;
+        }
+
+        private ErrorCode errorCode() {
+            return errorCode;
+        }
+
+        private String message() {
+            return message;
+        }
+
+        private String classificationSource() {
+            return classificationSource;
+        }
+
+        private String retryAfter() {
+            return retryAfter;
+        }
+
+        private String upstreamStatus() {
+            return upstreamStatus;
+        }
+
+        private List<String> reasonHints() {
+            return reasonHints;
         }
     }
 }

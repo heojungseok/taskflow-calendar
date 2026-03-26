@@ -83,10 +83,22 @@ function getSummaryErrorPresentation(error: unknown) {
   }
 
   switch (apiError.code) {
-    case 'LLM_QUOTA_EXCEEDED':
+    case 'LLM_RATE_LIMITED_TEMPORARY':
       return {
-        title: '오늘 요약 호출 한도를 초과했습니다.',
-        message: '즉시 다시 생성하기보다 저장된 요약이 있다면 그 결과를 우선 확인해주세요.',
+        title: '요약 호출이 잠시 몰려 있습니다.',
+        message: '잠시 후 다시 시도해주세요. 저장된 요약이 있다면 그 결과를 먼저 보여드릴게요.',
+        tone: 'warning',
+      } as const;
+    case 'LLM_QUOTA_EXHAUSTED':
+      return {
+        title: '현재 사용 가능한 요약 호출 한도를 소진했습니다.',
+        message: '즉시 다시 생성하기보다 저장된 요약이 있다면 그 결과를 먼저 확인해주세요.',
+        tone: 'warning',
+      } as const;
+    case 'LLM_429_UNKNOWN':
+      return {
+        title: '현재 요약 호출이 제한된 상태입니다.',
+        message: '잠시 후 다시 시도해주세요. 제한 원인은 서버 로그에서 추가로 확인할 수 있습니다.',
         tone: 'warning',
       } as const;
     case 'LLM_API_KEY_MISSING':

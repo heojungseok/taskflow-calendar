@@ -1,4 +1,4 @@
-package com.taskflow.calendar.domain.summary;
+package com.taskflow.calendar.domain.summary.cache;
 
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheHealthResponse;

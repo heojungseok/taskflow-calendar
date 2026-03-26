@@ -3,11 +3,15 @@ package com.taskflow.calendar.domain.summary;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
+import com.taskflow.calendar.domain.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
+import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationException;
+import com.taskflow.calendar.domain.summary.generator.SummaryPromptTaskSupport;
+import com.taskflow.calendar.domain.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
@@ -35,9 +39,13 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ProjectWeeklySummaryService {
 
-    private static final int MAX_TASKS_PER_SECTION = 15;
     private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
     private static final int RECENT_UPDATE_HOURS = 24;
+    private static final int MAX_SYNCED_TASKS_PER_SECTION = 6;
+    private static final int MAX_UNSYNCED_TASKS_PER_SECTION = 4;
+    private static final int MAX_SYNCED_DESC_BRIEF_CHARS = 280;
+    private static final int MAX_UNSYNCED_DESC_BRIEF_CHARS = 160;
+    private static final int MAX_DONE_TASKS_PER_SECTION = 1;
     private static final List<String> HIGH_PRIORITY_DESCRIPTION_KEYWORDS = List.of(
             "긴급", "urgent", "asap", "즉시", "오늘", "차단", "blocked", "장애", "incident", "배포", "release"
     );
@@ -51,8 +59,13 @@ public class ProjectWeeklySummaryService {
     private final TaskSyncStateResolver taskSyncStateResolver;
     private final WeeklySummaryCacheService weeklySummaryCacheService;
     private final GeminiProperties geminiProperties;
+    private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId) {
+        return generateWeeklySummary(projectId, false);
+    }
+
+    public WeeklySummaryResponse generateWeeklySummary(Long projectId, boolean forceLive) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
@@ -77,7 +90,7 @@ public class ProjectWeeklySummaryService {
         String exactCacheKey = exactCacheKey(projectId, weekStart, weekEnd, modelName, fingerprint);
         String latestCacheKey = latestCacheKey(projectId, weekStart, weekEnd, modelName);
 
-        if (weeklySummaryCacheService.isEnabled()) {
+        if (!forceLive && weeklySummaryCacheService.isEnabled()) {
             WeeklySummaryResponse cached = weeklySummaryCacheService.find(exactCacheKey)
                     .map(response -> response.withCacheStatus(WeeklySummaryCacheStatus.CACHE_HIT))
                     .orElse(null);
@@ -107,7 +120,7 @@ public class ProjectWeeklySummaryService {
 
             return liveResponse;
         } catch (WeeklySummaryGenerationException e) {
-            if (weeklySummaryCacheService.isEnabled() && e.isFallbackEligible()) {
+            if (!forceLive && weeklySummaryCacheService.isEnabled() && e.isFallbackEligible()) {
                 WeeklySummaryResponse fallback = readLatestCachedResponse(latestCacheKey);
                 if (fallback != null) {
                     log.warn("Weekly summary stale fallback served. projectId={}, errorCode={}, latestCacheKey={}",
@@ -126,12 +139,8 @@ public class ProjectWeeklySummaryService {
                                                 List<SummaryTaskSnapshot> syncedTasks,
                                                 List<SummaryTaskSnapshot> unsyncedTasks,
                                                 WeeklySummaryCacheStatus cacheStatus) {
-        List<SummaryTaskSnapshot> syncedIncludedTasks = syncedTasks.stream()
-                .limit(MAX_TASKS_PER_SECTION)
-                .collect(Collectors.toList());
-        List<SummaryTaskSnapshot> unsyncedIncludedTasks = unsyncedTasks.stream()
-                .limit(MAX_TASKS_PER_SECTION)
-                .collect(Collectors.toList());
+        List<SummaryTaskSnapshot> syncedIncludedTasks = selectIncludedTasks(syncedTasks, SummaryBucket.SYNCED);
+        List<SummaryTaskSnapshot> unsyncedIncludedTasks = selectIncludedTasks(unsyncedTasks, SummaryBucket.UNSYNCED);
 
         WeeklySummarySectionsResult generatedSections = shouldCallGenerator(syncedTasks, unsyncedTasks)
                 ? weeklySummaryGenerator.generate(
@@ -174,6 +183,53 @@ public class ProjectWeeklySummaryService {
 
     private boolean shouldCallGenerator(List<SummaryTaskSnapshot> syncedTasks, List<SummaryTaskSnapshot> unsyncedTasks) {
         return !syncedTasks.isEmpty() || !unsyncedTasks.isEmpty();
+    }
+
+    private List<SummaryTaskSnapshot> selectIncludedTasks(List<SummaryTaskSnapshot> tasks, SummaryBucket bucket) {
+        if (tasks.isEmpty()) {
+            return List.of();
+        }
+
+        int maxTasks = bucket == SummaryBucket.SYNCED
+                ? MAX_SYNCED_TASKS_PER_SECTION
+                : MAX_UNSYNCED_TASKS_PER_SECTION;
+        int maxDescBriefChars = bucket == SummaryBucket.SYNCED
+                ? MAX_SYNCED_DESC_BRIEF_CHARS
+                : MAX_UNSYNCED_DESC_BRIEF_CHARS;
+
+        List<SummaryTaskSnapshot> selected = new java.util.ArrayList<>();
+        int selectedDescBriefChars = 0;
+        int doneCount = 0;
+
+        for (SummaryTaskSnapshot snapshot : tasks) {
+            if (selected.size() >= maxTasks) {
+                break;
+            }
+
+            Task task = snapshot.getTask();
+            if (task.getStatus() == TaskStatus.DONE && doneCount >= MAX_DONE_TASKS_PER_SECTION) {
+                continue;
+            }
+
+            int descBriefChars = promptTaskSupport.descBriefChars(task);
+            boolean firstTask = selected.isEmpty();
+            boolean withinDescBudget = firstTask || selectedDescBriefChars + descBriefChars <= maxDescBriefChars;
+            if (!withinDescBudget) {
+                continue;
+            }
+
+            selected.add(snapshot);
+            selectedDescBriefChars += descBriefChars;
+            if (task.getStatus() == TaskStatus.DONE) {
+                doneCount++;
+            }
+        }
+
+        if (selected.isEmpty()) {
+            selected.add(tasks.get(0));
+        }
+
+        return selected;
     }
 
     private WeeklySummaryResponse readLatestCachedResponse(String latestCacheKey) {
