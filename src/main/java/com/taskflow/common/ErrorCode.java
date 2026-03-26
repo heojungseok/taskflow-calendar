@@ -20,6 +20,13 @@ public enum ErrorCode {
     EMAIL_NOT_VERIFIED("EMAIL_NOT_VERIFIED", "Google 이메일 인증이 필요합니다"),
     INVALID_OAUTH_STATE("INVALID_OAUTH_STATE", "OAuth 상태가 유효하지 않습니다"),
 
+    // Weekly summary / LLM
+    LLM_QUOTA_EXCEEDED("LLM_QUOTA_EXCEEDED", "Gemini quota exceeded"),
+    LLM_API_KEY_MISSING("LLM_API_KEY_MISSING", "Gemini API key is not configured"),
+    LLM_CONFIG_INVALID("LLM_CONFIG_INVALID", "Gemini configuration is invalid"),
+    LLM_UPSTREAM_TEMPORARY_FAILURE("LLM_UPSTREAM_TEMPORARY_FAILURE", "Gemini temporary failure"),
+    LLM_INVALID_RESPONSE("LLM_INVALID_RESPONSE", "Gemini response was invalid"),
+
     // Generic
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "Internal server error"),
     UNAUTHORIZED("UNAUTHORIZED", "Unauthorized");
