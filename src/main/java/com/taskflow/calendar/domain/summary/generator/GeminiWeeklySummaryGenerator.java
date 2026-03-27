@@ -235,12 +235,14 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         instructions.add("unsynced는 누락 위험과 반영 필요성 중심으로 쓴다.");
         instructions.add("summary는 2~4문장, highlights/risks/nextActions는 각 0~3개만 작성한다.");
         instructions.add("리스크와 차단 상태는 risks에, 바로 할 일은 nextActions에 적는다.");
-        instructions.add("summary는 자연스럽게 쓰되, 구체 근거와 액션은 제공된 tasks 안에서만 사용한다.");
-        instructions.add("summary의 첫 문장은 섹션 전체 경향을 먼저 요약하고, 다음 문장에서 대표 task를 연결한다.");
+        instructions.add("summary는 status·syncState·outbox 결과만 사실로 쓰고, 완료·성공적·순조·문제없음·위험없음은 추측하지 않는다.");
 
         if (hasPartialCoverage(syncedTasks, syncedTotalTaskCount)
                 || hasPartialCoverage(unsyncedTasks, unsyncedTotalTaskCount)) {
-            instructions.add("includedTaskCount가 totalTaskCount보다 작으면, 제공된 tasks는 우선순위 대표 subset으로 이해하고 전체를 다 본 것처럼 단정하지 않는다.");
+            instructions.add("includedTaskCount가 totalTaskCount보다 작으면, 제공된 tasks는 상태, 일정, 리스크 신호로 추린 우선순위 대표 업무로 이해하고 그 범위 안에서만 요약한다.");
+            instructions.add("partial coverage 섹션에서는 첫 문장부터 '우선순위 대표 업무 기준'처럼 범위를 한정하고 섹션 전체를 단정하지 않는다.");
+        } else {
+            instructions.add("summary의 첫 문장은 섹션 전체 경향을 먼저 요약하고, 다음 문장에서 대표 task를 연결한다.");
         }
 
         return instructions;
@@ -257,7 +259,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         section.put("includedTaskCount", tasks.size());
         section.put("summaryLeadHint", summaryLeadHint(bucket, tasks, totalTaskCount));
         if (hasPartialCoverage(tasks, totalTaskCount)) {
-            section.put("coverageHint", "전체 경향은 참고만 하고, 세부 근거는 포함된 우선순위 task만 사용한다.");
+            section.put("coverageHint", "세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.");
         }
         section.put("tasks", taskPayload(tasks, weekStart, weekEnd));
         return section;
@@ -269,12 +271,12 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         boolean partialCoverage = hasPartialCoverage(tasks, totalTaskCount);
         if (bucket == SummaryBucket.UNSYNCED) {
             if (partialCoverage) {
-                return "첫 문장은 전체 미동기화 업무의 공통 흐름이나 누락 위험을 요약하고, 이후 문장에서 대표 task를 예시로 든다.";
+                return "첫 문장부터 우선순위 대표 업무 기준으로 누락 위험과 반영 필요 사항을 요약하고, 이후 문장에서 대표 task를 연결한다.";
             }
             return "첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.";
         }
         if (partialCoverage) {
-            return "첫 문장은 전체 일정 흐름을 요약하고, 이후 문장에서 대표 일정과 리스크를 연결한다.";
+            return "첫 문장부터 우선순위 대표 업무 기준으로 핵심 일정과 리스크를 요약하고, 이후 문장에서 대표 task를 연결한다.";
         }
         return "첫 문장은 이번 주 일정 전반을 요약하고, 이후 문장에서 주요 일정과 리스크를 연결한다.";
     }

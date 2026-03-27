@@ -202,14 +202,17 @@ class GeminiWeeklySummaryGeneratorTest {
         JsonNode request = preparedRequestBody(prepared);
         JsonNode instructions = request.path("contents").get(0).path("parts").get(0).path("text");
 
-        assertTrue(instructions.asText().contains("대표 subset"));
-        assertTrue(instructions.asText().contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
+        assertTrue(instructions.asText().contains("summary는 status·syncState·outbox 결과만 사실로 쓰고, 완료·성공적·순조·문제없음·위험없음은 추측하지 않는다."));
+        assertTrue(instructions.asText().contains("상태, 일정, 리스크 신호로 추린 우선순위 대표 업무"));
+        assertTrue(instructions.asText().contains("우선순위 대표 업무 기준"));
+        assertTrue(instructions.asText().contains("섹션 전체를 단정하지 않는다"));
+        assertFalse(instructions.asText().contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
         JsonNode syncedSection = userPromptPayload(request).path("synced");
         assertEquals(3, syncedSection.path("totalTaskCount").asInt());
         assertEquals(1, syncedSection.path("includedTaskCount").asInt());
-        assertEquals("첫 문장은 전체 일정 흐름을 요약하고, 이후 문장에서 대표 일정과 리스크를 연결한다.",
+        assertEquals("첫 문장부터 우선순위 대표 업무 기준으로 핵심 일정과 리스크를 요약하고, 이후 문장에서 대표 task를 연결한다.",
                 syncedSection.path("summaryLeadHint").asText());
-        assertEquals("전체 경향은 참고만 하고, 세부 근거는 포함된 우선순위 task만 사용한다.",
+        assertEquals("세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.",
                 syncedSection.path("coverageHint").asText());
 
         JsonNode unsyncedSection = userPromptPayload(request).path("unsynced");
@@ -238,7 +241,10 @@ class GeminiWeeklySummaryGeneratorTest {
         );
 
         JsonNode request = preparedRequestBody(prepared);
-        assertFalse(request.path("contents").get(0).path("parts").get(0).path("text").asText().contains("대표 subset"));
+        String instructions = request.path("contents").get(0).path("parts").get(0).path("text").asText();
+        assertTrue(instructions.contains("summary는 status·syncState·outbox 결과만 사실로 쓰고, 완료·성공적·순조·문제없음·위험없음은 추측하지 않는다."));
+        assertFalse(instructions.contains("우선순위 대표 업무"));
+        assertTrue(instructions.contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
 
         JsonNode payload = userPromptPayload(request);
         assertTrue(payload.path("synced").path("coverageHint").isMissingNode());
@@ -271,9 +277,9 @@ class GeminiWeeklySummaryGeneratorTest {
         JsonNode payload = userPromptPayload(preparedRequestBody(prepared));
         JsonNode unsyncedSection = payload.path("unsynced");
 
-        assertEquals("첫 문장은 전체 미동기화 업무의 공통 흐름이나 누락 위험을 요약하고, 이후 문장에서 대표 task를 예시로 든다.",
+        assertEquals("첫 문장부터 우선순위 대표 업무 기준으로 누락 위험과 반영 필요 사항을 요약하고, 이후 문장에서 대표 task를 연결한다.",
                 unsyncedSection.path("summaryLeadHint").asText());
-        assertEquals("전체 경향은 참고만 하고, 세부 근거는 포함된 우선순위 task만 사용한다.",
+        assertEquals("세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.",
                 unsyncedSection.path("coverageHint").asText());
     }
 
