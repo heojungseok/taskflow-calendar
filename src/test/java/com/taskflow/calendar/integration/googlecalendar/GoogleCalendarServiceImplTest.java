@@ -20,8 +20,10 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -88,6 +90,34 @@ class GoogleCalendarServiceImplTest {
         assertEquals(dueAt, sent.getEndAt());
     }
 
+    @Test
+    @DisplayName("DELETE 처리 시 payload eventId 기준으로 Google 이벤트를 삭제한다")
+    void handle_delete_callsDeleteEvent() throws Exception {
+        CalendarOutbox outbox = deleteOutbox(TASK_ID);
+
+        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class)))
+                .thenReturn(payloadMap(TASK_ID, USER_ID, "event-123"));
+
+        googleCalendarService.handle(outbox);
+
+        verify(googleCalendarClient).deleteEvent(USER_ID, "event-123");
+        verify(taskRepository, never()).findByIdAndDeletedFalse(TASK_ID);
+    }
+
+    @Test
+    @DisplayName("DELETE 처리 시 payload eventId가 없으면 no-op 처리한다")
+    void handle_delete_withoutEventId_isNoOp() throws Exception {
+        CalendarOutbox outbox = deleteOutbox(TASK_ID);
+
+        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class)))
+                .thenReturn(payloadMap(TASK_ID, USER_ID, null));
+
+        googleCalendarService.handle(outbox);
+
+        verify(googleCalendarClient, never()).deleteEvent(eq(USER_ID), anyString());
+        verify(taskRepository, never()).findByIdAndDeletedFalse(TASK_ID);
+    }
+
     private CalendarOutbox upsertOutbox(Long taskId) {
         return CalendarOutbox.builder()
                 .taskId(taskId)
@@ -98,11 +128,30 @@ class GoogleCalendarServiceImplTest {
                 .build();
     }
 
+    private CalendarOutbox deleteOutbox(Long taskId) {
+        return CalendarOutbox.builder()
+                .taskId(taskId)
+                .opType(OutboxOpType.DELETE)
+                .status(OutboxStatus.PENDING)
+                .payload("{\"taskId\":" + taskId + "}")
+                .retryCount(0)
+                .build();
+    }
+
     private Map<String, Object> payloadMap(Long taskId, Long userId) {
-        return Map.of(
-                "taskId", taskId,
-                "meta", Map.of("requestedByUserId", userId)
-        );
+        return payloadMap(taskId, userId, null);
+    }
+
+    private Map<String, Object> payloadMap(Long taskId, Long userId, String eventId) {
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("taskId", taskId);
+        payload.put("meta", Map.of("requestedByUserId", userId));
+        if (eventId != null) {
+            payload.put("event", Map.of("eventId", eventId));
+        } else {
+            payload.put("event", Map.of());
+        }
+        return payload;
     }
 
     private Task taskWithSchedule(Long id, LocalDateTime startAt, LocalDateTime dueAt, String eventId) throws Exception {
