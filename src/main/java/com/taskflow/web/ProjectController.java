@@ -4,6 +4,8 @@ import com.taskflow.common.ApiResponse;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.BusinessException;
 import com.taskflow.calendar.domain.project.ProjectService;
+import com.taskflow.calendar.domain.recommendation.ProjectTaskRecommendationService;
+import com.taskflow.calendar.domain.recommendation.dto.ProjectTaskRecommendationResponse;
 import com.taskflow.calendar.domain.project.dto.CreateProjectRequest;
 import com.taskflow.calendar.domain.project.dto.ProjectResponse;
 import com.taskflow.calendar.domain.summary.ProjectWeeklySummaryService;
@@ -26,6 +28,7 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final ProjectWeeklySummaryService projectWeeklySummaryService;
+    private final ProjectTaskRecommendationService projectTaskRecommendationService;
     private final WeeklySummaryCacheService weeklySummaryCacheService;
     @Value("${summary.force-live-enabled:false}")
     private boolean forceLiveEnabled;
@@ -67,6 +70,14 @@ public class ProjectController {
         }
         WeeklySummaryResponse summary = projectWeeklySummaryService.generateWeeklySummary(projectId, forceLive);
         return ResponseEntity.ok(ApiResponse.success(summary));
+    }
+
+    @GetMapping("/{projectId}/task-recommendations")
+    public ResponseEntity<ApiResponse<ProjectTaskRecommendationResponse>> getTaskRecommendations(
+            @PathVariable Long projectId
+    ) {
+        ProjectTaskRecommendationResponse response = projectTaskRecommendationService.getRecommendations(projectId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/weekly-summary/cache-health")

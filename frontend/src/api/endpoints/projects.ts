@@ -1,6 +1,6 @@
 import apiClient from '../client';
 import type { ApiResponse } from '../types';
-import type { Project, ProjectCreateRequest, ProjectWeeklySummary } from '@/types/project';
+import type { Project, ProjectCreateRequest, ProjectTaskRecommendation, ProjectWeeklySummary } from '@/types/project';
 
 export const projectsApi = {
   // GET /api/projects
@@ -26,6 +26,15 @@ export const projectsApi = {
     const response = await apiClient.post<ApiResponse<ProjectWeeklySummary>>(
       `/projects/${projectId}/weekly-summary`,
       undefined,
+      { timeout: 60000 }
+    );
+    return response.data.data;
+  },
+
+  // GET /api/projects/:projectId/task-recommendations
+  getTaskRecommendations: async (projectId: number) => {
+    const response = await apiClient.get<ApiResponse<ProjectTaskRecommendation>>(
+      `/projects/${projectId}/task-recommendations`,
       { timeout: 60000 }
     );
     return response.data.data;
