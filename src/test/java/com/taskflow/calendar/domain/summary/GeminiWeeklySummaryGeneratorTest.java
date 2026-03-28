@@ -181,6 +181,54 @@ class GeminiWeeklySummaryGeneratorTest {
     }
 
     @Test
+    @DisplayName("prepareRequest_topK와topP가유효하면generationConfig에포함한다")
+    void prepareRequest_includesTopKAndTopPWhenValid() throws Exception {
+        generatorProperties().setTopK(20);
+        generatorProperties().setTopP(0.8d);
+
+        Object prepared = invokePrivate(
+                generator,
+                "prepareRequest",
+                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                project,
+                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                1,
+                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                1,
+                LocalDate.of(2026, 3, 23),
+                LocalDate.of(2026, 3, 29)
+        );
+
+        JsonNode generationConfig = preparedRequestBody(prepared).path("generationConfig");
+        assertEquals(20, generationConfig.path("topK").asInt());
+        assertEquals(0.8d, generationConfig.path("topP").asDouble());
+    }
+
+    @Test
+    @DisplayName("prepareRequest_topK와topP가유효하지않으면generationConfig에서생략한다")
+    void prepareRequest_omitsTopKAndTopPWhenInvalid() throws Exception {
+        generatorProperties().setTopK(0);
+        generatorProperties().setTopP(1.5d);
+
+        Object prepared = invokePrivate(
+                generator,
+                "prepareRequest",
+                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                project,
+                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                1,
+                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                1,
+                LocalDate.of(2026, 3, 23),
+                LocalDate.of(2026, 3, 29)
+        );
+
+        JsonNode generationConfig = preparedRequestBody(prepared).path("generationConfig");
+        assertTrue(generationConfig.path("topK").isMissingNode());
+        assertTrue(generationConfig.path("topP").isMissingNode());
+    }
+
+    @Test
     @DisplayName("prepareRequest_partialCoverage면대표subset가이드를추가한다")
     void prepareRequest_addsCoverageGuidanceWhenCoverageIsPartial() throws Exception {
         LocalDate weekStart = LocalDate.of(2026, 3, 23);
@@ -202,10 +250,11 @@ class GeminiWeeklySummaryGeneratorTest {
         JsonNode request = preparedRequestBody(prepared);
         JsonNode instructions = request.path("contents").get(0).path("parts").get(0).path("text");
 
-        assertTrue(instructions.asText().contains("summary는 status·syncState·outbox 결과만 사실로 쓰고, 완료·성공적·순조·문제없음·위험없음은 추측하지 않는다."));
-        assertTrue(instructions.asText().contains("상태, 일정, 리스크 신호로 추린 우선순위 대표 업무"));
+        assertTrue(instructions.asText().contains("summary는 status·syncState·outbox 결과만 사실로 사용하고, 완료·성공적·순조·문제없음·위험없음 같은 표현은 근거 없으면 쓰지 마라."));
+        assertTrue(instructions.asText().contains("summary와 목록 문장은 모두 한국어 존댓말로 작성하라."));
+        assertTrue(instructions.asText().contains("제공된 tasks만 우선순위 대표 업무로 보고"));
         assertTrue(instructions.asText().contains("우선순위 대표 업무 기준"));
-        assertTrue(instructions.asText().contains("섹션 전체를 단정하지 않는다"));
+        assertTrue(instructions.asText().contains("섹션 전체를 단정하지 마라"));
         assertFalse(instructions.asText().contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
         JsonNode syncedSection = userPromptPayload(request).path("synced");
         assertEquals(3, syncedSection.path("totalTaskCount").asInt());
@@ -242,7 +291,8 @@ class GeminiWeeklySummaryGeneratorTest {
 
         JsonNode request = preparedRequestBody(prepared);
         String instructions = request.path("contents").get(0).path("parts").get(0).path("text").asText();
-        assertTrue(instructions.contains("summary는 status·syncState·outbox 결과만 사실로 쓰고, 완료·성공적·순조·문제없음·위험없음은 추측하지 않는다."));
+        assertTrue(instructions.contains("summary는 status·syncState·outbox 결과만 사실로 사용하고, 완료·성공적·순조·문제없음·위험없음 같은 표현은 근거 없으면 쓰지 마라."));
+        assertTrue(instructions.contains("summary와 목록 문장은 모두 한국어 존댓말로 작성하라."));
         assertFalse(instructions.contains("우선순위 대표 업무"));
         assertTrue(instructions.contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
 
@@ -427,17 +477,23 @@ class GeminiWeeklySummaryGeneratorTest {
         );
         Object metrics = invokeGetter(prepared, "getMetrics");
         JsonNode root = objectMapper.readTree("{\"usageMetadata\":{\"promptTokenCount\":768,\"candidatesTokenCount\":320,\"totalTokenCount\":1088}}");
+        Object usageMetrics = invokePrivate(
+                generator,
+                "usageMetrics",
+                new Class[]{JsonNode.class},
+                root
+        );
 
         invokePrivate(
                 generator,
                 "logUsage",
-                new Class[]{Project.class, LocalDate.class, LocalDate.class, JsonNode.class, long.class, metrics.getClass()},
+                new Class[]{Project.class, LocalDate.class, LocalDate.class, long.class, metrics.getClass(), usageMetrics.getClass()},
                 project,
                 weekStart,
                 weekEnd,
-                root,
                 2864L,
-                metrics
+                metrics,
+                usageMetrics
         );
 
         assertTrue(output.getOut().contains("Gemini summary request succeeded."));
@@ -445,6 +501,12 @@ class GeminiWeeklySummaryGeneratorTest {
         assertTrue(output.getOut().contains("promptInputFingerprint="));
         assertTrue(output.getOut().contains("promptTokens=768"));
         assertTrue(output.getOut().contains("totalTokens=1088"));
+    }
+
+    private GeminiSummaryProperties generatorProperties() throws Exception {
+        java.lang.reflect.Field field = GeminiWeeklySummaryGenerator.class.getDeclaredField("properties");
+        field.setAccessible(true);
+        return (GeminiSummaryProperties) field.get(generator);
     }
 
     private Task task(String title, String description, TaskStatus status) {

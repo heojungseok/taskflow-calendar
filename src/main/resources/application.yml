@@ -43,7 +43,9 @@ gemini:
     model: ${GEMINI_SUMMARY_MODEL:gemini-3.1-flash-lite-preview}
     base-url: https://generativelanguage.googleapis.com/v1beta
     timeout-seconds: 20
-    temperature: 0.2
+    temperature: ${GEMINI_SUMMARY_TEMPERATURE:1.0}
+    top-k: ${GEMINI_SUMMARY_TOP_K:20}
+    top-p: ${GEMINI_SUMMARY_TOP_P:0.8}
   recommendation:
     api-key: ${GEMINI_RECOMMENDATION_API_KEY:}
     model: ${GEMINI_RECOMMENDATION_MODEL:gemini-3.1-flash-lite-preview}
@@ -62,4 +64,4 @@ summary:
   cache:
     enabled: ${WEEKLY_SUMMARY_CACHE_ENABLED:false}
     redis-url: ${REDIS_URL:}
-    ttl-seconds: ${WEEKLY_SUMMARY_CACHE_TTL_SECONDS:604800}
+    ttl-seconds: ${WEEKLY_SUMMARY_CACHE_TTL_SECONDS:259200}
