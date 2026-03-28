@@ -9,7 +9,7 @@ import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationExc
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.calendar.domain.task.Task;
-import com.taskflow.config.GeminiProperties;
+import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
-    private final GeminiProperties properties;
+    private final GeminiSummaryProperties properties;
     private final ObjectMapper objectMapper;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -146,7 +146,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_API_KEY_MISSING,
-                    "GEMINI_API_KEY is not configured",
+                    "GEMINI_SUMMARY_API_KEY is not configured",
                     false
             );
         }

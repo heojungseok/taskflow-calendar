@@ -38,11 +38,24 @@ google:
     token-uri: https://oauth2.googleapis.com/token
 
 gemini:
-  api-key: ${GEMINI_API_KEY:}
-  model: ${GEMINI_MODEL:gemini-2.5-flash}
-  base-url: https://generativelanguage.googleapis.com/v1beta
-  timeout-seconds: 20
-  temperature: 0.2
+  summary:
+    api-key: ${GEMINI_SUMMARY_API_KEY:}
+    model: ${GEMINI_SUMMARY_MODEL:gemini-3.1-flash-lite-preview}
+    base-url: https://generativelanguage.googleapis.com/v1beta
+    timeout-seconds: 20
+    temperature: 0.2
+  recommendation:
+    api-key: ${GEMINI_RECOMMENDATION_API_KEY:}
+    model: ${GEMINI_RECOMMENDATION_MODEL:gemini-3.1-flash-lite-preview}
+    base-url: https://generativelanguage.googleapis.com/v1beta
+    timeout-seconds: 20
+    temperature: 0.2
+  search:
+    api-key: ${GEMINI_SEARCH_API_KEY:}
+    model: ${GEMINI_SEARCH_MODEL:gemini-3.1-flash-lite-preview}
+    base-url: https://generativelanguage.googleapis.com/v1beta
+    timeout-seconds: 20
+    temperature: 0.2
 
 summary:
   force-live-enabled: ${WEEKLY_SUMMARY_FORCE_LIVE_ENABLED:false}

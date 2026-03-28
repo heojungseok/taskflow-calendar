@@ -16,7 +16,7 @@ import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import com.taskflow.config.GeminiProperties;
+import com.taskflow.config.GeminiRecommendationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -52,7 +52,7 @@ public class ProjectTaskRecommendationService {
     private final TaskSyncStateResolver taskSyncStateResolver;
     private final TaskRecommendationGenerator taskRecommendationGenerator;
     private final TaskRecommendationCacheService taskRecommendationCacheService;
-    private final GeminiProperties geminiProperties;
+    private final GeminiRecommendationProperties geminiProperties;
 
     public ProjectTaskRecommendationResponse getRecommendations(Long projectId) {
         Project project = projectRepository.findById(projectId)

@@ -6,7 +6,7 @@ import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.recommendation.exception.TaskRecommendationGenerationException;
 import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
 import com.taskflow.common.ErrorCode;
-import com.taskflow.config.GeminiProperties;
+import com.taskflow.config.GeminiRecommendationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,7 +32,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class GeminiTaskRecommendationGenerator implements TaskRecommendationGenerator {
 
-    private final GeminiProperties properties;
+    private final GeminiRecommendationProperties properties;
     private final ObjectMapper objectMapper;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -98,7 +98,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
             throw new TaskRecommendationGenerationException(
                     ErrorCode.LLM_API_KEY_MISSING,
-                    "GEMINI_API_KEY is not configured"
+                    "GEMINI_RECOMMENDATION_API_KEY is not configured"
             );
         }
     }

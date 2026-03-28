@@ -15,7 +15,7 @@ import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import com.taskflow.config.GeminiProperties;
+import com.taskflow.config.GeminiRecommendationProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,7 +61,7 @@ class ProjectTaskRecommendationServiceTest {
 
     @BeforeEach
     void setUp() {
-        GeminiProperties geminiProperties = new GeminiProperties();
+        GeminiRecommendationProperties geminiProperties = new GeminiRecommendationProperties();
         geminiProperties.setModel("gemini-2.5-flash");
         service = new ProjectTaskRecommendationService(
                 projectRepository,

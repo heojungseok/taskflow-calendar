@@ -141,9 +141,12 @@ docker-compose up -d
 ```bash
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
-GEMINI_API_KEY=your_gemini_api_key
-# 선택
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_SUMMARY_API_KEY=your_summary_gemini_api_key
+GEMINI_SUMMARY_MODEL=gemini-3.1-flash-lite-preview
+GEMINI_RECOMMENDATION_API_KEY=your_recommendation_gemini_api_key
+GEMINI_RECOMMENDATION_MODEL=gemini-3.1-flash-lite-preview
+GEMINI_SEARCH_API_KEY=your_search_gemini_api_key
+GEMINI_SEARCH_MODEL=gemini-3.1-flash-lite-preview
 WEEKLY_SUMMARY_CACHE_ENABLED=true
 REDIS_URL=rediss://default:your_upstash_token@your-upstash-host:6379
 WEEKLY_SUMMARY_FORCE_LIVE_ENABLED=false
@@ -161,9 +164,11 @@ Redis 캐시를 사용하려면 `WEEKLY_SUMMARY_CACHE_ENABLED=true` 와 `REDIS_U
 다만 IDE 실행이나 다른 방식으로 실행하면 `.env`가 자동 반영되지 않을 수 있으므로,
 그 경우에는 아래처럼 직접 export가 필요합니다.
 ```bash
-export GEMINI_API_KEY=your_api_key
 export GOOGLE_CLIENT_ID=your_google_client_id
 export GOOGLE_CLIENT_SECRET=your_google_client_secret
+export GEMINI_SUMMARY_API_KEY=your_summary_api_key
+export GEMINI_RECOMMENDATION_API_KEY=your_recommendation_api_key
+export GEMINI_SEARCH_API_KEY=your_search_api_key
 ```
 
 5. 접속:

@@ -9,7 +9,7 @@ import com.taskflow.calendar.domain.summary.generator.GeminiWeeklySummaryGenerat
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.common.ErrorCode;
-import com.taskflow.config.GeminiProperties;
+import com.taskflow.config.GeminiSummaryProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ class GeminiWeeklySummaryGeneratorTest {
 
     @BeforeEach
     void setUp() {
-        GeminiProperties properties = new GeminiProperties();
+        GeminiSummaryProperties properties = new GeminiSummaryProperties();
         properties.setApiKey("test-key");
         properties.setModel("gemini-2.5-flash");
         properties.setBaseUrl("https://example.com/v1beta");

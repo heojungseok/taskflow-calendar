@@ -14,7 +14,7 @@ import com.taskflow.calendar.domain.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import com.taskflow.config.GeminiProperties;
+import com.taskflow.config.GeminiSummaryProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,7 @@ class ProjectWeeklySummaryServiceTest {
 
     @BeforeEach
     void setUp() {
-        GeminiProperties geminiProperties = new GeminiProperties();
+        GeminiSummaryProperties geminiProperties = new GeminiSummaryProperties();
         geminiProperties.setModel("gemini-2.5-flash");
         service = new ProjectWeeklySummaryService(
                 projectRepository,

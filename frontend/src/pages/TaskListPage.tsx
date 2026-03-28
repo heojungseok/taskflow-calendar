@@ -355,7 +355,7 @@ function TaskCard({
         <button
           type="button"
           onClick={() => onClickDetail(task.id)}
-          className="group flex min-h-[106px] flex-1 flex-col text-left"
+          className="group flex min-h-[106px] flex-1 cursor-pointer flex-col text-left"
         >
           {hasTopPillRow && (
             <div className="mb-2 flex min-h-[18px] items-center gap-1.5 flex-wrap">

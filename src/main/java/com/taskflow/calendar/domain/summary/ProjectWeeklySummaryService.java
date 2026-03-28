@@ -15,7 +15,7 @@ import com.taskflow.calendar.domain.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import com.taskflow.config.GeminiProperties;
+import com.taskflow.config.GeminiSummaryProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -58,7 +58,7 @@ public class ProjectWeeklySummaryService {
     private final WeeklySummaryGenerator weeklySummaryGenerator;
     private final TaskSyncStateResolver taskSyncStateResolver;
     private final WeeklySummaryCacheService weeklySummaryCacheService;
-    private final GeminiProperties geminiProperties;
+    private final GeminiSummaryProperties geminiProperties;
     private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId) {
