@@ -5,6 +5,8 @@ import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
+import com.taskflow.calendar.domain.search.TaskSearchDocumentChangedEvent;
+import com.taskflow.calendar.domain.search.TaskSearchDocumentDeletedEvent;
 import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
 import com.taskflow.calendar.domain.user.User;
@@ -15,6 +17,7 @@ import com.taskflow.common.exception.ValidationException;
 import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +37,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final TaskHistoryRepository historyRepository;
     private final CalendarOutboxService calendarOutboxService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Task 생성
@@ -90,6 +94,7 @@ public class TaskService {
         if (savedTask.isCalendarSyncActive()) {
             calendarOutboxService.enqueueUpsert(savedTask);
         }
+        eventPublisher.publishEvent(new TaskSearchDocumentChangedEvent(savedTask.getId()));
 
         return TaskResponse.from(savedTask);
     }
@@ -157,6 +162,7 @@ public class TaskService {
             // 동기화 비활성화 시 DELETE
             calendarOutboxService.enqueueDelete(task);
         }
+        eventPublisher.publishEvent(new TaskSearchDocumentChangedEvent(task.getId()));
 
         return TaskResponse.from(task);
     }
@@ -190,6 +196,7 @@ public class TaskService {
         if (task.isCalendarSyncActive()) {
             calendarOutboxService.enqueueUpsert(task);  // DONE이면 [DONE] prefix 추가
         }
+        eventPublisher.publishEvent(new TaskSearchDocumentChangedEvent(task.getId()));
 
         return TaskResponse.from(task);
     }
@@ -252,6 +259,7 @@ public class TaskService {
 
         // 3. Outbox 적재
         calendarOutboxService.enqueueDelete(task);
+        eventPublisher.publishEvent(new TaskSearchDocumentDeletedEvent(taskId));
 
         return DeleteTaskResponse.of(taskId);
     }

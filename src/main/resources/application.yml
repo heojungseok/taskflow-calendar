@@ -55,9 +55,15 @@ gemini:
   search:
     api-key: ${GEMINI_SEARCH_API_KEY:}
     model: ${GEMINI_SEARCH_MODEL:gemini-3.1-flash-lite-preview}
+    embedding-model: ${GEMINI_SEARCH_EMBEDDING_MODEL:gemini-embedding-001}
     base-url: https://generativelanguage.googleapis.com/v1beta
     timeout-seconds: 20
     temperature: 0.2
+    semantic-enabled: ${GEMINI_SEARCH_SEMANTIC_ENABLED:true}
+    embedding-dimensions: ${GEMINI_SEARCH_EMBEDDING_DIMENSIONS:3072}
+    lexical-candidate-limit: ${GEMINI_SEARCH_LEXICAL_CANDIDATE_LIMIT:50}
+    semantic-candidate-limit: ${GEMINI_SEARCH_SEMANTIC_CANDIDATE_LIMIT:50}
+    embedding-batch-size: ${GEMINI_SEARCH_EMBEDDING_BATCH_SIZE:16}
 
 summary:
   force-live-enabled: ${WEEKLY_SUMMARY_FORCE_LIVE_ENABLED:false}

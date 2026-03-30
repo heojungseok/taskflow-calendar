@@ -6,17 +6,19 @@ import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class TaskController {
+
+    private static final Logger log = LoggerFactory.getLogger(TaskController.class);
 
     private final TaskService taskService;
 

@@ -28,6 +28,7 @@ dependencies {
 
     // Database
     runtimeOnly 'org.postgresql:postgresql'
+    implementation 'com.pgvector:pgvector:0.1.6'
 
     // Lombok (optional)
     compileOnly 'org.projectlombok:lombok'
