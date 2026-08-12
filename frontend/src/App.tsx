@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router';
 import Login from './pages/Login';
 import OAuthCallback from './pages/OAuthCallback';
@@ -17,9 +16,9 @@ function AuthLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-[var(--paper)]">
       <Header />
-      <main className="max-w-5xl mx-auto px-6 py-6">
+      <main className="max-w-5xl mx-auto px-6 py-10">
         <Outlet />
       </main>
     </div>
@@ -27,12 +26,6 @@ function AuthLayout() {
 }
 
 function App() {
-  // 항상 다크 배경 보장
-  useEffect(() => {
-    document.documentElement.style.backgroundColor = '#0a0a0f';
-    document.body.style.backgroundColor = '#0a0a0f';
-  }, []);
-
   return (
     <BrowserRouter>
       <Routes>

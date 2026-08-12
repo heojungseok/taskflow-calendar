@@ -50,10 +50,10 @@ const OUTBOX_STATUS_LABEL: Record<OutboxStatus, string> = {
 };
 
 const OUTBOX_BADGE: Record<OutboxStatus, string> = {
-  PENDING: 'bg-[#1a1a20] text-[#9090a8] border border-[#252530]',
-  PROCESSING: 'bg-[#1a2040] text-[#6b8cff] border border-[#2a3558]',
-  SUCCESS: 'bg-[#0f2820] text-[#3dd68c] border border-[#1a4030]',
-  FAILED: 'bg-[#2a1018] text-[#ff6b6b] border border-[#3d1520]',
+  PENDING: 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
+  PROCESSING: 'bg-[var(--st-running-bg)] text-[var(--st-running)]',
+  SUCCESS: 'bg-[var(--st-done-bg)] text-[var(--st-done)]',
+  FAILED: 'bg-[var(--st-failed-bg)] text-[var(--st-failed)]',
 };
 
 const fmt = (iso?: string | null) => iso
@@ -138,19 +138,19 @@ function getCacheBadge(summary: ProjectWeeklySummary | null) {
     case 'CACHE_HIT':
       return {
         label: '캐시 응답',
-        className: 'bg-[#1a2040] text-[#8ea7ff] border border-[#2a3558]',
+        className: 'bg-[var(--sunken)] text-[var(--ink-2)] border border-[var(--rule)]',
         message: '같은 입력으로 생성된 저장본을 반환했습니다.',
       };
     case 'STALE_FALLBACK':
       return {
         label: '저장된 요약',
-        className: 'bg-[#2b2412] text-[#ffcf7a] border border-[#4a3b14]',
+        className: 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
         message: '최신 호출 대신 마지막 성공 요약을 보여주고 있습니다.',
       };
     default:
       return {
         label: '실시간 생성',
-        className: 'bg-[#0f2820] text-[#7dd3a7] border border-[#1a4030]',
+        className: 'bg-[var(--sunken)] text-[var(--ink-2)] border border-[var(--rule)]',
         message: '현재 Task 상태 기준으로 새로 생성했습니다.',
       };
   }
@@ -164,13 +164,13 @@ function getRecommendationMeta(recommendation: ProjectTaskRecommendation | null)
   if (recommendation.cacheStatus === 'CACHE_HIT') {
     return {
       label: '캐시 응답',
-      className: 'bg-[#1a2040] text-[#8ea7ff] border border-[#2a3558]',
+      className: 'bg-[var(--sunken)] text-[var(--ink-2)] border border-[var(--rule)]',
     } as const;
   }
 
   return {
     label: '실시간 생성',
-    className: 'bg-[#0f2820] text-[#7dd3a7] border border-[#1a4030]',
+    className: 'bg-[var(--sunken)] text-[var(--ink-2)] border border-[var(--rule)]',
   } as const;
 }
 
@@ -279,7 +279,7 @@ function TaskCard({
               {hasTopPillRow && (
                 <div className="mb-2 flex items-center gap-1.5 flex-wrap">
                   {recommendation && (
-                    <span className="inline-flex items-center rounded-full border border-[#2a3558] bg-[#131f36] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#8ea7ff]">
+                    <span className="inline-flex items-center rounded-full bg-[var(--sunken)] border border-[var(--rule)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-2)]">
                       추천 {recommendation.rank}
                     </span>
                   )}
@@ -289,7 +289,7 @@ function TaskCard({
               <p
                 className={clsx(
                   cx.text.cardTitle,
-                  'text-[14px] text-[#eef0f8] leading-snug transition-colors duration-150 group-hover:text-[#eef2ff]'
+                  'text-[15px] text-[var(--ink)] leading-snug'
                 )}
               >
                 {task.title}
@@ -312,8 +312,8 @@ function TaskCard({
               <span className={clsx(
                 cx.badge.base,
                 task.calendarEventId
-                  ? 'bg-[#1a1530] text-[#a78bfa] border border-[#2d2050]'
-                  : 'bg-[#1a1a20] text-[#8080a0] border border-[#252530]',
+                  ? 'bg-[var(--st-done-bg)] text-[var(--st-done)]'
+                  : 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
               )}>
                 <Calendar size={9} strokeWidth={2} />
                 {task.calendarEventId ? '동기화' : '대기'}
@@ -340,11 +340,11 @@ function TaskCard({
 
           {recommendation && (
             <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center rounded-full border border-[#2f2344] bg-[#191224] px-2 py-0.5 text-[10px] font-medium text-[#f1b6ff]">
+              <span className="inline-flex items-center rounded-full border border-[var(--rule)] bg-[var(--sunken)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-2)]">
                 {recommendation.primaryTag}
               </span>
               {recommendation.secondaryTag && (
-                <span className="inline-flex items-center rounded-full border border-[#234440] bg-[#12211f] px-2 py-0.5 text-[10px] font-medium text-[#8fe2ca]">
+                <span className="inline-flex items-center rounded-full border border-[var(--rule)] bg-[var(--sunken)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-2)]">
                   {recommendation.secondaryTag}
                 </span>
               )}
@@ -360,14 +360,14 @@ function TaskCard({
           {hasTopPillRow && (
             <div className="mb-2 flex min-h-[18px] items-center gap-1.5 flex-wrap">
               {showRecommendationMarker && (
-                <span className="inline-flex items-center rounded-full border border-[#2a3558] bg-[#131f36] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#8ea7ff]">
+                <span className="inline-flex items-center rounded-full bg-[var(--sunken)] border border-[var(--rule)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-2)]">
                   추천
                 </span>
               )}
             </div>
           )}
 
-          <p className={clsx(cx.text.cardTitle, 'min-h-[38px] leading-snug transition-colors duration-150 group-hover:text-[#e8e8ed] [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden')}>
+          <p className={clsx(cx.text.cardTitle, 'min-h-[38px] leading-snug transition-colors duration-150 [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden')}>
             {task.title}
           </p>
 
@@ -386,8 +386,8 @@ function TaskCard({
               <span className={clsx(
                 cx.badge.base,
                 task.calendarEventId
-                  ? 'bg-[#1a1530] text-[#a78bfa] border border-[#2d2050]'
-                  : 'bg-[#1a1a20] text-[#8080a0] border border-[#252530]',
+                  ? 'bg-[var(--st-done-bg)] text-[var(--st-done)]'
+                  : 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
               )}>
                 <Calendar size={9} strokeWidth={2} />
                 {task.calendarEventId ? '동기화' : '대기'}
@@ -477,8 +477,8 @@ function RecommendationSection({
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <Sparkles size={14} strokeWidth={2} className="text-[#f1b6ff]" />
-            <p className={cx.text.cardTitle}>지금 먼저 볼 Task</p>
+            <Sparkles size={14} strokeWidth={2} className="text-[var(--ink-3)]" />
+            <p className={cx.text.subheading}>지금 먼저 볼 Task</p>
           </div>
           <p className={clsx(cx.text.meta, 'mt-2')}>
             지금 우선 확인하면 좋은 업무를 추천합니다.
@@ -500,24 +500,27 @@ function RecommendationSection({
             type="button"
             onClick={onGenerate}
             disabled={isLoading}
-            className={cx.btn.primary}
+            className={clsx(cx.btn.primary, 'shrink-0 whitespace-nowrap')}
           >
-            {isLoading ? '생성 중...' : '추천 생성'}
+            {isLoading ? '생성 중' : '추천 생성'}
           </button>
         )}
       </div>
 
       {hasRecommendation && recommendationMeta && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-[#8a8aa6]">
-          <span>마지막 생성 {new Date(recommendation.generatedAt).toLocaleString('ko-KR')}</span>
-          <span className={clsx('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium', recommendationMeta.className)}>
+        <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className={cx.text.meta}>마지막 생성</span>
+          <span className={cx.text.data}>
+            {new Date(recommendation.generatedAt).toLocaleString('ko-KR')}
+          </span>
+          <span className={clsx(cx.text.meta, 'before:content-["·"] before:mr-2')}>
             {recommendationMeta.label}
           </span>
         </div>
       )}
 
       {hasRecommendation && isOutdated && (
-        <div className="mt-4 rounded-[10px] border border-[#3a3220] bg-[#18140d] px-3 py-2 text-[12px] text-[#e6c27f]">
+        <div className="mt-4 rounded-[var(--radius)] bg-[var(--st-pending-bg)] px-3 py-2 text-[13px] text-[var(--st-pending)]">
           Task 변경 이후 다시 추천받아 최신 우선순위를 확인하세요.
         </div>
       )}
@@ -531,7 +534,7 @@ function RecommendationSection({
           className={clsx(
             'mt-4 rounded-[10px] border px-3 py-3 text-[12px]',
             recommendationError?.tone === 'warning'
-              ? 'border-[#4a3b14] bg-[#20190c] text-[#ffcf7a]'
+              ? 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]'
               : cx.errorBox
           )}
         >
@@ -630,7 +633,7 @@ function CreateModal({ onClose, onSubmit, isPending, isError }: CreateModalProps
             <label className={cx.text.label}>제목</label>
             <input type="text" value={title} onChange={(e) => { setTitle(e.target.value); setTitleErr(''); }}
               placeholder="Task 제목" className={clsx(cx.input, titleErr && cx.inputError)} autoFocus />
-            {titleErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{titleErr}</p>}
+            {titleErr && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{titleErr}</p>}
           </div>
           <div>
             <label className={cx.text.label}>설명</label>
@@ -641,23 +644,23 @@ function CreateModal({ onClose, onSubmit, isPending, isError }: CreateModalProps
             <label className={cx.text.label}>시작일</label>
             <input type="datetime-local" value={startAt} onChange={(e) => { setStartAt(e.target.value); setStartErr(''); }}
               className={clsx(cx.input, startErr && cx.inputError)} />
-            {startErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{startErr}</p>}
+            {startErr && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{startErr}</p>}
           </div>
           <div>
             <label className={cx.text.label}>마감일</label>
             <input type="datetime-local" value={dueAt} onChange={(e) => { setDueAt(e.target.value); setDueErr(''); }}
               className={clsx(cx.input, dueErr && cx.inputError)} />
-            {dueErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{dueErr}</p>}
+            {dueErr && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{dueErr}</p>}
           </div>
           <div className="flex items-center gap-2">
             <input type="checkbox" id="calSync" checked={calendarSync} onChange={(e) => { setCalendarSync(e.target.checked); setStartErr(''); setDueErr(''); }}
-              className="w-3.5 h-3.5 rounded accent-[#3b5bff]" />
+              className="w-3.5 h-3.5 rounded accent-[var(--ink)]" />
             <label htmlFor="calSync" className={cx.text.body}>Google Calendar 동기화</label>
           </div>
           {isError && <div className={cx.errorBox}>생성에 실패했습니다.</div>}
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose} disabled={isPending} className={cx.btn.secondary}>취소</button>
-            <button type="submit" disabled={isPending} className={cx.btn.primary}>{isPending ? '생성 중...' : '생성'}</button>
+            <button type="submit" disabled={isPending} className={cx.btn.primary}>{isPending ? '만드는 중' : '만들기'}</button>
           </div>
         </form>
       </motion.div>
@@ -668,50 +671,44 @@ function CreateModal({ onClose, onSubmit, isPending, isError }: CreateModalProps
 interface SummarySectionProps {
   title: string;
   section: ProjectWeeklySummarySection;
-  accentClass: string;
+  mark: string;
 }
 
-function SummarySectionCard({ title, section, accentClass }: SummarySectionProps) {
+/** 요약 카드 안의 소제목 — 내용 분류이지 상태가 아니므로 무채색이다 */
+function SummaryGroup({ label, items }: { label: string; items: readonly string[] }) {
+  if (items.length === 0) return null;
   return (
-    <div className="rounded-[12px] border border-[#252535] bg-[#101018] p-4">
-      <div>
-        <p className={clsx('text-[11px] font-medium uppercase tracking-[0.16em]', accentClass)}>{title}</p>
+    <div className="mt-5">
+      <p className="mb-1.5 text-[12px] font-medium text-[var(--ink-3)]">{label}</p>
+      <ul className="space-y-1.5 pl-4 list-disc marker:text-[var(--rule-strong)]">
+        {items.map((item) => (
+          <li key={item} className="text-[13px] leading-6 text-[var(--ink-2)]">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SummarySectionCard({ title, section, mark }: SummarySectionProps) {
+  return (
+    <div className={cx.card}>
+      {/* 제목만 색을 갖는다 — 동기화 여부는 기계의 상태이므로 */}
+      <div className="flex items-center gap-2 pb-3 border-b border-[var(--rule)]">
+        <span
+          aria-hidden
+          className="w-2 h-2 rounded-[1px] shrink-0"
+          style={{ backgroundColor: mark }}
+        />
+        <p className="text-[14px] font-semibold text-[var(--ink)]">{title}</p>
       </div>
 
-      <p className="mt-4 text-[13px] leading-6 text-[#e8e8ed]">{section.summary}</p>
+      <p className="mt-4 text-[14px] leading-[1.7] text-[var(--ink)]">{section.summary}</p>
 
-      {section.highlights.length > 0 && (
-        <div className="mt-4">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8ea7ff]">핵심 포인트</p>
-          <ul className="space-y-2">
-            {section.highlights.map((item) => (
-              <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {section.risks.length > 0 && (
-        <div className="mt-4">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#ff9f7a]">주의</p>
-          <ul className="space-y-2">
-            {section.risks.map((item) => (
-              <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {section.nextActions.length > 0 && (
-        <div className="mt-4">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[#7dd3a7]">고려 사항</p>
-          <ul className="space-y-2">
-            {section.nextActions.map((item) => (
-              <li key={item} className="text-[13px] text-[#d8d8e5]">• {item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <SummaryGroup label="핵심 포인트" items={section.highlights} />
+      <SummaryGroup label="주의" items={section.risks} />
+      <SummaryGroup label="고려 사항" items={section.nextActions} />
     </div>
   );
 }
@@ -788,7 +785,7 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
       onClick={onClose}
     >
       <motion.div
-        className="mx-auto max-h-full w-full max-w-2xl overflow-y-auto rounded-[14px] border border-[#2a2a3a] bg-[#0f0f17] p-5"
+        className="mx-auto max-h-full w-full max-w-2xl overflow-y-auto rounded-[var(--radius)] border border-[var(--rule-strong)] bg-[var(--surface)] p-6 shadow-[0_16px_48px_-12px_rgba(20,22,26,0.28)]"
         initial={{ opacity: 0, y: 8, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -807,7 +804,7 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
           <div className="space-y-4">
             <div className={cx.card}>
               <div className="mb-2 flex items-center justify-between gap-2">
-                <h3 className="text-[15px] font-semibold text-[#ececf2]">{task.title}</h3>
+                <h3 className="text-[16px] font-semibold text-[var(--ink)]">{task.title}</h3>
                 {!isEditing ? (
                   <button type="button" onClick={() => setIsEditing(true)} className={cx.btn.secondary}>수정</button>
                 ) : (
@@ -835,8 +832,8 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
                   <span className={clsx(
                     cx.badge.base,
                     task.calendarEventId
-                      ? 'bg-[#1a1530] text-[#a78bfa] border border-[#2d2050]'
-                      : 'bg-[#1a1a20] text-[#8080a0] border border-[#252530]',
+                      ? 'bg-[var(--st-done-bg)] text-[var(--st-done)]'
+                      : 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
                   )}>
                     <Calendar size={9} strokeWidth={2} />
                     {task.calendarEventId ? '동기화' : '대기'}
@@ -885,7 +882,7 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
                       onChange={(e) => { setEditTitle(e.target.value); setEditTitleError(''); }}
                       className={clsx(cx.input, editTitleError && cx.inputError)}
                     />
-                    {editTitleError && <p className="mt-1 text-[11px] text-[#ff6b6b]">{editTitleError}</p>}
+                    {editTitleError && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{editTitleError}</p>}
                   </div>
                   <div>
                     <label className={cx.text.label}>설명</label>
@@ -904,7 +901,7 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
                       onChange={(e) => { setEditStartAt(e.target.value); setEditStartError(''); setEditDueError(''); }}
                       className={clsx(cx.input, editStartError && cx.inputError)}
                     />
-                    {editStartError && <p className="mt-1 text-[11px] text-[#ff6b6b]">{editStartError}</p>}
+                    {editStartError && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{editStartError}</p>}
                   </div>
                   <div>
                     <label className={cx.text.label}>마감일</label>
@@ -914,7 +911,7 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
                       onChange={(e) => { setEditDueAt(e.target.value); setEditDueError(''); }}
                       className={clsx(cx.input, editDueError && cx.inputError)}
                     />
-                    {editDueError && <p className="mt-1 text-[11px] text-[#ff6b6b]">{editDueError}</p>}
+                    {editDueError && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{editDueError}</p>}
                   </div>
                   {updateMutation.isError && <div className={cx.errorBox}>수정에 실패했습니다.</div>}
                   <div className="flex justify-end">
@@ -924,12 +921,12 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
                   </div>
                 </form>
               ) : task.description ? (
-                <p className="mb-4 whitespace-pre-wrap text-[13px] leading-6 text-[#d8d8e6]">{task.description}</p>
+                <p className="mb-4 whitespace-pre-wrap text-[14px] leading-[1.7] text-[var(--ink-2)]">{task.description}</p>
               ) : (
                 <p className={clsx(cx.text.meta, 'mb-4')}>설명이 없습니다.</p>
               )}
 
-              <div className="grid gap-2 text-[12px] text-[#b8b8c8] sm:grid-cols-2">
+              <div className="grid gap-2 text-[13px] text-[var(--ink-2)] sm:grid-cols-2">
                 <p>시작일: {fmt(task.startAt)}</p>
                 <p>마감일: {fmt(task.dueAt)}</p>
                 <p>생성일: {fmt(task.createdAt)}</p>
@@ -962,7 +959,7 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
               {!task.calendarSyncEnabled ? (
                 <p className={cx.text.meta}>동기화 비활성화 상태입니다.</p>
               ) : (
-                <div className="space-y-2 text-[12px] text-[#c8c8d8]">
+                <div className="space-y-2 text-[13px] text-[var(--ink-2)]">
                   <div className="flex items-center gap-2">
                     <span className={cx.text.meta}>상태</span>
                     {syncStatus?.lastOutboxStatus
@@ -970,7 +967,7 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
                       : <span className={cx.text.meta}>—</span>}
                   </div>
                   <p>마지막 성공: {fmt(syncStatus?.lastSyncedAt)}</p>
-                  {syncStatus?.lastOutboxError && <p className="text-[#ff9f9f]">오류: {syncStatus.lastOutboxError}</p>}
+                  {syncStatus?.lastOutboxError && <p className="text-[var(--st-failed)]">오류: {syncStatus.lastOutboxError}</p>}
                 </div>
               )}
             </div>
@@ -984,7 +981,7 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
                   {history.slice(0, 8).map((h: TaskHistory, i: number) => (
                     <div key={`${h.createdAt}-${i}`} className={clsx(i > 0 && clsx(cx.divider, 'pt-3'))}>
                       <div className="mb-1.5 flex items-center justify-between">
-                        <span className="text-[12px] text-[#d8d8e6]">{CHANGE_TYPE_LABEL[h.changeType] ?? h.changeType}</span>
+                        <span className="text-[13px] text-[var(--ink-2)]">{CHANGE_TYPE_LABEL[h.changeType] ?? h.changeType}</span>
                         <span className={cx.text.meta}>{fmt(h.createdAt)}</span>
                       </div>
                       <p className={cx.text.meta}>{h.changedByUserName}</p>
@@ -1145,10 +1142,10 @@ export default function TaskListPage() {
           <button onClick={() => navigate('/projects')} className={clsx(cx.btn.ghost, 'flex items-center gap-1')}>
             ← 프로젝트
           </button>
-          <span className="text-[#1e1e2a]">/</span>
+          <span className="text-[var(--rule-strong)]">/</span>
           <h2 className={cx.text.heading}>{project?.name ?? '...'}</h2>
           {tasks && (
-            <span className="text-[11px] text-[#a0a0bc] bg-[#111118] border border-[#252535] px-1.5 py-0.5 rounded-[3px]">
+            <span className="font-mono text-[12px] text-[var(--ink-3)] bg-[var(--sunken)] border border-[var(--rule)] px-1.5 py-0.5 rounded-[var(--radius)] tabular">
               {tasks.length}
             </span>
           )}
@@ -1162,8 +1159,8 @@ export default function TaskListPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Sparkles size={14} strokeWidth={2} className="text-[#6ea8fe]" />
-              <p className={cx.text.cardTitle}>이번 주 요약</p>
+              <Sparkles size={14} strokeWidth={2} className="text-[var(--ink-3)]" />
+              <p className={cx.text.subheading}>이번 주 요약</p>
             </div>
             <p className={clsx(cx.text.meta, 'mt-2')}>
               현재 프로젝트 Task를 Google Calendar 반영 여부로 나눠 이번 주 흐름을 정리합니다. 버튼을 누를 때마다 새로 생성됩니다.
@@ -1176,18 +1173,18 @@ export default function TaskListPage() {
               summaryMutation.mutate();
             }}
             disabled={summaryMutation.isPending}
-            className={cx.btn.primary}
+            className={clsx(cx.btn.primary, 'shrink-0 whitespace-nowrap')}
           >
-            {summaryMutation.isPending ? '생성 중...' : summary ? '다시 생성' : '요약 생성'}
+            {summaryMutation.isPending ? '생성 중' : summary ? '다시 생성' : '요약 생성'}
           </button>
         </div>
 
         {summaryMutation.isError && (
           <div
             className={clsx(
-              'mt-4 rounded-[10px] border px-3 py-3 text-[12px]',
+              'mt-4 px-3 py-2.5 rounded-[var(--radius)] text-[13px]',
               summaryError?.tone === 'warning'
-                ? 'border-[#4a3b14] bg-[#20190c] text-[#ffcf7a]'
+                ? 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]'
                 : cx.errorBox
             )}
           >
@@ -1198,35 +1195,46 @@ export default function TaskListPage() {
 
         {summary ? (
           <div className="mt-4 space-y-4">
-            <div className="flex flex-wrap gap-2 text-[11px] text-[#8a8aa6]">
-              <span>{summary.weekStart} ~ {summary.weekEnd}</span>
-              <span>전체 {summary.totalTaskCount}</span>
-              <span>동기화 {summary.syncedTaskCount}</span>
-              <span>미동기화 {summary.unsyncedTaskCount}</span>
-              <span>{new Date(summary.generatedAt).toLocaleString('ko-KR')}</span>
-              {cacheBadge && (
-                <span className={clsx('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium', cacheBadge.className)}>
-                  {cacheBadge.label}
-                </span>
-              )}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-[var(--rule)] pb-3">
+              <span className={cx.text.data}>
+                {summary.weekStart} ~ {summary.weekEnd}
+              </span>
+              <span className={cx.text.data}>전체 {summary.totalTaskCount}</span>
+              <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-[var(--ink-3)] tabular">
+                <span
+                  aria-hidden
+                  className="w-[7px] h-[7px] rounded-[1px]"
+                  style={{ backgroundColor: 'var(--st-done-mark)' }}
+                />
+                동기화 {summary.syncedTaskCount}
+              </span>
+              <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-[var(--ink-3)] tabular">
+                <span
+                  aria-hidden
+                  className="w-[7px] h-[7px] rounded-[1px]"
+                  style={{ backgroundColor: 'var(--st-pending-mark)' }}
+                />
+                미동기화 {summary.unsyncedTaskCount}
+              </span>
+              <span className={cx.text.data}>
+                {new Date(summary.generatedAt).toLocaleString('ko-KR')}
+              </span>
             </div>
 
             {cacheBadge && (
-              <div className="rounded-[10px] border border-[#252535] bg-[#0d0d14] px-3 py-2 text-[12px] text-[#b8b8c8]">
-                {cacheBadge.message}
-              </div>
+              <p className={cx.text.meta}>{cacheBadge.message}</p>
             )}
 
             <div className="grid gap-4 lg:grid-cols-2">
               <SummarySectionCard
                 title="동기화된 일정"
                 section={summary.synced}
-                accentClass="text-[#8ea7ff]"
+                mark="var(--st-done-mark)"
               />
               <SummarySectionCard
                 title="미동기화 일정"
                 section={summary.unsynced}
-                accentClass="text-[#ffb482]"
+                mark="var(--st-pending-mark)"
               />
             </div>
           </div>
@@ -1248,7 +1256,7 @@ export default function TaskListPage() {
       />
 
       {/* 필터 */}
-      <div className="flex gap-1 mb-5">
+      <div className="flex gap-5 mb-6 border-b border-[var(--rule)]">
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.value}

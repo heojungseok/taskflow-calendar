@@ -1,55 +1,145 @@
 @import "tailwindcss";
 
-/* ── 전역 기본값 ───────────────────────────────────────── */
-*, *::before, *::after {
+/* ─────────────────────────────────────────────────────────
+   토큰
+
+   규율 하나: 색은 상태를 의미할 때만 쓴다.
+   브랜드·본문·버튼·포커스는 전부 먹색이고, 유채색은
+   PENDING / PROCESSING / DONE / FAILED 에만 배정한다.
+
+   라이트 단일 테마다. 다크 모드는 두지 않는다.
+   ───────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  /* 지면 */
+  --paper: #f3f4f2;
+  --surface: #ffffff;
+  --sunken: #eceeeb;
+  --rule: #dcdfdb;
+  --rule-strong: #c2c7c1;
+
+  /* 먹 */
+  --ink: #14161a;
+  --ink-2: #4a5058;
+  --ink-3: #767d85;
+  --ink-inv: #f7f8f6;
+
+  /* 버튼 면 전용.
+     순검정은 밝은 지면에서 구멍처럼 보인다. 종이(#f3f4f2)가 머금은
+     차가운 초록 기미를 그대로 어둡게 내린 값이라 색으로 읽히지 않으면서
+     배경과 한 계열이 된다. 유채색이 아니므로 "색은 상태 전용" 규율을
+     깨지 않는다. */
+  --ink-solid: #2f3733;
+  --ink-solid-hover: #3d4641;
+
+  /* 상태 — 이 넷만 유채색이다.
+     역할을 둘로 나눈다.
+       --st-*        글자용. 밝은 지면에서 읽히도록 어둡게 잡는다.
+       --st-*-mark   표식용. 점·스와치처럼 글자가 아닌 자리는
+                     선명해야 한눈에 잡힌다. 관제 화면의 표시등이
+                     탁하면 제 역할을 못 한다.
+       --st-*-bg     칩 배경. */
+  --st-pending: #7d5c10;
+  --st-running: #1553bb;
+  --st-done: #146043;
+  --st-failed: #a02438;
+
+  --st-pending-mark: #f0a92b;
+  --st-running-mark: #2f7bff;
+  --st-done-mark: #10b47a;
+  --st-failed-mark: #f04458;
+
+  --st-pending-bg: #fbeccd;
+  --st-running-bg: #dde8fd;
+  --st-done-bg: #d5f0e5;
+  --st-failed-bg: #fde0e4;
+
+  --radius: 2px;
+  --ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text',
-    'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0a0a0f;
-  color: #e8e8ed;
+  background-color: var(--paper);
+  color: var(--ink);
 }
 
 body {
-  background-color: #0a0a0f;
-  color: #e8e8ed;
+  background-color: var(--paper);
+  color: var(--ink);
   min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-/* ── 스크롤바 ─────────────────────────────────────────── */
+/* 숫자는 표에서 자리가 맞아야 한다 */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e1e2a;
-  border-radius: 2px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #2a2a3a;
+  background: var(--rule-strong);
+  border: 3px solid var(--paper);
+  border-radius: 999px;
 }
 
-/* ── datetime-local input ─────────────────────────────── */
-input[type="datetime-local"] {
-  color-scheme: dark;
-}
-
-/* ── 선택 영역 ────────────────────────────────────────── */
 ::selection {
-  background-color: rgba(59, 91, 255, 0.3);
-  color: #e8e8ed;
+  background-color: var(--ink);
+  color: var(--ink-inv);
 }
 
-/* ── 트랜지션 최소화 (깜빡임 방지) ───────────────────── */
-*, *::before, *::after {
-  transition-property: color, background-color, border-color, opacity, transform;
-  transition-duration: 120ms;
-  transition-timing-function: ease;
+/* 포커스는 색이 아니라 형태로 알린다 — 색은 상태 전용이므로 */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius);
+}
+
+/* 처리중 상태만 살아 움직인다. 나머지는 정지 상태다. */
+@keyframes running-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.running-dot {
+  animation: running-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .running-dot {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

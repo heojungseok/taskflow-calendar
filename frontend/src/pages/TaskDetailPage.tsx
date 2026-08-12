@@ -27,10 +27,10 @@ const OUTBOX_STATUS_LABEL: Record<OutboxStatus, string> = {
 };
 
 const OUTBOX_BADGE: Record<OutboxStatus, string> = {
-  PENDING:    'bg-[#1a1a20] text-[#9090a8] border border-[#252530]',
-  PROCESSING: 'bg-[#1a2040] text-[#6b8cff] border border-[#2a3558]',
-  SUCCESS:    'bg-[#0f2820] text-[#3dd68c] border border-[#1a4030]',
-  FAILED:     'bg-[#2a1018] text-[#ff6b6b] border border-[#3d1520]',
+  PENDING:    'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
+  PROCESSING: 'bg-[var(--st-running-bg)] text-[var(--st-running)]',
+  SUCCESS:    'bg-[var(--st-done-bg)] text-[var(--st-done)]',
+  FAILED:     'bg-[var(--st-failed-bg)] text-[var(--st-failed)]',
 };
 
 // ── 유틸 ──────────────────────────────────────────────────
@@ -49,7 +49,7 @@ function Section({ title, children, defaultOpen = true }: { title: string; child
     <div className={cx.card}>
       <button className="w-full flex items-center justify-between" onClick={() => setOpen(v => !v)}>
         <span className={cx.text.subheading}>{title}</span>
-        {open ? <ChevronUp size={13} className="text-[#686884]" /> : <ChevronDown size={13} className="text-[#686884]" />}
+        {open ? <ChevronUp size={13} className="text-[var(--ink-3)]" /> : <ChevronDown size={13} className="text-[var(--ink-3)]" />}
       </button>
       <AnimatePresence initial={false}>
         {open && (
@@ -101,7 +101,7 @@ function EditForm({ initialTitle, initialDescription, initialStartAt, initialDue
       <div>
         <label className={cx.text.label}>제목</label>
         <input type="text" value={title} onChange={(e) => { setTitle(e.target.value); setTitleErr(''); }} className={clsx(cx.input, titleErr && cx.inputError)} />
-        {titleErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{titleErr}</p>}
+        {titleErr && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{titleErr}</p>}
       </div>
       <div>
         <label className={cx.text.label}>설명</label>
@@ -110,15 +110,15 @@ function EditForm({ initialTitle, initialDescription, initialStartAt, initialDue
       <div>
         <label className={cx.text.label}>시작일</label>
         <input type="datetime-local" value={startAt} onChange={(e) => { setStartAt(e.target.value); setStartErr(''); }} className={clsx(cx.input, startErr && cx.inputError)} />
-        {startErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{startErr}</p>}
+        {startErr && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{startErr}</p>}
       </div>
       <div>
         <label className={cx.text.label}>마감일</label>
         <input type="datetime-local" value={dueAt} onChange={(e) => { setDueAt(e.target.value); setDueErr(''); }} className={clsx(cx.input, dueErr && cx.inputError)} />
-        {dueErr && <p className="mt-1 text-[11px] text-[#ff6b6b]">{dueErr}</p>}
+        {dueErr && <p className="mt-1 text-[12px] text-[var(--st-failed)]">{dueErr}</p>}
       </div>
       <div className="flex items-center gap-2">
-        <input type="checkbox" id="editSync" checked={calSync} onChange={(e) => { setCalSync(e.target.checked); setStartErr(''); setDueErr(''); }} className="w-3.5 h-3.5 rounded accent-[#3b5bff]" />
+        <input type="checkbox" id="editSync" checked={calSync} onChange={(e) => { setCalSync(e.target.checked); setStartErr(''); setDueErr(''); }} className="w-3.5 h-3.5 rounded accent-[var(--ink)]" />
         <label htmlFor="editSync" className={cx.text.body}>Google Calendar 동기화</label>
       </div>
       {isError && <div className={cx.errorBox}>수정에 실패했습니다.</div>}
@@ -177,7 +177,7 @@ export default function TaskDetailPage() {
           <div>
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-[15px] font-semibold text-[#e8e8ed] leading-snug mb-2">{task.title}</h2>
+                <h2 className="text-[18px] font-semibold text-[var(--ink)] leading-snug mb-2">{task.title}</h2>
                 <motion.span key={task.status} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.15 }}
                   className={clsx(cx.badge.base, cx.badge[task.status])}>
                   {STATUS_LABEL[task.status]}
@@ -187,7 +187,7 @@ export default function TaskDetailPage() {
                 <button onClick={() => setIsEditing(true)} className={cx.btn.secondary}>수정</button>
                 <button onClick={() => { if (!window.confirm('삭제하시겠습니까?')) return; deleteMutation.mutate(); }}
                   disabled={deleteMutation.isPending}
-                  className="px-3 py-1.5 text-xs font-medium border border-[#2a1018] text-[#ff6b6b]/60 hover:text-[#ff6b6b] hover:border-[#3d1520] rounded transition-all duration-150 disabled:opacity-40">
+                  className="px-3 py-2 text-[13px] font-medium border border-[var(--rule-strong)] text-[var(--ink-3)] hover:text-[var(--st-failed)] hover:border-[var(--st-failed)] rounded-[var(--radius)] transition-colors duration-150 disabled:opacity-40">
                   삭제
                 </button>
               </div>
@@ -252,8 +252,8 @@ export default function TaskDetailPage() {
               <p className={clsx(cx.text.meta, 'w-20 flex items-center gap-1')}><Calendar size={10} /> 이벤트</p>
               <p className={cx.text.body}>
                 {task.calendarEventId
-                  ? <span className="text-[#3dd68c]">연동됨 ({task.calendarEventId.slice(0, 12)}...)</span>
-                  : <span className="text-[#8080a0]">미연동</span>}
+                  ? <span className="text-[var(--st-done)]">연동됨 ({task.calendarEventId.slice(0, 12)}...)</span>
+                  : <span className="text-[var(--ink-3)]">미연동</span>}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -284,9 +284,9 @@ export default function TaskDetailPage() {
                 </div>
                 {(h.beforeValue || h.afterValue) && (
                   <div className="flex items-center gap-2 mb-1.5 font-mono">
-                    <span className="flex-1 px-2 py-1 rounded text-[11px] bg-[#0d0d14] text-[#8080a0] break-all border border-[#1a1a24]">{h.beforeValue ?? '—'}</span>
-                    <span className="text-[#5a5a7a] flex-shrink-0 text-xs">→</span>
-                    <span className="flex-1 px-2 py-1 rounded text-[11px] bg-[#0d1020] text-[#8aabff] break-all border border-[#1a2040]">{h.afterValue ?? '—'}</span>
+                    <span className="flex-1 px-2 py-1 rounded-[var(--radius)] font-mono text-[12px] bg-[var(--sunken)] text-[var(--ink-3)] break-all border border-[var(--rule)]">{h.beforeValue ?? '—'}</span>
+                    <span className="text-[var(--ink-3)] flex-shrink-0 text-[13px]">→</span>
+                    <span className="flex-1 px-2 py-1 rounded-[var(--radius)] font-mono text-[12px] bg-[var(--surface)] text-[var(--ink)] break-all border border-[var(--rule-strong)]">{h.afterValue ?? '—'}</span>
                   </div>
                 )}
                 <p className={cx.text.meta}>{h.changedByUserName}</p>
