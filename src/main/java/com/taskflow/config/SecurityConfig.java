@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .formLogin(fl -> fl.disable())
                 .authorizeHttpRequests(auth -> auth
                         // MVP: Google OAuth 엔드포인트만 공개
-                        .antMatchers(
+                        .requestMatchers(
                                 "/api/oauth/google/**",  // authorize + callback
                                 "/api/admin/**",         // 관리자 (디버깅)
                                 "/api/test/**"           // 테스트

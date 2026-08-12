@@ -3,7 +3,7 @@ package com.taskflow.calendar.domain.task.dto;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import lombok.Getter;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Task 상태 변경 요청 DTO
