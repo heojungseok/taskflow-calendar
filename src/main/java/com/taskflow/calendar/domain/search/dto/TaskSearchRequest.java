@@ -1,6 +1,6 @@
 package com.taskflow.calendar.domain.search.dto;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 public class TaskSearchRequest {
 

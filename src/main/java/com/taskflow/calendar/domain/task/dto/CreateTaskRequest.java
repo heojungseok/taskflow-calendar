@@ -3,8 +3,8 @@ package com.taskflow.calendar.domain.task.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 /**

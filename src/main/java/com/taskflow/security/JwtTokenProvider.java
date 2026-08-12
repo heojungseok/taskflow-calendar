@@ -30,10 +30,10 @@ public class JwtTokenProvider {
         Date expiry = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
-                .setSubject(String.valueOf(userId))  // userId를 subject로
-                .setIssuedAt(now)
-                .setExpiration(expiry)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .subject(String.valueOf(userId))  // userId를 subject로
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -42,10 +42,10 @@ public class JwtTokenProvider {
      */
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
+            Jwts.parser()
+                    .verifyWith(key)
                     .build()
-                    .parseClaimsJws(token);
+                    .parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             // 만료, 변조, 형식 오류 등 모두 false 반환
@@ -57,11 +57,11 @@ public class JwtTokenProvider {
      * 토큰에서 userId 추출
      */
     public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
         return Long.parseLong(claims.getSubject());
     }
