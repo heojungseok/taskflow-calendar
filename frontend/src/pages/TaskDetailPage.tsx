@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { SYNC_POLL_INTERVAL_MS, isSyncInFlight } from '@/lib/sync';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { tasksApi } from '@/api/endpoints/tasks';
@@ -140,7 +141,13 @@ export default function TaskDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
 
   const { data: task, isLoading, isError } = useQuery({ queryKey: ['task', tid], queryFn: () => tasksApi.getTask(tid), enabled: !!tid });
-  const { data: syncStatus } = useQuery({ queryKey: ['task-sync', tid], queryFn: () => tasksApi.getSyncStatus(tid), enabled: !!tid });
+  const { data: syncStatus } = useQuery({
+    queryKey: ['task-sync', tid],
+    queryFn: () => tasksApi.getSyncStatus(tid),
+    enabled: !!tid,
+    // 워커가 처리를 끝낼 때까지만 폴링한다
+    refetchInterval: (query) => (isSyncInFlight(query.state.data) ? SYNC_POLL_INTERVAL_MS : false),
+  });
   const { data: history } = useQuery({ queryKey: ['task-history', tid], queryFn: () => tasksApi.getHistory(tid), enabled: !!tid });
 
   const updateMutation = useMutation({

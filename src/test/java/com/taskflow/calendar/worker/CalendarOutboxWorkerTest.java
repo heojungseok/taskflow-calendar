@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -286,6 +287,54 @@ class CalendarOutboxWorkerTest {
             // then: 처리 안 됨
             verify(outboxService, never()).claimProcessing(anyLong(), any());
             verify(googleCalendarService, never()).handle(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("스케줄 폴링 스위치")
+    class SchedulingSwitchTest {
+
+        @Test
+        @DisplayName("enabled=true면 스케줄 진입점이 폴링을 수행한다")
+        void scheduledPoll_enabled_수행() {
+            // given
+            ReflectionTestUtils.setField(worker, "schedulingEnabled", true);
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of());
+
+            // when
+            worker.scheduledPoll();
+
+            // then
+            verify(outboxRepository).findProcessable(any(), any(), anyInt());
+        }
+
+        @Test
+        @DisplayName("enabled=false면 조회조차 하지 않는다")
+        void scheduledPoll_disabled_skip() {
+            // given
+            ReflectionTestUtils.setField(worker, "schedulingEnabled", false);
+
+            // when
+            worker.scheduledPoll();
+
+            // then
+            verify(outboxRepository, never()).findProcessable(any(), any(), anyInt());
+        }
+
+        @Test
+        @DisplayName("enabled=false여도 수동 트리거 경로는 동작한다")
+        void 수동트리거는_스위치와_무관() {
+            // given
+            ReflectionTestUtils.setField(worker, "schedulingEnabled", false);
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of());
+
+            // when: OutboxController가 호출하는 경로
+            worker.pollAndProcess();
+
+            // then
+            verify(outboxRepository).findProcessable(any(), any(), anyInt());
         }
     }
 }

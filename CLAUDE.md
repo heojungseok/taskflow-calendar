@@ -89,7 +89,8 @@ src/main/java/com/taskflow/backend/
 - Worker 처리 부하 90% 절감
 
 **Worker (CalendarOutboxWorker)**:
-- 5초마다 Polling
+- 60초마다 Polling (`OUTBOX_WORKER_FIXED_DELAY`로 조정)
+  - 재시도 백오프의 최소 간격이 1분이라 그보다 길게 잡으면 앞 단계가 뭉개진다
 - PENDING/FAILED 상태 조회
 - Lease Timeout (5분) 적용
 - Exponential Backoff (최대 6회)
@@ -207,10 +208,11 @@ JWT_SECRET=your_jwt_secret_key_at_least_256_bits
 JWT_EXPIRATION=86400000
 
 # Worker
-OUTBOX_WORKER_FIXED_DELAY=5000
-OUTBOX_WORKER_MAX_RETRY=6
-OUTBOX_WORKER_LEASE_TIMEOUT_MINUTES=5
+OUTBOX_WORKER_ENABLED=true      # 스케줄 폴링 on/off (수동 트리거는 항상 동작)
+OUTBOX_WORKER_FIXED_DELAY=60000 # ms
 ```
+
+> Max Retry(6회)와 Lease Timeout(5분)은 환경변수가 아니라 `OutboxPolicy` enum 상수다.
 
 ## 빌드 & 실행
 ```bash

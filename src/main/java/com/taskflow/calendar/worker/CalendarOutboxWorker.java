@@ -10,6 +10,8 @@ import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIn
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -17,10 +19,13 @@ import java.util.List;
 
 /**
  * Calendar Outbox Worker
- * - 5초마다 처리 가능한 Outbox 조회
+ * - {@code outbox.worker.fixed-delay}(기본 60초)마다 처리 가능한 Outbox 조회
  * - 조건부 UPDATE로 원자적 선점 (Race Condition 방지)
  * - Lease timeout: 5분
  * - Max retry: 6회
+ *
+ * <p>주기를 재시도 백오프의 최소 간격(1분)보다 길게 잡으면
+ * {@code CalendarOutboxService#calculateNextRetry}의 앞 단계가 뭉개진다.
  */
 @Component
 @RequiredArgsConstructor
@@ -32,13 +37,27 @@ public class CalendarOutboxWorker {
     private final GoogleCalendarService googleCalendarService;
     private final GoogleOAuthService googleOAuthService;
 
-//    @Scheduled(fixedDelay = 60000)  // 60초 설정
+    @Value("${outbox.worker.enabled:true}")
+    private boolean schedulingEnabled;
+
+    /**
+     * 스케줄 진입점. 수동 트리거({@code /api/admin/calendar-outbox/trigger-worker})는
+     * {@link #pollAndProcess()}를 직접 호출하므로 이 스위치의 영향을 받지 않는다.
+     */
+    @Scheduled(fixedDelayString = "${outbox.worker.fixed-delay:60000}")
+    public void scheduledPoll() {
+        if (!schedulingEnabled) {
+            return;
+        }
+        pollAndProcess();
+    }
+
     public void pollAndProcess() {
         try {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime leaseTimeout = now.minusMinutes(OutboxPolicy.LEASE_TIMEOUT_MINUTES.value());
 
-            log.info("[Worker] Polling at {}, leaseTimeout={}", now, leaseTimeout);
+            log.debug("[Worker] Polling at {}, leaseTimeout={}", now, leaseTimeout);
 
             // 1. 처리 가능한 Outbox 조회
             List<CalendarOutbox> processableOutboxes = outboxRepository.findProcessable(

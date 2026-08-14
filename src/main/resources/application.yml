@@ -65,6 +65,12 @@ gemini:
     semantic-candidate-limit: ${GEMINI_SEARCH_SEMANTIC_CANDIDATE_LIMIT:50}
     embedding-batch-size: ${GEMINI_SEARCH_EMBEDDING_BATCH_SIZE:16}
 
+outbox:
+  worker:
+    enabled: ${OUTBOX_WORKER_ENABLED:true}
+    # 재시도 백오프의 최소 간격이 1분이라 그보다 길게 잡으면 앞 단계가 뭉개진다
+    fixed-delay: ${OUTBOX_WORKER_FIXED_DELAY:60000}
+
 summary:
   force-live-enabled: ${WEEKLY_SUMMARY_FORCE_LIVE_ENABLED:false}
   cache:

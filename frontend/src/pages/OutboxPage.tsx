@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Play } from 'lucide-react';
 import { outboxApi } from '@/api/endpoints/calendar';
 import type { OutboxEntry, OutboxStatus, OutboxOpType } from '@/types/outbox';
 import { cx, clsx } from '@/styles/cx';
+import { SYNC_POLL_INTERVAL_MS, hasOutboxInFlight } from '@/lib/sync';
 
 // ── 상수 ──────────────────────────────────────────────────
 
@@ -141,6 +142,8 @@ export default function OutboxPage() {
   const { data: entries, isLoading, isError, refetch } = useQuery({
     queryKey: ['outbox', statusFilter, taskIdFilter],
     queryFn: () => outboxApi.getOutboxList({ status: statusFilter || undefined, taskId: taskIdFilter }),
+    // 워커가 처리 중인 항목이 있는 동안만 폴링한다
+    refetchInterval: (query) => (hasOutboxInFlight(query.state.data) ? SYNC_POLL_INTERVAL_MS : false),
   });
 
   const triggerMutation = useMutation({

@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 
-@SpringBootTest
+// 스케줄러가 켜진 채 컨텍스트가 뜨면 테스트 도중 워커가 실제 구글 API를 호출한다
+@SpringBootTest(properties = "outbox.worker.enabled=false")
 class GoogleCalendarClientTest {
 
     @Autowired

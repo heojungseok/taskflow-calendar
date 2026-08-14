@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { SYNC_POLL_INTERVAL_MS, isSyncInFlight } from '@/lib/sync';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import axios, { AxiosError } from 'axios';
@@ -734,6 +735,8 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
     queryKey: ['task-sync', taskId],
     queryFn: () => tasksApi.getSyncStatus(taskId),
     enabled: !!taskId,
+    // 워커가 처리를 끝낼 때까지만 폴링한다
+    refetchInterval: (query) => (isSyncInFlight(query.state.data) ? SYNC_POLL_INTERVAL_MS : false),
   });
   const { data: history } = useQuery({
     queryKey: ['task-history', taskId],
