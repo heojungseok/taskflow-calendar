@@ -106,6 +106,14 @@ public class CalendarOutboxService {
     }
 
     @Transactional
+    public void markSkipped(Long outboxId, String reason) {
+        CalendarOutbox outbox = outboxRepository.findById(outboxId)
+                .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
+
+        outbox.markAsSkipped(reason);
+    }
+
+    @Transactional
     public boolean claimProcessing(Long outboxId, LocalDateTime leaseTimeout) {
         int updated = outboxRepository.claimForProcessing(outboxId, leaseTimeout);
         return updated == 1;  // ✅ 선점 성공 여부 명확!

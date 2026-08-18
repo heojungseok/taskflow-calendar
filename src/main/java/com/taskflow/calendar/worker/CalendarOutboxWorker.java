@@ -3,6 +3,7 @@ package com.taskflow.calendar.worker;
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
+import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.outbox.OutboxPolicy;
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarService;
@@ -36,6 +37,7 @@ public class CalendarOutboxWorker {
     private final CalendarOutboxService outboxService;
     private final GoogleCalendarService googleCalendarService;
     private final GoogleOAuthService googleOAuthService;
+    private final OAuthGoogleTokenRepository tokenRepository;
 
     @Value("${outbox.worker.enabled:true}")
     private boolean schedulingEnabled;
@@ -100,6 +102,11 @@ public class CalendarOutboxWorker {
 
     private void processOne(CalendarOutbox outbox) {
         try {
+            // 0. 구글 연동이 없는 사용자면 호출 자체를 하지 않는다.
+            //    데모 사용자는 영원히 연동이 없으므로 FAILED로 쌓이면 알람이 무의미해진다.
+            if (skipIfNotLinked(outbox)) {
+                return;
+            }
 
             // 1. Google Calendar API 호출 (내부에서 Task 최신 상태 조회)
             googleCalendarService.handle(outbox);
@@ -136,6 +143,34 @@ public class CalendarOutboxWorker {
      * - 갱신 성공 → markForRetry (다음 polling에서 재시도)
      * - 갱신 실패 → markFailed (수동 확인 필요)
      */
+    /**
+     * 구글 연동이 없으면 SKIPPED로 종결하고 true를 반환한다.
+     *
+     * <p>FAILED와 나누는 이유는 관측이다. "조치가 필요한 실패"와 "정상적으로 하지 않는 것"이
+     * 한 상태로 뭉치면 대시보드를 봐도 대응 여부를 판단할 수 없다.
+     * 지표 이름은 로그 키와 맞춘다: outbox_skipped{reason="no_google_link"}
+     */
+    private boolean skipIfNotLinked(CalendarOutbox outbox) {
+        Long userId;
+        try {
+            userId = outboxService.extractUserIdFromPayload(outbox);
+        } catch (RuntimeException e) {
+            // payload에서 userId를 못 읽으면 연동 여부를 판단할 수 없다. 기존 경로로 보낸다.
+            log.warn("[Worker] outbox_skip_check_failed outboxId={} reason={}",
+                    outbox.getId(), e.getMessage());
+            return false;
+        }
+
+        if (tokenRepository.existsByUserId(userId)) {
+            return false;
+        }
+
+        log.info("[Worker] outbox_skipped outboxId={} taskId={} userId={} opType={} reason=no_google_link",
+                outbox.getId(), outbox.getTaskId(), userId, outbox.getOpType());
+        outboxService.markSkipped(outbox.getId(), "구글 연동 없음. userId=" + userId);
+        return true;
+    }
+
     private void handleTokenRefreshAndRetry(CalendarOutbox outbox, NonRetryableIntegrationException e) {
         try {
             Long userId = outboxService.extractUserIdFromPayload(outbox);

@@ -60,7 +60,7 @@ export interface TaskHistory {
 // ===== CalendarSyncStatus 타입 =====
 // 백엔드 CalendarSyncStatusResponse.java 기준
 
-export type OutboxStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+export type OutboxStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'SKIPPED';
 export type OutboxOpType = 'UPSERT' | 'DELETE';
 
 export interface CalendarSyncStatus {
