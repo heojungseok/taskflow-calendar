@@ -10,6 +10,7 @@ import com.taskflow.calendar.domain.summary.TaskSyncState;
 import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
+import com.taskflow.security.SecurityContextHelper;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -179,7 +180,7 @@ public class ProjectTaskSearchService {
             );
         }
 
-        List<Task> tasks = taskRepository.findAllByDeletedFalse();
+        List<Task> tasks = taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(SecurityContextHelper.getCurrentUserId());
         taskSearchEmbeddingService.ensureEmbeddings(tasks);
         Map<Long, Double> semanticSimilarities = taskSearchEmbeddingService.searchSimilarities(intent);
 

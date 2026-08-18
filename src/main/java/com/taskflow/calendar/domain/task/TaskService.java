@@ -45,7 +45,8 @@ public class TaskService {
     @Transactional
     public TaskResponse createTask(Long projectId, CreateTaskRequest request) {
         // 1. 프로젝트 조회
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository
+                .findByIdAndOwnerUserId(projectId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         // 2. Assignee 조회 (있는 경우)
@@ -106,7 +107,7 @@ public class TaskService {
     public TaskResponse updateTask(Long taskId, UpdateTaskRequest request) {
 
         // 1. Task 조회 (deleted=false)
-        Task task = taskRepository.findByIdAndDeletedFalse(taskId)
+        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
         // 변경 전 스냅샷 저장
@@ -173,7 +174,7 @@ public class TaskService {
     @Transactional
     public TaskResponse changeTaskStatus(Long taskId, ChangeTaskStatusRequest request) {
         // 1. Task 조회
-        Task task = taskRepository.findByIdAndDeletedFalse(taskId)
+        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
         // 2. 상태 전이 검증
@@ -205,7 +206,7 @@ public class TaskService {
      * Task 조회 (단건)
      */
     public TaskResponse getTask(Long taskId) {
-        Task task = taskRepository.findByIdAndDeletedFalse(taskId)
+        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
         return TaskResponse.from(task);
@@ -217,15 +218,20 @@ public class TaskService {
     public List<TaskResponse> listTasks(Long projectId, TaskStatus status, Long assigneeUserId) {
         List<Task> tasks;
 
+        Long ownerUserId = SecurityContextHelper.getCurrentUserId();
+
         if (status != null) {
             // 상태 필터링
-            tasks = taskRepository.findAllByProjectIdAndStatusAndDeletedFalse(projectId, status);
+            tasks = taskRepository.findAllByProjectIdAndStatusAndDeletedFalseAndProject_OwnerUserId(
+                    projectId, status, ownerUserId);
         } else if (assigneeUserId != null) {
             // 담당자 필터링
-            tasks = taskRepository.findAllByAssigneeIdAndDeletedFalse(assigneeUserId);
+            tasks = taskRepository.findAllByAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                    assigneeUserId, ownerUserId);
         } else {
             // 전체 조회
-            tasks = taskRepository.findAllByProjectIdAndDeletedFalse(projectId);
+            tasks = taskRepository.findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(
+                    projectId, ownerUserId);
         }
 
         return tasks.stream()
@@ -239,7 +245,7 @@ public class TaskService {
     @Transactional
     public DeleteTaskResponse deleteTask(Long taskId, Long requestedByUserId) {
         // 1. Task 조회
-        Task task = taskRepository.findByIdAndDeletedFalse(taskId)
+        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
         // 2. 삭제 전 스냅샷 저장 (추가!)
@@ -269,7 +275,7 @@ public class TaskService {
      */
     public List<TaskHistoryResponse> getTaskHistory(Long taskId) {
         // 1. Task 존재 확인 (deleted=false)
-        taskRepository.findByIdAndDeletedFalse(taskId)
+        taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
         // 2. 이력 조회
@@ -286,7 +292,7 @@ public class TaskService {
      * GET /api/tasks/{taskId}/calendar-sync
      */
     public CalendarSyncStatusResponse getCalendarSyncStatus(Long taskId) {
-        Task task = taskRepository.findByIdAndDeletedFalse(taskId)
+        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
         CalendarOutbox latestOutbox = calendarOutboxService.findLatestByTaskId(taskId)

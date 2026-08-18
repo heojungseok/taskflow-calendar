@@ -16,6 +16,7 @@ import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiSummaryProperties;
+import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -66,7 +67,7 @@ public class ProjectWeeklySummaryService {
     }
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId, boolean forceLive) {
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdAndOwnerUserId(projectId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         List<Task> allTasks = taskRepository.findAllByProjectIdAndDeletedFalse(projectId);

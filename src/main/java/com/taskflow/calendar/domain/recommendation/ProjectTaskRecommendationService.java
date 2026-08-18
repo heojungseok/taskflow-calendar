@@ -17,6 +17,7 @@ import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiRecommendationProperties;
+import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -55,7 +56,7 @@ public class ProjectTaskRecommendationService {
     private final GeminiRecommendationProperties geminiProperties;
 
     public ProjectTaskRecommendationResponse getRecommendations(Long projectId) {
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdAndOwnerUserId(projectId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         LocalDate today = LocalDate.now();

@@ -1,5 +1,8 @@
 package com.taskflow.calendar.domain.search;
 
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.search.dto.ProjectTaskSearchResponse;
 import com.taskflow.calendar.domain.search.generator.TaskSearchIntentParser;
@@ -26,6 +29,21 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectTaskSearchServiceTest {
+
+    /**
+     * 소유권 격리가 들어간 뒤로 서비스가 현재 사용자를 요구한다.
+     * SecurityContextHolder는 스레드 로컬이라 테스트 간에 새어나가므로 명시적으로 설정하고 정리한다.
+     */
+    @org.junit.jupiter.api.BeforeEach
+    void setUpSecurityContext() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(1L, null, null));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Mock
     private TaskRepository taskRepository;
@@ -103,7 +121,7 @@ class ProjectTaskSearchServiceTest {
                 List.of("이번 주 배포 준비 일정", "차단된 배포 작업", "캘린더 반영 안 된 배포 일정")
         );
         when(taskSearchIntentParser.parse("배포 관련")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(deployTask));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(deployTask));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(deployTask));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
         when(taskSyncStateResolver.resolve(deployTask)).thenReturn(snapshot(deployTask, TaskSyncState.SYNCED));
@@ -147,7 +165,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("이번 주 배포 준비 일정")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(alphaTask, betaTask, lifeTask));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(alphaTask, betaTask, lifeTask));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(alphaTask, betaTask, lifeTask));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
         when(taskSyncStateResolver.resolve(alphaTask)).thenReturn(snapshot(alphaTask, TaskSyncState.SYNCED));
@@ -194,7 +212,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("노는 일정이 뭐가 있었지?")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(outingTask, workTask));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(outingTask, workTask));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(outingTask, workTask));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
         when(taskSyncStateResolver.resolve(outingTask)).thenReturn(snapshot(outingTask, TaskSyncState.SYNC_DISABLED));
@@ -241,7 +259,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("친구들과 노는 일정이 뭐가 있었지?")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(outing, friendMeet, dentist, family, qaMeeting));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(outing, friendMeet, dentist, family, qaMeeting));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(outing, friendMeet, dentist, family, qaMeeting));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(
                 30L, 0.793d,
@@ -294,7 +312,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("화상 회의 일정들")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(remoteMeeting));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(remoteMeeting));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(remoteMeeting));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
         when(taskSyncStateResolver.resolve(remoteMeeting)).thenReturn(snapshot(remoteMeeting, TaskSyncState.SYNC_DISABLED));
@@ -339,7 +357,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("화상 회의 일정들")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(onlineMeeting, qaMeeting, friendMeet));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(onlineMeeting, qaMeeting, friendMeet));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(onlineMeeting, qaMeeting, friendMeet));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(
                 60L, 0.83d,
@@ -384,7 +402,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("친구들과 노는 일정이 뭐가 있었지?")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(outing));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(outing));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(outing));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
         when(taskSyncStateResolver.resolve(outing)).thenReturn(snapshot(outing, TaskSyncState.SYNC_DISABLED));
@@ -429,7 +447,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("친구 만나서 병원 가는 거")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(combined, friendOnly, hospitalOnly, genericCompanionOnly));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(combined, friendOnly, hospitalOnly, genericCompanionOnly));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(combined, friendOnly, hospitalOnly, genericCompanionOnly));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(
                 70L, 0.86d,
@@ -484,7 +502,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("누군가와 병원 가기")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(genericCompanion, specificCompanion, soloHospital));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(genericCompanion, specificCompanion, soloHospital));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(genericCompanion, specificCompanion, soloHospital));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(
                 75L, 0.83d,
@@ -564,7 +582,7 @@ class ProjectTaskSearchServiceTest {
         );
 
         when(taskSearchIntentParser.parse("병원 가는 일정")).thenReturn(intent);
-        when(taskRepository.findAllByDeletedFalse()).thenReturn(List.of(hospital));
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(hospital));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(hospital));
         when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(73L, 0.82d));
         when(taskSyncStateResolver.resolve(hospital)).thenReturn(snapshot(hospital, TaskSyncState.SYNC_DISABLED));
@@ -580,7 +598,7 @@ class ProjectTaskSearchServiceTest {
     }
 
     private Project project(Long id, String name) {
-        Project project = Project.of(name);
+        Project project = Project.of(name, 1L);
         ReflectionTestUtils.setField(project, "id", id);
         return project;
     }

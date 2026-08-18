@@ -1,5 +1,8 @@
 package com.taskflow.calendar.domain.summary;
 
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
@@ -39,6 +42,21 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProjectWeeklySummaryServiceTest {
 
+    /**
+     * 소유권 격리가 들어간 뒤로 서비스가 현재 사용자를 요구한다.
+     * SecurityContextHolder는 스레드 로컬이라 테스트 간에 새어나가므로 명시적으로 설정하고 정리한다.
+     */
+    @org.junit.jupiter.api.BeforeEach
+    void setUpSecurityContext() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(1L, null, null));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Mock
     private ProjectRepository projectRepository;
 
@@ -70,13 +88,13 @@ class ProjectWeeklySummaryServiceTest {
                 weeklySummaryCacheService,
                 geminiProperties
         );
-        project = Project.of("TaskFlow");
+        project = Project.of("TaskFlow", 1L);
     }
 
     @Test
     @DisplayName("generateWeeklySummary_프로젝트없음_예외발생")
     void generateWeeklySummary_projectNotFound() {
-        when(projectRepository.findById(1L)).thenReturn(Optional.empty());
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.empty());
 
         assertThrows(ProjectNotFoundException.class, () -> service.generateWeeklySummary(1L));
     }
@@ -84,7 +102,7 @@ class ProjectWeeklySummaryServiceTest {
     @Test
     @DisplayName("generateWeeklySummary_Task없음_로컬빈요약반환")
     void generateWeeklySummary_noTasks_returnsEmptySummary() {
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of());
 
         WeeklySummaryResponse response = service.generateWeeklySummary(1L);
@@ -105,7 +123,7 @@ class ProjectWeeklySummaryServiceTest {
         Task syncedTask = task("API 설계", TaskStatus.IN_PROGRESS, LocalDateTime.now().plusDays(1), true, "evt-123");
         Task unsyncedTask = task("문서 정리", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(3), false, null);
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(syncedTask, unsyncedTask));
         when(taskSyncStateResolver.resolve(syncedTask))
                 .thenReturn(snapshot(syncedTask, TaskSyncState.SYNCED));
@@ -161,7 +179,7 @@ class ProjectWeeklySummaryServiceTest {
     void generateWeeklySummary_withoutEventId_goesToUnsynced() {
         Task pendingSyncTask = task("캘린더 대기", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), true, null);
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(pendingSyncTask));
         when(taskSyncStateResolver.resolve(pendingSyncTask))
                 .thenReturn(snapshot(pendingSyncTask, TaskSyncState.PENDING_SYNC));
@@ -221,7 +239,7 @@ class ProjectWeeklySummaryServiceTest {
                 false
         );
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(noStartTask, rangedTask));
         when(taskSyncStateResolver.resolve(rangedTask))
                 .thenReturn(snapshot(rangedTask, TaskSyncState.SYNC_DISABLED));
@@ -266,7 +284,7 @@ class ProjectWeeklySummaryServiceTest {
         setField(recentDescribed, "updatedAt", LocalDateTime.now().minusHours(1));
         setField(staleDescribed, "updatedAt", LocalDateTime.now().minusHours(48));
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(staleDescribed, recentDescribed));
         when(taskSyncStateResolver.resolve(recentDescribed)).thenReturn(snapshot(recentDescribed, TaskSyncState.SYNCED));
         when(taskSyncStateResolver.resolve(staleDescribed)).thenReturn(snapshot(staleDescribed, TaskSyncState.SYNCED));
@@ -304,7 +322,7 @@ class ProjectWeeklySummaryServiceTest {
         Task cachedTask = task("캐시된 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
         WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(cachedTask));
         when(taskSyncStateResolver.resolve(cachedTask)).thenReturn(snapshot(cachedTask, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
@@ -322,7 +340,7 @@ class ProjectWeeklySummaryServiceTest {
     void generateWeeklySummary_forceLive_skipsExactCacheRead() {
         Task liveTask = task("라이브 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(liveTask));
         when(taskSyncStateResolver.resolve(liveTask)).thenReturn(snapshot(liveTask, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
@@ -360,7 +378,7 @@ class ProjectWeeklySummaryServiceTest {
         Task task = task("Quota 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
         WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
@@ -395,7 +413,7 @@ class ProjectWeeklySummaryServiceTest {
         Task task = task("Rate limit 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
         WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
@@ -430,7 +448,7 @@ class ProjectWeeklySummaryServiceTest {
         Task task = task("Unknown 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
         WeeklySummaryResponse cachedResponse = cachedResponse(WeeklySummaryCacheStatus.LIVE);
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
@@ -464,7 +482,7 @@ class ProjectWeeklySummaryServiceTest {
     void generateWeeklySummary_forceLive_doesNotUseLatestFallback() {
         Task task = task("Force live 일정", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), false, null);
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryGenerator.generate(
