@@ -47,26 +47,35 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
             ")")
     int claimForProcessing(@Param("id") Long id, @Param("leaseTimeout") LocalDateTime leaseTimeout);
 
-    // 4. Task별 Outbox 이력 조회 (선택)
-    // 힌트: findAllBy... 메서드명으로 가능
-    List<CalendarOutbox> findAllByTaskIdOrderByCreatedAtDesc(Long taskId);
+    /**
+     * 소유자 기준 Outbox 조회 (최신순). status/taskId는 선택 필터다.
+     * 소유는 payload의 meta.requestedByUserId로 판단한다 — Task.assignee는 91%가 비어 있어 쓸 수 없다.
+     * ponytail: payload를 jsonb로 캐스팅해 매번 스캔한다. 현재 수백 건이라 문제없다.
+     *   건수가 커지면 calendar_outbox에 user_id 컬럼을 두고 인덱스를 건다.
+     */
+    @Query(value = """
+            SELECT * FROM calendar_outbox o
+            WHERE o.payload::jsonb -> 'meta' ->> 'requestedByUserId' = cast(:userId AS text)
+              AND (cast(:status AS text) IS NULL OR o.status = cast(:status AS text))
+              AND (cast(:taskId AS bigint) IS NULL OR o.task_id = cast(:taskId AS bigint))
+            ORDER BY o.created_at DESC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<CalendarOutbox> findOwnedBy(@Param("userId") Long userId,
+                                     @Param("status") String status,
+                                     @Param("taskId") Long taskId,
+                                     @Param("limit") int limit);
 
     /**
-     * Task ID + 상태별 Outbox 조회 (최신순)
+     * 소유자 기준 Outbox 단건 조회. 남의 것이면 empty다.
      */
-    List<CalendarOutbox> findAllByTaskIdAndStatusOrderByCreatedAtDesc(Long taskId, OutboxStatus status);
-
-    /**
-     * 상태별 Outbox 조회 (최신순)
-     * - 관측 API용
-     */
-    List<CalendarOutbox> findAllByStatusOrderByCreatedAtDesc(OutboxStatus status);
-
-    /**
-     * 전체 Outbox 조회 (최신순, 최대 100개)
-     * - 관측 API용 (페이징 없이 최근 100개만)
-     */
-    List<CalendarOutbox> findTop100ByOrderByCreatedAtDesc();
+    @Query(value = """
+            SELECT * FROM calendar_outbox o
+            WHERE o.id = :outboxId
+              AND o.payload::jsonb -> 'meta' ->> 'requestedByUserId' = cast(:userId AS text)
+            """, nativeQuery = true)
+    Optional<CalendarOutbox> findOwnedById(@Param("outboxId") Long outboxId,
+                                           @Param("userId") Long userId);
 
     /**
      * Task별 최신 Outbox 1개 조회

@@ -6,7 +6,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -33,14 +35,13 @@ public class SecurityConfig {
                 .httpBasic(hb -> hb.disable())
                 .formLogin(fl -> fl.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // MVP: Google OAuth 엔드포인트만 공개
-                        .requestMatchers(
-                                "/api/oauth/google/**",  // authorize + callback
-                                "/api/admin/**",         // 관리자 (디버깅)
-                                "/api/test/**"           // 테스트
-                        ).permitAll()
+                        // Google OAuth 진입점만 공개. 토큰을 받기 전 단계라 인증을 걸 수 없다.
+                        .requestMatchers("/api/oauth/google/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                // 기본값은 403이라 프론트 인터셉터(401 -> /login 이동)가 동작하지 않는다.
+                .exceptionHandling(eh -> eh.authenticationEntryPoint(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
