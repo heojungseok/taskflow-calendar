@@ -8,6 +8,7 @@ import com.taskflow.common.ApiResponse;
 import com.taskflow.config.GoogleOAuthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +34,9 @@ public class GoogleOAuthController {
     private final GoogleOAuthProperties properties;
     private final GoogleOAuthService googleOAuthService;
     private final OAuthStateStore stateStore;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
     /**
      * Google OAuth 인증 URL 생성 (공개 엔드포인트)
@@ -83,7 +87,7 @@ public class GoogleOAuthController {
 
             // 4️⃣ 프론트엔드로 리다이렉트 (JWT 전달)
             String redirectUrl = String.format(
-                    "http://localhost:3000/oauth/callback?token=%s",
+                    frontendBaseUrl + "/oauth/callback?token=%s",
                     jwt
             );
 
@@ -97,7 +101,7 @@ public class GoogleOAuthController {
             log.error("OAuth callback failed", e);
 
             String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown OAuth error";
-            String errorUrl = "http://localhost:3000/oauth/callback?error=" +
+            String errorUrl = frontendBaseUrl + "/oauth/callback?error=" +
                     URLEncoder.encode(errorMessage, StandardCharsets.UTF_8);
 
             return ResponseEntity.status(HttpStatus.FOUND)
