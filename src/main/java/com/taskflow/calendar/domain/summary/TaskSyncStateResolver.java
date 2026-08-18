@@ -32,6 +32,12 @@ public class TaskSyncStateResolver {
         boolean hasEventId = task.getCalendarEventId() != null && !task.getCalendarEventId().isBlank();
 
         if (latestOutbox != null) {
+            // 구글 연동이 없어 워커가 건너뛴 건이다. 처리 대기가 아니라 종결이므로
+            // 여기서 걸러내지 않으면 아래 분기가 PENDING_SYNC로 떨어뜨려 화면에 영구 "대기"가 뜬다.
+            if (latestOutbox.getStatus() == OutboxStatus.SKIPPED) {
+                return TaskSyncState.SYNC_DISABLED;
+            }
+
             if (latestOutbox.getOpType() == OutboxOpType.UPSERT) {
                 return classifyUpsert(syncEnabled, hasEventId, latestOutbox.getStatus());
             }
