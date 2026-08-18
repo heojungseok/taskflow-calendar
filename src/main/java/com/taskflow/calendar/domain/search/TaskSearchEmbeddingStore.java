@@ -167,10 +167,14 @@ public class TaskSearchEmbeddingStore {
         );
     }
 
-    private Integer currentEmbeddingDimensions() {
+    /**
+     * pgvector의 vector(N)은 atttypmod에 N을 그대로 담는다. varchar처럼 -4 하면 안 된다.
+     * 빼면 매 기동마다 3072를 3068로 읽어 "차원이 바뀌었다"고 판단하고 테이블을 드롭한다.
+     */
+    Integer currentEmbeddingDimensions() {
         try {
             return jdbcTemplate.query(
-                    "SELECT a.atttypmod - 4 AS dimensions " +
+                    "SELECT a.atttypmod AS dimensions " +
                             "FROM pg_attribute a " +
                             "JOIN pg_class c ON a.attrelid = c.oid " +
                             "JOIN pg_namespace n ON c.relnamespace = n.oid " +
