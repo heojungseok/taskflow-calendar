@@ -1,7 +1,8 @@
-version: '3.8'
 services:
   postgres:
-    image: postgres:14-alpine
+    # pgvector 포함 이미지. postgres:14-alpine에는 확장이 없어 의미 검색이 조용히 꺼졌었다.
+    # PostgreSQL 17.11 / pgvector 0.8.6. 재현성을 위해 다이제스트까지 고정한다.
+    image: pgvector/pgvector:0.8.6-pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
     container_name: taskflow-postgres
     environment:
       POSTGRES_DB: taskflow
@@ -10,7 +11,13 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data-pg17:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow -d taskflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  postgres-data:
+  # pg14 시절 볼륨(taskflow-calendar_postgres-data)은 롤백용으로 남겨둔다.
+  postgres-data-pg17:
