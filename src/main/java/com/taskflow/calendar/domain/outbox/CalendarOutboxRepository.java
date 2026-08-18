@@ -1,5 +1,6 @@
 package com.taskflow.calendar.domain.outbox;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -47,26 +48,30 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
             ")")
     int claimForProcessing(@Param("id") Long id, @Param("leaseTimeout") LocalDateTime leaseTimeout);
 
-    // 4. Task별 Outbox 이력 조회 (선택)
-    // 힌트: findAllBy... 메서드명으로 가능
-    List<CalendarOutbox> findAllByTaskIdOrderByCreatedAtDesc(Long taskId);
+    /**
+     * 소유자 기준 Outbox 조회 (최신순). status/taskId는 선택 필터다.
+     * - 관측 API용. 소유는 Task.assignee로 판단한다.
+     * ponytail: assignee가 없는 Task의 Outbox는 아무에게도 안 보인다.
+     *   Task에 생성자(owner) 컬럼이 생기면 그쪽으로 옮긴다.
+     */
+    @Query("SELECT o FROM CalendarOutbox o " +
+            "WHERE o.taskId IN (SELECT t.id FROM Task t WHERE t.assignee.id = :userId) " +
+            "AND (:status IS NULL OR o.status = :status) " +
+            "AND (:taskId IS NULL OR o.taskId = :taskId) " +
+            "ORDER BY o.createdAt DESC")
+    List<CalendarOutbox> findOwnedBy(@Param("userId") Long userId,
+                                     @Param("status") OutboxStatus status,
+                                     @Param("taskId") Long taskId,
+                                     Pageable pageable);
 
     /**
-     * Task ID + 상태별 Outbox 조회 (최신순)
+     * 소유자 기준 Outbox 단건 조회. 남의 것이면 empty다.
      */
-    List<CalendarOutbox> findAllByTaskIdAndStatusOrderByCreatedAtDesc(Long taskId, OutboxStatus status);
-
-    /**
-     * 상태별 Outbox 조회 (최신순)
-     * - 관측 API용
-     */
-    List<CalendarOutbox> findAllByStatusOrderByCreatedAtDesc(OutboxStatus status);
-
-    /**
-     * 전체 Outbox 조회 (최신순, 최대 100개)
-     * - 관측 API용 (페이징 없이 최근 100개만)
-     */
-    List<CalendarOutbox> findTop100ByOrderByCreatedAtDesc();
+    @Query("SELECT o FROM CalendarOutbox o " +
+            "WHERE o.id = :outboxId " +
+            "AND o.taskId IN (SELECT t.id FROM Task t WHERE t.assignee.id = :userId)")
+    Optional<CalendarOutbox> findOwnedById(@Param("outboxId") Long outboxId,
+                                           @Param("userId") Long userId);
 
     /**
      * Task별 최신 Outbox 1개 조회

@@ -7,6 +7,7 @@ import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.Optional;
 @Slf4j
 public class CalendarOutboxService {
     private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
+    private static final int MAX_LIST_SIZE = 100;
 
     private final CalendarOutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
@@ -113,16 +115,8 @@ public class CalendarOutboxService {
     /**
      * Outbox 목록 조회 (필터링)
      */
-    public List<CalendarOutbox> listOutboxes(OutboxStatus status, Long taskId) {
-        if (taskId != null && status != null) {
-            return outboxRepository.findAllByTaskIdAndStatusOrderByCreatedAtDesc(taskId, status);
-        } else if (taskId != null) {
-            return outboxRepository.findAllByTaskIdOrderByCreatedAtDesc(taskId);
-        } else if (status != null) {
-            return outboxRepository.findAllByStatusOrderByCreatedAtDesc(status);
-        } else {
-            return outboxRepository.findTop100ByOrderByCreatedAtDesc();
-        }
+    public List<CalendarOutbox> listOutboxes(Long userId, OutboxStatus status, Long taskId) {
+        return outboxRepository.findOwnedBy(userId, status, taskId, PageRequest.of(0, MAX_LIST_SIZE));
     }
 
     /**
@@ -142,8 +136,8 @@ public class CalendarOutboxService {
     /**
      * Outbox 단건 조회
      */
-    public CalendarOutbox getOutbox(Long outboxId) {
-        return outboxRepository.findById(outboxId)
+    public CalendarOutbox getOutbox(Long outboxId, Long userId) {
+        return outboxRepository.findOwnedById(outboxId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
     }
 
