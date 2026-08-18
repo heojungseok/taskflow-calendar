@@ -7,7 +7,6 @@ import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,7 +115,8 @@ public class CalendarOutboxService {
      * Outbox 목록 조회 (필터링)
      */
     public List<CalendarOutbox> listOutboxes(Long userId, OutboxStatus status, Long taskId) {
-        return outboxRepository.findOwnedBy(userId, status, taskId, PageRequest.of(0, MAX_LIST_SIZE));
+        return outboxRepository.findOwnedBy(
+                userId, status == null ? null : status.name(), taskId, MAX_LIST_SIZE);
     }
 
     /**

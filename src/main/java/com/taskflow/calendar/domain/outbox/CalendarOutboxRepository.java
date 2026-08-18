@@ -1,6 +1,5 @@
 package com.taskflow.calendar.domain.outbox;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -50,26 +49,31 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
 
     /**
      * 소유자 기준 Outbox 조회 (최신순). status/taskId는 선택 필터다.
-     * - 관측 API용. 소유는 Task.assignee로 판단한다.
-     * ponytail: assignee가 없는 Task의 Outbox는 아무에게도 안 보인다.
-     *   Task에 생성자(owner) 컬럼이 생기면 그쪽으로 옮긴다.
+     * 소유는 payload의 meta.requestedByUserId로 판단한다 — Task.assignee는 91%가 비어 있어 쓸 수 없다.
+     * ponytail: payload를 jsonb로 캐스팅해 매번 스캔한다. 현재 수백 건이라 문제없다.
+     *   건수가 커지면 calendar_outbox에 user_id 컬럼을 두고 인덱스를 건다.
      */
-    @Query("SELECT o FROM CalendarOutbox o " +
-            "WHERE o.taskId IN (SELECT t.id FROM Task t WHERE t.assignee.id = :userId) " +
-            "AND (:status IS NULL OR o.status = :status) " +
-            "AND (:taskId IS NULL OR o.taskId = :taskId) " +
-            "ORDER BY o.createdAt DESC")
+    @Query(value = """
+            SELECT * FROM calendar_outbox o
+            WHERE o.payload::jsonb -> 'meta' ->> 'requestedByUserId' = cast(:userId AS text)
+              AND (cast(:status AS text) IS NULL OR o.status = cast(:status AS text))
+              AND (cast(:taskId AS bigint) IS NULL OR o.task_id = cast(:taskId AS bigint))
+            ORDER BY o.created_at DESC
+            LIMIT :limit
+            """, nativeQuery = true)
     List<CalendarOutbox> findOwnedBy(@Param("userId") Long userId,
-                                     @Param("status") OutboxStatus status,
+                                     @Param("status") String status,
                                      @Param("taskId") Long taskId,
-                                     Pageable pageable);
+                                     @Param("limit") int limit);
 
     /**
      * 소유자 기준 Outbox 단건 조회. 남의 것이면 empty다.
      */
-    @Query("SELECT o FROM CalendarOutbox o " +
-            "WHERE o.id = :outboxId " +
-            "AND o.taskId IN (SELECT t.id FROM Task t WHERE t.assignee.id = :userId)")
+    @Query(value = """
+            SELECT * FROM calendar_outbox o
+            WHERE o.id = :outboxId
+              AND o.payload::jsonb -> 'meta' ->> 'requestedByUserId' = cast(:userId AS text)
+            """, nativeQuery = true)
     Optional<CalendarOutbox> findOwnedById(@Param("outboxId") Long outboxId,
                                            @Param("userId") Long userId);
 
