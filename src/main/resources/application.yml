@@ -7,15 +7,17 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:local}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/taskflow
-    username: taskflow
-    password: taskflow123
+    # 기본값은 docker-compose.yml의 로컬 컨테이너와 같다. 배포에서는 환경변수로 덮는다.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/taskflow}
+    username: ${DB_USERNAME:taskflow}
+    password: ${DB_PASSWORD:taskflow123}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update # 테이블 자동 생성/수정 (개발 환경)
-    show-sql: true # SQL 로그 출력
+      # 배포에서는 validate로 내린다. update는 운영 스키마를 말없이 바꾼다.
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:true}
     properties:
       hibernate:
         format_sql: true # SQL 포맷팅
@@ -30,14 +32,16 @@ logging:
     org.hibernate.type.descriptor.sql.BasicExtractor: ${LOG_LEVEL_SQL_BIND:TRACE}
 
 jwt:
-  secret: taskflow-calendar-secret-key-change-this-in-production-256-bits
-  expiration: 86400000  # 24 hours in ms
+  # 기본값을 두지 않는다. 저장소에 박힌 시크릿은 곧 인증 우회다.
+  # 없으면 기동에 실패한다 - 그게 맞는 동작이다.
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24 hours in ms
 
 google:
   oauth:
     client-id: ${GOOGLE_CLIENT_ID}
     client-secret: ${GOOGLE_CLIENT_SECRET}
-    redirect-uri: http://localhost:8080/api/oauth/google/callback
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/api/oauth/google/callback}
     scope: openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.events
     authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
     token-uri: https://oauth2.googleapis.com/token
@@ -69,6 +73,11 @@ gemini:
     lexical-candidate-limit: ${GEMINI_SEARCH_LEXICAL_CANDIDATE_LIMIT:50}
     semantic-candidate-limit: ${GEMINI_SEARCH_SEMANTIC_CANDIDATE_LIMIT:50}
     embedding-batch-size: ${GEMINI_SEARCH_EMBEDDING_BATCH_SIZE:16}
+
+app:
+  frontend:
+    # OAuth 콜백이 JWT를 붙여 돌려보내는 곳
+    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
 
 outbox:
   worker:
