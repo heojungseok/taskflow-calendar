@@ -22,11 +22,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 logging:
+  # 공개 배포에서는 환경변수로 낮춘다. SQL/바인딩 로그는 요청마다 수십 줄이 쌓인다.
   level:
-    com.taskflow: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.hibernate.type.descriptor.sql.BasicExtractor: TRACE
+    com.taskflow: ${LOG_LEVEL_APP:DEBUG}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:DEBUG}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_SQL_BIND:TRACE}
+    org.hibernate.type.descriptor.sql.BasicExtractor: ${LOG_LEVEL_SQL_BIND:TRACE}
 
 jwt:
   secret: taskflow-calendar-secret-key-change-this-in-production-256-bits

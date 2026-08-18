@@ -8,10 +8,11 @@ import com.taskflow.common.exception.ResourceNotFoundException;
 import com.taskflow.common.exception.UnauthorizedException;
 import com.taskflow.common.exception.ValidationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -63,19 +64,28 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 아래 handleGeneric(Exception)이 스프링 MVC 자체 예외까지 삼켜 405를 500으로 만든다.
-     * 부작용이 있는 엔드포인트를 GET으로 때렸을 때 500이 아니라 405가 나와야 한다.
+     * 잘못된 enum·숫자 파라미터. Spring 6.1의 TypeMismatchException은 아직 ErrorResponse가
+     * 아니라서(6.2부터) 아래 분기에 걸리지 않는다. 명시하지 않으면 500으로 나간다.
      */
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
-        log.warn("Method not allowed: {}", e.getMessage());
+    @ExceptionHandler(TypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(TypeMismatchException e) {
+        log.warn("Type mismatch: {}", e.getMessage());
         return ResponseEntity
-                .status(HttpStatus.METHOD_NOT_ALLOWED)
-                .body(ApiResponse.error(ErrorCode.METHOD_NOT_ALLOWED, e.getMessage()));
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ErrorCode.REQUEST_ERROR, e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception e) {
+        // 스프링 MVC 자체 예외(405, 404, 415, 잘못된 body, 타입 불일치...)는 ErrorResponse를 구현하고
+        // 각자 올바른 상태 코드를 들고 있다. 여기서 걸러내지 않으면 전부 500으로 나간다.
+        if (e instanceof ErrorResponse mvcError) {
+            log.warn("Request error {}: {}", mvcError.getStatusCode(), e.getMessage());
+            return ResponseEntity
+                    .status(mvcError.getStatusCode())
+                    .body(ApiResponse.error(ErrorCode.REQUEST_ERROR, e.getMessage()));
+        }
+
         log.error("Unexpected error", e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)

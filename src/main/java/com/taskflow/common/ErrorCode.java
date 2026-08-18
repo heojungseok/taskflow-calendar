@@ -31,7 +31,7 @@ public enum ErrorCode {
     WEEKLY_SUMMARY_FORCE_LIVE_DISABLED("WEEKLY_SUMMARY_FORCE_LIVE_DISABLED", "forceLive is disabled"),
 
     // Generic
-    METHOD_NOT_ALLOWED("METHOD_NOT_ALLOWED", "Method not allowed"),
+    REQUEST_ERROR("REQUEST_ERROR", "Invalid request"),
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "Internal server error"),
     UNAUTHORIZED("UNAUTHORIZED", "Unauthorized");
 

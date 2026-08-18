@@ -124,6 +124,14 @@ class OutboxControllerSecurityTest {
         }
 
         @Test
+        @DisplayName("잘못된 status 값은 500이 아니라 400 - 캐치올이 MVC 예외를 삼키지 않는다")
+        void badEnumIsBadRequest() throws Exception {
+            mvc.perform(get(BASE).param("status", "NOPE")
+                            .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
         @DisplayName("인증된 POST면 실행된다")
         void postRunsWorker() throws Exception {
             mvc.perform(post(BASE + "/trigger-worker").header("Authorization", "Bearer " + TOKEN))

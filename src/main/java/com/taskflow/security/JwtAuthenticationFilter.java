@@ -29,16 +29,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        log.info("JWT Authentication Filter");
-        log.info("Request URI: {}", request.getRequestURI());
         // 1. Authorization 헤더에서 토큰 추출
         String token = extractTokenFromHeader(request);
-        log.info("JWT Token exists: {}", (token != null));
         // 2. 토큰이 있고 유효하면
         if (token != null && jwtTokenProvider.validateToken(token)) {
             // 3. userId 추출
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            log.info("JWT User ID: {}", userId);
             // 4. Authentication 객체 생성
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     userId,
@@ -48,7 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // 5. SecurityContext에 설정
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.info("Authentication set: {}" , authentication);
+            // 요청마다 찍힌다. userId가 로그에 남으므로 debug로 둔다.
+            log.debug("Authenticated userId={} for {}", userId, request.getRequestURI());
         }
 
         // 6. 다음 필터로 전달
