@@ -27,7 +27,6 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class GoogleCalendarClientImpl implements GoogleCalendarClient {
 
-    private static final String DELETE_OPERATION = "deleteEvent";
 
     private final OAuthGoogleTokenRepository repository;
     private final GoogleOAuthService googleOAuthService;
@@ -64,7 +63,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
             });
 
         } catch (GoogleJsonResponseException e) {
-            handleGoogleApiException(e, "createEvent", userId);
+            handleGoogleApiException(e, "createEvent", userId, false);
             return null;
         }
         catch (IOException e) {
@@ -94,7 +93,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
             });
 
         } catch (GoogleJsonResponseException e) {
-            handleGoogleApiException(e, "updateEvent", userId);
+            handleGoogleApiException(e, "updateEvent", userId, false);
         } catch (IOException e) {
             throw new RetryableIntegrationException("Network error during updateEvent", e);
         }
@@ -110,7 +109,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
                 return service.events().delete("primary", eventId).execute();
             });
         } catch (GoogleJsonResponseException e) {
-            handleGoogleApiException(e, DELETE_OPERATION, userId);
+            handleGoogleApiException(e, "deleteEvent", userId, true);
         } catch (IOException e) {
             throw new RetryableIntegrationException("Network error", e);
         }
@@ -165,7 +164,8 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
     /**
      * Google API 예외 분류
      */
-    private void handleGoogleApiException(GoogleJsonResponseException e, String operation, Long userId) {
+    private void handleGoogleApiException(GoogleJsonResponseException e, String operation, Long userId,
+                                          boolean goneIsSuccess) {
         int statusCode = e.getStatusCode();
         String reason = e.getDetails() != null ? e.getDetails().getMessage() : "Unknown";
 
@@ -188,7 +188,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
         // 멱등 DELETE: 이미 지워진 이벤트를 지우는 것은 성공이다.
         // UPDATE/CREATE에서는 성공이 아니다 — 캘린더가 안 바뀌었는데 SUCCESS로 남는다.
         if (statusCode == 404 || statusCode == 410) {
-            if (DELETE_OPERATION.equals(operation)) {
+            if (goneIsSuccess) {
                 log.info("Google Calendar resource already deleted (status={}), treat as success", statusCode);
                 return;
             }

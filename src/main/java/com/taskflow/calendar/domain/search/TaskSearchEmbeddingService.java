@@ -36,11 +36,23 @@ public class TaskSearchEmbeddingService {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
+    /**
+     * 의미 검색이 왜 안 도는지까지 알려준다.
+     * boolean 하나로 합치면 "꺼둔 것"과 "고장난 것"이 구분되지 않는다.
+     */
+    public SemanticSearchStatus semanticStatus() {
+        if (!properties.isSemanticEnabled()
+                || properties.getApiKey() == null
+                || properties.getApiKey().isBlank()) {
+            return SemanticSearchStatus.DISABLED;
+        }
+        return embeddingStore.isAvailable()
+                ? SemanticSearchStatus.READY
+                : SemanticSearchStatus.UNAVAILABLE;
+    }
+
     public boolean isSemanticEnabled() {
-        return properties.isSemanticEnabled()
-                && properties.getApiKey() != null
-                && !properties.getApiKey().isBlank()
-                && embeddingStore.isAvailable();
+        return semanticStatus() == SemanticSearchStatus.READY;
     }
 
     public void ensureEmbeddings(List<Task> tasks) {

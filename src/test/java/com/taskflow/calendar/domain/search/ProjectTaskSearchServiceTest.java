@@ -104,7 +104,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("중요한 거 찾아줘");
 
-        assertTrue(response.isFallback());
+        assertTrue(response.isIntentFallback());
         assertEquals(3, response.getSuggestedQueries().size());
         verifyNoInteractions(taskRepository, taskSyncStateResolver);
     }
@@ -142,7 +142,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("배포 관련");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(1, response.getTaskResults().size());
         assertEquals("배포 일정 정리", response.getTaskResults().get(0).getTitle());
         assertEquals("TOPIC_SEARCH", response.getIntent().getQueryType());
@@ -188,7 +188,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("이번 주 배포 준비 일정");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(2, response.getTaskResults().size());
         assertEquals("배포 체크리스트 준비", response.getTaskResults().get(0).getTitle());
         assertEquals("배포 초안 준비", response.getTaskResults().get(1).getTitle());
@@ -234,7 +234,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("노는 일정이 뭐가 있었지?");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(1, response.getTaskResults().size());
         assertEquals("한강 나들이", response.getTaskResults().get(0).getTitle());
     }
@@ -290,7 +290,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("친구들과 노는 일정이 뭐가 있었지?");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(2, response.getTaskResults().size());
         List<String> titles = response.getTaskResults().stream()
                 .map(result -> result.getTitle())
@@ -333,7 +333,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("화상 회의 일정들");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals("TOPIC_SEARCH", response.getIntent().getQueryType());
         assertEquals("ALLOW_PARTIAL", response.getIntent().getRelationPolicy());
         assertEquals(1, response.getTaskResults().size());
@@ -384,7 +384,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("화상 회의 일정들");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(1, response.getTaskResults().size());
         assertEquals("온라인 회의 준비", response.getTaskResults().get(0).getTitle());
     }
@@ -423,7 +423,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("친구들과 노는 일정이 뭐가 있었지?");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals("RELATIONAL_SEARCH", response.getIntent().getQueryType());
         assertEquals("PREFER_ALL", response.getIntent().getRelationPolicy());
         assertEquals(1, response.getTaskResults().size());
@@ -476,7 +476,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("친구 만나서 병원 가는 거");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals("RELATIONAL_SEARCH", response.getIntent().getQueryType());
         assertEquals("VISIT", response.getIntent().getMainAction());
         assertTrue(response.getIntent().getSecondaryActions().contains("MEET"));
@@ -529,7 +529,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("누군가와 병원 가기");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         List<String> titles = response.getTaskResults().stream()
                 .map(result -> result.getTitle())
                 .collect(java.util.stream.Collectors.toList());
@@ -565,7 +565,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("누군가 어떤 일 하기");
 
-        assertTrue(response.isFallback());
+        assertTrue(response.isIntentFallback());
         verifyNoInteractions(taskRepository, taskSyncStateResolver);
     }
 
@@ -603,7 +603,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("병원 가는 일정");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals("TOPIC_SEARCH", response.getIntent().getQueryType());
         assertEquals("VISIT", response.getIntent().getMainAction());
         assertTrue(response.getIntent().getLocationTerms().contains("병원"));

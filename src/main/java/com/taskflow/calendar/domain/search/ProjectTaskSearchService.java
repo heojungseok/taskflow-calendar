@@ -173,6 +173,7 @@ public class ProjectTaskSearchService {
             return ProjectTaskSearchResponse.of(
                     query,
                     true,
+                    taskSearchEmbeddingService.semanticStatus(),
                     SearchIntentResponse.from(intent),
                     List.of(),
                     List.of(),
@@ -220,6 +221,8 @@ public class ProjectTaskSearchService {
         return ProjectTaskSearchResponse.of(
                 query,
                 false,
+                // 검색을 끝낸 뒤에 읽는다. 쿼리 도중 스토어가 죽으면 그 사실까지 잡힌다.
+                taskSearchEmbeddingService.semanticStatus(),
                 SearchIntentResponse.from(intent),
                 taskResults,
                 relatedProjects,
