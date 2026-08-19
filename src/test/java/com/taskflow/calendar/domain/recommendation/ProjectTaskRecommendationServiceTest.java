@@ -17,6 +17,7 @@ import com.taskflow.calendar.domain.summary.TaskSyncState;
 import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiRecommendationProperties;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,6 +77,9 @@ class ProjectTaskRecommendationServiceTest {
     @Mock
     private TaskRecommendationCacheService taskRecommendationCacheService;
 
+    @Mock
+    private UserRepository userRepository;
+
     private ProjectTaskRecommendationService service;
 
     private Project project;
@@ -90,7 +94,8 @@ class ProjectTaskRecommendationServiceTest {
                 taskSyncStateResolver,
                 taskRecommendationGenerator,
                 taskRecommendationCacheService,
-                geminiProperties
+                geminiProperties,
+                userRepository
         );
         project = Project.of("TaskFlow", 1L);
         stubResolveAllViaResolve();

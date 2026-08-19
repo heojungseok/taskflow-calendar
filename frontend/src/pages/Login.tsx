@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import apiClient from '@/api/client';
 import { cx, clsx, PIPELINE } from '@/styles/cx';
+import { authApi } from '@/api/endpoints/auth';
+import { useAuthStore } from '@/store/authStore';
+import { useNavigate } from 'react-router-dom';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -14,8 +17,23 @@ interface AuthorizeUrlResponse {
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [error, setError] = useState('');
   const reduceMotion = useReducedMotion();
+  const navigate = useNavigate();
+  const setSession = useAuthStore((state) => state.setSession);
+
+  const handleDemoLogin = async () => {
+    setError('');
+    setIsDemoLoading(true);
+    try {
+      setSession(await authApi.demo());
+      navigate('/projects');
+    } catch {
+      setError('데모를 시작할 수 없습니다. 잠시 후 다시 시도하세요.');
+      setIsDemoLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setError('');
@@ -101,11 +119,19 @@ export default function Login() {
           )}
 
           <button
+            onClick={handleDemoLogin}
+            disabled={isDemoLoading || isLoading}
+            className={clsx(cx.btn.primary, 'w-full py-3 text-[14px]')}
+          >
+            {isDemoLoading ? '데모를 준비하는 중' : '데모로 둘러보기'}
+          </button>
+
+          <button
             onClick={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={isLoading || isDemoLoading}
             className={clsx(
-              cx.btn.primary,
-              'w-full inline-flex items-center justify-center gap-2.5 py-3 text-[14px]'
+              cx.btn.secondary,
+              'mt-3 w-full inline-flex items-center justify-center gap-2.5 py-3 text-[14px]'
             )}
           >
             {isLoading ? (
@@ -130,7 +156,7 @@ export default function Login() {
           </button>
 
           <p className="mt-3 text-[13px] text-[var(--ink-3)]">
-            계정이 없으면 로그인할 때 만들어집니다.
+            데모 데이터는 방문자별로 분리되며 24시간 뒤 삭제됩니다.
           </p>
         </motion.div>
       </main>

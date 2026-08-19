@@ -1,5 +1,6 @@
 package com.taskflow.calendar.domain.project;
 
+import com.taskflow.calendar.domain.user.User;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,6 +33,11 @@ public class Project {
     @Column(name = "owner_user_id")
     private Long ownerUserId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_user_id", insertable = false, updatable = false,
+            foreignKey = @ForeignKey(name = "fk_projects_owner_user"))
+    private User owner;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -49,4 +55,3 @@ public class Project {
         return new Project(name, ownerUserId);
     }
 }
-

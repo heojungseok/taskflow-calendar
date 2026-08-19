@@ -92,8 +92,7 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
         
         if (eventId != null) {
             // UPDATE (멱등)
-            log.info("[GoogleCalendarService] Updating event. taskId={}, eventId={}, title={}",
-                    taskId, eventId, event.getTitle());
+            log.info("[GoogleCalendarService] Updating event. taskId={}, eventId={}", taskId, eventId);
             try {
                 googleCalendarClient.updateEvent(userId, eventId, event);
                 return;
@@ -108,8 +107,7 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
         }
 
         // CREATE
-        log.info("[GoogleCalendarService] Creating event. taskId={}, title={}",
-                taskId, event.getTitle());
+        log.info("[GoogleCalendarService] Creating event. taskId={}", taskId);
         String newEventId = googleCalendarClient.createEvent(userId, event);
 
         // eventId를 Task에 저장

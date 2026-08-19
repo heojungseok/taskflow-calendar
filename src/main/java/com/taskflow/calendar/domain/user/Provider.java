@@ -6,5 +6,6 @@ package com.taskflow.calendar.domain.user;
  */
 public enum Provider {
     GOOGLE,  // Google OAuth 인증
-    LOCAL    // 이메일/패스워드 인증 (추후 확장)
+    LOCAL,   // 이메일/패스워드 인증 (추후 확장)
+    DEMO     // 24시간 공개 데모 사용자
 }

@@ -104,4 +104,33 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
      * - 마지막 동기화 성공 시각 제공
      */
     Optional<CalendarOutbox> findTopByTaskIdAndStatusOrderByUpdatedAtDesc(Long taskId, OutboxStatus status);
+
+    @Query(value = """
+            SELECT EXISTS (
+              SELECT 1 FROM calendar_outbox o
+              JOIN tasks t ON t.id = o.task_id
+              JOIN projects p ON p.id = t.project_id
+              WHERE p.owner_user_id = :userId AND o.status = 'PROCESSING'
+            )
+            """, nativeQuery = true)
+    boolean existsProcessingForOwner(@Param("userId") Long userId);
+
+    @Query(value = """
+            SELECT o.* FROM calendar_outbox o
+            JOIN tasks t ON t.id = o.task_id
+            JOIN projects p ON p.id = t.project_id
+            WHERE p.owner_user_id = :userId
+            FOR UPDATE OF o
+            """, nativeQuery = true)
+    List<CalendarOutbox> lockOwnedBy(@Param("userId") Long userId);
+
+    @Modifying
+    @Query(value = """
+            DELETE FROM calendar_outbox
+            WHERE task_id IN (
+              SELECT t.id FROM tasks t JOIN projects p ON p.id = t.project_id
+              WHERE p.owner_user_id = :userId
+            )
+            """, nativeQuery = true)
+    int deleteOwnedBy(@Param("userId") Long userId);
 }

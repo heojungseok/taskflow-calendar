@@ -16,6 +16,7 @@ import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationExc
 import com.taskflow.calendar.domain.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiSummaryProperties;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +76,9 @@ class ProjectWeeklySummaryServiceTest {
     @Mock
     private WeeklySummaryCacheService weeklySummaryCacheService;
 
+    @Mock
+    private UserRepository userRepository;
+
     private ProjectWeeklySummaryService service;
 
     private Project project;
@@ -89,7 +93,8 @@ class ProjectWeeklySummaryServiceTest {
                 weeklySummaryGenerator,
                 taskSyncStateResolver,
                 weeklySummaryCacheService,
-                geminiProperties
+                geminiProperties,
+                userRepository
         );
         project = Project.of("TaskFlow", 1L);
         stubResolveAllViaResolve();

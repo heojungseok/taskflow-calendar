@@ -1,5 +1,17 @@
-// MVP에서 이메일/패스워드 인증은 미구현 (백엔드 @Deprecated 상태)
-// Google OAuth 인증은 oauthApi (calendar.ts) 참조
-// 이 파일은 LOCAL 인증 추가 시 복구 예정
+import apiClient from '../client';
+import type { ApiResponse } from '../types';
+import type { Session } from '@/store/authStore';
 
-export {};
+export const authApi = {
+  session: async () => {
+    const response = await apiClient.get<ApiResponse<Session>>('/auth/session');
+    return response.data.data;
+  },
+  demo: async () => {
+    const response = await apiClient.post<ApiResponse<Session>>('/auth/demo');
+    return response.data.data;
+  },
+  logout: async () => {
+    await apiClient.post('/auth/logout');
+  },
+};

@@ -4,6 +4,9 @@ import io.jsonwebtoken.JwtException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -35,6 +38,17 @@ class JwtTokenProviderTest {
 
         assertThat(provider.validateToken(token)).isTrue();
         assertThat(provider.getUserIdFromToken(token)).isEqualTo(USER_ID);
+    }
+
+    @Test
+    @DisplayName("지정한 만료 시각을 그대로 사용한다")
+    void exactExpiry() {
+        JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
+        Instant expiresAt = Instant.now().plusSeconds(300).truncatedTo(ChronoUnit.SECONDS);
+
+        String token = provider.generateToken(USER_ID, expiresAt);
+
+        assertThat(provider.getExpiration(token)).isEqualTo(expiresAt);
     }
 
     @Test

@@ -17,6 +17,7 @@ public class UpdateTaskRequest {
     @Size(max = 200, message = "제목은 200자를 초과할 수 없습니다")
     private String title;
 
+    @Size(max = 4000, message = "설명은 4000자를 초과할 수 없습니다")
     private String description;
 
     private Long assigneeUserId;

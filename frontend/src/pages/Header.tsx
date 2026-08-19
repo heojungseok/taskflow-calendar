@@ -1,15 +1,20 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { cx, clsx } from '@/styles/cx';
+import { authApi } from '@/api/endpoints/auth';
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
-  const logout = useAuthStore((state) => state.logout);
+  const clearSession = useAuthStore((state) => state.clearSession);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      clearSession();
+      navigate('/login');
+    }
   };
 
   // 현재 위치는 색이 아니라 밑줄로 알린다 — 색은 상태 전용이므로

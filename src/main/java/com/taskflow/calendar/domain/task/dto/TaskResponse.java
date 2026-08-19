@@ -7,6 +7,7 @@ import com.taskflow.calendar.domain.task.TaskStatus;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Task 조회 응답 DTO
@@ -76,14 +77,16 @@ public class TaskResponse {
     }
 
     public static TaskResponse from(Task task, TaskSyncState syncState) {
+        boolean ownedAssignee = task.getAssignee() != null
+                && Objects.equals(task.getAssignee().getId(), task.getProject().getOwnerUserId());
         return new TaskResponse(
                 task.getId(),
                 task.getProject().getId(),
                 task.getTitle(),
                 task.getDescription(),
                 task.getStatus(),
-                task.getAssignee() != null ? task.getAssignee().getId() : null,
-                task.getAssignee() != null ? task.getAssignee().getName() : null,
+                ownedAssignee ? task.getAssignee().getId() : null,
+                ownedAssignee ? task.getAssignee().getName() : null,
                 task.getStartAt(),
                 task.getDueAt(),
                 task.getCalendarSyncEnabled(),

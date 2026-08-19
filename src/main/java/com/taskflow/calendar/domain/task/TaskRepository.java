@@ -1,6 +1,9 @@
 package com.taskflow.calendar.domain.task;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,4 +44,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     // 전체 Task 목록 (삭제되지 않은 것만)
     List<Task> findAllByDeletedFalse();
+
+    long countByProject_OwnerUserId(Long ownerUserId);
+
+    @Modifying
+    @Query("delete from Task t where t.project.ownerUserId = :userId")
+    int deleteOwnedBy(@Param("userId") Long userId);
 }

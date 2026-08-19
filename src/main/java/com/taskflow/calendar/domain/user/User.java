@@ -30,6 +30,12 @@ public class User {
     @Column(length = 255)
     private String password;
 
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
+    @Column(name = "demo_mutation_count", nullable = false, columnDefinition = "integer default 0")
+    private int demoMutationCount;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -55,6 +61,23 @@ public class User {
         user.provider = Provider.GOOGLE;
         user.password = null;
         return user;
+    }
+
+    public static User createDemoUser(String id, LocalDateTime expiresAt) {
+        User user = new User();
+        user.email = id + "@demo.taskflow.local";
+        user.name = "방문자";
+        user.provider = Provider.DEMO;
+        user.expiresAt = expiresAt;
+        return user;
+    }
+
+    public boolean isSessionActive(LocalDateTime now) {
+        return provider != Provider.DEMO || expiresAt != null && expiresAt.isAfter(now);
+    }
+
+    public void incrementDemoMutationCount() {
+        demoMutationCount++;
     }
 
     /**

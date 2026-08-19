@@ -2,15 +2,17 @@ package com.taskflow.service;
 
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.calendar.domain.user.exception.UserNotFoundException;
 import com.taskflow.security.JwtTokenProvider;
-import com.taskflow.web.dto.auth.LoginRequest;
-import com.taskflow.web.dto.auth.LoginResponse;
-import lombok.extern.slf4j.Slf4j;
+import com.taskflow.web.dto.auth.AuthSession;
+import com.taskflow.web.dto.auth.SessionResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.UUID;
+
 @Service
 @Transactional(readOnly = true)
 public class AuthService {
@@ -23,17 +25,25 @@ public class AuthService {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    public LoginResponse login(LoginRequest request) {
-        // TODO: 1. email로 User 조회
-        // TODO: 2. User 없으면 NotFoundException
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new UserNotFoundException(request.getEmail()));
+    @Transactional
+    public AuthSession createDemoSession() {
+        Instant expiresAt = Instant.now().plusSeconds(86_400);
+        User user = userRepository.save(User.createDemoUser(
+                UUID.randomUUID().toString(),
+                LocalDateTime.ofInstant(expiresAt, ZoneId.systemDefault())));
+        return new AuthSession(
+                jwtTokenProvider.generateToken(user.getId(), expiresAt),
+                user.getId(), user.getProvider(), expiresAt);
+    }
 
-        log.info("User logged in successfully: userId={}, email={}", user.getId(), user.getEmail());
-
-        // TODO: 3. JWT 토큰 생성
-        String token = jwtTokenProvider.generateToken(user.getId());
-        // TODO: 4. LoginResponse 생성 및 반환
-        return new LoginResponse(token, user.getId(), user.getEmail(), user.getName());
+    public SessionResponse getSession(Long userId) {
+        return userRepository.findById(userId)
+                .map(user -> new SessionResponse(
+                        true,
+                        user.getProvider().name(),
+                        user.getExpiresAt() == null
+                                ? null
+                                : user.getExpiresAt().atZone(ZoneId.systemDefault()).toInstant()))
+                .orElseGet(SessionResponse::anonymous);
     }
 }

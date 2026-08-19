@@ -283,27 +283,15 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
             errorCode = ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
         }
 
-        log.warn("Gemini task recommendation request failed. statusCode={}, errorCode={}, latencyMs={}, body={}",
+        log.warn("Gemini task recommendation request failed. statusCode={}, errorCode={}, latencyMs={}",
                 statusCode,
                 errorCode.getCode(),
-                latencyMs,
-                abbreviate(responseBody));
+                latencyMs);
 
         return new TaskRecommendationGenerationException(
                 errorCode,
-                "Gemini recommendation request failed: " + abbreviate(responseBody)
+                "Gemini recommendation request failed"
         );
-    }
-
-    private String abbreviate(String value) {
-        if (value == null || value.isBlank()) {
-            return "";
-        }
-        String normalized = value.replaceAll("\\s+", " ").trim();
-        if (normalized.length() <= 240) {
-            return normalized;
-        }
-        return normalized.substring(0, 240) + "...";
     }
 
     private static class PreparedRequest {

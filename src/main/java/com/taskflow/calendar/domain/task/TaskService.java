@@ -11,6 +11,7 @@ import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
 import com.taskflow.calendar.domain.user.User;
+import com.taskflow.calendar.domain.user.DemoUsageService;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.user.exception.UserNotFoundException;
 import com.taskflow.common.ErrorCode;
@@ -36,6 +37,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final DemoUsageService demoUsageService;
     private final TaskHistoryRepository historyRepository;
     private final CalendarOutboxService calendarOutboxService;
     private final TaskSyncStateResolver taskSyncStateResolver;
@@ -46,16 +48,17 @@ public class TaskService {
      */
     @Transactional
     public TaskResponse createTask(Long projectId, CreateTaskRequest request) {
+        Long userId = SecurityContextHelper.getCurrentUserId();
         // 1. 프로젝트 조회
         Project project = projectRepository
-                .findByIdAndOwnerUserId(projectId, SecurityContextHelper.getCurrentUserId())
+                .findByIdAndOwnerUserId(projectId, userId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        demoUsageService.beforeTaskCreate(userId);
 
         // 2. Assignee 조회 (있는 경우)
         User assignee = null;
         if (request.getAssigneeUserId() != null) {
-            assignee = userRepository.findById(request.getAssigneeUserId())
-                    .orElseThrow(() -> new UserNotFoundException(request.getAssigneeUserId()));
+            assignee = findOwnedAssignee(request.getAssigneeUserId(), userId);
         }
 
         LocalDateTime normalizedStartAt = normalizeSyncStartAt(
@@ -90,7 +93,7 @@ public class TaskService {
                 TaskChangeType.CONTENT,
                 null,  // beforeValue: 생성 시에는 null
                 buildTaskSnapshot(savedTask),  // afterValue: 생성된 Task 정보
-                SecurityContextHelper.getCurrentUserId()
+                userId
         );
 
         // Outbox 적재
@@ -107,10 +110,12 @@ public class TaskService {
      */
     @Transactional
     public TaskResponse updateTask(Long taskId, UpdateTaskRequest request) {
+        Long userId = SecurityContextHelper.getCurrentUserId();
 
         // 1. Task 조회 (deleted=false)
-        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
+        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, userId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
+        demoUsageService.beforeMutation(userId);
 
         // 변경 전 스냅샷 저장
         String beforeSnapshot = buildTaskSnapshot(task);
@@ -118,8 +123,7 @@ public class TaskService {
         // 2. Assignee 조회 (변경하는 경우)
         User assignee = null;
         if (request.getAssigneeUserId() != null) {
-            assignee = userRepository.findById(request.getAssigneeUserId())
-                    .orElseThrow(() -> new UserNotFoundException(request.getAssigneeUserId()));
+            assignee = findOwnedAssignee(request.getAssigneeUserId(), userId);
         }
 
         // 3. 일정 검증 (startAt 또는 dueAt 변경 시)
@@ -155,7 +159,7 @@ public class TaskService {
                 TaskChangeType.CONTENT,
                 beforeSnapshot,
                 afterSnapshot,
-                SecurityContextHelper.getCurrentUserId()
+                userId
         );
 
         // 7. Outbox 적재
@@ -175,9 +179,11 @@ public class TaskService {
      */
     @Transactional
     public TaskResponse changeTaskStatus(Long taskId, ChangeTaskStatusRequest request) {
+        Long userId = SecurityContextHelper.getCurrentUserId();
         // 1. Task 조회
-        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
+        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, userId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
+        demoUsageService.beforeMutation(userId);
 
         // 2. 상태 전이 검증
         TaskStatus oldStatus = task.getStatus();
@@ -192,7 +198,7 @@ public class TaskService {
                 TaskChangeType.STATUS,
                 oldStatus.name(),
                 request.getToStatus().name(),
-                SecurityContextHelper.getCurrentUserId()
+                userId
         );
 
         // 4. Outbox 적재
@@ -254,6 +260,7 @@ public class TaskService {
         // 1. Task 조회
         Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
+        demoUsageService.beforeMutation(requestedByUserId);
 
         // 2. 삭제 전 스냅샷 저장 (추가!)
         String beforeSnapshot = buildTaskSnapshot(task);
@@ -356,6 +363,14 @@ public class TaskService {
                 .build();
 
         historyRepository.save(history);
+    }
+
+    private User findOwnedAssignee(Long assigneeUserId, Long ownerUserId) {
+        if (!ownerUserId.equals(assigneeUserId)) {
+            throw new UserNotFoundException(assigneeUserId);
+        }
+        return userRepository.findById(assigneeUserId)
+                .orElseThrow(() -> new UserNotFoundException(assigneeUserId));
     }
 
     /**

@@ -18,6 +18,8 @@ import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiRecommendationProperties;
 import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -54,10 +56,15 @@ public class ProjectTaskRecommendationService {
     private final TaskRecommendationGenerator taskRecommendationGenerator;
     private final TaskRecommendationCacheService taskRecommendationCacheService;
     private final GeminiRecommendationProperties geminiProperties;
+    private final UserRepository userRepository;
 
     public ProjectTaskRecommendationResponse getRecommendations(Long projectId) {
-        Project project = projectRepository.findByIdAndOwnerUserId(projectId, SecurityContextHelper.getCurrentUserId())
+        Long userId = SecurityContextHelper.getCurrentUserId();
+        Project project = projectRepository.findByIdAndOwnerUserId(projectId, userId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        boolean demo = userRepository.findById(userId)
+                .map(user -> user.getProvider() == Provider.DEMO)
+                .orElse(false);
 
         LocalDate today = LocalDate.now();
         LocalDateTime generatedAt = LocalDateTime.now();
@@ -69,7 +76,7 @@ public class ProjectTaskRecommendationService {
             return ProjectTaskRecommendationResponse.of(
                     project,
                     generatedAt,
-                    TaskRecommendationCacheStatus.LIVE,
+                    demo ? TaskRecommendationCacheStatus.DEMO_LOCAL : TaskRecommendationCacheStatus.LIVE,
                     0,
                     0,
                     List.of()
@@ -87,6 +94,19 @@ public class ProjectTaskRecommendationService {
         List<SummaryTaskSnapshot> candidates = prioritizedSnapshots.stream()
                 .limit(MAX_CANDIDATE_COUNT)
                 .collect(Collectors.toList());
+
+        if (demo) {
+            List<TaskRecommendationItemResult> localItems = candidates.stream()
+                    .limit(recommendationCount)
+                    .map(candidate -> TaskRecommendationItemResult.of(
+                            candidate.getTask().getId(),
+                            "DEMO",
+                            candidate.getTask().getStatus().name(),
+                            "현재 상태와 마감일 기준 로컬 추천"))
+                    .collect(Collectors.toList());
+            return buildResponse(project, generatedAt, prioritizedSnapshots.size(), candidates, localItems)
+                    .withCacheStatus(TaskRecommendationCacheStatus.DEMO_LOCAL);
+        }
 
         String cacheKey = cacheKey(project, candidates, recommendationCount, geminiProperties.getModel());
         if (taskRecommendationCacheService.isEnabled()) {
