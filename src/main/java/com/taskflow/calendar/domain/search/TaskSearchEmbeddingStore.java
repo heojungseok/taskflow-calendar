@@ -23,6 +23,9 @@ public class TaskSearchEmbeddingStore {
 
     private final JdbcTemplate jdbcTemplate;
     private final GeminiSearchProperties properties;
+    // ponytail: 한 번 false가 되면 재기동 전까지 돌아오지 않는다. 커넥션이 한 번 끊겨도
+    // 그 뒤로는 계속 UNAVAILABLE이다. 예전에는 로그에만 남아 티가 안 났지만 이제 화면에 뜬다.
+    // 오탐이 잦아지면 주기적 재프로브(또는 실패 후 N분 뒤 1회 재시도)를 붙인다.
     private final AtomicBoolean available = new AtomicBoolean(true);
 
     @PostConstruct
@@ -38,7 +41,9 @@ public class TaskSearchEmbeddingStore {
                 // 기존 테이블은 그대로 두고 비활성으로 떨어뜨린다. 이전은 사람이 판단한다.
                 available.set(false);
                 log.error("Task search embedding dimension mismatch. Semantic search unavailable. "
-                                + "Existing table kept — migrate manually. currentDimensions={}, targetDimensions={}",
+                                + "Existing table task_search_embeddings kept — migrate manually "
+                                + "(dump, recreate with the new dimension, re-embed). "
+                                + "currentDimensions={}, targetDimensions={}",
                         currentDimensions, targetDimensions);
                 return;
             }

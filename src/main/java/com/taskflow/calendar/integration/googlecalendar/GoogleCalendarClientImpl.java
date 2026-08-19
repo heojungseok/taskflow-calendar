@@ -165,7 +165,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
      * Google API 예외 분류
      */
     private void handleGoogleApiException(GoogleJsonResponseException e, String operation, Long userId,
-                                          boolean goneIsSuccess) {
+                                          boolean missingIsSuccess) {
         int statusCode = e.getStatusCode();
         String reason = e.getDetails() != null ? e.getDetails().getMessage() : "Unknown";
 
@@ -188,7 +188,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
         // 멱등 DELETE: 이미 지워진 이벤트를 지우는 것은 성공이다.
         // UPDATE/CREATE에서는 성공이 아니다 — 캘린더가 안 바뀌었는데 SUCCESS로 남는다.
         if (statusCode == 404 || statusCode == 410) {
-            if (goneIsSuccess) {
+            if (missingIsSuccess) {
                 log.info("Google Calendar resource already deleted (status={}), treat as success", statusCode);
                 return;
             }

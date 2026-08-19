@@ -11,7 +11,11 @@ public class ProjectTaskSearchResponse {
     private final String query;
     /** 의도 파싱이 약해 결과 없이 추천 질의만 돌려줬는가. 의미 검색 가용성과는 무관하다. */
     private final boolean intentFallback;
-    /** 의미 검색이 실제로 탔는가. UNAVAILABLE이면 어휘 검색만으로 만든 결과다. */
+    /**
+     * 이 응답을 만들 때 의미 검색이 어떤 상태였는가.
+     * UNAVAILABLE이면 어휘 검색만으로 만든 결과다.
+     * intentFallback=true인 응답에서는 검색을 아예 돌리지 않았으므로 현재 상태값일 뿐이다.
+     */
     private final SemanticSearchStatus semanticStatus;
     private final SearchIntentResponse intent;
     private final List<TaskSearchResultItemResponse> taskResults;

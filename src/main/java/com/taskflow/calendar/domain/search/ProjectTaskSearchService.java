@@ -183,7 +183,8 @@ public class ProjectTaskSearchService {
 
         List<Task> tasks = taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(SecurityContextHelper.getCurrentUserId());
         taskSearchEmbeddingService.ensureEmbeddings(tasks);
-        Map<Long, Double> semanticSimilarities = taskSearchEmbeddingService.searchSimilarities(intent);
+        SemanticSearchResult semanticResult = taskSearchEmbeddingService.searchSimilarities(intent);
+        Map<Long, Double> semanticSimilarities = semanticResult.similarities();
 
         List<ScoredTask> rankedTasks = taskSyncStateResolver.resolveAll(tasks).stream()
                 .map(snapshot -> scoreTask(snapshot, intent, semanticSimilarities.getOrDefault(snapshot.getTask().getId(), 0.0d)))
@@ -221,8 +222,9 @@ public class ProjectTaskSearchService {
         return ProjectTaskSearchResponse.of(
                 query,
                 false,
-                // 검색을 끝낸 뒤에 읽는다. 쿼리 도중 스토어가 죽으면 그 사실까지 잡힌다.
-                taskSearchEmbeddingService.semanticStatus(),
+                // 검색을 실제로 수행한 그 호출이 돌려준 상태다. 나중에 따로 물으면
+                // 임베딩 호출 실패(429 등)를 놓친다.
+                semanticResult.status(),
                 SearchIntentResponse.from(intent),
                 taskResults,
                 relatedProjects,

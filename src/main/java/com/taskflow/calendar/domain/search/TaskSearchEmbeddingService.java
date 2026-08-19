@@ -41,10 +41,13 @@ public class TaskSearchEmbeddingService {
      * boolean 하나로 합치면 "꺼둔 것"과 "고장난 것"이 구분되지 않는다.
      */
     public SemanticSearchStatus semanticStatus() {
-        if (!properties.isSemanticEnabled()
-                || properties.getApiKey() == null
-                || properties.getApiKey().isBlank()) {
+        if (!properties.isSemanticEnabled()) {
             return SemanticSearchStatus.DISABLED;
+        }
+        // 켜뒀는데 키가 없으면 껐다고 하면 안 된다. 오설정을 의도로 위장하는 것이고,
+        // DISABLED는 화면에 아무 표시도 안 하므로 그대로 조용한 실패가 된다.
+        if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
+            return SemanticSearchStatus.UNAVAILABLE;
         }
         return embeddingStore.isAvailable()
                 ? SemanticSearchStatus.READY
@@ -104,16 +107,29 @@ public class TaskSearchEmbeddingService {
         embeddingStore.delete(taskId);
     }
 
-    public Map<Long, Double> searchSimilarities(SearchIntent intent) {
-        if (!isSemanticEnabled()) {
-            return Map.of();
+    /**
+     * 유사도와 함께 "의미 검색이 실제로 탔는지"를 돌려준다.
+     *
+     * <p>상태를 나중에 따로 물으면 안 된다. 임베딩 호출이 실패하는 경로는
+     * 스토어를 건드리지 않아 {@code available}이 true로 남고, 그러면
+     * 쿼터가 소진돼 어휘 검색만 도는 상태가 READY로 보고된다.
+     * 실패를 아는 지점이 값을 만드는 지점이어야 한다.
+     */
+    public SemanticSearchResult searchSimilarities(SearchIntent intent) {
+        SemanticSearchStatus status = semanticStatus();
+        if (status != SemanticSearchStatus.READY) {
+            return new SemanticSearchResult(Map.of(), status);
         }
 
         List<Double> queryEmbedding = embedQuery(buildSemanticQueryText(intent));
         if (queryEmbedding.isEmpty()) {
-            return Map.of();
+            return new SemanticSearchResult(Map.of(), SemanticSearchStatus.UNAVAILABLE);
         }
-        return embeddingStore.searchSimilar(queryEmbedding, properties.getSemanticCandidateLimit());
+
+        Map<Long, Double> similarities =
+                embeddingStore.searchSimilar(queryEmbedding, properties.getSemanticCandidateLimit());
+        // 쿼리 도중 스토어가 죽었을 수 있으므로 여기서 다시 읽는다.
+        return new SemanticSearchResult(similarities, semanticStatus());
     }
 
     private List<Double> embedQuery(String text) {
