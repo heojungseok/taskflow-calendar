@@ -150,6 +150,12 @@ function getCacheBadge(summary: ProjectWeeklySummary | null) {
         className: 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
         message: '최신 호출 대신 마지막 성공 요약을 보여주고 있습니다.',
       };
+    case 'DEMO_LOCAL':
+      return {
+        label: '데모 로컬',
+        className: 'bg-[var(--sunken)] text-[var(--ink-2)] border border-[var(--rule)]',
+        message: '외부 AI 호출 없이 현재 Task로 만든 요약입니다.',
+      };
     default:
       return {
         label: '실시간 생성',
@@ -167,6 +173,13 @@ function getRecommendationMeta(recommendation: ProjectTaskRecommendation | null)
   if (recommendation.cacheStatus === 'CACHE_HIT') {
     return {
       label: '캐시 응답',
+      className: 'bg-[var(--sunken)] text-[var(--ink-2)] border border-[var(--rule)]',
+    } as const;
+  }
+
+  if (recommendation.cacheStatus === 'DEMO_LOCAL') {
+    return {
+      label: '데모 로컬',
       className: 'bg-[var(--sunken)] text-[var(--ink-2)] border border-[var(--rule)]',
     } as const;
   }
@@ -747,18 +760,6 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
   const [editStartError, setEditStartError] = useState('');
   const [editDueError, setEditDueError] = useState('');
 
-  useEffect(() => {
-    if (!task) return;
-    setEditTitle(task.title);
-    setEditDescription(task.description ?? '');
-    setEditStartAt(toLocal(task.startAt));
-    setEditDueAt(toLocal(task.dueAt));
-    setEditTitleError('');
-    setEditStartError('');
-    setEditDueError('');
-    setIsEditing(false);
-  }, [task?.id, task?.title, task?.description, task?.startAt, task?.dueAt]);
-
   const updateMutation = useMutation({
     mutationFn: (payload: TaskUpdateRequest) => tasksApi.updateTask(taskId, payload),
     onSuccess: () => {
@@ -804,7 +805,20 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
               <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 className="text-[16px] font-semibold text-[var(--ink)]">{task.title}</h3>
                 {!isEditing ? (
-                  <button type="button" onClick={() => setIsEditing(true)} className={cx.btn.secondary}>수정</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditTitle(task.title);
+                      setEditDescription(task.description ?? '');
+                      setEditStartAt(toLocal(task.startAt));
+                      setEditDueAt(toLocal(task.dueAt));
+                      setEditTitleError('');
+                      setEditStartError('');
+                      setEditDueError('');
+                      setIsEditing(true);
+                    }}
+                    className={cx.btn.secondary}
+                  >수정</button>
                 ) : (
                   <button
                     type="button"
@@ -1026,6 +1040,7 @@ export default function TaskListPage() {
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- route 변경 시 이전 프로젝트 결과를 즉시 버린다.
     setSummary(null);
     setRecommendation(null);
     setRecommendationStatus('idle');

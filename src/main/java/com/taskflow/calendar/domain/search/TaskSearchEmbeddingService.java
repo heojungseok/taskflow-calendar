@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.GeminiSearchProperties;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -33,6 +35,7 @@ public class TaskSearchEmbeddingService {
     private final ObjectMapper objectMapper;
     private final TaskSearchEmbeddingStore embeddingStore;
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -59,7 +62,7 @@ public class TaskSearchEmbeddingService {
     }
 
     public void ensureEmbeddings(List<Task> tasks) {
-        if (!isSemanticEnabled() || tasks.isEmpty()) {
+        if (!isSemanticEnabled() || tasks.isEmpty() || isDemoOwned(tasks.get(0))) {
             return;
         }
 
@@ -88,6 +91,12 @@ public class TaskSearchEmbeddingService {
             }
         }
         log.info("Task search embeddings refreshed. refreshedCount={}", staleDocuments.size());
+    }
+
+    private boolean isDemoOwned(Task task) {
+        return userRepository.findById(task.getProject().getOwnerUserId())
+                .map(user -> user.getProvider() == Provider.DEMO)
+                .orElse(false);
     }
 
     @Transactional(readOnly = true)
@@ -167,7 +176,7 @@ public class TaskSearchEmbeddingService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() >= 400) {
-                log.warn("Task search embedding request failed. statusCode={}, body={}", response.statusCode(), abbreviate(response.body()));
+                log.warn("Task search embedding request failed. statusCode={}", response.statusCode());
                 return List.of();
             }
 
@@ -250,13 +259,6 @@ public class TaskSearchEmbeddingService {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 not supported", e);
         }
-    }
-
-    private String abbreviate(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.length() <= 500 ? value : value.substring(0, 500) + "...";
     }
 
     private static final class TaskDocument {

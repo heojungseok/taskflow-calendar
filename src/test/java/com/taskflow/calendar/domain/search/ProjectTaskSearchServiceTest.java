@@ -6,6 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.search.dto.ProjectTaskSearchResponse;
 import com.taskflow.calendar.domain.search.generator.TaskSearchIntentParser;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
 import com.taskflow.calendar.domain.summary.TaskSyncState;
 import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
@@ -58,11 +59,15 @@ class ProjectTaskSearchServiceTest {
     @Mock
     private TaskSearchEmbeddingService taskSearchEmbeddingService;
 
+    @Mock
+    private UserRepository userRepository;
+
     private ProjectTaskSearchService service;
 
     @BeforeEach
     void setUp() {
-        service = new ProjectTaskSearchService(taskRepository, taskSyncStateResolver, taskSearchIntentParser, taskSearchEmbeddingService);
+        service = new ProjectTaskSearchService(taskRepository, taskSyncStateResolver,
+                taskSearchIntentParser, taskSearchEmbeddingService, userRepository);
         stubResolveAllViaResolve();
     }
 

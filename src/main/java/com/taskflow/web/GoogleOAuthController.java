@@ -6,20 +6,25 @@ import com.taskflow.calendar.domain.oauth.dto.AuthorizeUrlResponse;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.config.GoogleOAuthProperties;
+import com.taskflow.web.dto.auth.AuthSession;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 /**
  * Google OAuth 2.0 인증 Controller
@@ -34,6 +39,7 @@ public class GoogleOAuthController {
     private final GoogleOAuthProperties properties;
     private final GoogleOAuthService googleOAuthService;
     private final OAuthStateStore stateStore;
+    private final SessionCookieService cookieService;
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
@@ -42,11 +48,15 @@ public class GoogleOAuthController {
      * Google OAuth 인증 URL 생성 (공개 엔드포인트)
      */
     @GetMapping("/authorize")
-    public ApiResponse<AuthorizeUrlResponse> getAuthorizeUrl() {
-        // MVP: state에 userId 포함 안 함 (UUID만)
-        String state = stateStore.generateState();
-
-        log.info("Generating authorize URL. state={}", state);
+    public ApiResponse<AuthorizeUrlResponse> getAuthorizeUrl(HttpServletResponse response) {
+        String state;
+        try {
+            state = stateStore.generateState();
+        } catch (IllegalStateException e) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE, "OAuth temporarily unavailable");
+        }
+        cookieService.setOAuthState(response, state);
 
         String authorizeUrl = UriComponentsBuilder
                 .fromHttpUrl(properties.getAuthorizationUri())
@@ -68,14 +78,15 @@ public class GoogleOAuthController {
      */
     @GetMapping("/callback")
     public ResponseEntity<Void> handleCallback(
-            @RequestParam("state") String state,
-            @RequestParam("code") String code
+            @RequestParam(value = "state", required = false) String state,
+            @RequestParam(value = "code", required = false) String code,
+            @RequestParam(value = "error", required = false) String oauthError,
+            @CookieValue(name = SessionCookieService.OAUTH_STATE_COOKIE, required = false) String cookieState,
+            HttpServletResponse response
     ) {
-        log.info("OAuth callback received. state={}", state);
-
         try {
-            // 1️⃣ State 검증 (CSRF 방어)
-            if (!stateStore.validateState(state)) {
+            if (oauthError != null || code == null
+                    || !sameState(state, cookieState) || !stateStore.validateState(state)) {
                 throw new IllegalArgumentException("Invalid or expired OAuth state");
             }
 
@@ -83,30 +94,37 @@ public class GoogleOAuthController {
             GoogleOAuthResult result = googleOAuthService.exchangeCodeAndGetUserInfo(code);
 
             // 3️⃣ User 조회/생성 + JWT 발급
-            String jwt = googleOAuthService.loginOrRegister(result);
-
-            // 4️⃣ 프론트엔드로 리다이렉트 (JWT 전달)
-            String redirectUrl = String.format(
-                    frontendBaseUrl + "/oauth/callback?token=%s",
-                    jwt
-            );
-
-            log.info("OAuth login successful. Redirecting to frontend");
+            AuthSession session = googleOAuthService.loginOrRegister(result);
+            cookieService.setSession(response, session.token(), session.expiresAt());
 
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(redirectUrl))
+                    .location(URI.create(frontendBaseUrl + "/oauth/callback"))
                     .build();
 
         } catch (Exception e) {
-            log.error("OAuth callback failed", e);
-
-            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown OAuth error";
-            String errorUrl = frontendBaseUrl + "/oauth/callback?error=" +
-                    URLEncoder.encode(errorMessage, StandardCharsets.UTF_8);
+            log.warn("OAuth callback failed. errorCode=oauth_failed");
 
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(errorUrl))
+                    .location(URI.create(frontendBaseUrl + "/oauth/callback?error=oauth_failed"))
                     .build();
+        } finally {
+            cookieService.clearOAuthState(response);
+        }
+    }
+
+    private boolean sameState(String queryState, String cookieState) {
+        return queryState != null && cookieState != null && MessageDigest.isEqual(
+                queryState.getBytes(StandardCharsets.UTF_8),
+                cookieState.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @PostMapping("/disconnect")
+    public ApiResponse<Void> disconnect(Authentication authentication, HttpServletResponse response) {
+        try {
+            googleOAuthService.disconnect((Long) authentication.getPrincipal());
+            return ApiResponse.success(null);
+        } finally {
+            cookieService.clearSession(response);
         }
     }
 }

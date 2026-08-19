@@ -17,6 +17,8 @@ import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -60,6 +62,7 @@ public class ProjectWeeklySummaryService {
     private final TaskSyncStateResolver taskSyncStateResolver;
     private final WeeklySummaryCacheService weeklySummaryCacheService;
     private final GeminiSummaryProperties geminiProperties;
+    private final UserRepository userRepository;
     private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId) {
@@ -67,7 +70,8 @@ public class ProjectWeeklySummaryService {
     }
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId, boolean forceLive) {
-        Project project = projectRepository.findByIdAndOwnerUserId(projectId, SecurityContextHelper.getCurrentUserId())
+        Long userId = SecurityContextHelper.getCurrentUserId();
+        Project project = projectRepository.findByIdAndOwnerUserId(projectId, userId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         List<Task> allTasks = taskRepository.findAllByProjectIdAndDeletedFalse(projectId);
@@ -84,6 +88,10 @@ public class ProjectWeeklySummaryService {
         List<SummaryTaskSnapshot> unsyncedTasks = prioritizedTasks.stream()
                 .filter(snapshot -> !snapshot.getSyncState().isSynced())
                 .collect(Collectors.toList());
+
+        if (userRepository.findById(userId).map(user -> user.getProvider() == Provider.DEMO).orElse(false)) {
+            return buildDemoResponse(project, weekStart, weekEnd, generatedAt, syncedTasks, unsyncedTasks);
+        }
 
         String modelName = geminiProperties.getModel();
         String fingerprint = summaryFingerprint(project, weekStart, weekEnd, prioritizedTasks, modelName);
@@ -130,6 +138,43 @@ public class ProjectWeeklySummaryService {
             }
             throw e;
         }
+    }
+
+    private WeeklySummaryResponse buildDemoResponse(Project project,
+                                                     LocalDate weekStart,
+                                                     LocalDate weekEnd,
+                                                     LocalDateTime generatedAt,
+                                                     List<SummaryTaskSnapshot> syncedTasks,
+                                                     List<SummaryTaskSnapshot> unsyncedTasks) {
+        return WeeklySummaryResponse.of(
+                project,
+                weekStart,
+                weekEnd,
+                generatedAt,
+                WeeklySummaryCacheStatus.DEMO_LOCAL,
+                syncedTasks.size() + unsyncedTasks.size(),
+                syncedTasks.size(),
+                unsyncedTasks.size(),
+                demoSection(syncedTasks, SummaryBucket.SYNCED),
+                demoSection(unsyncedTasks, SummaryBucket.UNSYNCED));
+    }
+
+    private WeeklySummarySectionResponse demoSection(
+            List<SummaryTaskSnapshot> tasks, SummaryBucket bucket) {
+        if (tasks.isEmpty()) {
+            return WeeklySummarySectionResponse.of(
+                    0, 0, WeeklySummaryResult.empty(bucket.getEmptySummary(), bucket.getEmptyNextActions()));
+        }
+        List<SummaryTaskSnapshot> included = selectIncludedTasks(tasks, bucket);
+        return WeeklySummarySectionResponse.of(
+                tasks.size(),
+                included.size(),
+                WeeklySummaryResult.of(
+                        "데모 로컬 요약: " + tasks.size() + "개의 Task가 있습니다.",
+                        List.of(),
+                        List.of(),
+                        List.of("우선순위가 높은 Task부터 진행해보세요."),
+                        "demo-local"));
     }
 
     private WeeklySummaryResponse buildResponse(Project project,

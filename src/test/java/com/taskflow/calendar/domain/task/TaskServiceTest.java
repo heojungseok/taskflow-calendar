@@ -8,8 +8,10 @@ import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.task.dto.DeleteTaskResponse;
+import com.taskflow.calendar.domain.task.dto.CreateTaskRequest;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.calendar.domain.user.DemoUsageService;
 import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,6 +65,9 @@ class TaskServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private DemoUsageService demoUsageService;
 
     @Mock
     private TaskHistoryRepository historyRepository;
@@ -153,6 +159,20 @@ class TaskServiceTest {
 
         verify(taskRepository).findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
                 PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID, 1L);
+    }
+
+    @Test
+    @DisplayName("다른 사용자를 담당자로 지정하면 존재 여부를 조회하지 않고 거절한다")
+    void createTask_rejectsForeignAssigneeWithoutLookup() {
+        when(projectRepository.findByIdAndOwnerUserId(PROJECT_ID, 1L))
+                .thenReturn(Optional.of(Project.of("TaskFlow", 1L)));
+        CreateTaskRequest request = new CreateTaskRequest(
+                "격리", null, 99L, null, null, false);
+
+        assertThrows(com.taskflow.calendar.domain.user.exception.UserNotFoundException.class,
+                () -> taskService.createTask(PROJECT_ID, request));
+
+        verify(userRepository, never()).findById(99L);
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {

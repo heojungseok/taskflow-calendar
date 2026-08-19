@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 
 @Component
@@ -26,13 +27,16 @@ public class JwtTokenProvider {
      * userId를 기반으로 JWT 생성
      */
     public String generateToken(Long userId) {
+        return generateToken(userId, Instant.now().plusMillis(expirationMs));
+    }
+
+    public String generateToken(Long userId, Instant expiresAt) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))  // userId를 subject로
                 .issuedAt(now)
-                .expiration(expiry)
+                .expiration(Date.from(expiresAt))
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
@@ -64,5 +68,17 @@ public class JwtTokenProvider {
                 .getPayload();
 
         return Long.parseLong(claims.getSubject());
+    }
+
+    public Instant getExpiration(String token) {
+        return parseClaims(token).getExpiration().toInstant();
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

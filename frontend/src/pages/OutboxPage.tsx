@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Play } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { outboxApi } from '@/api/endpoints/calendar';
 import type { OutboxEntry, OutboxStatus, OutboxOpType } from '@/types/outbox';
 import { cx, clsx } from '@/styles/cx';
@@ -32,7 +32,7 @@ const OP_LABEL: Record<OutboxOpType, string> = {
 const STATUS_FILTERS = [
   { label: '전체', value: '' }, { label: '대기', value: 'PENDING' },
   { label: '처리 중', value: 'PROCESSING' }, { label: '성공', value: 'SUCCESS' },
-  { label: '실패', value: 'FAILED' },
+  { label: '실패', value: 'FAILED' }, { label: '건너뜀', value: 'SKIPPED' },
 ];
 
 const fmt = (iso?: string | null) => iso
@@ -102,9 +102,11 @@ function OutboxRow({ entry }: { entry: OutboxEntry }) {
             <div className="pb-5 pt-1 space-y-4">
               {entry.lastError && (
                 <div>
-                  <p className={cx.text.label}>오류</p>
-                  <p className="font-mono text-[12px] leading-5 break-all px-3 py-2 rounded-[var(--radius)] bg-[var(--st-failed-bg)] text-[var(--st-failed)]">
-                    {entry.lastError}
+                  <p className={cx.text.label}>{entry.status === 'SKIPPED' ? '처리 결과' : '오류'}</p>
+                  <p className="text-[12px] leading-5 break-all px-3 py-2 rounded-[var(--radius)] bg-[var(--sunken)] text-[var(--ink-2)]">
+                    {entry.status === 'SKIPPED' && entry.lastError === 'no_google_link'
+                      ? 'Google 연결이 없는 데모라 외부 호출 없이 건너뜀'
+                      : entry.lastError}
                   </p>
                 </div>
               )}
@@ -139,19 +141,12 @@ export default function OutboxPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [taskIdInput, setTaskIdInput] = useState('');
   const [taskIdFilter, setTaskIdFilter] = useState<number | undefined>();
-  const [msg, setMsg] = useState('');
 
-  const { data: entries, isLoading, isError, refetch } = useQuery({
+  const { data: entries, isLoading, isError } = useQuery({
     queryKey: ['outbox', statusFilter, taskIdFilter],
     queryFn: () => outboxApi.getOutboxList({ status: statusFilter || undefined, taskId: taskIdFilter }),
     // 워커가 처리 중인 항목이 있는 동안만 폴링한다
     refetchInterval: (query) => (hasOutboxInFlight(query.state.data) ? SYNC_POLL_INTERVAL_MS : false),
-  });
-
-  const triggerMutation = useMutation({
-    mutationFn: () => outboxApi.triggerWorker(),
-    onSuccess: () => { setMsg('밀린 항목을 처리했습니다.'); refetch(); setTimeout(() => setMsg(''), 3000); },
-    onError: () => { setMsg('처리하지 못했습니다. 잠시 후 다시 시도하세요.'); setTimeout(() => setMsg(''), 3000); },
   });
 
   const counts = entries?.reduce((a, e) => ({ ...a, [e.status]: (a[e.status] ?? 0) + 1 }), {} as Record<string, number>);
@@ -168,34 +163,11 @@ export default function OutboxPage() {
             </span>
           )}
         </div>
-        <button
-          onClick={() => triggerMutation.mutate()}
-          disabled={triggerMutation.isPending}
-          className={clsx(cx.btn.secondary, 'inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap')}
-        >
-          <Play size={12} strokeWidth={2.5} />
-          {triggerMutation.isPending ? '처리 중' : '지금 처리'}
-        </button>
       </div>
 
       <p className={clsx(cx.text.meta, 'mb-6')}>
         캘린더로 보낼 항목이 여기에 쌓입니다. 실패한 항목은 지수 백오프로 다시 시도합니다.
       </p>
-
-      {/* 처리 결과 */}
-      <AnimatePresence>
-        {msg && (
-          <motion.p
-            role="status"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mb-4 text-[13px] text-[var(--ink-2)]"
-          >
-            {msg}
-          </motion.p>
-        )}
-      </AnimatePresence>
 
       {/* 상태 집계 — 이 화면의 요약 */}
       {counts && Object.keys(counts).length > 0 && (

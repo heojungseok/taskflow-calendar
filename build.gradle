@@ -52,6 +52,7 @@ dependencies {
 
     // ✅ 테스트 의존성 추가
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
 }
@@ -60,6 +61,7 @@ tasks.named('test') {
     useJUnitPlatform()
     // application.yml의 jwt.secret은 기본값이 없다. 테스트 컨텍스트도 값이 있어야 뜬다.
     environment 'JWT_SECRET', 'test-only-secret-key-not-used-anywhere-else-256-bits-long'
+    environment 'SESSION_COOKIE_SECURE', 'true'
 }
 
 // .env 파일 로드

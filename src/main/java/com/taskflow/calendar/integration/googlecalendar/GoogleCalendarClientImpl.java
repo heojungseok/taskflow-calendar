@@ -33,7 +33,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
 
     @Override
     public String createEvent(Long userId, CalendarEventDto eventDto) {
-        log.info("Creating calendar event. userId={}, title={}", userId, eventDto.getTitle());
+        log.info("Creating calendar event. userId={}", userId);
 
         try {
             // Event 객체 생성

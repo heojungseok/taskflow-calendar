@@ -510,7 +510,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             message = "Gemini request failed";
         }
 
-        log.warn("Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}, body={}",
+        log.warn("Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}",
                 project.getId(),
                 properties.getModel(),
                 weekStart,
@@ -530,12 +530,11 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 classificationSource != null ? classificationSource : "UNKNOWN",
                 retryAfter,
                 upstreamStatus,
-                reasonHints,
-                abbreviate(responseBody));
+                reasonHints);
 
         return new WeeklySummaryGenerationException(
                 errorCode,
-                message + ": " + abbreviate(responseBody),
+                message,
                 fallbackEligible,
                 classificationSource,
                 retryAfter,

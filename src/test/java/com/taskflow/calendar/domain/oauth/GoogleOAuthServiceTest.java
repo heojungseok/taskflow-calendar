@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.time.LocalDateTime;
+import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -135,5 +136,15 @@ class GoogleOAuthServiceTest {
         // when & then
         assertThrows(NonRetryableIntegrationException.class,
                 () -> service.refreshAccessToken(USER_ID));
+    }
+
+    @Test
+    void disconnectDeletesLocalTokenEvenWhenGoogleRevokeFails() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        doThrow(new IOException("network")).when(service).revokeToken(anyString());
+
+        service.disconnect(USER_ID);
+
+        verify(tokenRepository).deleteByUserId(USER_ID);
     }
 }

@@ -2,34 +2,52 @@ package com.taskflow.web;
 
 import com.taskflow.common.ApiResponse;
 import com.taskflow.service.AuthService;
-import com.taskflow.web.dto.auth.LoginRequest;
-import com.taskflow.web.dto.auth.LoginResponse;
+import com.taskflow.web.dto.auth.AuthSession;
+import com.taskflow.web.dto.auth.SessionResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * MVP에서는 비활성화
- * 추후 LOCAL 인증 (이메일/패스워드) 추가 시 복구
- */
-@Deprecated
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
+    private final SessionCookieService cookieService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, SessionCookieService cookieService) {
         this.authService = authService;
+        this.cookieService = cookieService;
     }
 
-    /**
-     * MVP에서는 사용 안 함 - Google OAuth로 로그인
-     */
-    @Deprecated
-    @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
-        throw new UnsupportedOperationException("Use Google OAuth for login");
+    @GetMapping("/session")
+    public ApiResponse<SessionResponse> session(
+            Authentication authentication,
+            HttpServletRequest request) {
+        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+        csrfToken.getToken();
+        if (authentication == null) {
+            return ApiResponse.success(SessionResponse.anonymous());
+        }
+        return ApiResponse.success(authService.getSession((Long) authentication.getPrincipal()));
+    }
+
+    @PostMapping("/demo")
+    public ApiResponse<SessionResponse> demo(HttpServletResponse response) {
+        AuthSession session = authService.createDemoSession();
+        cookieService.setSession(response, session.token(), session.expiresAt());
+        return ApiResponse.success(new SessionResponse(
+                true, session.userType().name(), session.expiresAt()));
+    }
+
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(HttpServletResponse response) {
+        cookieService.clearSession(response);
+        return ApiResponse.success(null);
     }
 }

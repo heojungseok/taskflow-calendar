@@ -39,13 +39,10 @@ public class CalendarOutboxWorker {
     private final GoogleOAuthService googleOAuthService;
     private final OAuthGoogleTokenRepository tokenRepository;
 
-    @Value("${outbox.worker.enabled:true}")
+    @Value("${outbox.worker.enabled:false}")
     private boolean schedulingEnabled;
 
-    /**
-     * 스케줄 진입점. 수동 트리거({@code /api/admin/calendar-outbox/trigger-worker})는
-     * {@link #pollAndProcess()}를 직접 호출하므로 이 스위치의 영향을 받지 않는다.
-     */
+    /** 유일한 실행 진입점은 scheduler다. */
     @Scheduled(fixedDelayString = "${outbox.worker.fixed-delay:60000}")
     public void scheduledPoll() {
         if (!schedulingEnabled) {
@@ -54,7 +51,7 @@ public class CalendarOutboxWorker {
         pollAndProcess();
     }
 
-    public void pollAndProcess() {
+    void pollAndProcess() {
         try {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime leaseTimeout = now.minusMinutes(OutboxPolicy.LEASE_TIMEOUT_MINUTES.value());

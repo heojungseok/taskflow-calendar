@@ -14,7 +14,7 @@ export interface ProjectWeeklySummary {
   weekStart: string;
   weekEnd: string;
   generatedAt: string;
-  cacheStatus: 'LIVE' | 'CACHE_HIT' | 'STALE_FALLBACK';
+  cacheStatus: 'LIVE' | 'CACHE_HIT' | 'STALE_FALLBACK' | 'DEMO_LOCAL';
   totalTaskCount: number;
   syncedTaskCount: number;
   unsyncedTaskCount: number;
@@ -36,7 +36,7 @@ export interface ProjectTaskRecommendation {
   projectId: number;
   projectName: string;
   generatedAt: string;
-  cacheStatus: 'LIVE' | 'CACHE_HIT';
+  cacheStatus: 'LIVE' | 'CACHE_HIT' | 'DEMO_LOCAL';
   totalEligibleTaskCount: number;
   candidateCount: number;
   recommendedCount: number;

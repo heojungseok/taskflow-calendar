@@ -33,12 +33,4 @@ export const outboxApi = {
     );
     return response.data.data;
   },
-
-  // POST /api/admin/calendar-outbox/trigger-worker
-  triggerWorker: async () => {
-    const response = await apiClient.post<ApiResponse<void>>(
-      '/admin/calendar-outbox/trigger-worker'
-    );
-    return response.data;
-  },
 };

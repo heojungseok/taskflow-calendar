@@ -23,7 +23,7 @@ class SemanticStatusTest {
         TaskSearchEmbeddingStore store = mock(TaskSearchEmbeddingStore.class);
         when(store.isAvailable()).thenReturn(storeAvailable);
 
-        return new TaskSearchEmbeddingService(properties, null, store, null);
+        return new TaskSearchEmbeddingService(properties, null, store, null, null);
     }
 
     @Test

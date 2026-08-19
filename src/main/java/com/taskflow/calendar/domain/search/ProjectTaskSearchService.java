@@ -11,6 +11,8 @@ import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -140,40 +142,37 @@ public class ProjectTaskSearchService {
     private final TaskSyncStateResolver taskSyncStateResolver;
     private final TaskSearchIntentParser taskSearchIntentParser;
     private final TaskSearchEmbeddingService taskSearchEmbeddingService;
+    private final UserRepository userRepository;
 
     @Transactional
     public ProjectTaskSearchResponse search(String query) {
-        SearchIntent intent = normalizeIntent(taskSearchIntentParser.parse(query));
-        log.info("Task search parsed intent. query='{}', queryType={}, targetType={}, domainType={}, mainAction={}, secondaryActions={}, topicTerms={}, participantTerms={}, locationTerms={}, genericCompanionRequired={}, relationPolicy={}, timeIntent={}, priorityIntent={}, statusIntents={}, syncIntent={}, overallConfidence={}",
-                query,
+        Long userId = SecurityContextHelper.getCurrentUserId();
+        boolean demo = userRepository.findById(userId)
+                .map(user -> user.getProvider() == Provider.DEMO)
+                .orElse(false);
+        SearchIntent intent = normalizeIntent(demo ? localIntent(query) : taskSearchIntentParser.parse(query));
+        log.info("Task search parsed intent. queryType={}, targetType={}, domainType={}, mainAction={}, genericCompanionRequired={}, relationPolicy={}, timeIntent={}, priorityIntent={}, syncIntent={}, overallConfidence={}",
                 intent.getQueryType(),
                 intent.getTargetType(),
                 intent.getDomainType(),
                 intent.getMainAction(),
-                intent.getSecondaryActions(),
-                intent.getTopicTerms(),
-                intent.getParticipantTerms(),
-                intent.getLocationTerms(),
                 intent.isGenericCompanionRequired(),
                 intent.getRelationPolicy(),
                 intent.getTimeIntent(),
                 intent.getPriorityIntent(),
-                intent.getStatusIntents(),
                 intent.getSyncIntent(),
                 intent.getOverallConfidence());
 
         if (shouldFallback(intent)) {
-            log.info("Task search fallback. query='{}', topicWeak={}, mainActionWeak={}, genericCompanionRequired={}, relationPolicy={}, suggestedQueries={}",
-                    query,
+            log.info("Task search fallback. topicWeak={}, mainActionWeak={}, genericCompanionRequired={}, relationPolicy={}",
                     !intent.hasUsefulTopicTerms(),
                     !intent.hasUsefulMainAction(),
                     intent.isGenericCompanionRequired(),
-                    intent.getRelationPolicy(),
-                    intent.getSuggestedQueries());
+                    intent.getRelationPolicy());
             return ProjectTaskSearchResponse.of(
                     query,
                     true,
-                    taskSearchEmbeddingService.semanticStatus(),
+                    demo ? SemanticSearchStatus.DISABLED : taskSearchEmbeddingService.semanticStatus(),
                     SearchIntentResponse.from(intent),
                     List.of(),
                     List.of(),
@@ -181,9 +180,13 @@ public class ProjectTaskSearchService {
             );
         }
 
-        List<Task> tasks = taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(SecurityContextHelper.getCurrentUserId());
-        taskSearchEmbeddingService.ensureEmbeddings(tasks);
-        SemanticSearchResult semanticResult = taskSearchEmbeddingService.searchSimilarities(intent);
+        List<Task> tasks = taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(userId);
+        if (!demo) {
+            taskSearchEmbeddingService.ensureEmbeddings(tasks);
+        }
+        SemanticSearchResult semanticResult = demo
+                ? new SemanticSearchResult(Map.of(), SemanticSearchStatus.DISABLED)
+                : taskSearchEmbeddingService.searchSimilarities(intent);
         Map<Long, Double> semanticSimilarities = semanticResult.similarities();
 
         List<ScoredTask> rankedTasks = taskSyncStateResolver.resolveAll(tasks).stream()
@@ -197,7 +200,7 @@ public class ProjectTaskSearchService {
                 .limit(TASK_RESULT_LIMIT)
                 .collect(Collectors.toList());
 
-        logTopCandidates(query, rankedTasks);
+        logTopCandidates(rankedTasks);
 
         List<TaskSearchResultItemResponse> taskResults = rankedTasks.stream()
                 .map(scored -> {
@@ -230,6 +233,31 @@ public class ProjectTaskSearchService {
                 relatedProjects,
                 List.of()
         );
+    }
+
+    private SearchIntent localIntent(String query) {
+        List<String> terms = java.util.Arrays.stream(query.trim().split("\\s+"))
+                .filter(term -> !term.isBlank())
+                .limit(5)
+                .collect(Collectors.toList());
+        return SearchIntent.of(
+                query,
+                SearchQueryType.TOPIC_SEARCH,
+                SearchTargetType.MIXED,
+                SearchDomainType.UNKNOWN,
+                SearchActionIntent.UNKNOWN,
+                List.of(),
+                terms,
+                List.of(),
+                List.of(),
+                SearchTimeIntent.UNSPECIFIED,
+                SearchPriorityIntent.NONE,
+                List.of(),
+                SearchSyncIntent.ANY,
+                SearchRelationPolicy.ALLOW_PARTIAL,
+                1.0d,
+                Map.of(),
+                List.of());
     }
 
     private boolean shouldFallback(SearchIntent intent) {
@@ -1164,16 +1192,12 @@ public class ProjectTaskSearchService {
                 .collect(Collectors.toList());
     }
 
-    private void logTopCandidates(String query, List<ScoredTask> rankedTasks) {
+    private void logTopCandidates(List<ScoredTask> rankedTasks) {
         if (rankedTasks.isEmpty()) {
-            log.info("Task search produced no ranked candidates. query='{}'", query);
+            log.info("Task search produced no ranked candidates");
             return;
         }
-        List<String> topCandidates = rankedTasks.stream()
-                .limit(10)
-                .map(ScoredTask::debugSummary)
-                .collect(Collectors.toList());
-        log.info("Task search top candidates. query='{}', candidates={}", query, topCandidates);
+        log.info("Task search ranked candidates. count={}", rankedTasks.size());
     }
 
     private String normalizeText(String... values) {

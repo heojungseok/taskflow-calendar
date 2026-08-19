@@ -462,26 +462,15 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
             errorCode = ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
         }
 
-        log.warn("Gemini search intent request failed. statusCode={}, errorCode={}, latencyMs={}, body={}",
+        log.warn("Gemini search intent request failed. statusCode={}, errorCode={}, latencyMs={}",
                 statusCode,
                 errorCode.getCode(),
-                latencyMs,
-                abbreviate(responseBody));
+                latencyMs);
 
         return new TaskSearchGenerationException(
                 errorCode,
-                "Gemini search intent request failed: " + abbreviate(responseBody)
+                "Gemini search intent request failed"
         );
     }
 
-    private String abbreviate(String value) {
-        if (value == null || value.isBlank()) {
-            return "";
-        }
-        String normalized = value.replaceAll("\\s+", " ").trim();
-        if (normalized.length() <= 240) {
-            return normalized;
-        }
-        return normalized.substring(0, 240) + "...";
-    }
 }

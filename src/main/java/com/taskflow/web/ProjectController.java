@@ -12,6 +12,9 @@ import com.taskflow.calendar.domain.summary.ProjectWeeklySummaryService;
 import com.taskflow.calendar.domain.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheHealthResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,7 @@ public class ProjectController {
     private final ProjectWeeklySummaryService projectWeeklySummaryService;
     private final ProjectTaskRecommendationService projectTaskRecommendationService;
     private final WeeklySummaryCacheService weeklySummaryCacheService;
+    private final UserRepository userRepository;
     @Value("${summary.force-live-enabled:false}")
     private boolean forceLiveEnabled;
 
@@ -82,7 +86,11 @@ public class ProjectController {
 
     @GetMapping("/weekly-summary/cache-health")
     public ResponseEntity<ApiResponse<WeeklySummaryCacheHealthResponse>> checkWeeklySummaryCacheHealth() {
-        WeeklySummaryCacheHealthResponse health = weeklySummaryCacheService.healthCheck();
+        WeeklySummaryCacheHealthResponse health = userRepository
+                .findById(SecurityContextHelper.getCurrentUserId())
+                .filter(user -> user.getProvider() == Provider.DEMO)
+                .map(user -> WeeklySummaryCacheHealthResponse.disabled())
+                .orElseGet(weeklySummaryCacheService::healthCheck);
         HttpStatus status = health.isHealthy() ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE;
         return ResponseEntity.status(status).body(ApiResponse.success(health));
     }

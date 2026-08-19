@@ -121,7 +121,10 @@ public class GlobalExceptionHandler {
     private HttpStatus determineHttpStatus(ErrorCode errorCode) {
         switch (errorCode) {
             case TASK_STATUS_TRANSITION_NOT_ALLOWED:
+            case DEMO_RESOURCE_LIMIT:
                 return HttpStatus.CONFLICT;
+            case DEMO_MUTATION_LIMIT:
+                return HttpStatus.TOO_MANY_REQUESTS;
             case VALIDATION_ERROR:
             case SCHEDULE_INVALID:
             case CALENDAR_SYNC_REQUIRES_DUE_AT:

@@ -14,6 +14,7 @@ import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIn
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.security.JwtTokenProvider;
+import com.taskflow.web.dto.auth.AuthSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -21,7 +22,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 @Slf4j
@@ -34,6 +42,27 @@ public class GoogleOAuthService {
     private final OAuthGoogleTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+
+    public void disconnect(Long userId) {
+        tokenRepository.findByUserId(userId).ifPresent(token -> {
+            try {
+                revokeToken(token.getRefreshToken());
+            } catch (Exception e) {
+                log.warn("Google token revoke failed. userId={}, errorType={}",
+                        userId, e.getClass().getSimpleName());
+            }
+        });
+        tokenRepository.deleteByUserId(userId);
+    }
+
+    protected void revokeToken(String token) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(URI.create("https://oauth2.googleapis.com/revoke"))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
+                .build();
+        HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding());
+    }
 
     public void exchangeCodeForToken(String code, Long userId) {
         log.info("Exchanging code for token. userId={}", userId);
@@ -173,7 +202,7 @@ public class GoogleOAuthService {
             Boolean emailVerified = payload.getEmailVerified();
             String name = (String) payload.get("name");
 
-            log.info("User info extracted. email={}, name={}, emailVerified={}", email, name, emailVerified);
+            log.info("Google user info extracted. emailVerified={}", emailVerified);
 
             if (emailVerified == null || !emailVerified) {
                 throw new IllegalStateException("Email not verified by Google");
@@ -189,7 +218,7 @@ public class GoogleOAuthService {
             );
 
         } catch (IOException e) {
-            log.error("Failed to exchange code for token", e);
+            log.error("Google token exchange failed. errorType={}", e.getClass().getSimpleName());
             throw new RuntimeException("Google OAuth failed", e);
         }
     }
@@ -197,8 +226,8 @@ public class GoogleOAuthService {
     /**
      * MVP: User 조회/생성 + JWT 발급
      */
-    public String loginOrRegister(GoogleOAuthResult result) {
-        log.info("Processing login or register. email={}", result.getEmail());
+    public AuthSession loginOrRegister(GoogleOAuthResult result) {
+        log.info("Processing Google login or register");
 
         // 1️⃣ User 조회 (email)
         Optional<User> userOpt = userRepository.findByEmail(result.getEmail());
@@ -206,12 +235,12 @@ public class GoogleOAuthService {
         User user;
         if (userOpt.isPresent()) {
             user = userOpt.get();
-            log.info("Existing user logged in. userId={}, email={}", user.getId(), user.getEmail());
+            log.info("Existing Google user logged in. userId={}", user.getId());
         } else {
             // 회원가입
             user = User.createGoogleUser(result.getEmail(), result.getName());
             user = userRepository.save(user);
-            log.info("New user registered. userId={}, email={}", user.getId(), user.getEmail());
+            log.info("New Google user registered. userId={}", user.getId());
         }
 
         // 2️⃣ OAuthGoogleToken 저장/업데이트
@@ -219,9 +248,10 @@ public class GoogleOAuthService {
 
         // 3️⃣ JWT 발급
         String jwt = jwtTokenProvider.generateToken(user.getId());
+        Instant expiresAt = jwtTokenProvider.getExpiration(jwt);
         log.info("JWT issued. userId={}", user.getId());
 
-        return jwt;
+        return new AuthSession(jwt, user.getId(), user.getProvider(), expiresAt);
     }
 
     /**

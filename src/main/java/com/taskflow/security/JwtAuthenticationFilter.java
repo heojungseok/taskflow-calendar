@@ -1,5 +1,6 @@
 package com.taskflow.security;
 
+import com.taskflow.calendar.domain.user.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -10,16 +11,20 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Collections;
 
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -29,13 +34,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // 1. Authorization 헤더에서 토큰 추출
-        String token = extractTokenFromHeader(request);
+        String token = extractTokenFromCookie(request);
         // 2. 토큰이 있고 유효하면
         if (token != null && jwtTokenProvider.validateToken(token)) {
             // 3. userId 추출
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            // 4. Authentication 객체 생성
+            if (!userRepository.isSessionActive(userId, LocalDateTime.now())) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     userId,
                     null,
@@ -52,10 +60,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String extractTokenFromHeader(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")) {
-            return header.substring(7);
+    private String extractTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+        for (Cookie cookie : request.getCookies()) {
+            if ("TASKFLOW_SESSION".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
         }
         return null;
     }

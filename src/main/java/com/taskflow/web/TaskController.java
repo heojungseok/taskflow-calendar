@@ -32,8 +32,7 @@ public class TaskController {
             @Valid @RequestBody CreateTaskRequest request) {
 
         Long requestedByUserId = SecurityContextHelper.getCurrentUserId();
-        log.info("Creating task - userId: {}, projectId: {}, title: {}",
-                requestedByUserId, projectId, request.getTitle());
+        log.info("Creating task. userId={}, projectId={}", requestedByUserId, projectId);
 
         TaskResponse response = taskService.createTask(projectId, request);
         return ApiResponse.success(response);

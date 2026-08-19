@@ -4,6 +4,7 @@ import com.taskflow.calendar.domain.project.dto.CreateProjectRequest;
 import com.taskflow.calendar.domain.project.dto.ProjectResponse;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
 import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.calendar.domain.user.DemoUsageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +18,13 @@ import java.util.stream.Collectors;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final DemoUsageService demoUsageService;
 
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request) {
-        // Project 생성 → 저장 → DTO 변환
-        Project project = Project.of(request.getName(), SecurityContextHelper.getCurrentUserId());
+        Long userId = SecurityContextHelper.getCurrentUserId();
+        demoUsageService.beforeProjectCreate(userId);
+        Project project = Project.of(request.getName(), userId);
         Project savedProject = projectRepository.save(project);
 
         return ProjectResponse.from(savedProject);
