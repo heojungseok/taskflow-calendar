@@ -76,8 +76,7 @@ public class ProjectTaskRecommendationService {
             );
         }
 
-        List<SummaryTaskSnapshot> prioritizedSnapshots = eligibleTasks.stream()
-                .map(taskSyncStateResolver::resolve)
+        List<SummaryTaskSnapshot> prioritizedSnapshots = taskSyncStateResolver.resolveAll(eligibleTasks).stream()
                 .sorted(candidateComparator(today))
                 .collect(Collectors.toList());
 

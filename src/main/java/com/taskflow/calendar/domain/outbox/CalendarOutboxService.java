@@ -11,10 +11,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -132,6 +134,19 @@ public class CalendarOutboxService {
      */
     public Optional<CalendarOutbox> findLatestByTaskId(Long taskId) {
         return outboxRepository.findTopByTaskIdOrderByCreatedAtDesc(taskId);
+    }
+
+    /**
+     * Task 묶음의 최신 Outbox를 한 번에 조회한다. 키는 taskId다.
+     * 빈 목록이면 쿼리를 보내지 않는다 — 네이티브 IN ()은 문법 오류다.
+     */
+    public Map<Long, CalendarOutbox> findLatestByTaskIds(Collection<Long> taskIds) {
+        if (taskIds == null || taskIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return outboxRepository.findLatestByTaskIdIn(taskIds).stream()
+                .collect(Collectors.toMap(CalendarOutbox::getTaskId, outbox -> outbox));
     }
 
     /**

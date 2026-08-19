@@ -7,6 +7,7 @@ import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
 import com.taskflow.calendar.domain.search.TaskSearchDocumentChangedEvent;
 import com.taskflow.calendar.domain.search.TaskSearchDocumentDeletedEvent;
+import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
 import com.taskflow.calendar.domain.user.User;
@@ -37,6 +38,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final TaskHistoryRepository historyRepository;
     private final CalendarOutboxService calendarOutboxService;
+    private final TaskSyncStateResolver taskSyncStateResolver;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -220,22 +222,27 @@ public class TaskService {
 
         Long ownerUserId = SecurityContextHelper.getCurrentUserId();
 
-        if (status != null) {
+        // 두 필터는 함께 올 수 있다. else-if로 묶으면 담당자 조건이 조용히 무시된다.
+        if (status != null && assigneeUserId != null) {
+            tasks = taskRepository.findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                    projectId, status, assigneeUserId, ownerUserId);
+        } else if (status != null) {
             // 상태 필터링
             tasks = taskRepository.findAllByProjectIdAndStatusAndDeletedFalseAndProject_OwnerUserId(
                     projectId, status, ownerUserId);
         } else if (assigneeUserId != null) {
-            // 담당자 필터링
-            tasks = taskRepository.findAllByAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
-                    assigneeUserId, ownerUserId);
+            // 담당자 필터링 (프로젝트 안에서만)
+            tasks = taskRepository.findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                    projectId, assigneeUserId, ownerUserId);
         } else {
             // 전체 조회
             tasks = taskRepository.findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(
                     projectId, ownerUserId);
         }
 
-        return tasks.stream()
-                .map(TaskResponse::from)
+        // Outbox는 건당이 아니라 한 번에 읽는다. 건당이면 목록 크기만큼 쿼리가 나간다.
+        return taskSyncStateResolver.resolveAll(tasks).stream()
+                .map(snapshot -> TaskResponse.from(snapshot.getTask(), snapshot.getSyncState()))
                 .collect(Collectors.toList());
     }
 

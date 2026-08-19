@@ -75,8 +75,7 @@ public class ProjectWeeklySummaryService {
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate weekEnd = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
         LocalDateTime generatedAt = LocalDateTime.now();
-        List<SummaryTaskSnapshot> prioritizedTasks = allTasks.stream()
-                .map(taskSyncStateResolver::resolve)
+        List<SummaryTaskSnapshot> prioritizedTasks = taskSyncStateResolver.resolveAll(allTasks).stream()
                 .sorted(taskPriorityComparator(today))
                 .collect(Collectors.toList());
         List<SummaryTaskSnapshot> syncedTasks = prioritizedTasks.stream()

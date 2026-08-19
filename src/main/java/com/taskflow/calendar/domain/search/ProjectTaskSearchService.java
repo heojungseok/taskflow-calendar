@@ -184,8 +184,7 @@ public class ProjectTaskSearchService {
         taskSearchEmbeddingService.ensureEmbeddings(tasks);
         Map<Long, Double> semanticSimilarities = taskSearchEmbeddingService.searchSimilarities(intent);
 
-        List<ScoredTask> rankedTasks = tasks.stream()
-                .map(taskSyncStateResolver::resolve)
+        List<ScoredTask> rankedTasks = taskSyncStateResolver.resolveAll(tasks).stream()
                 .map(snapshot -> scoreTask(snapshot, intent, semanticSimilarities.getOrDefault(snapshot.getTask().getId(), 0.0d)))
                 .filter(Objects::nonNull)
                 .sorted(Comparator

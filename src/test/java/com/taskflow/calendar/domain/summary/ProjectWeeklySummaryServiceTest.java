@@ -31,6 +31,9 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -89,6 +92,19 @@ class ProjectWeeklySummaryServiceTest {
                 geminiProperties
         );
         project = Project.of("TaskFlow", 1L);
+        stubResolveAllViaResolve();
+    }
+
+    /**
+     * 서비스는 목록을 resolveAll로 한 번에 해석한다(N+1 제거).
+     * 이 테스트가 보는 것은 요약 입력 구성이므로 기존 Task별 resolve 스텁을 그대로 쓴다.
+     */
+    private void stubResolveAllViaResolve() {
+        Mockito.lenient().when(taskSyncStateResolver.resolveAll(ArgumentMatchers.anyList()))
+                .thenAnswer(invocation -> {
+                    List<Task> tasks = invocation.getArgument(0);
+                    return tasks.stream().map(taskSyncStateResolver::resolve).toList();
+                });
     }
 
     @Test
