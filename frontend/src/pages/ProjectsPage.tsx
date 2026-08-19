@@ -230,7 +230,12 @@ export default function ProjectsPage() {
       {/* 검색 결과 */}
       {searchResult && (
         <div className="mb-8 space-y-4">
-          {searchResult.fallback ? (
+          {!searchResult.intentFallback && searchResult.semanticStatus === 'UNAVAILABLE' && (
+            <div className={clsx(cx.card, 'text-[13px] text-[var(--ink-2)]')}>
+              의미 검색을 쓸 수 없어 키워드 검색 결과만 표시합니다.
+            </div>
+          )}
+          {searchResult.intentFallback ? (
             <div className={cx.card}>
               <p className={clsx(cx.text.subheading, 'mb-1')}>검색어가 넓습니다</p>
               <p className="text-[13px] text-[var(--ink-2)] mb-4">

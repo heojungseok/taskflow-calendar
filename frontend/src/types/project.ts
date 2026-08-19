@@ -60,7 +60,10 @@ export interface ProjectTaskRecommendationItem {
 
 export interface ProjectTaskSearchResponse {
   query: string;
-  fallback: boolean;
+  /** 의도 파싱이 약해 결과 없이 추천 질의만 온 경우. 의미 검색 가용성과는 무관하다. */
+  intentFallback: boolean;
+  /** UNAVAILABLE이면 의미 검색이 죽어서 어휘 검색만으로 만든 결과다. */
+  semanticStatus: 'READY' | 'DISABLED' | 'UNAVAILABLE';
   intent: ProjectTaskSearchIntent;
   taskResults: ProjectTaskSearchResultItem[];
   relatedProjects: RelatedProjectSearchResult[];

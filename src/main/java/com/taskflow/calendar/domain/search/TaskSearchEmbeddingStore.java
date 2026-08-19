@@ -23,13 +23,32 @@ public class TaskSearchEmbeddingStore {
 
     private final JdbcTemplate jdbcTemplate;
     private final GeminiSearchProperties properties;
+    // ponytail: 한 번 false가 되면 재기동 전까지 돌아오지 않는다. 커넥션이 한 번 끊겨도
+    // 그 뒤로는 계속 UNAVAILABLE이다. 예전에는 로그에만 남아 티가 안 났지만 이제 화면에 뜬다.
+    // 오탐이 잦아지면 주기적 재프로브(또는 실패 후 N분 뒤 1회 재시도)를 붙인다.
     private final AtomicBoolean available = new AtomicBoolean(true);
 
     @PostConstruct
     public void initialize() {
         try {
             jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS vector");
-            reconcileEmbeddingTable();
+
+            Integer currentDimensions = currentEmbeddingDimensions();
+            int targetDimensions = properties.getEmbeddingDimensions();
+            if (currentDimensions != null && currentDimensions != targetDimensions) {
+                // 예전에는 여기서 테이블을 DROP 했다. atttypmod를 4 적게 읽는 버그와 만나
+                // 매 기동마다 임베딩이 통째로 지워졌다. 읽기 실수가 데이터 소실이 되면 안 된다.
+                // 기존 테이블은 그대로 두고 비활성으로 떨어뜨린다. 이전은 사람이 판단한다.
+                available.set(false);
+                log.error("Task search embedding dimension mismatch. Semantic search unavailable. "
+                                + "Existing table task_search_embeddings kept — migrate manually "
+                                + "(dump, recreate with the new dimension, re-embed). "
+                                + "currentDimensions={}, targetDimensions={}",
+                        currentDimensions, targetDimensions);
+                return;
+            }
+
+            createEmbeddingTable();
             jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_task_search_embeddings_updated_at ON task_search_embeddings(updated_at)");
             available.set(true);
         } catch (DataAccessException e) {
@@ -149,13 +168,7 @@ public class TaskSearchEmbeddingStore {
                 .collect(Collectors.joining(",")) + "]";
     }
 
-    private void reconcileEmbeddingTable() {
-        Integer currentDimensions = currentEmbeddingDimensions();
-        if (currentDimensions != null && currentDimensions != properties.getEmbeddingDimensions()) {
-            log.warn("Task search embedding dimension changed. Recreating table. currentDimensions={}, targetDimensions={}",
-                    currentDimensions, properties.getEmbeddingDimensions());
-            jdbcTemplate.execute("DROP TABLE IF EXISTS task_search_embeddings");
-        }
+    private void createEmbeddingTable() {
         jdbcTemplate.execute(
                 "CREATE TABLE IF NOT EXISTS task_search_embeddings (" +
                         "task_id BIGINT PRIMARY KEY REFERENCES tasks(id) ON DELETE CASCADE," +

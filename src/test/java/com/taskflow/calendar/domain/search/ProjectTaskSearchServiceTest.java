@@ -104,7 +104,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("중요한 거 찾아줘");
 
-        assertTrue(response.isFallback());
+        assertTrue(response.isIntentFallback());
         assertEquals(3, response.getSuggestedQueries().size());
         verifyNoInteractions(taskRepository, taskSyncStateResolver);
     }
@@ -137,12 +137,12 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("배포 관련")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(deployTask));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(deployTask));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(deployTask)).thenReturn(snapshot(deployTask, TaskSyncState.SYNCED));
 
         ProjectTaskSearchResponse response = service.search("배포 관련");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(1, response.getTaskResults().size());
         assertEquals("배포 일정 정리", response.getTaskResults().get(0).getTitle());
         assertEquals("TOPIC_SEARCH", response.getIntent().getQueryType());
@@ -181,14 +181,14 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("이번 주 배포 준비 일정")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(alphaTask, betaTask, lifeTask));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(alphaTask, betaTask, lifeTask));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(alphaTask)).thenReturn(snapshot(alphaTask, TaskSyncState.SYNCED));
         when(taskSyncStateResolver.resolve(betaTask)).thenReturn(snapshot(betaTask, TaskSyncState.PENDING_SYNC));
         when(taskSyncStateResolver.resolve(lifeTask)).thenReturn(snapshot(lifeTask, TaskSyncState.SYNC_DISABLED));
 
         ProjectTaskSearchResponse response = service.search("이번 주 배포 준비 일정");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(2, response.getTaskResults().size());
         assertEquals("배포 체크리스트 준비", response.getTaskResults().get(0).getTitle());
         assertEquals("배포 초안 준비", response.getTaskResults().get(1).getTitle());
@@ -228,13 +228,13 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("노는 일정이 뭐가 있었지?")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(outingTask, workTask));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(outingTask, workTask));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(outingTask)).thenReturn(snapshot(outingTask, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(workTask)).thenReturn(snapshot(workTask, TaskSyncState.SYNCED));
 
         ProjectTaskSearchResponse response = service.search("노는 일정이 뭐가 있었지?");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(1, response.getTaskResults().size());
         assertEquals("한강 나들이", response.getTaskResults().get(0).getTitle());
     }
@@ -275,13 +275,13 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("친구들과 노는 일정이 뭐가 있었지?")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(outing, friendMeet, dentist, family, qaMeeting));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(outing, friendMeet, dentist, family, qaMeeting));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(
                 30L, 0.793d,
                 31L, 0.842d,
                 32L, 0.823d,
                 33L, 0.843d,
                 34L, 0.780d
-        ));
+        ), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(outing)).thenReturn(snapshot(outing, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(friendMeet)).thenReturn(snapshot(friendMeet, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(dentist)).thenReturn(snapshot(dentist, TaskSyncState.SYNC_DISABLED));
@@ -290,7 +290,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("친구들과 노는 일정이 뭐가 있었지?");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(2, response.getTaskResults().size());
         List<String> titles = response.getTaskResults().stream()
                 .map(result -> result.getTitle())
@@ -328,12 +328,12 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("화상 회의 일정들")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(remoteMeeting));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(remoteMeeting));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(remoteMeeting)).thenReturn(snapshot(remoteMeeting, TaskSyncState.SYNC_DISABLED));
 
         ProjectTaskSearchResponse response = service.search("화상 회의 일정들");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals("TOPIC_SEARCH", response.getIntent().getQueryType());
         assertEquals("ALLOW_PARTIAL", response.getIntent().getRelationPolicy());
         assertEquals(1, response.getTaskResults().size());
@@ -373,18 +373,18 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("화상 회의 일정들")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(onlineMeeting, qaMeeting, friendMeet));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(onlineMeeting, qaMeeting, friendMeet));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(
                 60L, 0.83d,
                 61L, 0.83d,
                 62L, 0.82d
-        ));
+        ), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(onlineMeeting)).thenReturn(snapshot(onlineMeeting, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(qaMeeting)).thenReturn(snapshot(qaMeeting, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(friendMeet)).thenReturn(snapshot(friendMeet, TaskSyncState.SYNC_DISABLED));
 
         ProjectTaskSearchResponse response = service.search("화상 회의 일정들");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals(1, response.getTaskResults().size());
         assertEquals("온라인 회의 준비", response.getTaskResults().get(0).getTitle());
     }
@@ -418,12 +418,12 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("친구들과 노는 일정이 뭐가 있었지?")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(outing));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(outing));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of());
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(outing)).thenReturn(snapshot(outing, TaskSyncState.SYNC_DISABLED));
 
         ProjectTaskSearchResponse response = service.search("친구들과 노는 일정이 뭐가 있었지?");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals("RELATIONAL_SEARCH", response.getIntent().getQueryType());
         assertEquals("PREFER_ALL", response.getIntent().getRelationPolicy());
         assertEquals(1, response.getTaskResults().size());
@@ -463,12 +463,12 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("친구 만나서 병원 가는 거")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(combined, friendOnly, hospitalOnly, genericCompanionOnly));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(combined, friendOnly, hospitalOnly, genericCompanionOnly));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(
                 70L, 0.86d,
                 71L, 0.78d,
                 72L, 0.79d,
                 74L, 0.82d
-        ));
+        ), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(combined)).thenReturn(snapshot(combined, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(friendOnly)).thenReturn(snapshot(friendOnly, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(hospitalOnly)).thenReturn(snapshot(hospitalOnly, TaskSyncState.SYNC_DISABLED));
@@ -476,7 +476,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("친구 만나서 병원 가는 거");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals("RELATIONAL_SEARCH", response.getIntent().getQueryType());
         assertEquals("VISIT", response.getIntent().getMainAction());
         assertTrue(response.getIntent().getSecondaryActions().contains("MEET"));
@@ -518,18 +518,18 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("누군가와 병원 가기")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(genericCompanion, specificCompanion, soloHospital));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(genericCompanion, specificCompanion, soloHospital));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(
                 75L, 0.83d,
                 76L, 0.81d,
                 77L, 0.79d
-        ));
+        ), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(genericCompanion)).thenReturn(snapshot(genericCompanion, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(specificCompanion)).thenReturn(snapshot(specificCompanion, TaskSyncState.SYNC_DISABLED));
         when(taskSyncStateResolver.resolve(soloHospital)).thenReturn(snapshot(soloHospital, TaskSyncState.SYNC_DISABLED));
 
         ProjectTaskSearchResponse response = service.search("누군가와 병원 가기");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         List<String> titles = response.getTaskResults().stream()
                 .map(result -> result.getTitle())
                 .collect(java.util.stream.Collectors.toList());
@@ -565,7 +565,7 @@ class ProjectTaskSearchServiceTest {
 
         ProjectTaskSearchResponse response = service.search("누군가 어떤 일 하기");
 
-        assertTrue(response.isFallback());
+        assertTrue(response.isIntentFallback());
         verifyNoInteractions(taskRepository, taskSyncStateResolver);
     }
 
@@ -598,12 +598,12 @@ class ProjectTaskSearchServiceTest {
         when(taskSearchIntentParser.parse("병원 가는 일정")).thenReturn(intent);
         when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L)).thenReturn(List.of(hospital));
         doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(hospital));
-        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(Map.of(73L, 0.82d));
+        when(taskSearchEmbeddingService.searchSimilarities(any())).thenReturn(new SemanticSearchResult(Map.of(73L, 0.82d), SemanticSearchStatus.READY));
         when(taskSyncStateResolver.resolve(hospital)).thenReturn(snapshot(hospital, TaskSyncState.SYNC_DISABLED));
 
         ProjectTaskSearchResponse response = service.search("병원 가는 일정");
 
-        assertTrue(!response.isFallback());
+        assertTrue(!response.isIntentFallback());
         assertEquals("TOPIC_SEARCH", response.getIntent().getQueryType());
         assertEquals("VISIT", response.getIntent().getMainAction());
         assertTrue(response.getIntent().getLocationTerms().contains("병원"));
