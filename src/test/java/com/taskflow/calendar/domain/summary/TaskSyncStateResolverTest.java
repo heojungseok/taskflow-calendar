@@ -13,9 +13,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -147,6 +153,34 @@ class TaskSyncStateResolverTest {
         SummaryTaskSnapshot snapshot = resolver.resolve(task);
 
         assertEquals(TaskSyncState.SYNC_DISABLED, snapshot.getSyncState());
+    }
+
+    @Test
+    @DisplayName("resolveAll_목록크기와무관하게_Outbox조회는한번이다")
+    void resolveAll_queriesOutboxOnce() throws Exception {
+        Task first = taskWithId(11L, "첫 번째", true, "evt-1");
+        Task second = taskWithId(12L, "두 번째", true, null);
+        CalendarOutbox latest = CalendarOutbox.forUpsert(11L, "{}");
+        latest.markAsProcessing();
+        latest.markAsSuccess();
+        when(calendarOutboxService.findLatestByTaskIds(List.of(11L, 12L)))
+                .thenReturn(Map.of(11L, latest));
+
+        List<SummaryTaskSnapshot> snapshots = resolver.resolveAll(List.of(first, second));
+
+        assertEquals(2, snapshots.size());
+        assertEquals(TaskSyncState.SYNCED, snapshots.get(0).getSyncState());
+        assertEquals(TaskSyncState.PENDING_SYNC, snapshots.get(1).getSyncState());
+        verify(calendarOutboxService, times(1)).findLatestByTaskIds(List.of(11L, 12L));
+        verify(calendarOutboxService, never()).findLatestByTaskId(any());
+    }
+
+    private Task taskWithId(Long id, String title, boolean calendarSyncEnabled, String eventId) throws Exception {
+        Task task = task(title, "설명", calendarSyncEnabled, eventId);
+        var field = Task.class.getDeclaredField("id");
+        field.setAccessible(true);
+        field.set(task, id);
+        return task;
     }
 
     private Task task(String title, String description, boolean calendarSyncEnabled, String eventId) {

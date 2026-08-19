@@ -25,6 +25,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,6 +63,19 @@ class ProjectTaskSearchServiceTest {
     @BeforeEach
     void setUp() {
         service = new ProjectTaskSearchService(taskRepository, taskSyncStateResolver, taskSearchIntentParser, taskSearchEmbeddingService);
+        stubResolveAllViaResolve();
+    }
+
+    /**
+     * 서비스는 목록을 resolveAll로 한 번에 해석한다(N+1 제거).
+     * 이 테스트들이 검증하는 것은 배치 자체가 아니라 점수·정렬이므로,
+     * 기존의 Task별 resolve 스텁을 그대로 살려 resolveAll이 그것을 위임하게 둔다.
+     */
+    private void stubResolveAllViaResolve() {
+        lenient().when(taskSyncStateResolver.resolveAll(anyList())).thenAnswer(invocation -> {
+            List<Task> tasks = invocation.getArgument(0);
+            return tasks.stream().map(taskSyncStateResolver::resolve).toList();
+        });
     }
 
     @Test

@@ -211,6 +211,16 @@ export const SYNC_STATE = {
   DELETE_FAILED: { ko: '삭제 실패', mark: 'var(--st-failed-mark)' },
 } as const;
 
+/** 같은 상태를 배지로 쓸 때의 색. 점(SyncDot)과 어휘를 맞춘다. */
+export const SYNC_BADGE_TONE = {
+  SYNCED: 'bg-[var(--st-done-bg)] text-[var(--st-done)]',
+  PENDING_SYNC: 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
+  FAILED_SYNC: 'bg-[var(--st-failed-bg)] text-[var(--st-failed)]',
+  SYNC_DISABLED: 'text-[var(--ink-3)]',
+  DELETE_PENDING: 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
+  DELETE_FAILED: 'bg-[var(--st-failed-bg)] text-[var(--st-failed)]',
+} as const;
+
 /**
  * 작업 상태 — 사람이 정하는 것.
  * 기계 상태와 구분하려고 색 대신 무채색 글자로만 쓴다.

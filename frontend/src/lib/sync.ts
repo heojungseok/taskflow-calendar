@@ -1,4 +1,4 @@
-import type { CalendarSyncStatus } from '@/types/task';
+import type { CalendarSyncStatus, Task } from '@/types/task';
 import type { OutboxEntry } from '@/types/outbox';
 
 /**
@@ -14,6 +14,11 @@ export const SYNC_POLL_INTERVAL_MS = 10_000;
 export function isSyncInFlight(status: CalendarSyncStatus | undefined): boolean {
   const last = status?.lastOutboxStatus;
   return last === 'PENDING' || last === 'PROCESSING';
+}
+
+/** Task 목록에 워커가 아직 처리하지 않은 건이 하나라도 있는가 */
+export function hasTaskSyncInFlight(tasks: Task[] | undefined): boolean {
+  return !!tasks?.some((t) => t.syncState === 'PENDING_SYNC' || t.syncState === 'DELETE_PENDING');
 }
 
 /** 목록에 처리 대기·처리 중인 Outbox가 하나라도 있는가 */

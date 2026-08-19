@@ -3,6 +3,15 @@
 
 export type TaskStatus = 'REQUESTED' | 'IN_PROGRESS' | 'DONE' | 'BLOCKED';
 
+/** 백엔드 TaskSyncState.java 기준 */
+export type TaskSyncState =
+  | 'SYNCED'
+  | 'PENDING_SYNC'
+  | 'FAILED_SYNC'
+  | 'SYNC_DISABLED'
+  | 'DELETE_PENDING'
+  | 'DELETE_FAILED';
+
 export interface Task {
   id: number;
   projectId: number;
@@ -15,6 +24,8 @@ export interface Task {
   dueAt: string | null;        // ISO-8601 LocalDateTime: "yyyy-MM-dd'T'HH:mm:ss"
   calendarSyncEnabled: boolean;
   calendarEventId: string | null;
+  /** 목록 조회에만 실려 온다. 단건·생성·수정 응답에서는 null이다. */
+  syncState: TaskSyncState | null;
   createdAt: string;
   updatedAt: string;
 }

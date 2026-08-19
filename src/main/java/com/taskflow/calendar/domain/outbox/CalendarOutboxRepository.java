@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -82,6 +83,21 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
      * - 캘린더 동기화 상태 API용
      */
     Optional<CalendarOutbox> findTopByTaskIdOrderByCreatedAtDesc(Long taskId);
+
+    /**
+     * Task 묶음의 최신 Outbox를 taskId당 1건씩 조회한다.
+     * 목록 화면·검색·추천이 Task마다 findTopByTaskId...를 부르면 그대로 N+1이다.
+     *
+     * created_at은 같은 초에 여러 건이 들어갈 수 있어 id를 tie-breaker로 둔다.
+     * 단건 조회(findTopByTaskIdOrderByCreatedAtDesc)와 결과가 갈리지 않게 하려는 것이다.
+     */
+    @Query(value = """
+            SELECT DISTINCT ON (o.task_id) *
+            FROM calendar_outbox o
+            WHERE o.task_id IN (:taskIds)
+            ORDER BY o.task_id, o.created_at DESC, o.id DESC
+            """, nativeQuery = true)
+    List<CalendarOutbox> findLatestByTaskIdIn(@Param("taskIds") Collection<Long> taskIds);
 
     /**
      * Task별 마지막 SUCCESS Outbox 조회

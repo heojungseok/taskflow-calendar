@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SYNC_POLL_INTERVAL_MS, isSyncInFlight } from '@/lib/sync';
+import { SYNC_POLL_INTERVAL_MS, isSyncInFlight, hasTaskSyncInFlight } from '@/lib/sync';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import axios, { AxiosError } from 'axios';
@@ -10,7 +10,7 @@ import { projectsApi } from '@/api/endpoints/projects';
 import type { ApiResponse } from '@/api/types';
 import type { Task, TaskStatus, TaskCreateRequest, TaskUpdateRequest, TaskHistory, OutboxStatus } from '@/types/task';
 import type { ProjectTaskRecommendation, ProjectTaskRecommendationItem, ProjectWeeklySummary, ProjectWeeklySummarySection } from '@/types/project';
-import { cx, clsx } from '@/styles/cx';
+import { cx, clsx, SYNC_STATE, SYNC_BADGE_TONE } from '@/styles/cx';
 
 // ── 상수 ──────────────────────────────────────────────────
 
@@ -311,15 +311,11 @@ function TaskCard({
               {STATUS_LABEL[task.status]}
             </motion.span>
 
-            {task.calendarSyncEnabled && (
-              <span className={clsx(
-                cx.badge.base,
-                task.calendarEventId
-                  ? 'bg-[var(--st-done-bg)] text-[var(--st-done)]'
-                  : 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
-              )}>
+            {/* eventId 유무로 짐작하던 자리다. 실패·삭제대기가 '동기화'로 보였다. */}
+            {task.syncState && task.syncState !== 'SYNC_DISABLED' && (
+              <span className={clsx(cx.badge.base, SYNC_BADGE_TONE[task.syncState])}>
                 <Calendar size={9} strokeWidth={2} />
-                {task.calendarEventId ? '동기화' : '대기'}
+                {SYNC_STATE[task.syncState].ko}
               </span>
             )}
           </div>
@@ -385,15 +381,11 @@ function TaskCard({
               {STATUS_LABEL[task.status]}
             </motion.span>
 
-            {task.calendarSyncEnabled && (
-              <span className={clsx(
-                cx.badge.base,
-                task.calendarEventId
-                  ? 'bg-[var(--st-done-bg)] text-[var(--st-done)]'
-                  : 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
-              )}>
+            {/* eventId 유무로 짐작하던 자리다. 실패·삭제대기가 '동기화'로 보였다. */}
+            {task.syncState && task.syncState !== 'SYNC_DISABLED' && (
+              <span className={clsx(cx.badge.base, SYNC_BADGE_TONE[task.syncState])}>
                 <Calendar size={9} strokeWidth={2} />
-                {task.calendarEventId ? '동기화' : '대기'}
+                {SYNC_STATE[task.syncState].ko}
               </span>
             )}
           </div>
@@ -566,6 +558,7 @@ function RecommendationSection({
                 dueAt: item.dueAt,
                 calendarSyncEnabled: item.calendarSyncEnabled,
                 calendarEventId: item.calendarEventId,
+                syncState: item.syncState,
                 createdAt: recommendation.generatedAt,
                 updatedAt: recommendation.generatedAt,
               };
@@ -1028,6 +1021,8 @@ export default function TaskListPage() {
     queryKey: ['tasks', pid, statusFilter],
     queryFn: () => tasksApi.getTasks(pid, statusFilter ? { status: statusFilter } : undefined),
     enabled: !!pid,
+    // 대기 중인 건이 남아 있는 동안만 폴링한다. 다 끝나면 멈춘다.
+    refetchInterval: (query) => (hasTaskSyncInFlight(query.state.data) ? SYNC_POLL_INTERVAL_MS : false),
   });
 
   useEffect(() => {

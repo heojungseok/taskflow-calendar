@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
+import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.task.dto.DeleteTaskResponse;
@@ -65,6 +66,9 @@ class TaskServiceTest {
 
     @Mock
     private CalendarOutboxService calendarOutboxService;
+
+    @Mock
+    private TaskSyncStateResolver taskSyncStateResolver;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;

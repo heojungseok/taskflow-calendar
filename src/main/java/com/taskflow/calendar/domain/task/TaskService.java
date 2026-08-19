@@ -7,6 +7,7 @@ import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
 import com.taskflow.calendar.domain.search.TaskSearchDocumentChangedEvent;
 import com.taskflow.calendar.domain.search.TaskSearchDocumentDeletedEvent;
+import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
 import com.taskflow.calendar.domain.user.User;
@@ -37,6 +38,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final TaskHistoryRepository historyRepository;
     private final CalendarOutboxService calendarOutboxService;
+    private final TaskSyncStateResolver taskSyncStateResolver;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -234,8 +236,9 @@ public class TaskService {
                     projectId, ownerUserId);
         }
 
-        return tasks.stream()
-                .map(TaskResponse::from)
+        // Outbox는 건당이 아니라 한 번에 읽는다. 건당이면 목록 크기만큼 쿼리가 나간다.
+        return taskSyncStateResolver.resolveAll(tasks).stream()
+                .map(snapshot -> TaskResponse.from(snapshot.getTask(), snapshot.getSyncState()))
                 .collect(Collectors.toList());
     }
 

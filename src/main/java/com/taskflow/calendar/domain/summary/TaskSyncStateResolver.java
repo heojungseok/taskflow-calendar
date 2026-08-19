@@ -8,6 +8,9 @@ import com.taskflow.calendar.domain.task.Task;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class TaskSyncStateResolver {
@@ -18,6 +21,23 @@ public class TaskSyncStateResolver {
         CalendarOutbox latestOutbox = calendarOutboxService.findLatestByTaskId(task.getId())
                 .orElse(null);
 
+        return toSnapshot(task, latestOutbox);
+    }
+
+    /**
+     * 목록용. Task마다 resolve()를 부르면 Outbox 조회가 건수만큼 나간다(N+1).
+     * 최신 Outbox를 한 번에 받아 같은 분류 로직에 태운다.
+     */
+    public List<SummaryTaskSnapshot> resolveAll(List<Task> tasks) {
+        Map<Long, CalendarOutbox> latestByTaskId = calendarOutboxService.findLatestByTaskIds(
+                tasks.stream().map(Task::getId).toList());
+
+        return tasks.stream()
+                .map(task -> toSnapshot(task, latestByTaskId.get(task.getId())))
+                .toList();
+    }
+
+    private SummaryTaskSnapshot toSnapshot(Task task, CalendarOutbox latestOutbox) {
         return SummaryTaskSnapshot.of(
                 task,
                 classify(task, latestOutbox),
