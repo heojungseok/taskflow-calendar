@@ -6,6 +6,10 @@ spring:
     # /api/test/** 는 local 에서만 뜬다. 배포 프로파일에서는 빈 자체가 없다.
     active: ${SPRING_PROFILES_ACTIVE:local}
 
+  autoconfigure:
+    # JWT 전용이라 인메모리 기본 사용자가 필요 없다. 두면 기동 로그에 임시 비밀번호가 찍힌다.
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
   datasource:
     # 기본값은 docker-compose.yml의 로컬 컨테이너와 같다. 배포에서는 환경변수로 덮는다.
     url: ${DB_URL:jdbc:postgresql://localhost:5432/taskflow}

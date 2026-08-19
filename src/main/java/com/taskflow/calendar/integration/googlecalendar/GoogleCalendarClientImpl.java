@@ -27,6 +27,8 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class GoogleCalendarClientImpl implements GoogleCalendarClient {
 
+    private static final String DELETE_OPERATION = "deleteEvent";
+
     private final OAuthGoogleTokenRepository repository;
     private final GoogleOAuthService googleOAuthService;
 
@@ -108,7 +110,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
                 return service.events().delete("primary", eventId).execute();
             });
         } catch (GoogleJsonResponseException e) {
-            handleGoogleApiException(e, "deleteEvent", userId);
+            handleGoogleApiException(e, DELETE_OPERATION, userId);
         } catch (IOException e) {
             throw new RetryableIntegrationException("Network error", e);
         }
@@ -183,10 +185,15 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
             throw new RetryableIntegrationException("Server error: " + statusCode, e);
         }
 
-        // ✅ 멱등 DELETE 처리
+        // 멱등 DELETE: 이미 지워진 이벤트를 지우는 것은 성공이다.
+        // UPDATE/CREATE에서는 성공이 아니다 — 캘린더가 안 바뀌었는데 SUCCESS로 남는다.
         if (statusCode == 404 || statusCode == 410) {
-            log.info("Google Calendar resource already deleted (status={}), treat as success", statusCode);
-            return; // ← 여기서 swallow
+            if (DELETE_OPERATION.equals(operation)) {
+                log.info("Google Calendar resource already deleted (status={}), treat as success", statusCode);
+                return;
+            }
+            throw new NonRetryableIntegrationException(
+                    "Calendar event not found: " + reason, statusCode, e);
         }
 
         throw new NonRetryableIntegrationException(

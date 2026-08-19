@@ -94,19 +94,33 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
             // UPDATE (멱등)
             log.info("[GoogleCalendarService] Updating event. taskId={}, eventId={}, title={}",
                     taskId, eventId, event.getTitle());
-            googleCalendarClient.updateEvent(userId, eventId, event);
-        } else {
-            // CREATE
-            log.info("[GoogleCalendarService] Creating event. taskId={}, title={}",
-                    taskId, event.getTitle());
-            String newEventId = googleCalendarClient.createEvent(userId, event);
-            
-            // eventId를 Task에 저장
-            task.setCalendarEventId(newEventId);
-            taskRepository.save(task);
-            
-            log.info("[GoogleCalendarService] Event created. taskId={}, eventId={}", taskId, newEventId);
+            try {
+                googleCalendarClient.updateEvent(userId, eventId, event);
+                return;
+            } catch (NonRetryableIntegrationException e) {
+                if (!isEventGone(e)) {
+                    throw e;
+                }
+                // 구글에서 이벤트가 사라졌다. 재시도해도 같으니 새로 만들고 eventId를 갈아끼운다.
+                log.warn("[GoogleCalendarService] Event gone on Google ({}). Recreating. taskId={}, eventId={}",
+                        e.getStatusCode(), taskId, eventId);
+            }
         }
+
+        // CREATE
+        log.info("[GoogleCalendarService] Creating event. taskId={}, title={}",
+                taskId, event.getTitle());
+        String newEventId = googleCalendarClient.createEvent(userId, event);
+
+        // eventId를 Task에 저장
+        task.setCalendarEventId(newEventId);
+        taskRepository.save(task);
+
+        log.info("[GoogleCalendarService] Event created. taskId={}, eventId={}", taskId, newEventId);
+    }
+
+    private boolean isEventGone(NonRetryableIntegrationException e) {
+        return e.getStatusCode() == 404 || e.getStatusCode() == 410;
     }
 
     /**
