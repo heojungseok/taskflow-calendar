@@ -68,3 +68,4 @@ postgres-data/
 jacoco.exec
 
 .claude/
+CLAUDE.md
