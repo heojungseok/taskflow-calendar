@@ -30,7 +30,7 @@ class TaskSyncStateResolverTest {
     @BeforeEach
     void setUp() {
         resolver = new TaskSyncStateResolver(calendarOutboxService);
-        project = Project.of("Phase2 Sync Split Demo 150841");
+        project = Project.of("Phase2 Sync Split Demo 150841", 1L);
     }
 
     @Test

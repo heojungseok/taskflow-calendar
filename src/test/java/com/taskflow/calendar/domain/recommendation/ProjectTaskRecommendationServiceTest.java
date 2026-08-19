@@ -1,5 +1,8 @@
 package com.taskflow.calendar.domain.recommendation;
 
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
@@ -40,6 +43,21 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProjectTaskRecommendationServiceTest {
 
+    /**
+     * 소유권 격리가 들어간 뒤로 서비스가 현재 사용자를 요구한다.
+     * SecurityContextHolder는 스레드 로컬이라 테스트 간에 새어나가므로 명시적으로 설정하고 정리한다.
+     */
+    @org.junit.jupiter.api.BeforeEach
+    void setUpSecurityContext() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(1L, null, null));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Mock
     private ProjectRepository projectRepository;
 
@@ -71,13 +89,13 @@ class ProjectTaskRecommendationServiceTest {
                 taskRecommendationCacheService,
                 geminiProperties
         );
-        project = Project.of("TaskFlow");
+        project = Project.of("TaskFlow", 1L);
     }
 
     @Test
     @DisplayName("getRecommendations_프로젝트없음_예외발생")
     void getRecommendations_projectNotFound() {
-        when(projectRepository.findById(1L)).thenReturn(Optional.empty());
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.empty());
 
         assertThrows(ProjectNotFoundException.class, () -> service.getRecommendations(1L));
     }
@@ -87,7 +105,7 @@ class ProjectTaskRecommendationServiceTest {
     void getRecommendations_onlyDoneTasks_returnsEmpty() {
         Task doneTask = task("정리 완료", TaskStatus.DONE, LocalDateTime.now().plusDays(1));
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(doneTask));
 
         ProjectTaskRecommendationResponse response = service.getRecommendations(1L);
@@ -121,7 +139,7 @@ class ProjectTaskRecommendationServiceTest {
                 task("17", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(17))
         );
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(tasks);
         for (Task task : tasks) {
             when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
@@ -149,7 +167,7 @@ class ProjectTaskRecommendationServiceTest {
     void getRecommendations_cacheHit() {
         Task task = task("API 설계", TaskStatus.IN_PROGRESS, LocalDateTime.now().plusDays(1));
 
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNCED));
         when(taskRecommendationCacheService.isEnabled()).thenReturn(true);

@@ -131,7 +131,7 @@ class SummaryDecodingExperimentTest {
     }
 
     private ExperimentScenario releaseScenario() {
-        Project project = Project.of("Summary Decoding Experiment");
+        Project project = Project.of("Summary Decoding Experiment", 1L);
         return new ExperimentScenario(
                 "release-and-sync-risk",
                 project,
@@ -156,7 +156,7 @@ class SummaryDecodingExperimentTest {
     }
 
     private ExperimentScenario onboardingScenario() {
-        Project project = Project.of("Onboarding Flow Stabilization");
+        Project project = Project.of("Onboarding Flow Stabilization", 1L);
         return new ExperimentScenario(
                 "onboarding-and-ops-followup",
                 project,

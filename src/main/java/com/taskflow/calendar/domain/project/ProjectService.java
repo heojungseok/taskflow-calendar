@@ -3,6 +3,7 @@ package com.taskflow.calendar.domain.project;
 import com.taskflow.calendar.domain.project.dto.CreateProjectRequest;
 import com.taskflow.calendar.domain.project.dto.ProjectResponse;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
+import com.taskflow.security.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,21 +21,22 @@ public class ProjectService {
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request) {
         // Project 생성 → 저장 → DTO 변환
-        Project project = Project.of(request.getName());
+        Project project = Project.of(request.getName(), SecurityContextHelper.getCurrentUserId());
         Project savedProject = projectRepository.save(project);
 
         return ProjectResponse.from(savedProject);
     }
 
     public List<ProjectResponse> getAllProjects() {
-        return projectRepository.findAll()
+        return projectRepository.findAllByOwnerUserId(SecurityContextHelper.getCurrentUserId())
                 .stream()
                 .map(ProjectResponse::from)
                 .collect(Collectors.toList());
     }
 
     public ProjectResponse getProjectById(Long id) {
-        Project project = projectRepository.findById(id)
+        Project project = projectRepository
+                .findByIdAndOwnerUserId(id, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new ProjectNotFoundException(id));
 
         return ProjectResponse.from(project);

@@ -155,7 +155,7 @@ class GoogleCalendarServiceImplTest {
     }
 
     private Task taskWithSchedule(Long id, LocalDateTime startAt, LocalDateTime dueAt, String eventId) throws Exception {
-        Project project = Project.of("Google Sync");
+        Project project = Project.of("Google Sync", 1L);
         Task task = Task.createTask(project, "일정 테스트", "설명", null, startAt, dueAt, true);
         setField(task, "id", id);
         setField(task, "status", TaskStatus.IN_PROGRESS);

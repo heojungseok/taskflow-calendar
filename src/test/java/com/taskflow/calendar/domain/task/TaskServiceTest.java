@@ -1,5 +1,8 @@
 package com.taskflow.calendar.domain.task;
 
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
@@ -30,6 +33,21 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
 
+    /**
+     * 소유권 격리가 들어간 뒤로 서비스가 현재 사용자를 요구한다.
+     * SecurityContextHolder는 스레드 로컬이라 테스트 간에 새어나가므로 명시적으로 설정하고 정리한다.
+     */
+    @org.junit.jupiter.api.BeforeEach
+    void setUpSecurityContext() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(1L, null, null));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
     private static final Long TASK_ID = 10L;
     private static final Long USER_ID = 7L;
 
@@ -59,7 +77,7 @@ class TaskServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        Project project = Project.of("TaskFlow");
+        Project project = Project.of("TaskFlow", 1L);
         user = User.createGoogleUser("tester@example.com", "tester");
         setField(user, "id", USER_ID);
 
@@ -79,7 +97,7 @@ class TaskServiceTest {
     @Test
     @DisplayName("deleteTask는 soft delete 후 DELETE outbox를 적재한다")
     void deleteTask_softDeletesAndEnqueuesDelete() {
-        when(taskRepository.findByIdAndDeletedFalse(TASK_ID)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(TASK_ID, 1L)).thenReturn(Optional.of(task));
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
         DeleteTaskResponse response = taskService.deleteTask(TASK_ID, USER_ID);
@@ -100,7 +118,7 @@ class TaskServiceTest {
     @Test
     @DisplayName("deleteTask는 이미 삭제된 task를 다시 조회하지 못하면 예외를 던진다")
     void deleteTask_throwsWhenTaskMissing() {
-        when(taskRepository.findByIdAndDeletedFalse(TASK_ID)).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(TASK_ID, 1L)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> taskService.deleteTask(TASK_ID, USER_ID));
     }

@@ -46,7 +46,7 @@ class GeminiWeeklySummaryGeneratorTest {
 
         objectMapper = new ObjectMapper().findAndRegisterModules();
         generator = new GeminiWeeklySummaryGenerator(properties, objectMapper);
-        project = Project.of("TaskFlow");
+        project = Project.of("TaskFlow", 1L);
     }
 
     @Test
