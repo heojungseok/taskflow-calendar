@@ -8,6 +8,7 @@ import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
+import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -88,6 +89,47 @@ class GoogleCalendarServiceImplTest {
 
         assertEquals(dueAt.minusHours(1), sent.getStartAt());
         assertEquals(dueAt, sent.getEndAt());
+    }
+
+    @Test
+    @DisplayName("UPDATE가 404면 성공으로 삼키지 않고 이벤트를 새로 만들어 eventId를 갈아끼운다")
+    void handle_upsertUpdate_whenEventGone_recreates() throws Exception {
+        LocalDateTime dueAt = LocalDateTime.of(2026, 3, 29, 18, 0);
+        Task task = taskWithSchedule(TASK_ID, null, dueAt, "stale-event");
+        CalendarOutbox outbox = upsertOutbox(TASK_ID);
+
+        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class)))
+                .thenReturn(payloadMap(TASK_ID, USER_ID));
+        when(taskRepository.findByIdAndDeletedFalse(TASK_ID)).thenReturn(Optional.of(task));
+        org.mockito.Mockito.doThrow(new NonRetryableIntegrationException("Calendar event not found", 404))
+                .when(googleCalendarClient).updateEvent(eq(USER_ID), eq("stale-event"), org.mockito.ArgumentMatchers.any());
+        when(googleCalendarClient.createEvent(eq(USER_ID), org.mockito.ArgumentMatchers.any()))
+                .thenReturn("fresh-event");
+
+        googleCalendarService.handle(outbox);
+
+        verify(googleCalendarClient).createEvent(eq(USER_ID), org.mockito.ArgumentMatchers.any());
+        verify(taskRepository).save(task);
+        assertEquals("fresh-event", task.getCalendarEventId());
+    }
+
+    @Test
+    @DisplayName("UPDATE가 404 외의 NonRetryable이면 그대로 실패시킨다")
+    void handle_upsertUpdate_otherNonRetryable_propagates() throws Exception {
+        LocalDateTime dueAt = LocalDateTime.of(2026, 3, 29, 18, 0);
+        Task task = taskWithSchedule(TASK_ID, null, dueAt, "event-123");
+        CalendarOutbox outbox = upsertOutbox(TASK_ID);
+
+        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class)))
+                .thenReturn(payloadMap(TASK_ID, USER_ID));
+        when(taskRepository.findByIdAndDeletedFalse(TASK_ID)).thenReturn(Optional.of(task));
+        org.mockito.Mockito.doThrow(new NonRetryableIntegrationException("Forbidden", 403))
+                .when(googleCalendarClient).updateEvent(eq(USER_ID), eq("event-123"), org.mockito.ArgumentMatchers.any());
+
+        org.junit.jupiter.api.Assertions.assertThrows(NonRetryableIntegrationException.class,
+                () -> googleCalendarService.handle(outbox));
+
+        verify(googleCalendarClient, never()).createEvent(eq(USER_ID), org.mockito.ArgumentMatchers.any());
     }
 
     @Test

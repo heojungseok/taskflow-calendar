@@ -1,7 +1,6 @@
 package com.taskflow.common;
 
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
-import com.taskflow.calendar.domain.user.exception.DuplicateEmailException;
 import com.taskflow.calendar.domain.user.exception.UserNotFoundException;
 import com.taskflow.common.exception.BusinessException;
 import com.taskflow.common.exception.ResourceNotFoundException;
@@ -110,16 +109,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(ErrorCode.PROJECT_NOT_FOUND, e.getMessage()));
-    }
-
-    @ExceptionHandler(DuplicateEmailException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDuplicateEmail(DuplicateEmailException e) {
-
-        log.warn("{}", e.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ErrorCode.DUPLICATE_EMAIL, e.getMessage()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
