@@ -10,7 +10,7 @@ import { SYNC_POLL_INTERVAL_MS, hasOutboxInFlight } from '@/lib/sync';
 // ── 상수 ──────────────────────────────────────────────────
 
 const STATUS_LABEL: Record<OutboxStatus, string> = {
-  PENDING: '대기', PROCESSING: '처리 중', SUCCESS: '성공', FAILED: '실패',
+  PENDING: '대기', PROCESSING: '처리 중', SUCCESS: '성공', FAILED: '실패', SKIPPED: '건너뜀',
 };
 
 /** 색이 붙는 자리 — 기계의 상태 */
@@ -19,6 +19,8 @@ const STATUS_MARK: Record<OutboxStatus, string> = {
   PROCESSING: 'var(--st-running-mark)',
   SUCCESS: 'var(--st-done-mark)',
   FAILED: 'var(--st-failed-mark)',
+  // 연동이 없어 호출조차 하지 않은 것. 실패가 아니므로 유채색을 주지 않는다.
+  SKIPPED: 'var(--ink-3)',
 };
 
 /** 연산 종류는 상태가 아니므로 색을 주지 않는다 */

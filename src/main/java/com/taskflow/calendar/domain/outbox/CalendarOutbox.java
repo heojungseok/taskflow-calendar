@@ -134,6 +134,18 @@ public class CalendarOutbox {
         this.nextRetryAt = null;
     }
 
+    /**
+     * 건너뜀 마킹. 구글 연동이 없어 호출 자체를 하지 않은 경우다.
+     * FAILED와 달리 조치가 필요 없고 재시도 대상도 아니다 - findProcessable이 집지 않는다.
+     */
+    public void markAsSkipped(String reason) {
+        validateCurrentlyProcessing();
+
+        this.status = OutboxStatus.SKIPPED;
+        this.lastError = reason;
+        this.nextRetryAt = null;
+    }
+
     private void validateCurrentlyProcessing() {
         if (this.status != OutboxStatus.PROCESSING) {
             throw new InvalidOutboxStateTransitionException(

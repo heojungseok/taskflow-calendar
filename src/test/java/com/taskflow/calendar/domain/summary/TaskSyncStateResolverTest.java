@@ -72,6 +72,47 @@ class TaskSyncStateResolverTest {
     }
 
     @Test
+    @DisplayName("resolve_건너뛴업서트면_연동안함 (대기로 보이면 안 된다)")
+    void resolve_skippedUpsert_returnsSyncDisabled() {
+        Task task = task(
+                "구글 연동 없는 사용자의 작업",
+                "동기화를 켜두었지만 계정에 구글 연동이 없어 워커가 호출 없이 종결한 건이다.",
+                true,
+                null
+        );
+        CalendarOutbox latest = CalendarOutbox.forUpsert(1L, "{}");
+        latest.markAsProcessing();
+        latest.markAsSkipped("구글 연동 없음. userId=1");
+
+        when(calendarOutboxService.findLatestByTaskId(task.getId())).thenReturn(Optional.of(latest));
+
+        SummaryTaskSnapshot snapshot = resolver.resolve(task);
+
+        // SKIPPED는 종결이다. PENDING_SYNC면 화면에 영구 "대기"가 뜬다.
+        assertEquals(TaskSyncState.SYNC_DISABLED, snapshot.getSyncState());
+    }
+
+    @Test
+    @DisplayName("resolve_건너뛴삭제면_연동안함")
+    void resolve_skippedDelete_returnsSyncDisabled() {
+        Task task = task(
+                "삭제 요청이 건너뛰어진 작업",
+                "삭제 동기화 요청이 적재됐지만 구글 연동이 없어 호출 없이 종결됐다.",
+                true,
+                "evt-999"
+        );
+        CalendarOutbox latest = CalendarOutbox.forDelete(1L, "{}");
+        latest.markAsProcessing();
+        latest.markAsSkipped("구글 연동 없음. userId=1");
+
+        when(calendarOutboxService.findLatestByTaskId(task.getId())).thenReturn(Optional.of(latest));
+
+        SummaryTaskSnapshot snapshot = resolver.resolve(task);
+
+        assertEquals(TaskSyncState.SYNC_DISABLED, snapshot.getSyncState());
+    }
+
+    @Test
     @DisplayName("resolve_업서트실패면_미동기화실패상태")
     void resolve_failedUpsert_returnsFailedSync() {
         Task task = task(

@@ -1,6 +1,7 @@
 package com.taskflow.calendar.worker;
 
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
+import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.domain.outbox.*;
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarService;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
@@ -34,6 +35,9 @@ class CalendarOutboxWorkerTest {
 
     @Mock
     private GoogleOAuthService googleOAuthService;
+
+    @Mock
+    private OAuthGoogleTokenRepository tokenRepository;
 
     @InjectMocks
     private CalendarOutboxWorker worker;
@@ -81,6 +85,10 @@ class CalendarOutboxWorkerTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        // 기존 테스트는 모두 "구글 연동이 있는 사용자" 전제다. 건너뛰기 분기를 타지 않게 둔다.
+        lenient().when(outboxService.extractUserIdFromPayload(any())).thenReturn(USER_ID);
+        lenient().when(tokenRepository.existsByUserId(USER_ID)).thenReturn(true);
     }
 
     // =========================================================
@@ -179,10 +187,76 @@ class CalendarOutboxWorkerTest {
             worker.pollAndProcess();
 
             // then
+            // extractUserIdFromPayload는 건너뛰기 검사도 쓰므로 "갱신 안 함"의 지표가 될 수 없다.
+            // 갱신을 실제로 안 했는지 직접 본다.
             verify(googleOAuthService, never()).refreshAccessToken(anyLong());
-            verify(outboxService, never()).extractUserIdFromPayload(any());
             verify(outboxService).markFailed(OUTBOX_ID, "Bad Request");
             verify(outboxService, never()).markForRetry(anyLong(), anyString());
+        }
+    }
+
+    // =========================================================
+    // 구글 연동 없는 사용자 (데모 사용자 포함)
+    // =========================================================
+    @Nested
+    @DisplayName("구글 연동이 없는 사용자")
+    class WhenGoogleNotLinked {
+
+        private void givenClaimedOutbox() {
+            when(outboxRepository.findProcessable(any(), any(), anyInt()))
+                    .thenReturn(List.of(outbox));
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
+        }
+
+        @Test
+        @DisplayName("구글을 호출하지 않고 SKIPPED로 종결한다")
+        void 연동없으면_호출없이_skip() {
+            givenClaimedOutbox();
+            when(tokenRepository.existsByUserId(USER_ID)).thenReturn(false);
+
+            worker.pollAndProcess();
+
+            verify(googleCalendarService, never()).handle(any());
+            verify(outboxService).markSkipped(eq(OUTBOX_ID), contains("구글 연동 없음"));
+        }
+
+        @Test
+        @DisplayName("FAILED로 쌓이지 않는다 - 알람 대상이 아니다")
+        void 연동없으면_failed로_쌓이지_않는다() {
+            givenClaimedOutbox();
+            when(tokenRepository.existsByUserId(USER_ID)).thenReturn(false);
+
+            worker.pollAndProcess();
+
+            verify(outboxService, never()).markFailed(anyLong(), anyString());
+            verify(outboxService, never()).markForRetry(anyLong(), anyString());
+            verify(outboxService, never()).markSuccess(anyLong());
+        }
+
+        @Test
+        @DisplayName("연동이 있으면 평소대로 구글을 호출한다")
+        void 연동있으면_정상처리() {
+            givenClaimedOutbox();
+            when(tokenRepository.existsByUserId(USER_ID)).thenReturn(true);
+
+            worker.pollAndProcess();
+
+            verify(googleCalendarService).handle(outbox);
+            verify(outboxService).markSuccess(OUTBOX_ID);
+            verify(outboxService, never()).markSkipped(anyLong(), anyString());
+        }
+
+        @Test
+        @DisplayName("payload에서 userId를 못 읽으면 건너뛰지 않고 기존 경로로 보낸다")
+        void payload_파싱실패시_기존경로() {
+            givenClaimedOutbox();
+            when(outboxService.extractUserIdFromPayload(any()))
+                    .thenThrow(new IllegalStateException("payload 손상"));
+
+            worker.pollAndProcess();
+
+            verify(outboxService, never()).markSkipped(anyLong(), anyString());
+            verify(googleCalendarService).handle(outbox);
         }
     }
 

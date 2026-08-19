@@ -48,6 +48,7 @@ const OUTBOX_STATUS_LABEL: Record<OutboxStatus, string> = {
   PROCESSING: '처리 중',
   SUCCESS: '성공',
   FAILED: '실패',
+  SKIPPED: '건너뜀',
 };
 
 const OUTBOX_BADGE: Record<OutboxStatus, string> = {
@@ -55,6 +56,7 @@ const OUTBOX_BADGE: Record<OutboxStatus, string> = {
   PROCESSING: 'bg-[var(--st-running-bg)] text-[var(--st-running)]',
   SUCCESS: 'bg-[var(--st-done-bg)] text-[var(--st-done)]',
   FAILED: 'bg-[var(--st-failed-bg)] text-[var(--st-failed)]',
+  SKIPPED: 'bg-[var(--sunken)] text-[var(--ink-3)]',
 };
 
 const fmt = (iso?: string | null) => iso
