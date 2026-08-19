@@ -94,7 +94,7 @@ class TaskSearchEmbeddingDimensionTest {
                 Long.class);
         Long taskId = jdbcTemplate.queryForObject(
                 "INSERT INTO tasks(project_id, title, status, deleted, calendar_sync_enabled, created_at, updated_at) "
-                        + "VALUES (?, 'dimension probe', 'TODO', false, false, now(), now()) RETURNING id",
+                        + "VALUES (?, 'dimension probe', 'REQUESTED', false, false, now(), now()) RETURNING id",
                 Long.class, projectId);
         String vector = "[" + String.join(",", Collections.nCopies(dimensions, "0.1")) + "]";
         jdbcTemplate.update(
