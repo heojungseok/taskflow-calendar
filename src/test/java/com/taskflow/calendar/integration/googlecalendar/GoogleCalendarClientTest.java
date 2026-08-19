@@ -1,6 +1,7 @@
 package com.taskflow.calendar.integration.googlecalendar;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -9,7 +10,16 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 
-// 스케줄러가 켜진 채 컨텍스트가 뜨면 테스트 도중 워커가 실제 구글 API를 호출한다
+/**
+ * 실제 구글 Calendar API를 호출하고 실제 캘린더에 이벤트를 쓴다.
+ *
+ * <p>살아있는 refresh token이 있어야 통과한다. OAuth 동의 화면의 게시 상태가
+ * Testing이면 토큰이 7일마다 만료되므로 상시 실행 대상이 아니다.
+ * 돌리려면 구글 재로그인 후 {@code GOOGLE_CALENDAR_LIVE_TEST_ENABLED=true}로 실행한다.
+ * (SummaryDecodingExperimentTest와 같은 관례다.)
+ *
+ * <p>스케줄러가 켜진 채 컨텍스트가 뜨면 테스트 도중 워커가 실제 구글 API를 호출한다.
+ */
 @SpringBootTest(properties = "outbox.worker.enabled=false")
 class GoogleCalendarClientTest {
 
@@ -23,6 +33,7 @@ class GoogleCalendarClientTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_CALENDAR_LIVE_TEST_ENABLED", matches = "(?i)true")
     void createAndUpdateEvent_통합테스트() {
         Long userId = 4L;
 
@@ -54,6 +65,7 @@ class GoogleCalendarClientTest {
         System.out.println("✅ Event deleted: " + eventId);
     }
     @Test
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_CALENDAR_LIVE_TEST_ENABLED", matches = "(?i)true")
     void updateEvent_멱등성_같은요청_여러번() {
         Long userId = 4L;
 
@@ -88,6 +100,7 @@ class GoogleCalendarClientTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_CALENDAR_LIVE_TEST_ENABLED", matches = "(?i)true")
     void deleteEvent_멱등성_중복호출() {
         Long userId = 4L;
 
