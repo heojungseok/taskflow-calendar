@@ -33,7 +33,7 @@ approval_basis: "Gate 2 리뷰 후 사용자 승인 대기"
 | 작업 상태 | 설계 작성 전 clean, 기준 commit과 `main`·`origin/main` 동일 | `git status --porcelain`, `git rev-parse` |
 | 작업 브랜치 | `codex/taskflow-public-demo-deployment-design` | 격리 worktree에서 생성 |
 | 보존 자산 | 기존 stash 3개와 주 작업공간의 `main` worktree | `git stash list`, `git worktree list --porcelain` |
-| 배포 자산 | PostgreSQL 개발용 Compose만 존재. 백엔드·프론트 Dockerfile, Nginx, Prometheus, Grafana, CI 배포 자산은 없음 | `docker-compose.yml`, `git ls-files` |
+| 배포 자산 | PostgreSQL 개발용 Compose와 PR 검증용 GitHub Actions만 존재. 백엔드·프론트 Dockerfile, Nginx, Prometheus, Grafana, CI/CD 배포 자산은 없음 | `docker-compose.yml`, `.github/workflows/ci.yml`, `git ls-files` |
 | 조사 환경 | macOS, Docker Desktop 배포 목표, 2026-08-19 | 사용자 결정과 현재 task 환경 |
 
 ### Git 통합·보존 packet
@@ -423,7 +423,7 @@ DB·backend·Redis restart와 restore test는 현재 개발 container·volume ID
 | 환경 | 범위 | 증명 경계 |
 |---|---|---|
 | local | 코드·단위·통합·Docker Desktop 전체 | CI와 공개 HTTPS를 증명하지 않음 |
-| CI | 현재 범위에는 자동 workflow가 없음 | 미실행을 숨기지 않음 |
+| CI | PR에서 백엔드 전체 테스트와 프론트 lint·build·Playwright 목록 검증 | 실제 브라우저 E2E와 공개 배포를 증명하지 않음 |
 | deployed | Cloudflare HTTPS·Google callback·Discord·재시작·rollback | 검증한 배포 SHA만 증명 |
 
 ### 14. 롤백·복구

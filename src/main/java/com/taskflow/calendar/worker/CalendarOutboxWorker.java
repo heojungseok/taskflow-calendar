@@ -164,7 +164,7 @@ public class CalendarOutboxWorker {
 
         log.info("[Worker] outbox_skipped outboxId={} taskId={} userId={} opType={} reason=no_google_link",
                 outbox.getId(), outbox.getTaskId(), userId, outbox.getOpType());
-        outboxService.markSkipped(outbox.getId(), "구글 연동 없음. userId=" + userId);
+        outboxService.markSkipped(outbox.getId(), "no_google_link");
         return true;
     }
 

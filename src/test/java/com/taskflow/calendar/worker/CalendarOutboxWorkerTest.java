@@ -217,7 +217,7 @@ class CalendarOutboxWorkerTest {
             worker.pollAndProcess();
 
             verify(googleCalendarService, never()).handle(any());
-            verify(outboxService).markSkipped(eq(OUTBOX_ID), contains("구글 연동 없음"));
+            verify(outboxService).markSkipped(OUTBOX_ID, "no_google_link");
         }
 
         @Test
