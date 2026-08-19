@@ -20,7 +20,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findAllByProjectIdAndStatusAndDeletedFalseAndProject_OwnerUserId(
             Long projectId, TaskStatus status, Long ownerUserId);
 
-    List<Task> findAllByAssigneeIdAndDeletedFalseAndProject_OwnerUserId(Long assigneeId, Long ownerUserId);
+    // 담당자 필터는 프로젝트 안에서만 적용된다.
+    // projectId 없이 담당자만으로 조회하면 소유자의 다른 프로젝트 Task까지 섞여 나온다.
+    List<Task> findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+            Long projectId, Long assigneeId, Long ownerUserId);
+
+    List<Task> findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+            Long projectId, TaskStatus status, Long assigneeId, Long ownerUserId);
 
     List<Task> findAllByDeletedFalseAndProject_OwnerUserId(Long ownerUserId);
 

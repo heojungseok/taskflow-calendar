@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,6 +51,7 @@ class TaskServiceTest {
     }
 
     private static final Long TASK_ID = 10L;
+    private static final Long PROJECT_ID = 100L;
     private static final Long USER_ID = 7L;
 
     @Mock
@@ -125,6 +127,32 @@ class TaskServiceTest {
         when(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(TASK_ID, 1L)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> taskService.deleteTask(TASK_ID, USER_ID));
+    }
+
+    @Test
+    @DisplayName("담당자 필터는 프로젝트 안에서만 적용된다 — 다른 프로젝트 Task가 섞이면 안 된다")
+    void listTasks_assigneeFilterStaysWithinProject() {
+        when(taskRepository.findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                PROJECT_ID, USER_ID, 1L)).thenReturn(List.of());
+        when(taskSyncStateResolver.resolveAll(List.of())).thenReturn(List.of());
+
+        taskService.listTasks(PROJECT_ID, null, USER_ID);
+
+        verify(taskRepository).findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                PROJECT_ID, USER_ID, 1L);
+    }
+
+    @Test
+    @DisplayName("상태와 담당자를 함께 주면 둘 다 적용된다 — 담당자가 조용히 무시되지 않는다")
+    void listTasks_appliesBothFilters() {
+        when(taskRepository.findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID, 1L)).thenReturn(List.of());
+        when(taskSyncStateResolver.resolveAll(List.of())).thenReturn(List.of());
+
+        taskService.listTasks(PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID);
+
+        verify(taskRepository).findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID, 1L);
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {

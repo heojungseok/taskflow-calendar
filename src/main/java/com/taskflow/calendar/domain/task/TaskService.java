@@ -222,14 +222,18 @@ public class TaskService {
 
         Long ownerUserId = SecurityContextHelper.getCurrentUserId();
 
-        if (status != null) {
+        // 두 필터는 함께 올 수 있다. else-if로 묶으면 담당자 조건이 조용히 무시된다.
+        if (status != null && assigneeUserId != null) {
+            tasks = taskRepository.findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                    projectId, status, assigneeUserId, ownerUserId);
+        } else if (status != null) {
             // 상태 필터링
             tasks = taskRepository.findAllByProjectIdAndStatusAndDeletedFalseAndProject_OwnerUserId(
                     projectId, status, ownerUserId);
         } else if (assigneeUserId != null) {
-            // 담당자 필터링
-            tasks = taskRepository.findAllByAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
-                    assigneeUserId, ownerUserId);
+            // 담당자 필터링 (프로젝트 안에서만)
+            tasks = taskRepository.findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                    projectId, assigneeUserId, ownerUserId);
         } else {
             // 전체 조회
             tasks = taskRepository.findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(
