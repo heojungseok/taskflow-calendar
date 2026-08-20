@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * /api/admin/** 는 permitAll 이었다. 무인증 GET 하나가 워커를 돌려 실제 구글 API를 호출했다.
+ * 공개 동기화 조회는 현재 사용자의 Outbox만 반환한다.
  * 이 테스트가 지키는 것: ① 인증 없이는 못 들어온다 ② 조회 범위는 JWT의 userId 다
  * ③ 워커 트리거는 GET 으로 실행되지 않는다.
  */
@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class OutboxControllerSecurityTest {
 
-    private static final String BASE = "/api/admin/calendar-outbox";
+    private static final String BASE = "/api/calendar-outbox";
     private static final String TOKEN = "valid-token";
     private static final Long USER_ID = 7L;
 

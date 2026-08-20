@@ -6,6 +6,53 @@ async function csrfHeader(context: BrowserContext) {
   return { 'X-XSRF-TOKEN': token!.value };
 }
 
+test('browser project creation forwards the CSRF token', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: '데모로 둘러보기' }).click();
+  await expect(page).toHaveURL(/\/projects$/);
+
+  await page.getByRole('button', { name: '새 프로젝트' }).first().click();
+  await page.getByLabel('이름').fill('CSRF 회귀 확인');
+  const projectResponse = page.waitForResponse(response =>
+    response.request().method() === 'POST' && response.url().endsWith('/api/projects')
+  );
+  await page.getByRole('button', { name: '만들기' }).click();
+  expect((await projectResponse).status()).toBe(201);
+  await expect(page).toHaveURL(/\/projects$/);
+});
+
+test('public sync route and in-page task deletion work', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: '데모로 둘러보기' }).click();
+  await expect(page).toHaveURL(/\/projects$/);
+
+  const outboxRequest = page.waitForRequest(request =>
+    new URL(request.url()).pathname === '/api/calendar-outbox',
+    { timeout: 5_000 }
+  );
+  await page.getByRole('button', { name: '동기화 현황' }).click();
+  await outboxRequest;
+  await page.getByRole('button', { name: '프로젝트' }).click();
+
+  await page.getByRole('button', { name: '새 프로젝트' }).first().click();
+  await page.getByLabel('이름').fill('삭제 확인 프로젝트');
+  await page.getByRole('button', { name: '만들기' }).click();
+  await page.getByText('삭제 확인 프로젝트').click();
+
+  await page.getByRole('button', { name: '새 Task' }).click();
+  await page.getByRole('textbox', { name: 'Task 제목' }).fill('삭제 확인 Task');
+  await page.getByRole('button', { name: '만들기' }).click();
+
+  await page.getByRole('button', { name: '삭제' }).first().click();
+  await expect(page.getByRole('dialog', { name: 'Task 삭제' })).toBeVisible({ timeout: 5_000 });
+
+  const deleteResponse = page.waitForResponse(response =>
+    response.request().method() === 'DELETE' && /\/api\/tasks\/\d+$/.test(response.url())
+  );
+  await page.getByRole('button', { name: '확인' }).click();
+  expect((await deleteResponse).status()).toBe(200);
+});
+
 test('demo sessions stay isolated and scheduler produces SKIPPED', async ({ browser }) => {
   const first = await browser.newContext();
   const firstPage = await first.newPage();
@@ -40,7 +87,7 @@ test('demo sessions stay isolated and scheduler produces SKIPPED', async ({ brow
   expect(taskResponse.ok()).toBeTruthy();
 
   await expect.poll(async () => {
-    const response = await first.request.get('/api/admin/calendar-outbox?status=SKIPPED');
+    const response = await first.request.get('/api/calendar-outbox?status=SKIPPED');
     const entries = (await response.json()).data as Array<{ status: string; lastError: string }>;
     return entries.some(entry => entry.status === 'SKIPPED' && entry.lastError === 'no_google_link');
   }, { timeout: 90_000, intervals: [2_000, 5_000] }).toBeTruthy();

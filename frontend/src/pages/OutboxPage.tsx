@@ -36,7 +36,7 @@ const STATUS_FILTERS = [
 ];
 
 const fmt = (iso?: string | null) => iso
-  ? new Date(iso).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  ? new Date(`${iso}Z`).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
   : '—';
 
 /** 상태 표시등 — 로그인 화면의 파이프라인과 같은 어휘 */

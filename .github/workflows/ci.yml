@@ -67,4 +67,5 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - run: docker compose -p taskflow-public --env-file .env.production.example -f compose.production.yml config --quiet
       - run: docker compose -p taskflow-public --env-file .env.production.example -f compose.production.yml config --format json | sh deploy/verify-compose-boundary.sh
-      - run: sh -n deploy/postgres/init-roles.sh deploy/verify-compose-boundary.sh deploy/verify-runtime-privileges.sh deploy/verify-redis-resilience.sh
+      - run: sh -n deploy/postgres/init-roles.sh deploy/verify-compose-boundary.sh deploy/verify-runtime-privileges.sh deploy/verify-redis-resilience.sh deploy/verify-public-boundary.sh deploy/verify-public-boundary-test.sh
+      - run: sh deploy/verify-public-boundary-test.sh

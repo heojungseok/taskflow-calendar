@@ -1009,6 +1009,47 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
   );
 }
 
+function DeleteConfirmDialog({ isPending, onCancel, onConfirm }: {
+  isPending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <motion.div
+      className={cx.overlay}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.12 }}
+    >
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-task-title"
+        className={cx.modal}
+        initial={{ opacity: 0, scale: 0.97, y: 6 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ duration: 0.12 }}
+      >
+        <h3 id="delete-task-title" className={clsx(cx.text.subheading, 'mb-3')}>Task 삭제</h3>
+        <p className={clsx(cx.text.body, 'mb-5')}>Task와 연결된 Google Calendar 일정도 삭제합니다.</p>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onCancel} disabled={isPending} className={cx.btn.secondary}>취소</button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isPending}
+            className={clsx(cx.btn.secondary, 'border-[var(--st-failed)] text-[var(--st-failed)] hover:border-[var(--st-failed)] hover:text-[var(--st-failed)]')}
+          >
+            {isPending ? '삭제 중...' : '확인'}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── 메인 ──────────────────────────────────────────────────
 
 export default function TaskListPage() {
@@ -1020,6 +1061,7 @@ export default function TaskListPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [changingId, setChangingId] = useState<number | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [summary, setSummary] = useState<ProjectWeeklySummary | null>(null);
@@ -1137,6 +1179,7 @@ export default function TaskListPage() {
         summaryMutation.reset();
       }
       setDeletingId(null);
+      setDeleteTargetId(null);
       if (selectedTaskId === deletedId) {
         setSelectedTaskId(null);
       }
@@ -1305,7 +1348,7 @@ export default function TaskListPage() {
                 <TaskCard
                   task={task}
                   onStatusChange={(id, to) => { setChangingId(id); changeStatusMutation.mutate({ id, to }); }}
-                  onDelete={(id) => { if (!window.confirm('삭제하시겠습니까?')) return; setDeletingId(id); deleteMutation.mutate(id); }}
+                  onDelete={(id) => setDeleteTargetId(id)}
                   onClickDetail={(id) => setSelectedTaskId(id)}
                   isChanging={changingId === task.id}
                   isDeleting={deletingId === task.id}
@@ -1348,12 +1391,23 @@ export default function TaskListPage() {
               changeStatusMutation.mutate({ id, to });
             }}
             onDelete={(id) => {
-              if (!window.confirm('삭제하시겠습니까?')) return;
-              setDeletingId(id);
-              deleteMutation.mutate(id);
+              setDeleteTargetId(id);
             }}
             changingId={changingId}
             deletingId={deletingId}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deleteTargetId !== null && (
+          <DeleteConfirmDialog
+            isPending={deletingId === deleteTargetId}
+            onCancel={() => setDeleteTargetId(null)}
+            onConfirm={() => {
+              setDeletingId(deleteTargetId);
+              deleteMutation.mutate(deleteTargetId);
+            }}
           />
         )}
       </AnimatePresence>

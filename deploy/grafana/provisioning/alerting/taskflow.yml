@@ -8,7 +8,33 @@ contactPoints:
         type: discord
         settings:
           url: ${DISCORD_WEBHOOK_URL}
+          title: '{{ template "taskflow.discord.title" . }}'
+          message: '{{ template "taskflow.discord.message" . }}'
         disableResolveMessage: false
+
+templates:
+  - orgId: 1
+    name: taskflow-discord
+    template: |
+      {{ define "taskflow.discord.title" }}{{ if eq .Status "firing" }}[장애][{{ .CommonLabels.severity | toUpper }}] TaskFlow {{ .CommonLabels.environment }} · {{ .CommonAnnotations.summary }}{{ else }}[복구][{{ .CommonLabels.severity | toUpper }}] TaskFlow {{ .CommonLabels.environment }} · {{ .CommonAnnotations.summary }}{{ end }}{{ end }}
+      {{ define "taskflow.discord.message" }}
+      {{- if eq .Status "firing" }}
+      **영향** {{ .CommonAnnotations.impact }}
+      {{- range .Alerts.Firing }}
+      **발생 시각** {{ .StartsAt | tz "Asia/Seoul" | date "2006-01-02 15:04:05 MST" }}
+      {{- end }}
+      **대상** {{ .CommonLabels.service }} / {{ .CommonLabels.environment }}
+      **권장 조치** {{ .CommonAnnotations.action }}
+      **1차 가용성 확인** 공개 데모 origin의 `{{ .CommonAnnotations.check_url }}`
+      {{- else }}
+      {{- range .Alerts.Resolved }}
+      **복구 시각** {{ .EndsAt | tz "Asia/Seoul" | date "2006-01-02 15:04:05 MST" }}
+      {{- end }}
+      **대상** {{ .CommonLabels.service }} / {{ .CommonLabels.environment }}
+      **결과** 정상 상태로 돌아왔습니다.
+      **1차 가용성 확인** 공개 데모 origin의 `{{ .CommonAnnotations.check_url }}`
+      {{- end }}
+      {{ end }}
 
 policies:
   - orgId: 1
@@ -24,6 +50,15 @@ groups:
     interval: 1m
     rules:
       - uid: taskflow-demo-usage
+        labels:
+          environment: public-demo
+          service: gateway
+          severity: warning
+        annotations:
+          summary: 공개 데모 사용량 증가
+          impact: 공개 데모 트래픽이 운영 한도에 가까워질 수 있습니다.
+          action: 요청량과 rate limit 동작을 확인하세요.
+          check_url: /healthz
         title: demo usage
         condition: C
         isPaused: true
@@ -39,6 +74,15 @@ groups:
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
       - uid: taskflow-abuse
+        labels:
+          environment: public-demo
+          service: gateway
+          severity: warning
+        annotations:
+          summary: 비정상 요청 패턴 감지
+          impact: 공개 데모의 정상 사용자가 제한될 수 있습니다.
+          action: 요청 패턴과 rate limit 차단 현황을 확인하세요.
+          check_url: /healthz
         title: abuse
         condition: C
         isPaused: true
@@ -54,6 +98,15 @@ groups:
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
       - uid: taskflow-worker-backlog
+        labels:
+          environment: public-demo
+          service: worker
+          severity: warning
+        annotations:
+          summary: Worker 처리 지연
+          impact: 비동기 작업 반영이 늦어질 수 있습니다.
+          action: Worker 상태와 대기 작업량을 확인하세요.
+          check_url: /healthz
         title: worker backlog
         condition: C
         for: 2m
@@ -70,6 +123,15 @@ groups:
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [120]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
       - uid: taskflow-backend-down
+        labels:
+          environment: public-demo
+          service: backend
+          severity: critical
+        annotations:
+          summary: Backend 응답 중단
+          impact: 공개 API와 주요 기능을 사용할 수 없습니다.
+          action: Backend 컨테이너 상태와 최근 로그를 확인하세요.
+          check_url: /healthz
         title: backend down
         condition: C
         for: 2m
@@ -87,6 +149,15 @@ groups:
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: lt, params: [1]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
       - uid: taskflow-cleanup-failure
+        labels:
+          environment: public-demo
+          service: cleanup
+          severity: warning
+        annotations:
+          summary: Cleanup 작업 실패
+          impact: 만료된 데모 데이터가 남을 수 있습니다.
+          action: Cleanup 로그를 확인하고 작업을 다시 실행하세요.
+          check_url: /healthz
         title: cleanup failure
         condition: C
         isPaused: true
@@ -102,6 +173,15 @@ groups:
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
       - uid: taskflow-cleanup-overdue
+        labels:
+          environment: public-demo
+          service: cleanup
+          severity: warning
+        annotations:
+          summary: Cleanup 실행 지연
+          impact: 만료된 데모 데이터 정리가 늦어지고 있습니다.
+          action: 스케줄러 상태와 마지막 성공 시각을 확인하세요.
+          check_url: /healthz
         title: cleanup overdue
         condition: C
         for: 5m

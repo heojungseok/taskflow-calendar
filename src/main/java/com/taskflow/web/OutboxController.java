@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/admin/calendar-outbox")
+@RequestMapping("/api/calendar-outbox")
 @RequiredArgsConstructor
 public class OutboxController {
 
