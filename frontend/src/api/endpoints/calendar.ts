@@ -14,22 +14,22 @@ export const oauthApi = {
   },
 };
 
-// ===== Admin: Outbox 관측 =====
+// ===== 사용자별 Outbox 관측 =====
 
 export const outboxApi = {
-  // GET /api/admin/calendar-outbox?status=&taskId=
+  // GET /api/calendar-outbox?status=&taskId=
   getOutboxList: async (params?: { status?: string; taskId?: number }) => {
     const response = await apiClient.get<ApiResponse<OutboxEntry[]>>(
-      '/admin/calendar-outbox',
+      '/calendar-outbox',
       { params }
     );
     return response.data.data;
   },
 
-  // GET /api/admin/calendar-outbox/:outboxId
+  // GET /api/calendar-outbox/:outboxId
   getOutbox: async (outboxId: number) => {
     const response = await apiClient.get<ApiResponse<OutboxEntry>>(
-      `/admin/calendar-outbox/${outboxId}`
+      `/calendar-outbox/${outboxId}`
     );
     return response.data.data;
   },

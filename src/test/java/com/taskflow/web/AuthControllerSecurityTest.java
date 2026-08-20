@@ -3,6 +3,7 @@ package com.taskflow.web;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.SecurityConfig;
+import com.taskflow.security.JwtAuthenticationFilter;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.service.AuthService;
 import com.taskflow.web.dto.auth.AuthSession;
@@ -10,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -17,7 +21,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,6 +41,9 @@ class AuthControllerSecurityTest {
     @Autowired
     MockMvc mvc;
 
+    @Autowired
+    SecurityFilterChain securityFilterChain;
+
     @MockitoBean
     AuthService authService;
 
@@ -51,6 +60,22 @@ class AuthControllerSecurityTest {
                 .andExpect(cookie().exists("XSRF-TOKEN"))
                 .andExpect(cookie().secure("XSRF-TOKEN", true))
                 .andExpect(jsonPath("$.data.authenticated").value(false));
+    }
+
+    @Test
+    void jwtAuthenticationRunsAfterSessionManagementAndBeforeAuthorization() {
+        List<?> filters = securityFilterChain.getFilters();
+        int jwt = filters.indexOf(filters.stream()
+                .filter(JwtAuthenticationFilter.class::isInstance)
+                .findFirst().orElseThrow());
+        int session = filters.indexOf(filters.stream()
+                .filter(SessionManagementFilter.class::isInstance)
+                .findFirst().orElseThrow());
+        int authorization = filters.indexOf(filters.stream()
+                .filter(AuthorizationFilter.class::isInstance)
+                .findFirst().orElseThrow());
+
+        assertThat(jwt).isGreaterThan(session).isLessThan(authorization);
     }
 
     @Test

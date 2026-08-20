@@ -27,6 +27,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class GoogleCalendarClientImpl implements GoogleCalendarClient {
 
+    private static final ZoneId CALENDAR_ZONE = ZoneId.of("Asia/Seoul");
 
     private final OAuthGoogleTokenRepository repository;
     private final GoogleOAuthService googleOAuthService;
@@ -147,7 +148,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
      * LocalDateTime → Google DateTime 변환
      */
     private DateTime toDateTime(java.time.LocalDateTime localDateTime) {
-        ZonedDateTime zdt = localDateTime.atZone(ZoneId.systemDefault());
+        ZonedDateTime zdt = localDateTime.atZone(CALENDAR_ZONE);
         Date date = Date.from(zdt.toInstant());
         return new DateTime(date);
     }
