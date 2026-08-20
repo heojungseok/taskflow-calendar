@@ -16,7 +16,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.List;
+import com.taskflow.observability.TaskFlowMetrics;
 
 /**
  * Calendar Outbox Worker
@@ -38,6 +40,7 @@ public class CalendarOutboxWorker {
     private final GoogleCalendarService googleCalendarService;
     private final GoogleOAuthService googleOAuthService;
     private final OAuthGoogleTokenRepository tokenRepository;
+    private final TaskFlowMetrics metrics;
 
     @Value("${outbox.worker.enabled:false}")
     private boolean schedulingEnabled;
@@ -66,9 +69,13 @@ public class CalendarOutboxWorker {
             );
 
             if (processableOutboxes.isEmpty()) {
+                metrics.setOldestProcessableAgeSeconds(0);
                 log.debug("[Worker] No processable outboxes found");
                 return;
             }
+            LocalDateTime oldest = processableOutboxes.get(0).getCreatedAt();
+            metrics.setOldestProcessableAgeSeconds(
+                    oldest == null ? 0 : Duration.between(oldest, now).getSeconds());
 
             log.info("[Worker] Found {} processable outboxes", processableOutboxes.size());
 
@@ -110,6 +117,7 @@ public class CalendarOutboxWorker {
 
             // 2. 성공 처리
             outboxService.markSuccess(outbox.getId());
+            metrics.outboxProcessed("success", "none");
             log.info("[Worker] Successfully processed Outbox {}", outbox.getId());
 
         } catch (RetryableIntegrationException e) {
@@ -117,6 +125,7 @@ public class CalendarOutboxWorker {
             log.warn("[Worker] Retryable error on Outbox {}: {}",
                     outbox.getId(), e.getMessage());
             outboxService.markForRetry(outbox.getId(), e.getMessage());
+            metrics.outboxProcessed("failed", "none");
 
         } catch (NonRetryableIntegrationException e) {
             if (e.getStatusCode() == 401) {
@@ -125,6 +134,7 @@ public class CalendarOutboxWorker {
                 log.error("[Worker] NonRetryable error on Outbox {}: {}",
                         outbox.getId(), e.getMessage());
                 outboxService.markFailed(outbox.getId(), e.getMessage());
+                metrics.outboxProcessed("failed", "none");
             }
         } catch (Exception e) {
             // 예상치 못한 예외 → Retryable로 처리
@@ -132,6 +142,7 @@ public class CalendarOutboxWorker {
                     outbox.getId(), e.getMessage(), e);
             outboxService.markForRetry(outbox.getId(),
                     "Unexpected error: " + e.getMessage());
+            metrics.outboxProcessed("failed", "none");
         }
     }
 
@@ -165,6 +176,7 @@ public class CalendarOutboxWorker {
         log.info("[Worker] outbox_skipped outboxId={} taskId={} userId={} opType={} reason=no_google_link",
                 outbox.getId(), outbox.getTaskId(), userId, outbox.getOpType());
         outboxService.markSkipped(outbox.getId(), "no_google_link");
+        metrics.outboxProcessed("skipped", "no_google_link");
         return true;
     }
 
@@ -178,6 +190,7 @@ public class CalendarOutboxWorker {
 
             // 갱신 성공 → 재시도 대상으로 남김
             outboxService.markForRetry(outbox.getId(), "Token refreshed, will retry");
+            metrics.outboxProcessed("failed", "none");
             log.info("[Worker] Token refreshed successfully. Outbox {} will be retried", outbox.getId());
 
         } catch (Exception refreshException) {
@@ -186,6 +199,7 @@ public class CalendarOutboxWorker {
                     outbox.getId(), refreshException.getMessage());
             outboxService.markFailed(outbox.getId(),
                     "Token refresh failed: " + refreshException.getMessage());
+            metrics.outboxProcessed("failed", "none");
         }
     }
 }

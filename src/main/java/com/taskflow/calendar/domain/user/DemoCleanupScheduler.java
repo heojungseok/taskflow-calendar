@@ -6,6 +6,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.util.List;
+import com.taskflow.observability.TaskFlowMetrics;
 
 @Slf4j
 @Component
@@ -14,16 +17,24 @@ public class DemoCleanupScheduler {
 
     private final UserRepository userRepository;
     private final DemoCleanupService cleanupService;
+    private final TaskFlowMetrics metrics;
 
     @Scheduled(fixedDelay = 300_000, initialDelay = 300_000)
     public void cleanupExpiredUsers() {
-        LocalDateTime expiredBefore = LocalDateTime.now().minusMinutes(1);
-        for (User user : userRepository
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiredBefore = now.minusMinutes(1);
+        List<User> expired = userRepository
                 .findTop100ByProviderAndExpiresAtLessThanEqualOrderByExpiresAtAsc(
-                        Provider.DEMO, expiredBefore)) {
+                        Provider.DEMO, expiredBefore);
+        LocalDateTime oldest = expired.isEmpty() ? null : expired.get(0).getExpiresAt();
+        metrics.setOldestExpiredAgeSeconds(oldest == null ? 0 : Duration.between(oldest, now).getSeconds());
+        for (User user : expired) {
             try {
-                cleanupService.cleanup(user.getId(), expiredBefore);
+                if (cleanupService.cleanup(user.getId(), expiredBefore)) {
+                    metrics.demoUserExpired();
+                }
             } catch (RuntimeException e) {
+                metrics.demoCleanupFailed();
                 log.error("Demo cleanup failed. errorType={}", e.getClass().getSimpleName());
             }
         }

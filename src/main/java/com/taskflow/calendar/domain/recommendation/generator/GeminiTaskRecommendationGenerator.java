@@ -10,6 +10,7 @@ import com.taskflow.config.GeminiRecommendationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import io.micrometer.core.annotation.Timed;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,6 +40,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     private final RecommendationPromptTaskSupport promptTaskSupport = new RecommendationPromptTaskSupport();
 
     @Override
+    @Timed(value = "gemini_calls", extraTags = {"feature", "recommendation"})
     public TaskRecommendationGenerationResult generate(Project project,
                                                        List<SummaryTaskSnapshot> candidates,
                                                        int recommendationCount,

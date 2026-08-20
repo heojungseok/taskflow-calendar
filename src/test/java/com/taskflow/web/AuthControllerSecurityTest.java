@@ -72,6 +72,14 @@ class AuthControllerSecurityTest {
     }
 
     @Test
+    void managementHealthAndPrometheusAllowAnonymousScraping() throws Exception {
+        mvc.perform(get("/actuator/health/readiness"))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/actuator/prometheus"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void logoutRequiresCsrfAndClearsSessionCookie() throws Exception {
         given(jwtTokenProvider.validateToken(TOKEN)).willReturn(true);
         given(jwtTokenProvider.getUserIdFromToken(TOKEN)).willReturn(7L);

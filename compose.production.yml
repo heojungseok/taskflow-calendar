@@ -1,0 +1,173 @@
+name: taskflow-public
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+    environment:
+      POSTGRES_DB: taskflow
+      POSTGRES_USER: taskflow_bootstrap
+      POSTGRES_PASSWORD: ${POSTGRES_BOOTSTRAP_PASSWORD:?required}
+      TASKFLOW_DB_OWNER_PASSWORD: ${TASKFLOW_DB_OWNER_PASSWORD:?required}
+      TASKFLOW_DB_APP_PASSWORD: ${TASKFLOW_DB_APP_PASSWORD:?required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+    networks: [data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U taskflow_bootstrap -d taskflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    logging: *logging
+
+  migrator:
+    image: flyway/flyway:11.13-alpine@sha256:ed275452f578feab0d94f8660da7ced33cd629c266d34294d7d3173852e358db
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/taskflow
+      FLYWAY_USER: taskflow_owner
+      FLYWAY_PASSWORD: ${TASKFLOW_DB_OWNER_PASSWORD:?required}
+      FLYWAY_CONNECT_RETRIES: "12"
+    command: migrate
+    volumes:
+      - ./deploy/db/migration:/flyway/sql:ro
+    networks: [data]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+    logging: *logging
+
+  backend:
+    image: taskflow-backend:${GIT_SHA:?required}
+    build: { context: ., dockerfile: Dockerfile }
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/taskflow
+      DB_USERNAME: taskflow_app
+      DB_PASSWORD: ${TASKFLOW_DB_APP_PASSWORD:?required}
+      JPA_DDL_AUTO: validate
+      JPA_SHOW_SQL: "false"
+      LOG_LEVEL_APP: INFO
+      LOG_LEVEL_SQL: WARN
+      LOG_LEVEL_SQL_BIND: WARN
+      JWT_SECRET: ${JWT_SECRET:?required}
+      SESSION_COOKIE_SECURE: "true"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?required}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?required}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:?required}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:?required}
+      OUTBOX_WORKER_ENABLED: "true"
+      WEEKLY_SUMMARY_CACHE_ENABLED: "true"
+      WEEKLY_SUMMARY_CACHE_TTL_SECONDS: "900"
+      REDIS_URL: redis://redis:6379
+      METRICS_ENVIRONMENT: public-demo
+      GEMINI_SUMMARY_API_KEY: ${GEMINI_SUMMARY_API_KEY:-}
+      GEMINI_RECOMMENDATION_API_KEY: ${GEMINI_RECOMMENDATION_API_KEY:-}
+      GEMINI_SEARCH_API_KEY: ${GEMINI_SEARCH_API_KEY:-}
+    networks: [edge, data, cache, monitoring]
+    depends_on:
+      migrator: { condition: service_completed_successfully }
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://localhost:9091/actuator/health/readiness]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging: *logging
+
+  redis:
+    image: redis:8.2-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103
+    command: [redis-server, --save, "", --appendonly, "no", --protected-mode, "no", --maxmemory, 128mb, --maxmemory-policy, allkeys-lru]
+    tmpfs: ["/data:size=16m,mode=0700"]
+    mem_limit: 192m
+    networks: [cache]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    logging: *logging
+
+  prometheus:
+    image: prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=1GB
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks: [monitoring]
+    restart: unless-stopped
+    logging: *logging
+
+  grafana:
+    image: grafana/grafana:12.1.0@sha256:6ac590e7cabc2fbe8d7b8fc1ce9c9f0582177b334e0df9c927ebd9670469440f
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?required}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:?required}
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana-dashboards:ro
+    tmpfs: ["/var/lib/grafana:size=64m,mode=0700,uid=472,gid=0"]
+    networks: [monitoring, grafana-egress]
+    ports: ["127.0.0.1:${TASKFLOW_GRAFANA_PORT:-3001}:3000"]
+    restart: unless-stopped
+    logging: *logging
+
+  nginx:
+    image: taskflow-frontend:${GIT_SHA:?required}
+    build: { context: frontend, dockerfile: Dockerfile }
+    networks: [edge]
+    ports: ["127.0.0.1:${TASKFLOW_HTTP_PORT:-8088}:8080"]
+    depends_on:
+      backend: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, wget, -qO-, http://127.0.0.1:8080/healthz]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    logging: *logging
+
+  db-verify:
+    profiles: [verify]
+    image: pgvector/pgvector:0.8.6-pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+    environment:
+      PGHOST: postgres
+      PGDATABASE: taskflow
+      PGUSER: taskflow_app
+      PGPASSWORD: ${TASKFLOW_DB_APP_PASSWORD:?required}
+    volumes:
+      - ./deploy/verify-runtime-privileges.sh:/verify.sh:ro
+    entrypoint: [sh, /verify.sh]
+    networks: [data]
+
+  http-verify:
+    profiles: [verify]
+    image: taskflow-backend:${GIT_SHA:?required}
+    entrypoint: [curl, --fail, --silent, --show-error]
+    networks: [monitoring]
+
+networks:
+  edge: {}
+  data: { internal: true }
+  cache: { internal: true }
+  monitoring: { internal: true }
+  grafana-egress: {}
+
+volumes:
+  postgres-data: { name: taskflow-public-postgres-data }
+  prometheus-data: { name: taskflow-public-prometheus-data }

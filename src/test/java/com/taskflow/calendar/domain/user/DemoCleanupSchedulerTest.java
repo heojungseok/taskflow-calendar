@@ -10,6 +10,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import com.taskflow.observability.TaskFlowMetrics;
 
 class DemoCleanupSchedulerTest {
 
@@ -17,6 +18,7 @@ class DemoCleanupSchedulerTest {
     void oneUserFailureDoesNotStopNextUser() {
         UserRepository users = mock(UserRepository.class);
         DemoCleanupService cleanup = mock(DemoCleanupService.class);
+        TaskFlowMetrics metrics = mock(TaskFlowMetrics.class);
         User first = mock(User.class);
         User second = mock(User.class);
         given(first.getId()).willReturn(1L);
@@ -25,7 +27,7 @@ class DemoCleanupSchedulerTest {
                 eq(Provider.DEMO), any())).willReturn(List.of(first, second));
         doThrow(new IllegalStateException("fk")).when(cleanup).cleanup(eq(1L), any());
 
-        new DemoCleanupScheduler(users, cleanup).cleanupExpiredUsers();
+        new DemoCleanupScheduler(users, cleanup, metrics).cleanupExpiredUsers();
 
         verify(cleanup).cleanup(eq(2L), any());
     }

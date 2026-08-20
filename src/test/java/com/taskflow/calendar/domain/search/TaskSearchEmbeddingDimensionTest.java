@@ -34,6 +34,7 @@ class TaskSearchEmbeddingDimensionTest {
     @BeforeEach
     void ensureEmbeddingTableExists() {
         GeminiSearchProperties properties = new GeminiSearchProperties();
+        properties.setSchemaManagementEnabled(true);
         new TaskSearchEmbeddingStore(jdbcTemplate, properties).initialize();
     }
 

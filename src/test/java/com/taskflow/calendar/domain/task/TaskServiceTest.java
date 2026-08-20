@@ -22,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import com.taskflow.observability.TaskFlowMetrics;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -80,6 +81,9 @@ class TaskServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private TaskFlowMetrics metrics;
 
     @InjectMocks
     private TaskService taskService;

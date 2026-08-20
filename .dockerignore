@@ -1,0 +1,7 @@
+.git
+.gradle
+build
+.env*
+.codex-evidence
+frontend/node_modules
+frontend/dist

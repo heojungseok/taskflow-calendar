@@ -59,7 +59,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/api/oauth/google/authorize",
                                 "/api/oauth/google/callback",
-                                "/api/auth/session").permitAll()
+                                "/api/auth/session",
+                                "/actuator/health/**",
+                                "/actuator/prometheus").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/demo").permitAll()
                         .anyRequest().authenticated()
                 )

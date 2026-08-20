@@ -14,6 +14,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.util.StringUtils;
 
 import java.net.URI;
@@ -72,9 +73,10 @@ public class WeeklySummaryCacheConfiguration {
     @Bean
     @ConditionalOnBean(StringRedisTemplate.class)
     public WeeklySummaryCacheService redisWeeklySummaryCacheService(StringRedisTemplate redisTemplate,
-                                                                   ObjectMapper objectMapper,
-                                                                   WeeklySummaryCacheProperties properties) {
-        return new RedisWeeklySummaryCacheService(redisTemplate, objectMapper, properties);
+                                                                    ObjectMapper objectMapper,
+                                                                    WeeklySummaryCacheProperties properties,
+                                                                    MeterRegistry meterRegistry) {
+        return new RedisWeeklySummaryCacheService(redisTemplate, objectMapper, properties, meterRegistry);
     }
 
     @Bean
