@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @Configuration
 public class TaskRecommendationCacheConfiguration {
@@ -12,8 +13,9 @@ public class TaskRecommendationCacheConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "summary.cache", name = "enabled", havingValue = "true")
     public TaskRecommendationCacheService redisTaskRecommendationCacheService(StringRedisTemplate redisTemplate,
-                                                                             ObjectMapper objectMapper) {
-        return new RedisTaskRecommendationCacheService(redisTemplate, objectMapper);
+                                                                             ObjectMapper objectMapper,
+                                                                             MeterRegistry meterRegistry) {
+        return new RedisTaskRecommendationCacheService(redisTemplate, objectMapper, meterRegistry);
     }
 
     @Bean

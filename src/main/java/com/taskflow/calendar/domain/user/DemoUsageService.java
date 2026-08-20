@@ -31,12 +31,13 @@ public class DemoUsageService {
     }
 
     @Transactional
-    public void beforeTaskCreate(Long userId) {
+    public boolean beforeTaskCreate(Long userId) {
         User user = lockDemoUser(userId);
         if (user != null && taskRepository.countByProject_OwnerUserId(userId) >= TASK_LIMIT) {
             throw new BusinessException(ErrorCode.DEMO_RESOURCE_LIMIT);
         }
         increment(user);
+        return user != null;
     }
 
     @Transactional

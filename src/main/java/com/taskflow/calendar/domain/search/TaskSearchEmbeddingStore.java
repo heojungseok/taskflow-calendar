@@ -31,10 +31,17 @@ public class TaskSearchEmbeddingStore {
     @PostConstruct
     public void initialize() {
         try {
-            jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS vector");
+            if (properties.isSchemaManagementEnabled()) {
+                jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS vector");
+            }
 
             Integer currentDimensions = currentEmbeddingDimensions();
             int targetDimensions = properties.getEmbeddingDimensions();
+            if (currentDimensions == null && !properties.isSchemaManagementEnabled()) {
+                available.set(false);
+                log.error("Task search embedding schema missing. Run the deployment migration first.");
+                return;
+            }
             if (currentDimensions != null && currentDimensions != targetDimensions) {
                 // 예전에는 여기서 테이블을 DROP 했다. atttypmod를 4 적게 읽는 버그와 만나
                 // 매 기동마다 임베딩이 통째로 지워졌다. 읽기 실수가 데이터 소실이 되면 안 된다.
@@ -48,8 +55,10 @@ public class TaskSearchEmbeddingStore {
                 return;
             }
 
-            createEmbeddingTable();
-            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_task_search_embeddings_updated_at ON task_search_embeddings(updated_at)");
+            if (properties.isSchemaManagementEnabled()) {
+                createEmbeddingTable();
+                jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_task_search_embeddings_updated_at ON task_search_embeddings(updated_at)");
+            }
             available.set(true);
         } catch (DataAccessException e) {
             available.set(false);

@@ -23,6 +23,24 @@ spring:
         format_sql: true # SQL 포맷팅
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+management:
+  server:
+    port: 9091
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+  metrics:
+    tags:
+      environment: ${METRICS_ENVIRONMENT:local}
+
 logging:
   # 공개 배포에서는 환경변수로 낮춘다. SQL/바인딩 로그는 요청마다 수십 줄이 쌓인다.
   level:
@@ -73,6 +91,7 @@ gemini:
     lexical-candidate-limit: ${GEMINI_SEARCH_LEXICAL_CANDIDATE_LIMIT:50}
     semantic-candidate-limit: ${GEMINI_SEARCH_SEMANTIC_CANDIDATE_LIMIT:50}
     embedding-batch-size: ${GEMINI_SEARCH_EMBEDDING_BATCH_SIZE:16}
+    schema-management-enabled: ${SEARCH_SCHEMA_MANAGEMENT_ENABLED:false}
 
 app:
   frontend:

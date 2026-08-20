@@ -14,6 +14,7 @@ import com.taskflow.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import io.micrometer.core.annotation.Timed;
 
 import java.io.IOException;
 import java.net.URI;
@@ -46,6 +47,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     @Override
+    @Timed(value = "gemini_calls", extraTags = {"feature", "weekly_summary"})
     public WeeklySummarySectionsResult generate(Project project,
                                                 List<SummaryTaskSnapshot> syncedTasks,
                                                 int syncedTotalTaskCount,

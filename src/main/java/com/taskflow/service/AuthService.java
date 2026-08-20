@@ -5,6 +5,7 @@ import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.web.dto.auth.AuthSession;
 import com.taskflow.web.dto.auth.SessionResponse;
+import com.taskflow.observability.TaskFlowMetrics;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +20,13 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final TaskFlowMetrics metrics;
 
-    public AuthService(UserRepository userRepository, JwtTokenProvider jwtTokenProvider) {
+    public AuthService(UserRepository userRepository, JwtTokenProvider jwtTokenProvider,
+                       TaskFlowMetrics metrics) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.metrics = metrics;
     }
 
     @Transactional
@@ -31,6 +35,7 @@ public class AuthService {
         User user = userRepository.save(User.createDemoUser(
                 UUID.randomUUID().toString(),
                 LocalDateTime.ofInstant(expiresAt, ZoneId.systemDefault())));
+        metrics.demoSessionStarted();
         return new AuthSession(
                 jwtTokenProvider.generateToken(user.getId(), expiresAt),
                 user.getId(), user.getProvider(), expiresAt);

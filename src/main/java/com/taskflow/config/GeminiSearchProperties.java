@@ -13,6 +13,7 @@ public class GeminiSearchProperties extends GeminiProperties {
     private int lexicalCandidateLimit = 50;
     private int semanticCandidateLimit = 50;
     private int embeddingBatchSize = 16;
+    private boolean schemaManagementEnabled;
 
     public String getEmbeddingModel() {
         return embeddingModel;
@@ -60,5 +61,13 @@ public class GeminiSearchProperties extends GeminiProperties {
 
     public void setEmbeddingBatchSize(int embeddingBatchSize) {
         this.embeddingBatchSize = embeddingBatchSize;
+    }
+
+    public boolean isSchemaManagementEnabled() {
+        return schemaManagementEnabled;
+    }
+
+    public void setSchemaManagementEnabled(boolean schemaManagementEnabled) {
+        this.schemaManagementEnabled = schemaManagementEnabled;
     }
 }

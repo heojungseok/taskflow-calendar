@@ -1,0 +1,119 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: Discord
+    receivers:
+      - uid: taskflow-discord
+        type: discord
+        settings:
+          url: ${DISCORD_WEBHOOK_URL}
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: Discord
+    group_by: [alertname, environment]
+    group_wait: 30s
+    repeat_interval: 4h
+
+groups:
+  - orgId: 1
+    name: TaskFlow public demo
+    folder: TaskFlow
+    interval: 1m
+    rules:
+      - uid: taskflow-demo-usage
+        title: demo usage
+        condition: C
+        isPaused: true
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 3600, to: 0}
+            model: {refId: A, expr: 'sum(increase(demo_sessions_started_total[1h])) >= 3 and sum(increase(outbox_processed_total{outcome="skipped",reason="no_google_link"}[1h])) >= 5', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+      - uid: taskflow-abuse
+        title: abuse
+        condition: C
+        isPaused: true
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 600, to: 0}
+            model: {refId: A, expr: 'sum(increase(demo_sessions_started_total[10m])) >= 20 or sum(increase(outbox_processed_total{outcome="skipped",reason="no_google_link"}[10m])) >= 50', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+      - uid: taskflow-worker-backlog
+        title: worker backlog
+        condition: C
+        for: 2m
+        isPaused: true
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'max(outbox_oldest_processable_age_seconds)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [120]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+      - uid: taskflow-backend-down
+        title: backend down
+        condition: C
+        for: 2m
+        noDataState: Alerting
+        isPaused: true
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'up{job="taskflow"}', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: lt, params: [1]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+      - uid: taskflow-cleanup-failure
+        title: cleanup failure
+        condition: C
+        isPaused: true
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 900, to: 0}
+            model: {refId: A, expr: 'sum(increase(demo_cleanup_failures_total[15m]))', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+      - uid: taskflow-cleanup-overdue
+        title: cleanup overdue
+        condition: C
+        for: 5m
+        isPaused: true
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 600, to: 0}
+            model: {refId: A, expr: 'max(demo_oldest_expired_age_seconds)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [600]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}

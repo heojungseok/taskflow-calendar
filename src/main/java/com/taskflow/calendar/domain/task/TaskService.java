@@ -17,6 +17,7 @@ import com.taskflow.calendar.domain.user.exception.UserNotFoundException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.ValidationException;
 import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.observability.TaskFlowMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,6 +43,7 @@ public class TaskService {
     private final CalendarOutboxService calendarOutboxService;
     private final TaskSyncStateResolver taskSyncStateResolver;
     private final ApplicationEventPublisher eventPublisher;
+    private final TaskFlowMetrics metrics;
 
     /**
      * Task 생성
@@ -53,7 +55,7 @@ public class TaskService {
         Project project = projectRepository
                 .findByIdAndOwnerUserId(projectId, userId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
-        demoUsageService.beforeTaskCreate(userId);
+        boolean demoUser = demoUsageService.beforeTaskCreate(userId);
 
         // 2. Assignee 조회 (있는 경우)
         User assignee = null;
@@ -86,6 +88,9 @@ public class TaskService {
 
         // 6. 저장
         Task savedTask = taskRepository.save(task);
+        if (demoUser) {
+            metrics.demoTaskCreated();
+        }
 
         // 7. 이력 기록 - 생성
         recordHistory(
