@@ -5,10 +5,5 @@ global:
 scrape_configs:
   - job_name: taskflow
     metrics_path: /actuator/prometheus
-    metric_relabel_configs:
-      - source_labels: [__name__]
-        regex: demo_tasks_total
-        target_label: __name__
-        replacement: demo_tasks_created_total
     static_configs:
       - targets: [backend:9091]

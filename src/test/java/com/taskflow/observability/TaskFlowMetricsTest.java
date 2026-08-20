@@ -16,7 +16,7 @@ class TaskFlowMetricsTest {
 
         metrics.demoTaskCreated();
 
-        assertThat(registry.scrape()).contains("\ndemo_tasks_total ");
+        assertThat(registry.scrape()).contains("\ndemo_task_creations_total ");
     }
 
     @Test
@@ -33,7 +33,7 @@ class TaskFlowMetricsTest {
         metrics.setOldestProcessableAgeSeconds(84);
 
         assertThat(registry.get("demo_sessions_started_total").counter().count()).isEqualTo(1);
-        assertThat(registry.get("demo_tasks_created_total").counter().count()).isEqualTo(1);
+        assertThat(registry.get("demo_task_creations_total").counter().count()).isEqualTo(1);
         assertThat(registry.get("demo_users_expired_total").counter().count()).isEqualTo(1);
         assertThat(registry.get("demo_cleanup_failures_total").counter().count()).isEqualTo(1);
         assertThat(registry.get("outbox_processed_total")

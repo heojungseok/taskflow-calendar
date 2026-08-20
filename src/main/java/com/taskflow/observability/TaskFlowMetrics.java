@@ -23,7 +23,7 @@ public class TaskFlowMetrics {
         this.demoSessionsStarted = registry.counter("demo_sessions_started_total");
         this.demoUsersExpired = registry.counter("demo_users_expired_total");
         this.demoCleanupFailures = registry.counter("demo_cleanup_failures_total");
-        this.demoTasksCreated = registry.counter("demo_tasks_created_total");
+        this.demoTasksCreated = registry.counter("demo_task_creations_total");
         Gauge.builder("demo_oldest_expired_age_seconds", oldestExpiredAgeSeconds, AtomicLong::get)
                 .register(registry);
         Gauge.builder("outbox_oldest_processable_age_seconds", oldestProcessableAgeSeconds, AtomicLong::get)
