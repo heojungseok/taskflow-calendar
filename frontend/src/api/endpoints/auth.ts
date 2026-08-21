@@ -14,4 +14,7 @@ export const authApi = {
   logout: async () => {
     await apiClient.post('/auth/logout');
   },
+  disconnectGoogle: async () => {
+    await apiClient.post('/oauth/google/disconnect');
+  },
 };

@@ -2,15 +2,34 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { cx, clsx } from '@/styles/cx';
 import { authApi } from '@/api/endpoints/auth';
+import { useState } from 'react';
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const clearSession = useAuthStore((state) => state.clearSession);
+  const userType = useAuthStore((state) => state.userType);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   const handleLogout = async () => {
     try {
       await authApi.logout();
+    } finally {
+      clearSession();
+      navigate('/login');
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!window.confirm('Google Calendar 연결을 해제할까요? 캘린더 동기화가 중단되며 기존 일정은 삭제되지 않습니다.')) {
+      return;
+    }
+
+    setDisconnecting(true);
+    try {
+      await authApi.disconnectGoogle();
+    } catch {
+      window.alert('연결 해제 결과를 확인하지 못했습니다. 다시 로그인한 뒤 상태를 확인해주세요.');
     } finally {
       clearSession();
       navigate('/login');
@@ -62,9 +81,16 @@ export default function Header() {
           </nav>
         </div>
 
-        <button onClick={handleLogout} className={cx.btn.ghost}>
-          로그아웃
-        </button>
+        <div className="flex items-center gap-4">
+          {userType === 'GOOGLE' && (
+            <button onClick={handleDisconnect} disabled={disconnecting} className={cx.btn.danger}>
+              {disconnecting ? '연결 해제 중...' : 'Google 연결 해제'}
+            </button>
+          )}
+          <button onClick={handleLogout} className={cx.btn.ghost}>
+            로그아웃
+          </button>
+        </div>
       </div>
     </header>
   );
