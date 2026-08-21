@@ -2,17 +2,17 @@
   "annotations": {"list": []},
   "editable": false,
   "panels": [
-    {"id": 1, "type": "stat", "title": "Demo sessions / 1h", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(demo_sessions_started_total[1h]))"}], "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}},
-    {"id": 2, "type": "stat", "title": "Skipped outbox / 1h", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(outbox_processed_total{outcome=\"skipped\",reason=\"no_google_link\"}[1h]))"}], "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}},
-    {"id": 3, "type": "stat", "title": "Oldest processable outbox", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "max(outbox_oldest_processable_age_seconds)"}], "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}},
-    {"id": 4, "type": "timeseries", "title": "Cache outcomes", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (feature, outcome) (rate(taskflow_cache_operations_total[5m]))"}], "gridPos": {"h": 9, "w": 12, "x": 0, "y": 8}},
-    {"id": 5, "type": "timeseries", "title": "Gemini latency", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (feature) (rate(gemini_calls_seconds_sum[5m])) / sum by (feature) (rate(gemini_calls_seconds_count[5m]))"}], "gridPos": {"h": 9, "w": 12, "x": 12, "y": 8}}
+    {"id": 1, "type": "stat", "title": "Demo sessions started (1h)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(demo_sessions_started_total[1h]))"}], "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}},
+    {"id": 2, "type": "stat", "title": "Calendar sync skipped: no Google link (1h)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(outbox_processed_total{outcome=\"skipped\",reason=\"no_google_link\"}[1h])) or vector(0)"}], "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}},
+    {"id": 3, "type": "stat", "title": "Oldest processable outbox age", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "max(outbox_oldest_processable_age_seconds)"}], "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []}, "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}},
+    {"id": 4, "type": "timeseries", "title": "Cache operation rate (5m)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (feature, outcome) (rate(taskflow_cache_operations_total[5m]))"}], "gridPos": {"h": 9, "w": 12, "x": 0, "y": 8}},
+    {"id": 5, "type": "timeseries", "title": "Average Gemini latency (5m)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (feature) (rate(gemini_calls_seconds_sum[5m])) / sum by (feature) (rate(gemini_calls_seconds_count[5m]))"}], "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []}, "gridPos": {"h": 9, "w": 12, "x": 12, "y": 8}}
   ],
   "schemaVersion": 41,
-  "tags": ["taskflow", "public-demo"],
+  "tags": ["public"],
   "templating": {"list": []},
   "time": {"from": "now-6h", "to": "now"},
-  "title": "TaskFlow Public Demo",
-  "uid": "taskflow-public-demo",
+  "title": "TaskFlow",
+  "uid": "taskflow",
   "version": 1
 }
