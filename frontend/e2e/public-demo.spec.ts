@@ -53,6 +53,78 @@ test('browser project creation forwards the CSRF token', async ({ page }) => {
   await expect(page).toHaveURL(/\/projects$/);
 });
 
+test('project list switches between newest and oldest order', async ({ page }) => {
+  await page.route('**/api/projects', route => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    return route.fulfill({
+      json: {
+        success: true,
+        data: [
+          { id: 1, name: '먼저 만든 프로젝트', createdAt: '2026-08-21T09:00:00', updatedAt: '2026-08-21T09:00:00' },
+          { id: 2, name: '나중에 만든 프로젝트', createdAt: '2026-08-21T09:00:00', updatedAt: '2026-08-21T09:00:00' },
+        ],
+      },
+    });
+  });
+
+  await page.goto('/login');
+  await page.getByRole('button', { name: '데모로 둘러보기' }).click();
+  await expect(page).toHaveURL(/\/projects$/);
+
+  const projectRows = page.getByTestId('project-list').getByRole('button');
+  await expect(projectRows.first()).toContainText('나중에 만든 프로젝트');
+
+  await page.getByRole('combobox', { name: '프로젝트 정렬' }).selectOption('oldest');
+  await expect(projectRows.first()).toContainText('먼저 만든 프로젝트');
+});
+
+test('empty search result stays visible above the project list', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: '데모로 둘러보기' }).click();
+  await expect(page).toHaveURL(/\/projects$/);
+
+  await page.route('**/api/search/tasks', route => route.fulfill({
+    json: {
+      success: true,
+      data: {
+        query: '이번 주 슈퍼가세',
+        intentFallback: false,
+        semanticStatus: 'READY',
+        intent: {
+          rawQuery: '이번 주 슈퍼가세',
+          queryType: 'TOPIC_SEARCH',
+          targetType: 'TASK',
+          domainType: 'UNKNOWN',
+          mainAction: 'UNKNOWN',
+          secondaryActions: [],
+          topicTerms: ['슈퍼가세'],
+          participantTerms: [],
+          locationTerms: [],
+          timeIntent: 'THIS_WEEK',
+          priorityIntent: 'NONE',
+          statusIntents: [],
+          syncIntent: 'ANY',
+          relationPolicy: 'ALLOW_PARTIAL',
+          overallConfidence: 1,
+          fieldConfidence: {},
+        },
+        taskResults: [],
+        relatedProjects: [],
+        suggestedQueries: ['이번 주 슈퍼 일정', '중요한 슈퍼 일정', '슈퍼 관련 일정'],
+      },
+    },
+  }));
+
+  await page.getByLabel('자연어로 일정 찾기').fill('이번 주 슈퍼가세');
+  await page.getByRole('button', { name: '찾기' }).click();
+
+  await expect(page.getByRole('heading', { name: '검색 결과' })).toBeVisible();
+  await expect(page.getByText('0건', { exact: true })).toBeVisible();
+  await expect(page.getByText('조건에 맞는 일정이 없습니다.')).toBeVisible();
+  await expect(page.getByRole('button', { name: '이번 주 슈퍼 일정' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '전체 프로젝트' })).toBeVisible();
+});
+
 test('public sync route and in-page task deletion work', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: '데모로 둘러보기' }).click();
