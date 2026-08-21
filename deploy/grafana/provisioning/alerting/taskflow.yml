@@ -61,12 +61,12 @@ groups:
           check_url: /healthz
         title: demo usage
         condition: C
-        isPaused: true
+        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
             relativeTimeRange: {from: 3600, to: 0}
-            model: {refId: A, expr: 'sum(increase(demo_sessions_started_total[1h])) >= 3 and sum(increase(outbox_processed_total{outcome="skipped",reason="no_google_link"}[1h])) >= 5', instant: true}
+            model: {refId: A, expr: '(sum(increase(demo_sessions_started_total[1h])) >= 3 and sum(increase(outbox_processed_total{outcome="skipped",reason="no_google_link"}[1h])) >= 5) or vector(0)', instant: true}
           - refId: B
             datasourceUid: __expr__
             model: {refId: B, type: reduce, expression: A, reducer: last}
@@ -85,12 +85,12 @@ groups:
           check_url: /healthz
         title: abuse
         condition: C
-        isPaused: true
+        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
             relativeTimeRange: {from: 600, to: 0}
-            model: {refId: A, expr: 'sum(increase(demo_sessions_started_total[10m])) >= 20 or sum(increase(outbox_processed_total{outcome="skipped",reason="no_google_link"}[10m])) >= 50', instant: true}
+            model: {refId: A, expr: '(sum(increase(demo_sessions_started_total[10m])) >= 20 or sum(increase(outbox_processed_total{outcome="skipped",reason="no_google_link"}[10m])) >= 50) or vector(0)', instant: true}
           - refId: B
             datasourceUid: __expr__
             model: {refId: B, type: reduce, expression: A, reducer: last}
@@ -110,7 +110,7 @@ groups:
         title: worker backlog
         condition: C
         for: 2m
-        isPaused: true
+        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
@@ -136,7 +136,7 @@ groups:
         condition: C
         for: 2m
         noDataState: Alerting
-        isPaused: true
+        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
@@ -160,7 +160,7 @@ groups:
           check_url: /healthz
         title: cleanup failure
         condition: C
-        isPaused: true
+        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
@@ -185,7 +185,7 @@ groups:
         title: cleanup overdue
         condition: C
         for: 5m
-        isPaused: true
+        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
