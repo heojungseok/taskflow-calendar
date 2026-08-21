@@ -12,7 +12,12 @@ import { authApi } from './api/endpoints/auth';
 import { useEffect } from 'react';
 
 function AuthLayout() {
+  const initialized = useAuthStore((state) => state.initialized);
   const authenticated = useAuthStore((state) => state.authenticated);
+
+  if (!initialized) {
+    return <div className="min-h-screen grid place-items-center">불러오는 중</div>;
+  }
 
   if (!authenticated) {
     return <Navigate to="/login" replace />;
@@ -29,17 +34,12 @@ function AuthLayout() {
 }
 
 function App() {
-  const initialized = useAuthStore((state) => state.initialized);
   const setSession = useAuthStore((state) => state.setSession);
   const clearSession = useAuthStore((state) => state.clearSession);
 
   useEffect(() => {
     authApi.session().then(setSession).catch(clearSession);
   }, [setSession, clearSession]);
-
-  if (!initialized) {
-    return <div className="min-h-screen grid place-items-center">불러오는 중</div>;
-  }
 
   return (
     <BrowserRouter>

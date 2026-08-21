@@ -17,7 +17,9 @@ export default function OAuthCallback() {
     const error = searchParams.get('error');
 
     if (error) {
-      alert('Google 로그인에 실패했습니다. 다시 시도해주세요.');
+      alert(error === 'calendar_permission_required'
+        ? 'Google Calendar 권한이 필요합니다. Google 계정에서 TaskFlow 연결을 해제한 뒤 다시 로그인하고 Calendar 권한을 허용해주세요.'
+        : 'Google 로그인에 실패했습니다. 다시 시도해주세요.');
       navigate('/login');
     } else {
       authApi.session()

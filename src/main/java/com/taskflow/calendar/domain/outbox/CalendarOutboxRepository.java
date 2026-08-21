@@ -29,7 +29,9 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
     @Query("SELECT o " +
             "FROM CalendarOutbox o " +
             "WHERE (" +
-            "    (o.status IN ('PENDING', 'FAILED') AND (o.nextRetryAt IS NULL OR o.nextRetryAt <= :now))" +
+            "    o.status = 'PENDING'" +
+            "    OR " +
+            "    (o.status = 'FAILED' AND o.nextRetryAt IS NOT NULL AND o.nextRetryAt <= :now)" +
             "    OR " +
             "    (o.status = 'PROCESSING' AND o.updatedAt < :leaseTimeout)" +
             ")" +
@@ -42,11 +44,15 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
     @Query("UPDATE CalendarOutbox o " +
             "SET o.status = 'PROCESSING', o.updatedAt = CURRENT_TIMESTAMP " +
             "WHERE o.id = :id " +
-            "AND (o.status IN ('PENDING', 'FAILED')" +
+            "AND (o.status = 'PENDING'" +
+            "   OR " +
+            "   (o.status = 'FAILED' AND o.nextRetryAt IS NOT NULL AND o.nextRetryAt <= :now)" +
             "   OR " +
             "   (o.status = 'PROCESSING' AND o.updatedAt < :leaseTimeout) " +
             ")")
-    int claimForProcessing(@Param("id") Long id, @Param("leaseTimeout") LocalDateTime leaseTimeout);
+    int claimForProcessing(@Param("id") Long id,
+                           @Param("now") LocalDateTime now,
+                           @Param("leaseTimeout") LocalDateTime leaseTimeout);
 
     /**
      * 소유자 기준 Outbox 조회 (최신순). status/taskId는 선택 필터다.

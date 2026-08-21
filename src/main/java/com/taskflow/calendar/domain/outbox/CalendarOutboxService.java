@@ -117,7 +117,7 @@ public class CalendarOutboxService {
 
     @Transactional
     public boolean claimProcessing(Long outboxId, LocalDateTime leaseTimeout) {
-        int updated = outboxRepository.claimForProcessing(outboxId, leaseTimeout);
+        int updated = outboxRepository.claimForProcessing(outboxId, LocalDateTime.now(), leaseTimeout);
         return updated == 1;  // ✅ 선점 성공 여부 명확!
     }
 
