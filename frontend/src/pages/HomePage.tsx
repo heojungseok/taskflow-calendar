@@ -13,7 +13,7 @@ export default function HomePage() {
     <div className={clsx(cx.page, 'px-6')}>
       <header className="mx-auto flex max-w-5xl items-center justify-between border-b border-[var(--rule)] py-5">
         <span className="font-[family-name:var(--font-display)] text-[15px] font-extrabold tracking-[-0.02em]">
-          TASKFLOW
+          TaskFlow
         </span>
         <nav className="flex items-center gap-4 text-[13px] text-[var(--ink-3)]" aria-label="Public">
           <a href="/privacy" className="hover:text-[var(--ink)]">Privacy</a>
@@ -31,7 +31,12 @@ export default function HomePage() {
           </motion.h1>
           <motion.p {...step(2)} className="mt-8 max-w-2xl text-[17px] leading-8 text-[var(--ink-2)]">
             할 일을 적으면 Google Calendar 일정으로 이어집니다.<br />
-            수정하거나 삭제해도 두 곳을 따로 관리할 필요가 없습니다.
+            수정하거나 삭제해도 두 곳을 따로 관리할 필요가 없습니다.<br />
+            <span lang="en" className="mt-4 block text-[14px] leading-6">
+              TaskFlow is a task management service that creates, updates, and deletes
+              Google Calendar events for Tasks selected by the user. It does not list or
+              import unrelated calendar events.
+            </span>
           </motion.p>
           <motion.a {...step(3)} href="/login" className={clsx(cx.btn.primary, 'mt-8 inline-flex px-5 py-3 text-[14px]')}>
             TaskFlow 시작하기
@@ -42,8 +47,8 @@ export default function HomePage() {
           <div>
             <h2 className={cx.text.heading}>동기화는 사용자가 결정합니다</h2>
             <p className="mt-3 text-[14px] leading-7 text-[var(--ink-2)]">
-              Task마다 캘린더 동기화 여부를 선택할 수 있습니다.<br />
-              Google 연결을 해제하면 이후 동기화만 중단되고<br />
+              할 일마다 캘린더 동기화 여부를 선택할 수 있습니다.<br />
+              구글 연결을 해제하면 이후 동기화만 중단되고<br />
               기존 일정은 그대로 유지됩니다.
             </p>
           </div>
