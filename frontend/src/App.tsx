@@ -6,6 +6,7 @@ import TaskListPage from './pages/TaskListPage';
 import TaskDetailPage from './pages/TaskDetailPage';
 import OutboxPage from './pages/OutboxPage';
 import Header from './pages/Header';
+import PrivacyPage from './pages/PrivacyPage';
 import { useAuthStore } from './store/authStore';
 import { authApi } from './api/endpoints/auth';
 import { useEffect } from 'react';
@@ -45,6 +46,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
 
         <Route element={<AuthLayout />}>
           <Route path="/projects" element={<ProjectsPage />} />

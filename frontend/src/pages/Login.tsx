@@ -158,6 +158,12 @@ export default function Login() {
           <p className="mt-3 text-[13px] text-[var(--ink-3)]">
             데모 데이터는 방문자별로 분리되며 24시간 뒤 삭제됩니다.
           </p>
+          <a
+            href="/privacy"
+            className="mt-4 inline-block text-[13px] text-[var(--ink-3)] underline underline-offset-4"
+          >
+            Privacy Policy
+          </a>
         </motion.div>
       </main>
     </div>
