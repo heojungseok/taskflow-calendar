@@ -106,6 +106,7 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchError, setSearchError] = useState('');
   const [searchResult, setSearchResult] = useState<ProjectTaskSearchResponse | null>(null);
+  const [projectSort, setProjectSort] = useState<'newest' | 'oldest'>('newest');
 
   const { data: projects, isLoading, isError } = useQuery({
     queryKey: ['projects'],
@@ -161,6 +162,13 @@ export default function ProjectsPage() {
 
   const fallbackSuggestions = searchResult
     ? buildSuggestedQueries(searchResult.intent, searchResult.query, searchResult.suggestedQueries)
+    : [];
+  const sortedProjects = projects
+    ? [...projects].sort((a, b) => {
+        const createdAtDifference = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        const order = createdAtDifference || a.id - b.id;
+        return projectSort === 'oldest' ? order : -order;
+      })
     : [];
 
   return (
@@ -219,6 +227,13 @@ export default function ProjectsPage() {
             )}
           </AnimatePresence>
         </form>
+        <p role="status" aria-live="polite" className="sr-only">
+          {searchMutation.isPending
+            ? '검색 중'
+            : searchResult
+              ? `검색 완료 ${searchResult.taskResults.length}건`
+              : searchError}
+        </p>
       </section>
 
       <AnimatePresence mode="wait" initial={false}>
@@ -244,13 +259,18 @@ export default function ProjectsPage() {
           </div>
         </motion.div>
       ) : searchResult ? (
-        <motion.div
+        <motion.section
           key={`search-result-${searchResult.query}`}
+          aria-labelledby="search-results-heading"
           initial={{ opacity: 0, transform: 'translateY(6px)' }}
           animate={{ opacity: 1, transform: 'translateY(0)', transition: MOTION.enter }}
           exit={{ opacity: 0, transform: 'translateY(-6px)', transition: MOTION.exit }}
           className="mb-8 space-y-4"
         >
+          <div className="flex items-baseline justify-between mb-2">
+            <h3 id="search-results-heading" className={clsx(cx.text.label, 'mb-0')}>검색 결과</h3>
+            <span className={cx.text.data}>{searchResult.taskResults.length}건</span>
+          </div>
           {!searchResult.intentFallback && searchResult.semanticStatus === 'UNAVAILABLE' && (
             <div className={clsx(cx.card, 'text-[13px] text-[var(--ink-2)]')}>
               의미 검색을 쓸 수 없어 키워드 검색 결과만 표시합니다.
@@ -278,11 +298,6 @@ export default function ProjectsPage() {
           ) : (
             <>
               <section>
-                <div className="flex items-baseline justify-between mb-2">
-                  <span className={clsx(cx.text.label, 'mb-0')}>검색 결과</span>
-                  <span className={cx.text.data}>{searchResult.taskResults.length}건</span>
-                </div>
-
                 {searchResult.taskResults.length === 0 ? (
                   <div className="border-t border-[var(--rule)] pt-5">
                     <p className="text-[14px] text-[var(--ink-2)]">조건에 맞는 일정이 없습니다.</p>
@@ -357,64 +372,81 @@ export default function ProjectsPage() {
               )}
             </>
           )}
-        </motion.div>
+        </motion.section>
       ) : null}
       </AnimatePresence>
 
       {/* 목록 */}
-      {isLoading ? (
-        <div className="border-t border-[var(--rule)] pt-5 space-y-5">
-          {[0, 1, 2].map((i) => (
-            <SkeletonLine key={i} w={['45%', '30%', '38%'][i]} />
-          ))}
+      <section aria-labelledby="all-projects-heading">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+          <h3 id="all-projects-heading" className={clsx(cx.text.label, 'mb-0')}>전체 프로젝트</h3>
+          {!isLoading && !isError && sortedProjects.length > 0 && (
+            <select
+              aria-label="프로젝트 정렬"
+              value={projectSort}
+              onChange={(event) => setProjectSort(event.target.value as 'newest' | 'oldest')}
+              className="rounded-[var(--radius)] border border-[var(--rule-strong)] bg-transparent px-2.5 py-1.5 text-[13px] text-[var(--ink-2)] focus:border-[var(--ink)] focus:outline-none"
+            >
+              <option value="newest">최신순</option>
+              <option value="oldest">오래된순</option>
+            </select>
+          )}
         </div>
-      ) : isError ? (
-        <div className={cx.errorBox}>프로젝트 목록을 불러오지 못했습니다.</div>
-      ) : projects && projects.length === 0 ? (
-        <div className="border-t border-[var(--rule)] pt-10 pb-6">
-          <p className="text-[15px] text-[var(--ink)] mb-1">첫 프로젝트를 만들어 시작하세요.</p>
-          <p className="text-[13px] text-[var(--ink-2)] mb-5">
-            프로젝트 안에 일정을 넣으면 구글 캘린더로 반영됩니다.
-          </p>
-          <button onClick={handleOpenModal} className={clsx(cx.btn.primary, 'inline-flex items-center gap-1.5')}>
-            <Plus size={14} strokeWidth={2.5} />
-            새 프로젝트
-          </button>
-        </div>
-      ) : (
-        <ul className="border-t border-[var(--rule)]">
-          <AnimatePresence initial={false}>
-            {projects?.map((project) => (
-              <motion.li
-                key={project.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0, transition: MOTION.enter }}
-                exit={{ opacity: 0, scale: 0.98, transition: MOTION.exit }}
-                className="border-b border-[var(--rule)]"
-              >
-                <button
-                  onClick={() => navigate(`/projects/${project.id}/tasks`)}
-                  className="group w-full text-left px-2 py-4 -mx-2 flex items-baseline justify-between gap-4 hover:bg-[var(--sunken)] transition-colors duration-150"
-                >
-                  <span className="text-[15px] text-[var(--ink)]">{project.name}</span>
-                  <span className="flex items-baseline gap-3 shrink-0">
-                    <span className={cx.text.data}>
-                      {new Date(project.createdAt).toLocaleDateString('ko-KR')}
-                    </span>
-                    <span
-                      aria-hidden
-                      className="text-[var(--ink-3)] transition-transform duration-150 group-hover:translate-x-0.5"
-                    >
-                      →
-                    </span>
-                  </span>
-                </button>
-              </motion.li>
+
+        {isLoading ? (
+          <div className="border-t border-[var(--rule)] pt-5 space-y-5">
+            {[0, 1, 2].map((i) => (
+              <SkeletonLine key={i} w={['45%', '30%', '38%'][i]} />
             ))}
-          </AnimatePresence>
-        </ul>
-      )}
+          </div>
+        ) : isError ? (
+          <div className={cx.errorBox}>프로젝트 목록을 불러오지 못했습니다.</div>
+        ) : projects && projects.length === 0 ? (
+          <div className="border-t border-[var(--rule)] pt-10 pb-6">
+            <p className="text-[15px] text-[var(--ink)] mb-1">첫 프로젝트를 만들어 시작하세요.</p>
+            <p className="text-[13px] text-[var(--ink-2)] mb-5">
+              프로젝트 안에 일정을 넣으면 구글 캘린더로 반영됩니다.
+            </p>
+            <button onClick={handleOpenModal} className={clsx(cx.btn.primary, 'inline-flex items-center gap-1.5')}>
+              <Plus size={14} strokeWidth={2.5} />
+              새 프로젝트
+            </button>
+          </div>
+        ) : (
+          <ul data-testid="project-list" className="border-t border-[var(--rule)]">
+            <AnimatePresence initial={false}>
+              {sortedProjects.map((project) => (
+                <motion.li
+                  key={project.id}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0, transition: MOTION.enter }}
+                  exit={{ opacity: 0, scale: 0.98, transition: MOTION.exit }}
+                  className="border-b border-[var(--rule)]"
+                >
+                  <button
+                    onClick={() => navigate(`/projects/${project.id}/tasks`)}
+                    className="group w-full text-left px-2 py-4 -mx-2 flex items-baseline justify-between gap-4 hover:bg-[var(--sunken)] transition-colors duration-150"
+                  >
+                    <span className="text-[15px] text-[var(--ink)]">{project.name}</span>
+                    <span className="flex items-baseline gap-3 shrink-0">
+                      <span className={cx.text.data}>
+                        {new Date(project.createdAt).toLocaleDateString('ko-KR')}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="text-[var(--ink-3)] transition-transform duration-150 group-hover:translate-x-0.5"
+                      >
+                        →
+                      </span>
+                    </span>
+                  </button>
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
+        )}
+      </section>
 
       {/* 생성 모달 */}
       <AnimatePresence>
