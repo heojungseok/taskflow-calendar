@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-[19px] font-semibold text-[var(--ink)]">1. Operator and contact</h2>
             <p className="mt-3">
-              TaskFlow is operated by Heojeongseok. For privacy questions or data-deletion requests, contact{' '}
+              TaskFlow is operated by Jungseok Heo. For privacy questions or data-deletion requests, contact{' '}
               <a className="underline underline-offset-4" href="mailto:tjrwjdgj@gmail.com">
                 tjrwjdgj@gmail.com
               </a>.
