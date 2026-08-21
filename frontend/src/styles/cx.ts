@@ -12,6 +12,7 @@ export { clsx };
  */
 
 const RADIUS = 'rounded-[var(--radius)]';
+const PRESS = 'active:scale-[0.98] motion-reduce:active:scale-100 transition-[color,background-color,border-color,transform] duration-150 [transition-timing-function:var(--ease-out)]';
 
 export const cx = {
   page: 'min-h-screen bg-[var(--paper)] text-[var(--ink)]',
@@ -39,7 +40,8 @@ export const cx = {
       'text-[13px] font-medium whitespace-nowrap',
       RADIUS,
       'px-3.5 py-2',
-      'hover:bg-[var(--ink-solid-hover)] transition-colors duration-150',
+      'hover:bg-[var(--ink-solid-hover)]',
+      PRESS,
       'disabled:opacity-35 disabled:cursor-not-allowed',
     ].join(' '),
 
@@ -49,21 +51,21 @@ export const cx = {
       'text-[13px] font-medium whitespace-nowrap',
       RADIUS,
       'px-3.5 py-2',
-      'transition-colors duration-150',
+      PRESS,
       'disabled:opacity-35 disabled:cursor-not-allowed',
     ].join(' '),
 
     danger: [
       'text-[var(--ink-3)] hover:text-[var(--st-failed)]',
       'text-[13px] font-medium whitespace-nowrap',
-      'transition-colors duration-150',
+      PRESS,
       'disabled:opacity-35',
     ].join(' '),
 
     ghost: [
       'text-[var(--ink-3)] hover:text-[var(--ink)]',
       'text-[13px] font-medium whitespace-nowrap',
-      'transition-colors duration-150',
+      PRESS,
     ].join(' '),
 
     // 채운 알약 대신 밑줄. 밝은 지면에 검은 블록을 놓지 않는다.
@@ -78,7 +80,7 @@ export const cx = {
       'border border-[var(--rule)] text-[var(--ink-2)]',
       'hover:border-[var(--ink-3)] hover:text-[var(--ink)]',
       RADIUS,
-      'transition-colors duration-150',
+      PRESS,
       'disabled:opacity-35 disabled:cursor-not-allowed',
     ].join(' '),
   },

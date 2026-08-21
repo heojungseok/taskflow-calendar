@@ -17,6 +17,27 @@ test('privacy policy does not wait for session initialization', async ({ page })
   await expect(page.getByRole('heading', { name: 'Privacy Policy' })).toBeVisible({ timeout: 1_000 });
 });
 
+test('public homepage and terms do not require a session', async ({ page }) => {
+  let sessionRequested = false;
+  await page.route('**/api/auth/session', route => {
+    sessionRequested = true;
+    return route.abort();
+  });
+
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /쓰는 대로/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
+
+  await page.goto('/terms');
+  await expect(page.getByRole('heading', { name: 'Terms of Service' })).toBeVisible();
+
+  await page.goto('/login');
+  await expect(page.getByRole('button').nth(0)).toContainText('Google로 로그인');
+  await expect(page.getByRole('button').nth(1)).toContainText('데모로 둘러보기');
+  expect(sessionRequested).toBe(false);
+});
+
 test('browser project creation forwards the CSRF token', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: '데모로 둘러보기' }).click();
@@ -54,13 +75,13 @@ test('public sync route and in-page task deletion work', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Task 제목' }).fill('삭제 확인 Task');
   await page.getByRole('button', { name: '만들기' }).click();
 
-  await page.getByRole('button', { name: '삭제' }).first().click();
+  await page.getByRole('button', { name: '삭제', exact: true }).first().click();
   await expect(page.getByRole('dialog', { name: 'Task 삭제' })).toBeVisible({ timeout: 5_000 });
 
   const deleteResponse = page.waitForResponse(response =>
     response.request().method() === 'DELETE' && /\/api\/tasks\/\d+$/.test(response.url())
   );
-  await page.getByRole('button', { name: '확인' }).click();
+  await page.getByRole('button', { name: '확인', exact: true }).click();
   expect((await deleteResponse).status()).toBe(200);
 });
 

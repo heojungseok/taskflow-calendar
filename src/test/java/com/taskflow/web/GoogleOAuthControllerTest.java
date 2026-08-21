@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(GoogleOAuthController.class)
@@ -46,12 +47,16 @@ class GoogleOAuthControllerTest {
     void authorizeBindsStateToHttpOnlyCallbackCookie() throws Exception {
         given(stateStore.generateState()).willReturn("state-value");
         given(properties.getAuthorizationUri()).willReturn("https://accounts.google.test/o/oauth2/auth");
+        given(properties.getScope()).willReturn(
+                "openid https://www.googleapis.com/auth/calendar.events.owned");
 
         mvc.perform(get("/api/oauth/google/authorize"))
                 .andExpect(status().isOk())
                 .andExpect(cookie().value("OAUTH_STATE", "state-value"))
                 .andExpect(cookie().httpOnly("OAUTH_STATE", true))
-                .andExpect(cookie().path("OAUTH_STATE", "/api/oauth/google/callback"));
+                .andExpect(cookie().path("OAUTH_STATE", "/api/oauth/google/callback"))
+                .andExpect(jsonPath("$.data.authorizeUrl")
+                        .value(org.hamcrest.Matchers.containsString("calendar.events.owned")));
     }
 
     @Test
@@ -115,7 +120,7 @@ class GoogleOAuthControllerTest {
         given(stateStore.validateState("same")).willReturn(true);
         given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
         given(googleOAuthService.loginOrRegister(result))
-                .willThrow(new MissingRequiredGoogleScopeException("calendar.events"));
+                .willThrow(new MissingRequiredGoogleScopeException("calendar.events.owned"));
 
         mvc.perform(get("/api/oauth/google/callback")
                         .param("state", "same")

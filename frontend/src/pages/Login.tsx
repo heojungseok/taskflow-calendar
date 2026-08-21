@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import apiClient from '@/api/client';
 import { cx, clsx, PIPELINE } from '@/styles/cx';
 import { authApi } from '@/api/endpoints/auth';
 import { useAuthStore } from '@/store/authStore';
 import { useNavigate } from 'react-router-dom';
+import { MOTION } from '@/styles/motion';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -19,7 +20,6 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [error, setError] = useState('');
-  const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
 
@@ -50,18 +50,11 @@ export default function Login() {
     }
   };
 
-  const step = (i: number) =>
-    reduceMotion
-      ? {}
-      : {
-          initial: { opacity: 0, y: 6 },
-          animate: { opacity: 1, y: 0 },
-          transition: {
-            duration: 0.4,
-            delay: i * 0.08,
-            ease: [0.2, 0, 0, 1] as [number, number, number, number],
-          },
-        };
+  const step = (index: number) => ({
+    initial: { opacity: 0, transform: 'translateY(6px)' },
+    animate: { opacity: 1, transform: 'translateY(0)' },
+    transition: { ...MOTION.enter, delay: index * 0.05 },
+  });
 
   return (
     <div className={clsx(cx.page, 'min-h-screen grid place-items-center px-6')}>
@@ -119,19 +112,11 @@ export default function Login() {
           )}
 
           <button
-            onClick={handleDemoLogin}
-            disabled={isDemoLoading || isLoading}
-            className={clsx(cx.btn.primary, 'w-full py-3 text-[14px]')}
-          >
-            {isDemoLoading ? '데모를 준비하는 중' : '데모로 둘러보기'}
-          </button>
-
-          <button
             onClick={handleGoogleLogin}
             disabled={isLoading || isDemoLoading}
             className={clsx(
-              cx.btn.secondary,
-              'mt-3 w-full inline-flex items-center justify-center gap-2.5 py-3 text-[14px]'
+              cx.btn.primary,
+              'w-full inline-flex items-center justify-center gap-2.5 py-3 text-[14px]'
             )}
           >
             {isLoading ? (
@@ -155,15 +140,21 @@ export default function Login() {
             )}
           </button>
 
+          <button
+            onClick={handleDemoLogin}
+            disabled={isDemoLoading || isLoading}
+            className={clsx(cx.btn.secondary, 'mt-3 w-full py-3 text-[14px]')}
+          >
+            {isDemoLoading ? '데모를 준비하는 중' : '데모로 둘러보기'}
+          </button>
+
           <p className="mt-3 text-[13px] text-[var(--ink-3)]">
             데모 데이터는 방문자별로 분리되며 24시간 뒤 삭제됩니다.
           </p>
-          <a
-            href="/privacy"
-            className="mt-4 inline-block text-[13px] text-[var(--ink-3)] underline underline-offset-4"
-          >
-            Privacy Policy
-          </a>
+          <nav aria-label="Legal" className="mt-4 flex justify-center gap-4 text-[13px] text-[var(--ink-3)]">
+            <a href="/privacy" className="underline underline-offset-4">Privacy Policy</a>
+            <a href="/terms" className="underline underline-offset-4">Terms of Service</a>
+          </nav>
         </motion.div>
       </main>
     </div>

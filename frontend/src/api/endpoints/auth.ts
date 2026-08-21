@@ -8,6 +8,7 @@ export const authApi = {
     return response.data.data;
   },
   demo: async () => {
+    await apiClient.get('/auth/session');
     const response = await apiClient.post<ApiResponse<Session>>('/auth/demo');
     return response.data.data;
   },

@@ -11,6 +11,7 @@ import type { ApiResponse } from '@/api/types';
 import type { Task, TaskStatus, TaskCreateRequest, TaskUpdateRequest, TaskHistory, OutboxStatus } from '@/types/task';
 import type { ProjectTaskRecommendation, ProjectTaskRecommendationItem, ProjectWeeklySummary, ProjectWeeklySummarySection } from '@/types/project';
 import { cx, clsx, SYNC_STATE, SYNC_BADGE_TONE } from '@/styles/cx';
+import { MOTION } from '@/styles/motion';
 
 // ── 상수 ──────────────────────────────────────────────────
 
@@ -261,6 +262,41 @@ interface TaskCardProps {
   showRecommendationMarker?: boolean;
 }
 
+function TaskStatusBadge({ status }: { status: TaskStatus }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span
+        key={status}
+        initial={{ opacity: 0, transform: 'scale(0.97)' }}
+        animate={{ opacity: 1, transform: 'scale(1)', transition: MOTION.state }}
+        exit={{ opacity: 0, transform: 'scale(0.97)', transition: MOTION.exit }}
+        className={clsx(cx.badge.base, cx.badge[status])}
+      >
+        {STATUS_LABEL[status]}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
+function TaskSyncBadge({ state }: { state: keyof typeof SYNC_STATE }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {state !== 'SYNC_DISABLED' && (
+        <motion.span
+          key={state}
+          initial={{ opacity: 0, transform: 'scale(0.97)' }}
+          animate={{ opacity: 1, transform: 'scale(1)', transition: MOTION.state }}
+          exit={{ opacity: 0, transform: 'scale(0.97)', transition: MOTION.exit }}
+          className={clsx(cx.badge.base, SYNC_BADGE_TONE[state])}
+        >
+          <Calendar size={9} strokeWidth={2} />
+          {SYNC_STATE[state].ko}
+        </motion.span>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function TaskCard({
   task,
   onStatusChange,
@@ -314,23 +350,10 @@ function TaskCard({
           </div>
 
           <div className="mb-2 flex items-center gap-1.5 flex-wrap">
-            <motion.span
-              key={task.status}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.15 }}
-              className={clsx(cx.badge.base, cx.badge[task.status])}
-            >
-              {STATUS_LABEL[task.status]}
-            </motion.span>
+            <TaskStatusBadge status={task.status} />
 
             {/* eventId 유무로 짐작하던 자리다. 실패·삭제대기가 '동기화'로 보였다. */}
-            {task.syncState && task.syncState !== 'SYNC_DISABLED' && (
-              <span className={clsx(cx.badge.base, SYNC_BADGE_TONE[task.syncState])}>
-                <Calendar size={9} strokeWidth={2} />
-                {SYNC_STATE[task.syncState].ko}
-              </span>
-            )}
+            {task.syncState && <TaskSyncBadge state={task.syncState} />}
           </div>
 
           <p className={clsx(cx.text.meta, 'mt-2 flex min-h-[16px] items-center gap-1')}>
@@ -384,23 +407,10 @@ function TaskCard({
           </p>
 
           <div className="mt-2.5 flex min-h-[24px] items-center gap-1.5 flex-wrap">
-            <motion.span
-              key={task.status}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.15 }}
-              className={clsx(cx.badge.base, cx.badge[task.status])}
-            >
-              {STATUS_LABEL[task.status]}
-            </motion.span>
+            <TaskStatusBadge status={task.status} />
 
             {/* eventId 유무로 짐작하던 자리다. 실패·삭제대기가 '동기화'로 보였다. */}
-            {task.syncState && task.syncState !== 'SYNC_DISABLED' && (
-              <span className={clsx(cx.badge.base, SYNC_BADGE_TONE[task.syncState])}>
-                <Calendar size={9} strokeWidth={2} />
-                {SYNC_STATE[task.syncState].ko}
-              </span>
-            )}
+            {task.syncState && <TaskSyncBadge state={task.syncState} />}
           </div>
 
           <p className={clsx(cx.text.meta, 'mt-2 flex min-h-[16px] items-center gap-1')}>
@@ -634,8 +644,8 @@ function CreateModal({ onClose, onSubmit, isPending, isError }: CreateModalProps
   };
 
   return (
-    <motion.div className={cx.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-      <motion.div className={cx.modal} initial={{ opacity: 0, scale: 0.97, y: 6 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.12 }}>
+    <motion.div className={cx.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: MOTION.enter }} exit={{ opacity: 0, transition: MOTION.exit }}>
+      <motion.div className={cx.modal} initial={{ opacity: 0, transform: 'translateY(6px) scale(0.97)' }} animate={{ opacity: 1, transform: 'translateY(0) scale(1)', transition: MOTION.enter }} exit={{ opacity: 0, transform: 'translateY(6px) scale(0.97)', transition: MOTION.exit }}>
         <h3 className={clsx(cx.text.subheading, 'mb-5')}>새 Task</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -778,17 +788,15 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[1px] px-3 py-6 sm:px-6"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.14 }}
+      animate={{ opacity: 1, transition: MOTION.enter }}
+      exit={{ opacity: 0, transition: MOTION.exit }}
       onClick={onClose}
     >
       <motion.div
         className="mx-auto max-h-full w-full max-w-2xl overflow-y-auto rounded-[var(--radius)] border border-[var(--rule-strong)] bg-[var(--surface)] p-6 shadow-[0_16px_48px_-12px_rgba(20,22,26,0.28)]"
-        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 8, scale: 0.98 }}
-        transition={{ duration: 0.14 }}
+        initial={{ opacity: 0, transform: 'translateY(8px) scale(0.98)' }}
+        animate={{ opacity: 1, transform: 'translateY(0) scale(1)', transition: MOTION.enter }}
+        exit={{ opacity: 0, transform: 'translateY(8px) scale(0.98)', transition: MOTION.exit }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -1018,19 +1026,17 @@ function DeleteConfirmDialog({ isPending, onCancel, onConfirm }: {
     <motion.div
       className={cx.overlay}
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.12 }}
+      animate={{ opacity: 1, transition: MOTION.enter }}
+      exit={{ opacity: 0, transition: MOTION.exit }}
     >
       <motion.div
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-task-title"
         className={cx.modal}
-        initial={{ opacity: 0, scale: 0.97, y: 6 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97 }}
-        transition={{ duration: 0.12 }}
+        initial={{ opacity: 0, transform: 'translateY(6px) scale(0.97)' }}
+        animate={{ opacity: 1, transform: 'translateY(0) scale(1)', transition: MOTION.enter }}
+        exit={{ opacity: 0, transform: 'translateY(6px) scale(0.97)', transition: MOTION.exit }}
       >
         <h3 id="delete-task-title" className={clsx(cx.text.subheading, 'mb-3')}>Task 삭제</h3>
         <p className={clsx(cx.text.body, 'mb-5')}>Task와 연결된 Google Calendar 일정도 삭제합니다.</p>
@@ -1334,16 +1340,15 @@ export default function TaskListPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="popLayout" initial={false}>
             {tasks?.map((task) => (
               <motion.div
                 key={task.id}
                 layout
                 className="h-full"
                 initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.97 }}
-                transition={{ duration: 0.12 }}
+                animate={{ opacity: 1, y: 0, transition: MOTION.enter }}
+                exit={{ opacity: 0, scale: 0.98, transition: MOTION.exit }}
               >
                 <TaskCard
                   task={task}

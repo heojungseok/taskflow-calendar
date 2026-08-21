@@ -4,11 +4,14 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpResponseException;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.security.JwtTokenProvider;
+import com.taskflow.web.dto.auth.AuthSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -151,14 +155,35 @@ class GoogleOAuthServiceTest {
     }
 
     @Test
-    void loginRejectsMissingCalendarScopeBeforeChangingUserOrToken() {
+    void loginRejectsBroaderCalendarScopeWhenOwnedScopeIsMissing() {
         GoogleOAuthResult result = new GoogleOAuthResult(
                 "user@example.com", "User", "access", "refresh", 3600L,
-                "openid https://www.googleapis.com/auth/userinfo.email");
+                "openid https://www.googleapis.com/auth/calendar.events");
 
         assertThrows(MissingRequiredGoogleScopeException.class,
                 () -> service.loginOrRegister(result));
 
         verifyNoInteractions(userRepository, tokenRepository, jwtTokenProvider);
+    }
+
+    @Test
+    void loginAcceptsOwnedCalendarScope() {
+        GoogleOAuthResult result = new GoogleOAuthResult(
+                "user@example.com", "User", "access", "refresh", 3600L,
+                "openid https://www.googleapis.com/auth/calendar.events.owned");
+        User user = mock(User.class);
+        Instant expiresAt = Instant.now().plusSeconds(3600);
+
+        when(user.getId()).thenReturn(USER_ID);
+        when(user.getProvider()).thenReturn(Provider.GOOGLE);
+        when(userRepository.findByEmail(result.getEmail())).thenReturn(Optional.of(user));
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+        when(jwtTokenProvider.generateToken(USER_ID)).thenReturn("jwt");
+        when(jwtTokenProvider.getExpiration("jwt")).thenReturn(expiresAt);
+
+        AuthSession session = service.loginOrRegister(result);
+
+        assertEquals(new AuthSession("jwt", USER_ID, Provider.GOOGLE, expiresAt), session);
+        verify(tokenRepository).save(argThat(saved -> result.getScope().equals(saved.getScope())));
     }
 }

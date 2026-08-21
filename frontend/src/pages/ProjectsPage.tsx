@@ -6,6 +6,7 @@ import { LoaderCircle, Plus, Search } from 'lucide-react';
 import { projectsApi } from '@/api/endpoints/projects';
 import type { ProjectCreateRequest, ProjectTaskSearchIntent, ProjectTaskSearchResponse } from '@/types/project';
 import { cx, clsx, SYNC_STATE, TASK_STATUS } from '@/styles/cx';
+import { MOTION } from '@/styles/motion';
 
 const ACTION_QUERY_LABELS: Record<ProjectTaskSearchIntent['mainAction'], string> = {
   PREPARE: '준비',
@@ -205,13 +206,30 @@ export default function ProjectsPage() {
               {searchMutation.isPending ? '찾는 중' : '찾기'}
             </button>
           </div>
-          {searchError && <div className={clsx(cx.errorBox, 'mt-3')}>{searchError}</div>}
+          <AnimatePresence initial={false}>
+            {searchError && (
+              <motion.div
+                initial={{ opacity: 0, transform: 'translateY(-6px)' }}
+                animate={{ opacity: 1, transform: 'translateY(0)', transition: MOTION.enter }}
+                exit={{ opacity: 0, transform: 'translateY(-6px)', transition: MOTION.exit }}
+                className={clsx(cx.errorBox, 'mt-3')}
+              >
+                {searchError}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </form>
       </section>
 
-      {/* 검색 중 */}
-      {searchMutation.isPending && (
-        <div className={clsx(cx.card, 'mb-8')}>
+      <AnimatePresence mode="wait" initial={false}>
+        {searchMutation.isPending ? (
+        <motion.div
+          key="search-loading"
+          initial={{ opacity: 0, transform: 'translateY(6px)' }}
+          animate={{ opacity: 1, transform: 'translateY(0)', transition: MOTION.enter }}
+          exit={{ opacity: 0, transform: 'translateY(-6px)', transition: MOTION.exit }}
+          className={clsx(cx.card, 'mb-8')}
+        >
           <p className={clsx(cx.text.subheading, 'mb-1')}>질의를 해석하는 중</p>
           <p className="text-[13px] text-[var(--ink-2)] mb-5">
             검색어의 의도를 파악하고 관련 일정을 찾고 있습니다.
@@ -224,12 +242,15 @@ export default function ProjectsPage() {
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* 검색 결과 */}
-      {searchResult && (
-        <div className="mb-8 space-y-4">
+        </motion.div>
+      ) : searchResult ? (
+        <motion.div
+          key={`search-result-${searchResult.query}`}
+          initial={{ opacity: 0, transform: 'translateY(6px)' }}
+          animate={{ opacity: 1, transform: 'translateY(0)', transition: MOTION.enter }}
+          exit={{ opacity: 0, transform: 'translateY(-6px)', transition: MOTION.exit }}
+          className="mb-8 space-y-4"
+        >
           {!searchResult.intentFallback && searchResult.semanticStatus === 'UNAVAILABLE' && (
             <div className={clsx(cx.card, 'text-[13px] text-[var(--ink-2)]')}>
               의미 검색을 쓸 수 없어 키워드 검색 결과만 표시합니다.
@@ -336,8 +357,9 @@ export default function ProjectsPage() {
               )}
             </>
           )}
-        </div>
-      )}
+        </motion.div>
+      ) : null}
+      </AnimatePresence>
 
       {/* 목록 */}
       {isLoading ? (
@@ -366,10 +388,9 @@ export default function ProjectsPage() {
               <motion.li
                 key={project.id}
                 layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.14 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0, transition: MOTION.enter }}
+                exit={{ opacity: 0, scale: 0.98, transition: MOTION.exit }}
                 className="border-b border-[var(--rule)]"
               >
                 <button
@@ -401,16 +422,14 @@ export default function ProjectsPage() {
           <motion.div
             className={cx.overlay}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
+            animate={{ opacity: 1, transition: MOTION.enter }}
+            exit={{ opacity: 0, transition: MOTION.exit }}
           >
             <motion.div
               className={cx.modal}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.14 }}
+              initial={{ opacity: 0, transform: 'translateY(6px) scale(0.97)' }}
+              animate={{ opacity: 1, transform: 'translateY(0) scale(1)', transition: MOTION.enter }}
+              exit={{ opacity: 0, transform: 'translateY(6px) scale(0.97)', transition: MOTION.exit }}
             >
               <h3 className={clsx(cx.text.subheading, 'mb-5')}>새 프로젝트</h3>
 

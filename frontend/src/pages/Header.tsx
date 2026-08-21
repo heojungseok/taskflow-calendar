@@ -64,8 +64,8 @@ export default function Header() {
 
   return (
     <header className={cx.header}>
-      <div className="max-w-5xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      <div className="max-w-5xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4 sm:gap-6">
           <button
             onClick={() => navigate('/projects')}
             className="font-[family-name:var(--font-display)] text-[15px] font-extrabold tracking-[-0.02em] text-[var(--ink)]"
@@ -81,7 +81,9 @@ export default function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:justify-end sm:gap-4">
+          <a href="/privacy" className={cx.btn.ghost}>Privacy</a>
+          <a href="/terms" className={cx.btn.ghost}>Terms</a>
           {userType === 'GOOGLE' && (
             <button onClick={handleDisconnect} disabled={disconnecting} className={cx.btn.danger}>
               {disconnecting ? '연결 해제 중...' : 'Google 연결 해제'}

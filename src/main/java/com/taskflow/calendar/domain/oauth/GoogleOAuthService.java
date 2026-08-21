@@ -41,7 +41,7 @@ import java.util.Optional;
 public class GoogleOAuthService {
 
     private static final String CALENDAR_EVENTS_SCOPE =
-            "https://www.googleapis.com/auth/calendar.events";
+            "https://www.googleapis.com/auth/calendar.events.owned";
 
     private final GoogleOAuthProperties properties;
     private final OAuthGoogleTokenRepository tokenRepository;
