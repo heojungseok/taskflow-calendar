@@ -6,14 +6,23 @@ import TaskListPage from './pages/TaskListPage';
 import TaskDetailPage from './pages/TaskDetailPage';
 import OutboxPage from './pages/OutboxPage';
 import Header from './pages/Header';
+import HomePage from './pages/HomePage';
 import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import { useAuthStore } from './store/authStore';
 import { authApi } from './api/endpoints/auth';
 import { useEffect } from 'react';
+import { MotionConfig } from 'framer-motion';
 
 function AuthLayout() {
+  const setSession = useAuthStore((state) => state.setSession);
+  const clearSession = useAuthStore((state) => state.clearSession);
   const initialized = useAuthStore((state) => state.initialized);
   const authenticated = useAuthStore((state) => state.authenticated);
+
+  useEffect(() => {
+    authApi.session().then(setSession).catch(clearSession);
+  }, [setSession, clearSession]);
 
   if (!initialized) {
     return <div className="min-h-screen grid place-items-center">불러오는 중</div>;
@@ -34,19 +43,15 @@ function AuthLayout() {
 }
 
 function App() {
-  const setSession = useAuthStore((state) => state.setSession);
-  const clearSession = useAuthStore((state) => state.clearSession);
-
-  useEffect(() => {
-    authApi.session().then(setSession).catch(clearSession);
-  }, [setSession, clearSession]);
-
   return (
-    <BrowserRouter>
-      <Routes>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/" element={<HomePage />} />
 
         <Route element={<AuthLayout />}>
           <Route path="/projects" element={<ProjectsPage />} />
@@ -55,10 +60,10 @@ function App() {
           <Route path="/admin/outbox" element={<OutboxPage />} />
         </Route>
 
-        <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/tasks" element={<Navigate to="/projects" replace />} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </MotionConfig>
   );
 }
 

@@ -5,7 +5,7 @@ export default function PrivacyPage() {
     <main className="min-h-screen bg-[var(--paper)] px-6 py-12 text-[var(--ink)]">
       <article className="mx-auto max-w-3xl">
         <a
-          href="/login"
+          href="/"
           className="font-[family-name:var(--font-display)] text-[15px] font-extrabold tracking-[-0.02em]"
         >
           TASKFLOW
@@ -65,7 +65,11 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-[19px] font-semibold text-[var(--ink)]">4. External processing</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5">
-              <li>Google Calendar API processes only the calendar events linked to tasks you choose to sync.</li>
+              <li>
+                TaskFlow requests the <code>calendar.events.owned</code> permission, which allows event management on
+                calendars you own. TaskFlow currently uses it only for events on your primary calendar that are linked
+                to tasks you choose to sync; it does not list or import unrelated events.
+              </li>
               <li>
                 When you explicitly use an AI feature, relevant TaskFlow task fields, such as the title, description,
                 schedule, and status, may be sent to the Google Gemini API to generate the requested result. OAuth tokens
@@ -135,6 +139,11 @@ export default function PrivacyPage() {
               posted unless a later date is stated.
             </p>
           </section>
+
+          <p>
+            See also the{' '}
+            <a className="underline underline-offset-4" href="/terms">Terms of Service</a>.
+          </p>
         </div>
       </article>
     </main>

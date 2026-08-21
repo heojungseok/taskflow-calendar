@@ -58,6 +58,7 @@
 
   --radius: 2px;
   --ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   --font-display: "Archivo", system-ui, sans-serif;
   --font-sans: "IBM Plex Sans KR", system-ui, sans-serif;
