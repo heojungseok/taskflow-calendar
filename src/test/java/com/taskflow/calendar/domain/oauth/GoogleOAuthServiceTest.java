@@ -2,9 +2,11 @@ package com.taskflow.calendar.domain.oauth;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpResponseException;
+import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
+import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
-import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -146,5 +148,17 @@ class GoogleOAuthServiceTest {
         service.disconnect(USER_ID);
 
         verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void loginRejectsMissingCalendarScopeBeforeChangingUserOrToken() {
+        GoogleOAuthResult result = new GoogleOAuthResult(
+                "user@example.com", "User", "access", "refresh", 3600L,
+                "openid https://www.googleapis.com/auth/userinfo.email");
+
+        assertThrows(MissingRequiredGoogleScopeException.class,
+                () -> service.loginOrRegister(result));
+
+        verifyNoInteractions(userRepository, tokenRepository, jwtTokenProvider);
     }
 }

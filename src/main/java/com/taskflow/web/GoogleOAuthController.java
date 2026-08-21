@@ -4,6 +4,7 @@ import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.oauth.OAuthStateStore;
 import com.taskflow.calendar.domain.oauth.dto.AuthorizeUrlResponse;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
+import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.web.dto.auth.AuthSession;
@@ -101,6 +102,12 @@ public class GoogleOAuthController {
                     .location(URI.create(frontendBaseUrl + "/oauth/callback"))
                     .build();
 
+        } catch (MissingRequiredGoogleScopeException e) {
+            log.warn("OAuth callback failed. errorCode=calendar_permission_required");
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(frontendBaseUrl + "/oauth/callback?error=calendar_permission_required"))
+                    .build();
         } catch (Exception e) {
             log.warn("OAuth callback failed. errorCode=oauth_failed");
 

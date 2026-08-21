@@ -6,6 +6,17 @@ async function csrfHeader(context: BrowserContext) {
   return { 'X-XSRF-TOKEN': token!.value };
 }
 
+test('privacy policy does not wait for session initialization', async ({ page }) => {
+  await page.route('**/api/auth/session', async route => {
+    await new Promise(resolve => setTimeout(resolve, 5_000));
+    await route.fulfill({ json: { success: true, data: { authenticated: false } } });
+  });
+
+  await page.goto('/privacy');
+
+  await expect(page.getByRole('heading', { name: 'Privacy Policy' })).toBeVisible({ timeout: 1_000 });
+});
+
 test('browser project creation forwards the CSRF token', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: '데모로 둘러보기' }).click();

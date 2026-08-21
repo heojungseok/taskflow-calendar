@@ -8,6 +8,7 @@ import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
+import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
@@ -30,6 +31,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Optional;
 
 @Slf4j
@@ -37,6 +39,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Transactional
 public class GoogleOAuthService {
+
+    private static final String CALENDAR_EVENTS_SCOPE =
+            "https://www.googleapis.com/auth/calendar.events";
 
     private final GoogleOAuthProperties properties;
     private final OAuthGoogleTokenRepository tokenRepository;
@@ -229,6 +234,8 @@ public class GoogleOAuthService {
     public AuthSession loginOrRegister(GoogleOAuthResult result) {
         log.info("Processing Google login or register");
 
+        requireCalendarEventsScope(result.getScope());
+
         // 1️⃣ User 조회 (email)
         Optional<User> userOpt = userRepository.findByEmail(result.getEmail());
 
@@ -252,6 +259,14 @@ public class GoogleOAuthService {
         log.info("JWT issued. userId={}", user.getId());
 
         return new AuthSession(jwt, user.getId(), user.getProvider(), expiresAt);
+    }
+
+    private void requireCalendarEventsScope(String grantedScopes) {
+        boolean granted = grantedScopes != null && Arrays.stream(grantedScopes.trim().split("\\s+"))
+                .anyMatch(CALENDAR_EVENTS_SCOPE::equals);
+        if (!granted) {
+            throw new MissingRequiredGoogleScopeException(CALENDAR_EVENTS_SCOPE);
+        }
     }
 
     /**

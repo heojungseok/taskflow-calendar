@@ -3,6 +3,7 @@ package com.taskflow.web;
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.oauth.OAuthStateStore;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
+import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.GoogleOAuthProperties;
@@ -104,6 +105,25 @@ class GoogleOAuthControllerTest {
                         .cookie(new Cookie("OAUTH_STATE", "same")))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "http://frontend.test/oauth/callback?error=oauth_failed"))
+                .andExpect(cookie().maxAge("OAUTH_STATE", 0));
+    }
+
+    @Test
+    void missingCalendarPermissionUsesSpecificError() throws Exception {
+        GoogleOAuthResult result = new GoogleOAuthResult(
+                "user@example.test", "User", "access", "refresh", 3600L, "openid");
+        given(stateStore.validateState("same")).willReturn(true);
+        given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
+        given(googleOAuthService.loginOrRegister(result))
+                .willThrow(new MissingRequiredGoogleScopeException("calendar.events"));
+
+        mvc.perform(get("/api/oauth/google/callback")
+                        .param("state", "same")
+                        .param("code", "code")
+                        .cookie(new Cookie("OAUTH_STATE", "same")))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location",
+                        "http://frontend.test/oauth/callback?error=calendar_permission_required"))
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
     }
 }
