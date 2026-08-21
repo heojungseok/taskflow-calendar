@@ -63,7 +63,7 @@ export default function Login() {
           {...step(0)}
           className="font-[family-name:var(--font-display)] text-[clamp(38px,10vw,52px)] leading-[0.9] font-extrabold tracking-[-0.04em] text-[var(--ink)]"
         >
-          TASKFLOW
+          TaskFlow
         </motion.h1>
 
         <motion.div {...step(1)} className="mt-5">

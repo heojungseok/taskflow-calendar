@@ -8,7 +8,7 @@ export default function PrivacyPage() {
           href="/"
           className="font-[family-name:var(--font-display)] text-[15px] font-extrabold tracking-[-0.02em]"
         >
-          TASKFLOW
+          TaskFlow
         </a>
 
         <header className="mt-12 border-b border-[var(--rule)] pb-8">
