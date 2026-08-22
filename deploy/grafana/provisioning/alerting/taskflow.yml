@@ -115,7 +115,7 @@ groups:
           - refId: A
             datasourceUid: prometheus
             relativeTimeRange: {from: 300, to: 0}
-            model: {refId: A, expr: 'max(outbox_oldest_processable_age_seconds)', instant: true}
+            model: {refId: A, expr: 'max(outbox_oldest_processable_age_seconds) or vector(0)', instant: true}
           - refId: B
             datasourceUid: __expr__
             model: {refId: B, type: reduce, expression: A, reducer: last}
@@ -165,7 +165,7 @@ groups:
           - refId: A
             datasourceUid: prometheus
             relativeTimeRange: {from: 900, to: 0}
-            model: {refId: A, expr: 'sum(increase(demo_cleanup_failures_total[15m]))', instant: true}
+            model: {refId: A, expr: 'sum(increase(demo_cleanup_failures_total[15m])) or vector(0)', instant: true}
           - refId: B
             datasourceUid: __expr__
             model: {refId: B, type: reduce, expression: A, reducer: last}
@@ -190,7 +190,7 @@ groups:
           - refId: A
             datasourceUid: prometheus
             relativeTimeRange: {from: 600, to: 0}
-            model: {refId: A, expr: 'max(demo_oldest_expired_age_seconds)', instant: true}
+            model: {refId: A, expr: 'max(demo_oldest_expired_age_seconds) or vector(0)', instant: true}
           - refId: B
             datasourceUid: __expr__
             model: {refId: B, type: reduce, expression: A, reducer: last}
