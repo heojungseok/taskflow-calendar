@@ -55,6 +55,13 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}  # 24 hours in ms
 
+token:
+  encryption:
+    # jwt.secret과 같은 원칙 - 기본값을 두지 않는다. 없으면 기동에 실패하는 게 맞다.
+    # 이 키를 잃으면 저장된 OAuth 토큰은 영구히 복호화할 수 없다.
+    password: ${TOKEN_ENC_PASSWORD}
+    salt: ${TOKEN_ENC_SALT}  # hex 문자열이어야 한다 (openssl rand -hex 16)
+
 google:
   oauth:
     client-id: ${GOOGLE_CLIENT_ID}

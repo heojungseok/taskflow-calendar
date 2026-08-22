@@ -70,6 +70,9 @@ tasks.named('test') {
     // application.yml의 jwt.secret은 기본값이 없다. 테스트 컨텍스트도 값이 있어야 뜬다.
     environment 'JWT_SECRET', 'test-only-secret-key-not-used-anywhere-else-256-bits-long'
     environment 'SESSION_COOKIE_SECURE', 'true'
+    // token.encryption도 기본값이 없다. salt는 hex여야 한다.
+    environment 'TOKEN_ENC_PASSWORD', 'test-only-token-encryption-password'
+    environment 'TOKEN_ENC_SALT', '0123456789abcdef0123456789abcdef'
 }
 
 // .env 파일 로드
