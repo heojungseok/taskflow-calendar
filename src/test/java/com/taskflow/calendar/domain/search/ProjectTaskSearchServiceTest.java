@@ -20,7 +20,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 
@@ -159,9 +162,15 @@ class ProjectTaskSearchServiceTest {
         Project alpha = project(1L, "Alpha");
         Project beta = project(2L, "Beta");
 
-        Task alphaTask = task(10L, alpha, "배포 체크리스트 준비", "운영 배포 준비 문서 정리", LocalDateTime.now().plusDays(1));
-        Task betaTask = task(11L, beta, "배포 초안 준비", "릴리즈 초안 작성", LocalDateTime.now().plusDays(2));
-        Task lifeTask = task(12L, beta, "병원 방문", "검진 일정", LocalDateTime.now().plusDays(1));
+        // THIS_WEEK 의도는 월~일 범위로 자르므로, now().plusDays(n)를 쓰면 주 후반에 다음 주로 넘어가 결과가 사라진다.
+        // 요일과 무관하게 이번 주 안에 들어오도록 이번 주 월요일을 기준으로 잡는다.
+        LocalDateTime thisMonday = LocalDate.now()
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .atTime(9, 0);
+
+        Task alphaTask = task(10L, alpha, "배포 체크리스트 준비", "운영 배포 준비 문서 정리", thisMonday.plusDays(1));
+        Task betaTask = task(11L, beta, "배포 초안 준비", "릴리즈 초안 작성", thisMonday.plusDays(2));
+        Task lifeTask = task(12L, beta, "병원 방문", "검진 일정", thisMonday.plusDays(1));
 
         SearchIntent intent = SearchIntent.of(
                 "이번 주 배포 준비 일정",

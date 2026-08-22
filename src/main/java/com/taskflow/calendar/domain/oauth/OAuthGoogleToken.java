@@ -4,6 +4,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.taskflow.security.EncryptedStringConverter;
+
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -17,9 +19,12 @@ public class OAuthGoogleToken {
     @Column(name = "user_id")
     private Long userId;
 
+    // 평문 저장 금지. 암호문은 base64라 TEXT 그대로 들어간다.
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(name = "access_token", columnDefinition = "TEXT", nullable = false)
     private String accessToken;
 
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(name = "refresh_token", columnDefinition = "TEXT", nullable = false)
     private String refreshToken;
 
