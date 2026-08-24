@@ -5,6 +5,7 @@ import com.taskflow.calendar.domain.oauth.OAuthStateStore;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.config.SecurityConfig;
@@ -20,12 +21,19 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,6 +43,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, SessionCookieService.class})
 @TestPropertySource(properties = "app.frontend.base-url=http://frontend.test")
 class GoogleOAuthControllerTest {
+
+    private static final String TOKEN = "session-token";
 
     @Autowired MockMvc mvc;
     @MockitoBean GoogleOAuthProperties properties;
@@ -130,5 +140,27 @@ class GoogleOAuthControllerTest {
                 .andExpect(header().string("Location",
                         "http://frontend.test/oauth/callback?error=calendar_permission_required"))
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
+    }
+
+    @Test
+    void disconnectFailureStillClearsSessionCookie() throws Exception {
+        stubAuthenticatedUser();
+        willThrow(new IllegalStateException("disconnect failed"))
+                .given(googleOAuthService).disconnect(7L);
+
+        mvc.perform(post("/api/oauth/google/disconnect")
+                        .with(csrf())
+                        .cookie(new Cookie(SessionCookieService.SESSION_COOKIE, TOKEN)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(cookie().maxAge(SessionCookieService.SESSION_COOKIE, 0));
+    }
+
+    private void stubAuthenticatedUser() {
+        User user = mock(User.class);
+        given(jwtTokenProvider.validateToken(TOKEN)).willReturn(true);
+        given(jwtTokenProvider.getUserIdFromToken(TOKEN)).willReturn(7L);
+        given(jwtTokenProvider.getSessionVersion(TOKEN)).willReturn(3);
+        given(userRepository.findById(7L)).willReturn(Optional.of(user));
+        given(user.isSessionActive(eq(3), any(LocalDateTime.class))).willReturn(true);
     }
 }
