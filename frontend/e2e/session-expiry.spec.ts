@@ -326,6 +326,39 @@ test.describe('session expiry dialog', () => {
     expect(await storedReturnPath(page)).toBeNull();
   });
 
+  test('만료 확인으로 갱신된 서버 expiry를 반영해 재확인하지 않는다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 1000).toISOString());
+    await page.goto(ORIGINAL_PATH);
+    await expect(page.getByRole('heading', { name: '세션 만료 확인' })).toBeVisible();
+    let readbacks = 0;
+    await page.route('**/api/auth/session', route => {
+      readbacks++;
+      return route.fulfill({
+        json: {
+          success: true,
+          data: {
+            authenticated: true,
+            userType: 'GOOGLE',
+            expiresAt: new Date(now.getTime() + 12 * 60 * 60 * 1000).toISOString(),
+          },
+        },
+      });
+    });
+
+    await page.clock.setSystemTime(now.getTime() + 1000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect.poll(() => readbacks).toBe(1);
+    await expect(expiryDialog(page)).toHaveCount(0);
+
+    await page.clock.runFor(60_000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+
+    await expect.poll(() => readbacks).toBe(1);
+    await expect(page).toHaveURL(new RegExp(`${ORIGINAL_PATH.replace(/[?#]/g, '\\$&')}$`));
+    expect(await storedReturnPath(page)).toBeNull();
+  });
+
   test('expiry 서버 확인 실패는 보호 화면과 세션을 유지한다', async ({ page }) => {
     await page.clock.install({ time: now });
     await mockApi(page, 'authenticated', new Date(now.getTime() + 1000).toISOString());

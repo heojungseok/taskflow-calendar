@@ -16,6 +16,7 @@ export default function SessionExpiryDialog() {
   const navigate = useNavigate();
   const userType = useAuthStore(state => state.userType);
   const expiresAt = useAuthStore(state => state.expiresAt);
+  const setSession = useAuthStore(state => state.setSession);
   const clearSession = useAuthStore(state => state.clearSession);
   const [dismissed, setDismissed] = useState(false);
   const [open, setOpen] = useState(false);
@@ -61,7 +62,11 @@ export default function SessionExpiryDialog() {
         expiryReadbackPendingRef.current = true;
         try {
           const session = await authApi.sessionOrNull();
-          if (!active || session?.authenticated) return;
+          if (!active) return;
+          if (session?.authenticated) {
+            setSession(session);
+            return;
+          }
 
           const controller = authorizeControllerRef.current;
           if (controller) {
@@ -93,7 +98,7 @@ export default function SessionExpiryDialog() {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [userType, expiresAt, dismissed, clearSession, navigate]);
+  }, [userType, expiresAt, dismissed, setSession, clearSession, navigate]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
