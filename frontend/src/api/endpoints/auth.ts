@@ -3,9 +3,10 @@ import type { ApiResponse } from '../types';
 import type { Session } from '@/store/authStore';
 
 export const authApi = {
-  googleAuthorizeUrl: async () => {
+  googleAuthorizeUrl: async (signal?: AbortSignal) => {
     const response = await apiClient.get<ApiResponse<{ authorizeUrl: string }>>(
-      '/oauth/google/authorize'
+      '/oauth/google/authorize',
+      { signal }
     );
     return response.data.data.authorizeUrl;
   },

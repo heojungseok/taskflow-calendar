@@ -4,6 +4,7 @@ import { cx, clsx } from '@/styles/cx';
 import { authApi } from '@/api/endpoints/auth';
 import { useState } from 'react';
 import { broadcastSessionEnded } from '@/lib/authBroadcast';
+import axios from 'axios';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -12,14 +13,25 @@ export default function Header() {
   const userType = useAuthStore((state) => state.userType);
   const [disconnecting, setDisconnecting] = useState(false);
 
+  const finishSession = () => {
+    broadcastSessionEnded();
+    clearSession();
+    navigate('/login');
+  };
+
+  const receivedHttpResponse = (error: unknown) =>
+    axios.isAxiosError(error) && error.response !== undefined;
+
   const handleLogout = async () => {
     try {
       await authApi.logout();
-    } finally {
-      broadcastSessionEnded();
-      clearSession();
-      navigate('/login');
+    } catch (error) {
+      if (!receivedHttpResponse(error)) {
+        window.alert('로그아웃 요청 결과를 확인하지 못했습니다. 현재 세션을 유지합니다.');
+        return;
+      }
     }
+    finishSession();
   };
 
   const handleDisconnect = async () => {
@@ -30,13 +42,16 @@ export default function Header() {
     setDisconnecting(true);
     try {
       await authApi.disconnectGoogle();
-    } catch {
+    } catch (error) {
+      if (!receivedHttpResponse(error)) {
+        window.alert('연결 해제 요청 결과를 확인하지 못했습니다. 현재 세션을 유지합니다.');
+        return;
+      }
       window.alert('연결 해제 결과를 확인하지 못했습니다. 다시 로그인한 뒤 상태를 확인해주세요.');
     } finally {
-      broadcastSessionEnded();
-      clearSession();
-      navigate('/login');
+      setDisconnecting(false);
     }
+    finishSession();
   };
 
   // 현재 위치는 색이 아니라 밑줄로 알린다 — 색은 상태 전용이므로

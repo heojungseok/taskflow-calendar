@@ -9,6 +9,9 @@ const WARNING_WINDOW_MS = 10 * 60 * 1000;
 
 export default function SessionExpiryDialog() {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const laterButtonRef = useRef<HTMLButtonElement>(null);
+  const reauthorizeButtonRef = useRef<HTMLButtonElement>(null);
+  const authorizeControllerRef = useRef<AbortController | null>(null);
   const navigate = useNavigate();
   const userType = useAuthStore(state => state.userType);
   const expiresAt = useAuthStore(state => state.expiresAt);
@@ -19,12 +22,26 @@ export default function SessionExpiryDialog() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- a new server session resets this mount-local decision.
+    const controller = authorizeControllerRef.current;
+    if (controller) {
+      authorizeControllerRef.current = null;
+      controller.abort();
+      clearReturnPath();
+    }
     setDismissed(false);
     setOpen(false);
     setAuthorizing(false);
     setError('');
   }, [userType, expiresAt]);
+
+  useEffect(() => () => {
+    const controller = authorizeControllerRef.current;
+    if (controller) {
+      authorizeControllerRef.current = null;
+      controller.abort();
+      clearReturnPath();
+    }
+  }, []);
 
   useEffect(() => {
     const checkExpiry = () => {
@@ -62,21 +79,37 @@ export default function SessionExpiryDialog() {
   }, [open]);
 
   const dismiss = () => {
+    const controller = authorizeControllerRef.current;
+    if (controller) {
+      authorizeControllerRef.current = null;
+      controller.abort();
+      clearReturnPath();
+      setAuthorizing(false);
+    }
     setDismissed(true);
     setOpen(false);
     setError('');
   };
 
   const reauthorize = async () => {
+    const controller = new AbortController();
+    authorizeControllerRef.current = controller;
     setAuthorizing(true);
     setError('');
     saveReturnPath();
     try {
-      window.location.assign(await authApi.googleAuthorizeUrl());
+      const authorizeUrl = await authApi.googleAuthorizeUrl(controller.signal);
+      if (controller.signal.aborted) return;
+      window.location.assign(authorizeUrl);
     } catch {
+      if (controller.signal.aborted) return;
       clearReturnPath();
-      setAuthorizing(false);
       setError('다시 로그인을 시작하지 못했습니다. 잠시 후 다시 시도하세요.');
+    } finally {
+      if (authorizeControllerRef.current === controller) {
+        authorizeControllerRef.current = null;
+        setAuthorizing(false);
+      }
     }
   };
 
@@ -88,6 +121,22 @@ export default function SessionExpiryDialog() {
         event.preventDefault();
         dismiss();
       }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Tab') return;
+        const laterButton = laterButtonRef.current;
+        const reauthorizeButton = reauthorizeButtonRef.current;
+        if (!laterButton || !reauthorizeButton) return;
+        if (reauthorizeButton.disabled) {
+          event.preventDefault();
+          laterButton.focus();
+        } else if (event.shiftKey && document.activeElement === laterButton) {
+          event.preventDefault();
+          reauthorizeButton.focus();
+        } else if (!event.shiftKey && document.activeElement === reauthorizeButton) {
+          event.preventDefault();
+          laterButton.focus();
+        }
+      }}
       className={clsx(cx.modal, 'm-auto max-w-[420px] backdrop:bg-black/40')}
     >
       <h2 id="session-expiry-title" className={cx.text.heading}>세션이 곧 만료됩니다</h2>
@@ -96,11 +145,12 @@ export default function SessionExpiryDialog() {
       </p>
       {error && <p role="alert" className={clsx(cx.errorBox, 'mt-4')}>{error}</p>}
       <div className="mt-6 flex justify-end gap-2">
-        <button type="button" autoFocus onClick={dismiss} className={cx.btn.secondary}>
+        <button ref={laterButtonRef} type="button" autoFocus onClick={dismiss} className={cx.btn.secondary}>
           나중에
         </button>
         <button
           type="button"
+          ref={reauthorizeButtonRef}
           onClick={reauthorize}
           disabled={authorizing}
           className={cx.btn.primary}

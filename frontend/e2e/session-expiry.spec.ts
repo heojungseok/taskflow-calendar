@@ -318,16 +318,61 @@ test.describe('session expiry dialog', () => {
     expect(await storedReturnPath(page)).toBeNull();
   });
 
-  test('dialog는 접근 가능한 이름과 초기 focus를 제공하고 Escape로 취소된다', async ({ page }) => {
+  test('pending authorize는 나중에 취소하면 늦은 성공에도 현재 화면과 세션을 유지한다', async ({ page }) => {
     await page.clock.install({ time: now });
     await mockApi(page, 'authenticated', new Date(now.getTime() + 9 * 60 * 1000).toISOString());
+    let startAuthorize!: () => void;
+    let releaseAuthorize!: () => void;
+    let finishAuthorize!: () => void;
+    const authorizeStarted = new Promise<void>(resolve => { startAuthorize = resolve; });
+    const authorizeReleased = new Promise<void>(resolve => { releaseAuthorize = resolve; });
+    const authorizeFinished = new Promise<void>(resolve => { finishAuthorize = resolve; });
+    await page.route('**/api/oauth/google/authorize', async route => {
+      startAuthorize();
+      await authorizeReleased;
+      await route.fulfill({
+        json: { success: true, data: { authorizeUrl: 'https://accounts.google.test/oauth' } },
+      });
+      finishAuthorize();
+    });
+    await page.goto(ORIGINAL_PATH);
+    await expect(expiryDialog(page)).toBeVisible();
+
+    await page.getByRole('button', { name: '지금 다시 로그인' }).click();
+    await authorizeStarted;
+    await page.getByRole('button', { name: '나중에' }).click();
+    releaseAuthorize();
+    await authorizeFinished;
+
+    await expect(page).toHaveURL(new RegExp(`${ORIGINAL_PATH.replace(/[?#]/g, '\\$&')}$`));
+    await expect(page.getByRole('heading', { name: '세션 만료 확인' })).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    expect(await storedReturnPath(page)).toBeNull();
+  });
+
+  test('dialog 접근성은 focus를 내부 순환시키고 Escape 뒤 이전 focus를 복원한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 10 * 60 * 1000 + 1000).toISOString());
     await page.goto('/projects');
+    const previousFocus = page.getByRole('button', { name: '로그아웃' });
+    await previousFocus.focus();
+    await expect(previousFocus).toBeFocused();
+
+    await page.clock.setSystemTime(now.getTime() + 1000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 
     await expect(expiryDialog(page)).toBeVisible();
     await expect(page.getByRole('button', { name: '나중에' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    expect(await page.evaluate(() => document.querySelector('dialog')?.contains(document.activeElement)))
+      .toBe(true);
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.querySelector('dialog')?.contains(document.activeElement)))
+      .toBe(true);
     await page.keyboard.press('Escape');
 
     await expect(expiryDialog(page)).toHaveCount(0);
+    await expect(previousFocus).toBeFocused();
     expect(await storedReturnPath(page)).toBeNull();
   });
 });
@@ -348,6 +393,33 @@ for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
 
     await expect(first).toHaveURL(/\/login$/);
     await expect(second).toHaveURL(/\/login$/);
+  });
+}
+
+for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
+  test(`no-response ${action}은 두 page의 보호 화면과 세션을 유지하고 알린다`, async ({ context }) => {
+    const { first, second } = await openAuthenticatedPages(context);
+    const endpoint = action === '로그아웃' ? '/api/auth/logout' : '/api/oauth/google/disconnect';
+    await first.route(`**${endpoint}`, route => route.abort('failed'));
+    let receiveAlert!: (message: string) => void;
+    const alertReceived = new Promise<string>(resolve => { receiveAlert = resolve; });
+    first.on('dialog', async dialog => {
+      if (dialog.type() === 'confirm') {
+        await dialog.accept();
+      } else {
+        receiveAlert(dialog.message());
+        await dialog.accept();
+      }
+    });
+
+    await first.getByRole('button', { name: action }).click();
+    const alert = await alertReceived;
+
+    await expect(first).toHaveURL(/\/projects$/);
+    await expect(second).toHaveURL(/\/projects$/);
+    await expect(first.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+    await expect(second.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+    expect(alert).toContain('현재 세션을 유지');
   });
 }
 
