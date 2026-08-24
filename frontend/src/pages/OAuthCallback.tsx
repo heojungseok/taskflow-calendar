@@ -25,21 +25,21 @@ export default function OAuthCallback() {
       alert(error === 'calendar_permission_required'
         ? 'Google Calendar 권한이 필요합니다. Google 계정에서 TaskFlow 연결을 해제한 뒤 다시 로그인하고 Calendar 권한을 허용해주세요.'
         : 'Google 로그인에 실패했습니다. 다시 시도해주세요.');
-      navigate('/login');
+      navigate('/login', { replace: true });
     } else {
       authApi.session()
         .then((session) => {
           setSession(session);
           if (session.authenticated) {
-            navigate(consumeReturnPath());
+            navigate(consumeReturnPath(), { replace: true });
           } else {
             clearReturnPath();
-            navigate('/login');
+            navigate('/login', { replace: true });
           }
         })
         .catch(() => {
           clearReturnPath();
-          navigate('/login');
+          navigate('/login', { replace: true });
         });
     }
   }, [searchParams, navigate, setSession]);

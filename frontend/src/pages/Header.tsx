@@ -18,11 +18,26 @@ export default function Header() {
     navigate('/login');
   };
 
+  const reconcileFailedTermination = async (message: string) => {
+    try {
+      const session = await authApi.sessionOrNull();
+      if (!session?.authenticated) {
+        finishSession();
+        return;
+      }
+    } catch {
+      // The readback failed too, so the current browser state is the only safe state to keep.
+    }
+    window.alert(message);
+  };
+
   const handleLogout = async () => {
     try {
       await authApi.logout();
     } catch {
-      window.alert('로그아웃 요청 결과를 확인하지 못했습니다. 현재 세션을 유지합니다.');
+      await reconcileFailedTermination(
+        '로그아웃 처리 결과를 확인하지 못했습니다. 현재 화면을 유지합니다.'
+      );
       return;
     }
     finishSession();
@@ -37,7 +52,9 @@ export default function Header() {
     try {
       await authApi.disconnectGoogle();
     } catch {
-      window.alert('연결 해제 요청 결과를 확인하지 못했습니다. 현재 세션을 유지합니다.');
+      await reconcileFailedTermination(
+        '연결 해제 처리 결과를 확인하지 못했습니다. 현재 화면을 유지합니다.'
+      );
       return;
     } finally {
       setDisconnecting(false);

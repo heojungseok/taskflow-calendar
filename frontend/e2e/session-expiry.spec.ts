@@ -148,6 +148,9 @@ test.describe('return path', () => {
     await expect.poll(() => page.evaluate(() => location.pathname + location.search + location.hash))
       .toBe(ORIGINAL_PATH);
     expect(await storedReturnPath(page)).toBeNull();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/login$/);
   });
 
   const invalidRecords = [
@@ -476,6 +479,20 @@ for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
       await first.route(`**${endpoint}`, route => failure.status === null
         ? route.abort('failed')
         : route.fulfill({ status: failure.status, json: { success: false } }));
+      let readbacks = 0;
+      await first.route('**/api/auth/session', route => {
+        readbacks++;
+        return route.fulfill({
+          json: {
+            success: true,
+            data: {
+              authenticated: true,
+              userType: 'GOOGLE',
+              expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+            },
+          },
+        });
+      });
       const alerts: string[] = [];
       first.on('dialog', async dialog => {
         if (dialog.type() === 'confirm') {
@@ -493,10 +510,60 @@ for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
       await expect(first.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
       await expect(second.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
       await expect.poll(() => alerts).toHaveLength(1);
-      expect(alerts[0]).toContain('현재 세션을 유지');
+      expect(alerts[0]).toContain('현재 화면을 유지');
+      expect(readbacks).toBe(1);
     });
   }
 }
+
+for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
+  test(`reconciliation ${action} 500 뒤 session 401이면 두 page를 로그인으로 보낸다`, async ({ context }) => {
+    const { first, second } = await openAuthenticatedPages(context);
+    const endpoint = action === '로그아웃' ? '/api/auth/logout' : '/api/oauth/google/disconnect';
+    await first.route(`**${endpoint}`, route => route.fulfill({
+      status: 500,
+      json: { success: false },
+    }));
+    await first.route('**/api/auth/session', route => route.fulfill({
+      status: 401,
+      json: { success: false },
+    }));
+    if (action === 'Google 연결 해제') {
+      first.on('dialog', dialog => dialog.accept());
+    }
+
+    await first.getByRole('button', { name: action }).click();
+
+    await expect(first).toHaveURL(/\/login$/);
+    await expect(second).toHaveURL(/\/login$/);
+  });
+}
+
+test('reconciliation readback 500은 현재 화면과 양쪽 세션을 유지하고 알린다', async ({ context }) => {
+  const { first, second } = await openAuthenticatedPages(context);
+  await first.route('**/api/auth/logout', route => route.fulfill({
+    status: 500,
+    json: { success: false },
+  }));
+  await first.route('**/api/auth/session', route => route.fulfill({
+    status: 500,
+    json: { success: false },
+  }));
+  const alerts: string[] = [];
+  first.on('dialog', async dialog => {
+    alerts.push(dialog.message());
+    await dialog.accept();
+  });
+
+  await first.getByRole('button', { name: '로그아웃' }).click();
+
+  await expect(first).toHaveURL(/\/projects$/);
+  await expect(second).toHaveURL(/\/projects$/);
+  await expect(first.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+  await expect(second.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+  await expect.poll(() => alerts).toHaveLength(1);
+  expect(alerts[0]).toContain('현재 화면을 유지');
+});
 
 test('stale initial session 응답은 다른 page의 session-ended 뒤 인증을 복원하지 않는다', async ({ context }) => {
   const target = await context.newPage();

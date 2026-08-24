@@ -18,6 +18,12 @@ export const authApi = {
     const response = await apiClient.get<ApiResponse<Session>>('/auth/session');
     return response.data.data;
   },
+  sessionOrNull: async () => {
+    const response = await apiClient.get<ApiResponse<Session>>('/auth/session', {
+      validateStatus: status => (status >= 200 && status < 300) || status === 401,
+    });
+    return response.status === 401 ? null : response.data.data;
+  },
   demo: async () => {
     await apiClient.get('/auth/session');
     const response = await apiClient.post<ApiResponse<Session>>('/auth/demo');
