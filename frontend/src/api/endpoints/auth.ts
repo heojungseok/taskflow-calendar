@@ -3,6 +3,12 @@ import type { ApiResponse } from '../types';
 import type { Session } from '@/store/authStore';
 
 export const authApi = {
+  googleAuthorizeUrl: async () => {
+    const response = await apiClient.get<ApiResponse<{ authorizeUrl: string }>>(
+      '/oauth/google/authorize'
+    );
+    return response.data.data.authorizeUrl;
+  },
   session: async () => {
     const response = await apiClient.get<ApiResponse<Session>>('/auth/session');
     return response.data.data;

@@ -1,20 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import apiClient from '@/api/client';
 import { cx, clsx, PIPELINE } from '@/styles/cx';
 import { authApi } from '@/api/endpoints/auth';
 import { useAuthStore } from '@/store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { MOTION } from '@/styles/motion';
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-}
-
-interface AuthorizeUrlResponse {
-  authorizeUrl: string;
-}
+import { clearReturnPath } from '@/lib/authReturnPath';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +15,7 @@ export default function Login() {
   const setSession = useAuthStore((state) => state.setSession);
 
   const handleDemoLogin = async () => {
+    clearReturnPath();
     setError('');
     setIsDemoLoading(true);
     try {
@@ -39,10 +31,7 @@ export default function Login() {
     setError('');
     setIsLoading(true);
     try {
-      const response = await apiClient.get<ApiResponse<AuthorizeUrlResponse>>(
-        '/oauth/google/authorize'
-      );
-      window.location.href = response.data.data.authorizeUrl;
+      window.location.href = await authApi.googleAuthorizeUrl();
     } catch (err) {
       console.error('Failed to get Google OAuth URL:', err);
       setError('Google 로그인을 시작할 수 없습니다. 잠시 후 다시 시도하세요.');
