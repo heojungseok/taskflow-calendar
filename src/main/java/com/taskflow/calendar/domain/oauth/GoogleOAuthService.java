@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -151,7 +152,9 @@ public class GoogleOAuthService {
      * @throws NonRetryableIntegrationException refresh token 만료/폐기 시
      * @throws RetryableIntegrationException 일시적 네트워크 오류 시
      */
-    @Transactional(noRollbackFor = NonRetryableIntegrationException.class)
+    @Transactional(
+            propagation = Propagation.REQUIRES_NEW,
+            noRollbackFor = NonRetryableIntegrationException.class)
     public void refreshAccessToken(Long userId) {
         log.info("Refreshing access token. userId={}", userId);
 

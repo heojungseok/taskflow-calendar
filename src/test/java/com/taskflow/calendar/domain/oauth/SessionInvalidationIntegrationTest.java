@@ -15,6 +15,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -43,6 +45,9 @@ class SessionInvalidationIntegrationTest {
     private AuthService authService;
 
     @Autowired
+    private PlatformTransactionManager transactionManager;
+
+    @Autowired
     private MockMvc mvc;
 
     @MockitoSpyBean
@@ -68,7 +73,8 @@ class SessionInvalidationIntegrationTest {
         doThrow(tokenError(400, "invalid_grant"))
                 .when(googleOAuthService).requestTokenRefresh(any(OAuthGoogleToken.class));
 
-        assertThatThrownBy(() -> googleOAuthService.refreshAccessToken(user.getId()))
+        assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
+                .executeWithoutResult(ignored -> googleOAuthService.refreshAccessToken(user.getId())))
                 .isInstanceOf(NonRetryableIntegrationException.class);
 
         assertThat(tokenRepository.findByUserId(user.getId())).isEmpty();
