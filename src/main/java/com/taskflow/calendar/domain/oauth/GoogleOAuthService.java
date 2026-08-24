@@ -31,6 +31,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.Instant;
 import java.util.Arrays;
@@ -44,6 +45,7 @@ public class GoogleOAuthService {
 
     private static final String CALENDAR_EVENTS_SCOPE =
             "https://www.googleapis.com/auth/calendar.events.owned";
+    private static final Duration REVOKE_TIMEOUT = Duration.ofSeconds(5);
 
     private final GoogleOAuthProperties properties;
     private final OAuthGoogleTokenRepository tokenRepository;
@@ -75,11 +77,14 @@ public class GoogleOAuthService {
 
     protected int revokeToken(String token) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(URI.create("https://oauth2.googleapis.com/revoke"))
+                .timeout(REVOKE_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(
                         "token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
                 .build();
-        return HttpClient.newHttpClient()
+        return HttpClient.newBuilder()
+                .connectTimeout(REVOKE_TIMEOUT)
+                .build()
                 .send(request, HttpResponse.BodyHandlers.discarding())
                 .statusCode();
     }

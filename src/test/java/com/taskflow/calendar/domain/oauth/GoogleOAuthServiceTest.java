@@ -24,6 +24,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import java.time.LocalDateTime;
 import java.time.Instant;
 import java.io.IOException;
+import java.net.http.HttpTimeoutException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -186,6 +187,19 @@ class GoogleOAuthServiceTest {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
         when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         doThrow(new IOException("network")).when(service).revokeToken(anyString());
+
+        service.disconnect(USER_ID);
+
+        verify(user).invalidateSessions();
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectInvalidatesSessionsAndDeletesLocalTokenWhenGoogleRevokeTimesOut() throws Exception {
+        User user = mock(User.class);
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+        doThrow(new HttpTimeoutException("timeout")).when(service).revokeToken(anyString());
 
         service.disconnect(USER_ID);
 
