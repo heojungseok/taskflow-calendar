@@ -12,6 +12,7 @@ export default function SessionExpiryDialog() {
   const laterButtonRef = useRef<HTMLButtonElement>(null);
   const reauthorizeButtonRef = useRef<HTMLButtonElement>(null);
   const authorizeControllerRef = useRef<AbortController | null>(null);
+  const expiryReadbackPendingRef = useRef(false);
   const navigate = useNavigate();
   const userType = useAuthStore(state => state.userType);
   const expiresAt = useAuthStore(state => state.expiresAt);
@@ -44,7 +45,9 @@ export default function SessionExpiryDialog() {
   }, []);
 
   useEffect(() => {
-    const checkExpiry = () => {
+    let active = true;
+
+    const checkExpiry = async () => {
       if (userType !== 'GOOGLE' || !expiresAt) {
         setOpen(false);
         return;
@@ -54,15 +57,26 @@ export default function SessionExpiryDialog() {
       if (!Number.isFinite(remaining)) {
         setOpen(false);
       } else if (remaining <= 0) {
-        const controller = authorizeControllerRef.current;
-        if (controller) {
-          authorizeControllerRef.current = null;
-          controller.abort();
-          setAuthorizing(false);
+        if (expiryReadbackPendingRef.current) return;
+        expiryReadbackPendingRef.current = true;
+        try {
+          const session = await authApi.sessionOrNull();
+          if (!active || session?.authenticated) return;
+
+          const controller = authorizeControllerRef.current;
+          if (controller) {
+            authorizeControllerRef.current = null;
+            controller.abort();
+            setAuthorizing(false);
+          }
+          saveReturnPath();
+          clearSession();
+          navigate('/login', { replace: true });
+        } catch {
+          return;
+        } finally {
+          expiryReadbackPendingRef.current = false;
         }
-        saveReturnPath();
-        clearSession();
-        navigate('/login', { replace: true });
       } else if (dismissed) {
         setOpen(false);
       } else {
@@ -70,12 +84,14 @@ export default function SessionExpiryDialog() {
       }
     };
 
-    checkExpiry();
-    const interval = window.setInterval(checkExpiry, 60_000);
-    document.addEventListener('visibilitychange', checkExpiry);
+    const handleVisibilityChange = () => void checkExpiry();
+    void checkExpiry();
+    const interval = window.setInterval(() => void checkExpiry(), 60_000);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
+      active = false;
       window.clearInterval(interval);
-      document.removeEventListener('visibilitychange', checkExpiry);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [userType, expiresAt, dismissed, clearSession, navigate]);
 

@@ -18,26 +18,26 @@ export default function Header() {
     navigate('/login');
   };
 
-  const reconcileFailedTermination = async (message: string) => {
+  const reconcileFailedTermination = async (action: string) => {
+    const unknownMessage = `${action} 처리 결과를 확인하지 못했습니다. 현재 화면을 유지합니다.`;
     try {
       const session = await authApi.sessionOrNull();
       if (!session?.authenticated) {
+        window.alert(`${action} 요청이 실패해 서버 처리 여부를 확인하지 못했습니다. 다시 로그인한 뒤 ${action}을 다시 시도해주세요.`);
         finishSession();
-        return;
+      } else {
+        window.alert(unknownMessage);
       }
     } catch {
-      // The readback failed too, so the current browser state is the only safe state to keep.
+      window.alert(unknownMessage);
     }
-    window.alert(message);
   };
 
   const handleLogout = async () => {
     try {
       await authApi.logout();
     } catch {
-      await reconcileFailedTermination(
-        '로그아웃 처리 결과를 확인하지 못했습니다. 현재 화면을 유지합니다.'
-      );
+      await reconcileFailedTermination('로그아웃');
       return;
     }
     finishSession();
@@ -52,9 +52,7 @@ export default function Header() {
     try {
       await authApi.disconnectGoogle();
     } catch {
-      await reconcileFailedTermination(
-        '연결 해제 처리 결과를 확인하지 못했습니다. 현재 화면을 유지합니다.'
-      );
+      await reconcileFailedTermination('연결 해제');
       return;
     } finally {
       setDisconnecting(false);

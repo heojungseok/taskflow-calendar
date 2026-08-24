@@ -275,23 +275,92 @@ test.describe('session expiry dialog', () => {
     await page.goto(ORIGINAL_PATH);
     await expect(expiryDialog(page)).toBeVisible();
     await page.getByRole('button', { name: '나중에' }).click();
+    let readbacks = 0;
+    await page.route('**/api/auth/session', route => {
+      readbacks++;
+      return route.fulfill({ json: { success: true, data: { authenticated: false } } });
+    });
 
     await page.clock.setSystemTime(now.getTime() + 9 * 60 * 1000);
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 
     await expect(page).toHaveURL(/\/login$/);
+    expect(readbacks).toBe(1);
     const record = JSON.parse((await storedReturnPath(page))!) as { path: string };
     expect(record.path).toBe(ORIGINAL_PATH);
   });
 
-  test('expiry 잔여 시간이 0이면 보호 경로를 저장하고 로그인으로 이동한다', async ({ page }) => {
+  test('빠른 기기 시계에서도 서버 세션이 유효하면 겹치는 확인 없이 보호 화면을 유지한다', async ({ page }) => {
     await page.clock.install({ time: now });
-    await mockApi(page, 'authenticated', now.toISOString());
-
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 1000).toISOString());
     await page.goto(ORIGINAL_PATH);
+    await expect(page.getByRole('heading', { name: '세션 만료 확인' })).toBeVisible();
+    let readbacks = 0;
+    let releaseReadback!: () => void;
+    const readbackReleased = new Promise<void>(resolve => { releaseReadback = resolve; });
+    await page.route('**/api/auth/session', async route => {
+      readbacks++;
+      await readbackReleased;
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            authenticated: true,
+            userType: 'GOOGLE',
+            expiresAt: new Date(now.getTime() + 12 * 60 * 60 * 1000).toISOString(),
+          },
+        },
+      });
+    });
+
+    await page.clock.setSystemTime(now.getTime() + 1000);
+    await page.evaluate(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect.poll(() => readbacks).toBe(1);
+    releaseReadback();
+
+    await expect(page).toHaveURL(new RegExp(`${ORIGINAL_PATH.replace(/[?#]/g, '\\$&')}$`));
+    await expect(page.getByRole('heading', { name: '세션 만료 확인' })).toBeVisible();
+    expect(await storedReturnPath(page)).toBeNull();
+  });
+
+  test('expiry 서버 확인 실패는 보호 화면과 세션을 유지한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 1000).toISOString());
+    await page.goto(ORIGINAL_PATH);
+    await expect(page.getByRole('heading', { name: '세션 만료 확인' })).toBeVisible();
+    await page.route('**/api/auth/session', route => route.fulfill({
+      status: 500,
+      json: { success: false },
+    }));
+
+    await page.clock.setSystemTime(now.getTime() + 1000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+
+    await expect(page).toHaveURL(new RegExp(`${ORIGINAL_PATH.replace(/[?#]/g, '\\$&')}$`));
+    await expect(page.getByRole('heading', { name: '세션 만료 확인' })).toBeVisible();
+    expect(await storedReturnPath(page)).toBeNull();
+  });
+
+  test('expiry 서버가 익명을 확인하면 보호 경로를 저장하고 로그인으로 이동한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 1000).toISOString());
+    await page.goto(ORIGINAL_PATH);
+    await expect(page.getByRole('heading', { name: '세션 만료 확인' })).toBeVisible();
+    let readbacks = 0;
+    await page.route('**/api/auth/session', route => {
+      readbacks++;
+      return route.fulfill({ json: { success: true, data: { authenticated: false } } });
+    });
+
+    await page.clock.setSystemTime(now.getTime() + 1000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('button', { name: 'Google로 로그인' })).toBeVisible();
+    expect(readbacks).toBe(1);
     const record = JSON.parse((await storedReturnPath(page))!) as { path: string };
     expect(record.path).toBe(ORIGINAL_PATH);
   });
@@ -376,9 +445,15 @@ test.describe('session expiry dialog', () => {
 
     await page.getByRole('button', { name: '지금 다시 로그인' }).click();
     await authorizeStarted;
+    let readbacks = 0;
+    await page.route('**/api/auth/session', route => {
+      readbacks++;
+      return route.fulfill({ json: { success: true, data: { authenticated: false } } });
+    });
     await page.clock.setSystemTime(now.getTime() + 1000);
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await expect(page).toHaveURL(/\/login$/);
+    expect(readbacks).toBe(1);
     releaseAuthorize();
     await authorizeFinished;
 
@@ -528,12 +603,51 @@ for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
       status: 401,
       json: { success: false },
     }));
-    if (action === 'Google 연결 해제') {
-      first.on('dialog', dialog => dialog.accept());
-    }
+    const alerts: string[] = [];
+    first.on('dialog', async dialog => {
+      if (dialog.type() === 'confirm') {
+        await dialog.accept();
+      } else {
+        alerts.push(dialog.message());
+        await dialog.accept();
+      }
+    });
 
     await first.getByRole('button', { name: action }).click();
 
+    await expect.poll(() => alerts).toHaveLength(1);
+    expect(alerts[0]).toContain('다시 로그인');
+    await expect(first).toHaveURL(/\/login$/);
+    await expect(second).toHaveURL(/\/login$/);
+  });
+}
+
+for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
+  test(`reconciliation ${action} 500 cookie 삭제 뒤 session anonymous면 경고 후 두 page를 로그인으로 보낸다`, async ({ context }) => {
+    const { first, second } = await openAuthenticatedPages(context);
+    const endpoint = action === '로그아웃' ? '/api/auth/logout' : '/api/oauth/google/disconnect';
+    await first.route(`**${endpoint}`, route => route.fulfill({
+      status: 500,
+      headers: { 'Set-Cookie': 'TASKFLOW_SESSION=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax' },
+      json: { success: false },
+    }));
+    await first.route('**/api/auth/session', route => route.fulfill({
+      json: { success: true, data: { authenticated: false } },
+    }));
+    const alerts: string[] = [];
+    first.on('dialog', async dialog => {
+      if (dialog.type() === 'confirm') {
+        await dialog.accept();
+      } else {
+        alerts.push(dialog.message());
+        await dialog.accept();
+      }
+    });
+
+    await first.getByRole('button', { name: action }).click();
+
+    await expect.poll(() => alerts).toHaveLength(1);
+    expect(alerts[0]).toContain('다시 로그인');
     await expect(first).toHaveURL(/\/login$/);
     await expect(second).toHaveURL(/\/login$/);
   });
