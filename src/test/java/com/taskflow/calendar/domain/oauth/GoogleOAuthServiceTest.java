@@ -118,6 +118,21 @@ class GoogleOAuthServiceTest {
     }
 
     @Test
+    @DisplayName("400 오류 응답을 파싱할 수 없으면 로컬 토큰을 보존한다")
+    void refreshAccessToken_MalformedErrorKeepsLocalToken() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        HttpResponseException malformed = new HttpResponseException.Builder(
+                400, "Google token error", new com.google.api.client.http.HttpHeaders())
+                .setContent("not-json")
+                .build();
+        doThrow(malformed).when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+
+        assertThrows(NonRetryableIntegrationException.class,
+                () -> service.refreshAccessToken(USER_ID));
+        verify(tokenRepository, never()).deleteByUserId(USER_ID);
+    }
+
+    @Test
     @DisplayName("Google 500 응답은 재시도하고 로컬 토큰을 보존한다")
     void refreshAccessToken_ServerErrorKeepsLocalToken() throws Exception {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
