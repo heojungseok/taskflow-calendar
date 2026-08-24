@@ -6,8 +6,12 @@ export const authApi = {
   googleAuthorizeUrl: async (signal?: AbortSignal) => {
     const response = await apiClient.get<ApiResponse<{ authorizeUrl: string }>>(
       '/oauth/google/authorize',
-      { signal }
+      {
+        signal,
+        validateStatus: status => (status >= 200 && status < 300) || status === 401,
+      }
     );
+    if (response.status === 401) throw new Error('Google authorization requires authentication');
     return response.data.data.authorizeUrl;
   },
   session: async () => {

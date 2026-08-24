@@ -4,7 +4,6 @@ import { cx, clsx } from '@/styles/cx';
 import { authApi } from '@/api/endpoints/auth';
 import { useState } from 'react';
 import { broadcastSessionEnded } from '@/lib/authBroadcast';
-import axios from 'axios';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -19,17 +18,12 @@ export default function Header() {
     navigate('/login');
   };
 
-  const receivedHttpResponse = (error: unknown) =>
-    axios.isAxiosError(error) && error.response !== undefined;
-
   const handleLogout = async () => {
     try {
       await authApi.logout();
-    } catch (error) {
-      if (!receivedHttpResponse(error)) {
-        window.alert('로그아웃 요청 결과를 확인하지 못했습니다. 현재 세션을 유지합니다.');
-        return;
-      }
+    } catch {
+      window.alert('로그아웃 요청 결과를 확인하지 못했습니다. 현재 세션을 유지합니다.');
+      return;
     }
     finishSession();
   };
@@ -42,12 +36,9 @@ export default function Header() {
     setDisconnecting(true);
     try {
       await authApi.disconnectGoogle();
-    } catch (error) {
-      if (!receivedHttpResponse(error)) {
-        window.alert('연결 해제 요청 결과를 확인하지 못했습니다. 현재 세션을 유지합니다.');
-        return;
-      }
-      window.alert('연결 해제 결과를 확인하지 못했습니다. 다시 로그인한 뒤 상태를 확인해주세요.');
+    } catch {
+      window.alert('연결 해제 요청 결과를 확인하지 못했습니다. 현재 세션을 유지합니다.');
+      return;
     } finally {
       setDisconnecting(false);
     }

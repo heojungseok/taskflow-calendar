@@ -45,7 +45,7 @@ export default function SessionExpiryDialog() {
 
   useEffect(() => {
     const checkExpiry = () => {
-      if (userType !== 'GOOGLE' || !expiresAt || dismissed) {
+      if (userType !== 'GOOGLE' || !expiresAt) {
         setOpen(false);
         return;
       }
@@ -54,9 +54,17 @@ export default function SessionExpiryDialog() {
       if (!Number.isFinite(remaining)) {
         setOpen(false);
       } else if (remaining <= 0) {
+        const controller = authorizeControllerRef.current;
+        if (controller) {
+          authorizeControllerRef.current = null;
+          controller.abort();
+          setAuthorizing(false);
+        }
         saveReturnPath();
         clearSession();
         navigate('/login', { replace: true });
+      } else if (dismissed) {
+        setOpen(false);
       } else {
         setOpen(remaining <= WARNING_WINDOW_MS);
       }

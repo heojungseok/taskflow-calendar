@@ -3,7 +3,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 const RETURN_PATH_KEY = 'taskflow:return-path';
 const ORIGINAL_PATH = '/projects/7/tasks?sort=oldest#task-3';
 
-type ApiMode = 'authenticated' | 'session-401' | 'session-500' | 'resource-401' | 'authorize-500';
+type ApiMode = 'authenticated' | 'session-401' | 'session-500' | 'resource-401' | 'authorize-401' | 'authorize-500';
 
 async function mockApi(
   page: Page,
@@ -68,6 +68,9 @@ async function mockApi(
     }
 
     if (path === '/api/oauth/google/authorize') {
+      if (mode === 'authorize-401') {
+        return route.fulfill({ status: 401, json: { success: false } });
+      }
       if (mode === 'authorize-500') {
         return route.fulfill({ status: 500, json: { success: false } });
       }
@@ -263,6 +266,21 @@ test.describe('session expiry dialog', () => {
     await expect(expiryDialog(page)).toBeVisible();
   });
 
+  test('dismiss 뒤 expiry에 도달하면 보호 경로를 저장하고 로그인으로 이동한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 9 * 60 * 1000).toISOString());
+    await page.goto(ORIGINAL_PATH);
+    await expect(expiryDialog(page)).toBeVisible();
+    await page.getByRole('button', { name: '나중에' }).click();
+
+    await page.clock.setSystemTime(now.getTime() + 9 * 60 * 1000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+
+    await expect(page).toHaveURL(/\/login$/);
+    const record = JSON.parse((await storedReturnPath(page))!) as { path: string };
+    expect(record.path).toBe(ORIGINAL_PATH);
+  });
+
   test('expiry 잔여 시간이 0이면 보호 경로를 저장하고 로그인으로 이동한다', async ({ page }) => {
     await page.clock.install({ time: now });
     await mockApi(page, 'authenticated', now.toISOString());
@@ -316,6 +334,54 @@ test.describe('session expiry dialog', () => {
     await expect(expiryDialog(page)).toBeVisible();
     await expect(page.getByRole('alert')).toContainText('다시 로그인을 시작하지 못했습니다');
     expect(await storedReturnPath(page)).toBeNull();
+  });
+
+  test('authorize 401은 공통 redirect 없이 현재 세션을 유지하고 dialog에서 처리한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authorize-401', new Date(now.getTime() + 9 * 60 * 1000).toISOString());
+    await page.goto('/projects');
+    await expect(expiryDialog(page)).toBeVisible();
+
+    await page.getByRole('button', { name: '지금 다시 로그인' }).click();
+
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+    await expect(expiryDialog(page)).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('다시 로그인을 시작하지 못했습니다');
+    expect(await storedReturnPath(page)).toBeNull();
+  });
+
+  test('pending authorize expiry는 늦은 응답 뒤에도 원래 보호 경로를 보존한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 1000).toISOString());
+    let startAuthorize!: () => void;
+    let releaseAuthorize!: () => void;
+    let finishAuthorize!: () => void;
+    const authorizeStarted = new Promise<void>(resolve => { startAuthorize = resolve; });
+    const authorizeReleased = new Promise<void>(resolve => { releaseAuthorize = resolve; });
+    const authorizeFinished = new Promise<void>(resolve => { finishAuthorize = resolve; });
+    await page.route('**/api/oauth/google/authorize', async route => {
+      startAuthorize();
+      await authorizeReleased;
+      await route.fulfill({
+        json: { success: true, data: { authorizeUrl: 'https://accounts.google.test/oauth' } },
+      });
+      finishAuthorize();
+    });
+    await page.goto(ORIGINAL_PATH);
+    await expect(expiryDialog(page)).toBeVisible();
+
+    await page.getByRole('button', { name: '지금 다시 로그인' }).click();
+    await authorizeStarted;
+    await page.clock.setSystemTime(now.getTime() + 1000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(page).toHaveURL(/\/login$/);
+    releaseAuthorize();
+    await authorizeFinished;
+
+    await expect(page).toHaveURL(/\/login$/);
+    const record = JSON.parse((await storedReturnPath(page))!) as { path: string };
+    expect(record.path).toBe(ORIGINAL_PATH);
   });
 
   test('pending authorize는 나중에 취소하면 늦은 성공에도 현재 화면과 세션을 유지한다', async ({ page }) => {
@@ -378,12 +444,12 @@ test.describe('session expiry dialog', () => {
 });
 
 for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
-  test(`broadcast ${action}은 같은 BrowserContext의 다른 page도 로그인으로 보낸다`, async ({ context }) => {
+  test(`broadcast ${action} 2xx 성공은 같은 BrowserContext의 다른 page도 로그인으로 보낸다`, async ({ context }) => {
     const { first, second } = await openAuthenticatedPages(context);
     const endpoint = action === '로그아웃' ? '/api/auth/logout' : '/api/oauth/google/disconnect';
     await first.route(`**${endpoint}`, route => route.fulfill({
-      status: 500,
-      json: { success: false },
+      status: 200,
+      json: { success: true },
     }));
     if (action === 'Google 연결 해제') {
       first.on('dialog', dialog => dialog.accept());
@@ -396,32 +462,84 @@ for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
   });
 }
 
+const failedEndSessionCases = [
+  { name: '403', status: 403 },
+  { name: '500', status: 500 },
+  { name: 'no-response', status: null },
+] as const;
+
 for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
-  test(`no-response ${action}은 두 page의 보호 화면과 세션을 유지하고 알린다`, async ({ context }) => {
-    const { first, second } = await openAuthenticatedPages(context);
-    const endpoint = action === '로그아웃' ? '/api/auth/logout' : '/api/oauth/google/disconnect';
-    await first.route(`**${endpoint}`, route => route.abort('failed'));
-    let receiveAlert!: (message: string) => void;
-    const alertReceived = new Promise<string>(resolve => { receiveAlert = resolve; });
-    first.on('dialog', async dialog => {
-      if (dialog.type() === 'confirm') {
-        await dialog.accept();
-      } else {
-        receiveAlert(dialog.message());
-        await dialog.accept();
-      }
+  for (const failure of failedEndSessionCases) {
+    test(`fail-closed ${failure.name} ${action}은 두 page의 보호 화면과 세션을 유지하고 알린다`, async ({ context }) => {
+      const { first, second } = await openAuthenticatedPages(context);
+      const endpoint = action === '로그아웃' ? '/api/auth/logout' : '/api/oauth/google/disconnect';
+      await first.route(`**${endpoint}`, route => failure.status === null
+        ? route.abort('failed')
+        : route.fulfill({ status: failure.status, json: { success: false } }));
+      const alerts: string[] = [];
+      first.on('dialog', async dialog => {
+        if (dialog.type() === 'confirm') {
+          await dialog.accept();
+        } else {
+          alerts.push(dialog.message());
+          await dialog.accept();
+        }
+      });
+
+      await first.getByRole('button', { name: action }).click();
+
+      await expect(first).toHaveURL(/\/projects$/);
+      await expect(second).toHaveURL(/\/projects$/);
+      await expect(first.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+      await expect(second.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+      await expect.poll(() => alerts).toHaveLength(1);
+      expect(alerts[0]).toContain('현재 세션을 유지');
     });
-
-    await first.getByRole('button', { name: action }).click();
-    const alert = await alertReceived;
-
-    await expect(first).toHaveURL(/\/projects$/);
-    await expect(second).toHaveURL(/\/projects$/);
-    await expect(first.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
-    await expect(second.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
-    expect(alert).toContain('현재 세션을 유지');
-  });
+  }
 }
+
+test('stale initial session 응답은 다른 page의 session-ended 뒤 인증을 복원하지 않는다', async ({ context }) => {
+  const target = await context.newPage();
+  const broadcaster = await context.newPage();
+  await mockApi(target);
+  await mockApi(broadcaster);
+  let startSession!: () => void;
+  let releaseSession!: () => void;
+  let finishSession!: () => void;
+  const sessionStarted = new Promise<void>(resolve => { startSession = resolve; });
+  const sessionReleased = new Promise<void>(resolve => { releaseSession = resolve; });
+  const sessionFinished = new Promise<void>(resolve => { finishSession = resolve; });
+  await target.route('**/api/auth/session', async route => {
+    startSession();
+    await sessionReleased;
+    await route.fulfill({
+      json: {
+        success: true,
+        data: {
+          authenticated: true,
+          userType: 'GOOGLE',
+          expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+        },
+      },
+    });
+    finishSession();
+  });
+  await target.goto('/projects');
+  await sessionStarted;
+  await expect(target.getByText('불러오는 중')).toBeVisible();
+  await broadcaster.goto('/projects');
+  await expect(broadcaster.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+
+  await broadcaster.getByRole('button', { name: '로그아웃' }).click();
+  await expect(target).toHaveURL(/\/login$/);
+  releaseSession();
+  await sessionFinished;
+
+  await expect.poll(() => target.evaluate(async modulePath => {
+    const module = await import(modulePath);
+    return module.useAuthStore.getState().authenticated;
+  }, '/src/store/authStore.ts')).toBe(false);
+});
 
 test('broadcast 채널이 없어도 현재 tab logout은 정상 동작한다', async ({ page }) => {
   await page.addInitScript(() => {

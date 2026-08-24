@@ -26,7 +26,17 @@ function AuthLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    authApi.session().then(setSession).catch(clearSession);
+    let active = true;
+    authApi.session()
+      .then(session => {
+        if (active) setSession(session);
+      })
+      .catch(() => {
+        if (active) clearSession();
+      });
+    return () => {
+      active = false;
+    };
   }, [setSession, clearSession]);
 
   useEffect(() => listenForSessionEnded(() => {
