@@ -17,6 +17,7 @@ import SessionExpiryDialog from './components/SessionExpiryDialog';
 import { listenForSessionEnded } from './lib/authBroadcast';
 import { useNavigate } from 'react-router-dom';
 import NotFoundPage from './pages/NotFoundPage';
+import { saveReturnPath } from './lib/authReturnPath';
 
 function AuthLayout() {
   const setSession = useAuthStore((state) => state.setSession);
@@ -29,7 +30,9 @@ function AuthLayout() {
     let active = true;
     authApi.session()
       .then(session => {
-        if (active) setSession(session);
+        if (!active) return;
+        if (!session.authenticated) saveReturnPath();
+        setSession(session);
       })
       .catch(() => {
         if (active) clearSession();

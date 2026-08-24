@@ -3,7 +3,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 const RETURN_PATH_KEY = 'taskflow:return-path';
 const ORIGINAL_PATH = '/projects/7/tasks?sort=oldest#task-3';
 
-type ApiMode = 'authenticated' | 'session-401' | 'session-500' | 'resource-401' | 'authorize-401' | 'authorize-500';
+type ApiMode = 'authenticated' | 'session-anonymous' | 'session-401' | 'session-500' | 'resource-401' | 'authorize-401' | 'authorize-500';
 
 async function mockApi(
   page: Page,
@@ -17,6 +17,14 @@ async function mockApi(
     const path = new URL(request.url()).pathname;
 
     if (path === '/api/auth/session') {
+      if (mode === 'session-anonymous') {
+        return route.fulfill({
+          json: {
+            success: true,
+            data: { authenticated: false, userType: null, expiresAt: null },
+          },
+        });
+      }
       if (mode === 'session-401') {
         return route.fulfill({ status: 401, json: { success: false } });
       }
@@ -109,8 +117,8 @@ async function storedReturnPath(page: Page) {
 }
 
 test.describe('return path', () => {
-  test('401은 query와 hash를 포함한 보호 경로를 저장하고 로그인으로 이동한다', async ({ page }) => {
-    await mockApi(page, 'session-401');
+  test('200 익명 세션은 query와 hash를 포함한 보호 경로를 저장하고 로그인으로 이동한다', async ({ page }) => {
+    await mockApi(page, 'session-anonymous');
 
     await page.goto(ORIGINAL_PATH);
 
