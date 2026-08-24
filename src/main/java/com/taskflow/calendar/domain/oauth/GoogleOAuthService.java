@@ -1,5 +1,6 @@
 package com.taskflow.calendar.domain.oauth;
 
+import com.google.api.client.auth.oauth2.TokenErrorResponse;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest;
@@ -150,6 +151,7 @@ public class GoogleOAuthService {
      * @throws NonRetryableIntegrationException refresh token 만료/폐기 시
      * @throws RetryableIntegrationException 일시적 네트워크 오류 시
      */
+    @Transactional(noRollbackFor = NonRetryableIntegrationException.class)
     public void refreshAccessToken(Long userId) {
         log.info("Refreshing access token. userId={}", userId);
 
@@ -169,6 +171,9 @@ public class GoogleOAuthService {
         } catch (OptimisticLockingFailureException e) {
             log.info("Token already refreshed by another thread");
         } catch (HttpResponseException e) {
+            if (isInvalidGrant(e)) {
+                tokenRepository.deleteByUserId(userId);
+            }
             if (e.getStatusCode() == 400 || e.getStatusCode() == 401) {
                 throw new NonRetryableIntegrationException("Refresh token 만료 또는 폐기.", e.getStatusCode(), e);
             }
@@ -177,6 +182,19 @@ public class GoogleOAuthService {
             throw new RetryableIntegrationException("Token refresh 실패", e);
         }
 
+    }
+
+    private boolean isInvalidGrant(HttpResponseException exception) {
+        if (exception.getStatusCode() != 400 || exception.getContent() == null) {
+            return false;
+        }
+        try {
+            TokenErrorResponse error = JacksonFactory.getDefaultInstance()
+                    .fromString(exception.getContent(), TokenErrorResponse.class);
+            return "invalid_grant".equals(error.getError());
+        } catch (IOException ignored) {
+            return false;
+        }
     }
 
     /**

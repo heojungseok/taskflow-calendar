@@ -94,19 +94,39 @@ class GoogleOAuthServiceTest {
     // ② Refresh Token 만료 (NonRetryable)
     // =========================================================
     @Test
-    @DisplayName("refreshAccessToken_RefreshToken만료_NonRetryableException 발생")
-    void refreshAccessToken_RefreshToken만료() throws Exception {
-        // given
+    @DisplayName("invalid_grant면 재시도하지 않고 로컬 토큰을 삭제한다")
+    void refreshAccessToken_InvalidGrantDeletesLocalToken() throws Exception {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
-
-        // ✅ requestTokenRefresh에서 HttpResponseException 발생 (400)
-        doThrow(new HttpResponseException.Builder(
-                400, "Bad Request", new com.google.api.client.http.HttpHeaders()).build())
+        doThrow(tokenError(400, "invalid_grant"))
                 .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
 
-        // when & then
         assertThrows(NonRetryableIntegrationException.class,
                 () -> service.refreshAccessToken(USER_ID));
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    @DisplayName("invalid_client는 재시도하지 않지만 로컬 토큰을 보존한다")
+    void refreshAccessToken_InvalidClientKeepsLocalToken() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        doThrow(tokenError(400, "invalid_client"))
+                .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+
+        assertThrows(NonRetryableIntegrationException.class,
+                () -> service.refreshAccessToken(USER_ID));
+        verify(tokenRepository, never()).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    @DisplayName("Google 500 응답은 재시도하고 로컬 토큰을 보존한다")
+    void refreshAccessToken_ServerErrorKeepsLocalToken() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        doThrow(tokenError(500, "server_error"))
+                .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+
+        assertThrows(RetryableIntegrationException.class,
+                () -> service.refreshAccessToken(USER_ID));
+        verify(tokenRepository, never()).deleteByUserId(USER_ID);
     }
 
     // =========================================================
@@ -215,5 +235,12 @@ class GoogleOAuthServiceTest {
         assertEquals(new AuthSession("jwt", USER_ID, Provider.GOOGLE, expiresAt), session);
         verify(jwtTokenProvider).generateToken(USER_ID, SESSION_VERSION);
         verify(tokenRepository).save(argThat(saved -> result.getScope().equals(saved.getScope())));
+    }
+
+    private HttpResponseException tokenError(int status, String error) {
+        return new HttpResponseException.Builder(
+                status, "Google token error", new com.google.api.client.http.HttpHeaders())
+                .setContent("{\"error\":\"" + error + "\"}")
+                .build();
     }
 }
