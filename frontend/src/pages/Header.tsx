@@ -3,6 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import { cx, clsx } from '@/styles/cx';
 import { authApi } from '@/api/endpoints/auth';
 import { useState } from 'react';
+import { broadcastSessionEnded } from '@/lib/authBroadcast';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function Header() {
     try {
       await authApi.logout();
     } finally {
+      broadcastSessionEnded();
       clearSession();
       navigate('/login');
     }
@@ -31,6 +33,7 @@ export default function Header() {
     } catch {
       window.alert('연결 해제 결과를 확인하지 못했습니다. 다시 로그인한 뒤 상태를 확인해주세요.');
     } finally {
+      broadcastSessionEnded();
       clearSession();
       navigate('/login');
     }

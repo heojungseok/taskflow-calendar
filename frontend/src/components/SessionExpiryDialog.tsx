@@ -1,0 +1,113 @@
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authApi } from '@/api/endpoints/auth';
+import { clearReturnPath, saveReturnPath } from '@/lib/authReturnPath';
+import { useAuthStore } from '@/store/authStore';
+import { cx, clsx } from '@/styles/cx';
+
+const WARNING_WINDOW_MS = 10 * 60 * 1000;
+
+export default function SessionExpiryDialog() {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const navigate = useNavigate();
+  const userType = useAuthStore(state => state.userType);
+  const expiresAt = useAuthStore(state => state.expiresAt);
+  const clearSession = useAuthStore(state => state.clearSession);
+  const [dismissed, setDismissed] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [authorizing, setAuthorizing] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a new server session resets this mount-local decision.
+    setDismissed(false);
+    setOpen(false);
+    setAuthorizing(false);
+    setError('');
+  }, [userType, expiresAt]);
+
+  useEffect(() => {
+    const checkExpiry = () => {
+      if (userType !== 'GOOGLE' || !expiresAt || dismissed) {
+        setOpen(false);
+        return;
+      }
+
+      const remaining = new Date(expiresAt).getTime() - Date.now();
+      if (!Number.isFinite(remaining)) {
+        setOpen(false);
+      } else if (remaining <= 0) {
+        saveReturnPath();
+        clearSession();
+        navigate('/login', { replace: true });
+      } else {
+        setOpen(remaining <= WARNING_WINDOW_MS);
+      }
+    };
+
+    checkExpiry();
+    const interval = window.setInterval(checkExpiry, 60_000);
+    document.addEventListener('visibilitychange', checkExpiry);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', checkExpiry);
+    };
+  }, [userType, expiresAt, dismissed, clearSession, navigate]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  const dismiss = () => {
+    setDismissed(true);
+    setOpen(false);
+    setError('');
+  };
+
+  const reauthorize = async () => {
+    setAuthorizing(true);
+    setError('');
+    saveReturnPath();
+    try {
+      window.location.assign(await authApi.googleAuthorizeUrl());
+    } catch {
+      clearReturnPath();
+      setAuthorizing(false);
+      setError('다시 로그인을 시작하지 못했습니다. 잠시 후 다시 시도하세요.');
+    }
+  };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="session-expiry-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        dismiss();
+      }}
+      className={clsx(cx.modal, 'm-auto max-w-[420px] backdrop:bg-black/40')}
+    >
+      <h2 id="session-expiry-title" className={cx.text.heading}>세션이 곧 만료됩니다</h2>
+      <p className={clsx(cx.text.body, 'mt-3')}>
+        작업을 계속하려면 Google 계정으로 다시 로그인해주세요.
+      </p>
+      {error && <p role="alert" className={clsx(cx.errorBox, 'mt-4')}>{error}</p>}
+      <div className="mt-6 flex justify-end gap-2">
+        <button type="button" autoFocus onClick={dismiss} className={cx.btn.secondary}>
+          나중에
+        </button>
+        <button
+          type="button"
+          onClick={reauthorize}
+          disabled={authorizing}
+          className={cx.btn.primary}
+        >
+          {authorizing ? '로그인 준비 중' : '지금 다시 로그인'}
+        </button>
+      </div>
+    </dialog>
+  );
+}

@@ -1,11 +1,15 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 const RETURN_PATH_KEY = 'taskflow:return-path';
 const ORIGINAL_PATH = '/projects/7/tasks?sort=oldest#task-3';
 
-type ApiMode = 'authenticated' | 'session-401' | 'session-500' | 'resource-401';
+type ApiMode = 'authenticated' | 'session-401' | 'session-500' | 'resource-401' | 'authorize-500';
 
-async function mockApi(page: Page, mode: ApiMode = 'authenticated') {
+async function mockApi(
+  page: Page,
+  mode: ApiMode = 'authenticated',
+  expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString()
+) {
   let resourceFailures = 0;
 
   await page.route(/^https?:\/\/[^/]+\/api\//, async route => {
@@ -22,7 +26,7 @@ async function mockApi(page: Page, mode: ApiMode = 'authenticated') {
       return route.fulfill({
         json: {
           success: true,
-          data: { authenticated: true, userType: 'GOOGLE', expiresAt: '2026-08-25T00:00:00Z' },
+          data: { authenticated: true, userType: 'GOOGLE', expiresAt },
         },
       });
     }
@@ -64,6 +68,9 @@ async function mockApi(page: Page, mode: ApiMode = 'authenticated') {
     }
 
     if (path === '/api/oauth/google/authorize') {
+      if (mode === 'authorize-500') {
+        return route.fulfill({ status: 500, json: { success: false } });
+      }
       return route.fulfill({
         json: { success: true, data: { authorizeUrl: 'https://accounts.google.test/oauth' } },
       });
@@ -71,6 +78,19 @@ async function mockApi(page: Page, mode: ApiMode = 'authenticated') {
 
     return route.fulfill({ json: { success: true, data: null } });
   });
+}
+
+async function openAuthenticatedPages(context: BrowserContext) {
+  const first = await context.newPage();
+  const second = await context.newPage();
+  await mockApi(first);
+  await mockApi(second);
+  await Promise.all([first.goto('/projects'), second.goto('/projects')]);
+  await Promise.all([
+    expect(first.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible(),
+    expect(second.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible(),
+  ]);
+  return { first, second };
 }
 
 async function seedReturnPath(page: Page, raw: string) {
@@ -198,4 +218,148 @@ test.describe('return path', () => {
 
     await expect(page).toHaveURL(/\/login$/);
   });
+});
+
+test.describe('session expiry dialog', () => {
+  const now = new Date('2026-08-24T12:00:00Z');
+  const expiryDialog = (page: Page) => page.getByRole('dialog', { name: '세션이 곧 만료됩니다' });
+
+  test('expiry 10분 1초에는 닫혀 있고 정확히 10분에 dialog를 표시한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 10 * 60 * 1000 + 1000).toISOString());
+
+    await page.goto('/projects');
+
+    await expect(expiryDialog(page)).toHaveCount(0);
+    await page.clock.setSystemTime(now.getTime() + 1000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(expiryDialog(page)).toBeVisible();
+  });
+
+  test('dialog 취소는 같은 mount의 tick과 visibilitychange 재표시를 막고 저장하지 않는다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 9 * 60 * 1000).toISOString());
+    await page.goto('/projects');
+    await expect(expiryDialog(page)).toBeVisible();
+
+    await page.getByRole('button', { name: '나중에' }).click();
+
+    await expect(expiryDialog(page)).toHaveCount(0);
+    await page.clock.runFor(60_000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(expiryDialog(page)).toHaveCount(0);
+    expect(await storedReturnPath(page)).toBeNull();
+  });
+
+  test('dialog 취소 뒤 reload하면 만료 범위 안에서 다시 표시한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 9 * 60 * 1000).toISOString());
+    await page.goto('/projects');
+    await expect(expiryDialog(page)).toBeVisible();
+    await page.getByRole('button', { name: '나중에' }).click();
+
+    await page.reload();
+
+    await expect(expiryDialog(page)).toBeVisible();
+  });
+
+  test('expiry 잔여 시간이 0이면 보호 경로를 저장하고 로그인으로 이동한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', now.toISOString());
+
+    await page.goto(ORIGINAL_PATH);
+
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('button', { name: 'Google로 로그인' })).toBeVisible();
+    const record = JSON.parse((await storedReturnPath(page))!) as { path: string };
+    expect(record.path).toBe(ORIGINAL_PATH);
+  });
+
+  test('expiry 지금 다시 로그인은 logout 없이 경로를 저장하고 authorize 외부 위치로 이동한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 9 * 60 * 1000).toISOString());
+    let recordAtAuthorize: string | null = null;
+    let logoutRequests = 0;
+    page.on('request', request => {
+      if (new URL(request.url()).pathname === '/api/auth/logout') logoutRequests++;
+    });
+    await page.route('**/api/oauth/google/authorize', async route => {
+      recordAtAuthorize = await storedReturnPath(page);
+      await route.fulfill({
+        json: { success: true, data: { authorizeUrl: 'https://accounts.google.test/oauth' } },
+      });
+    });
+    await page.route('https://accounts.google.test/**', route => route.fulfill({
+      contentType: 'text/html',
+      body: '<title>Google OAuth mock</title>',
+    }));
+    await page.goto(ORIGINAL_PATH);
+    await expect(expiryDialog(page)).toBeVisible();
+
+    await page.getByRole('button', { name: '지금 다시 로그인' }).click();
+
+    await expect(page).toHaveURL('https://accounts.google.test/oauth');
+    expect((JSON.parse(recordAtAuthorize!) as { path: string }).path).toBe(ORIGINAL_PATH);
+    expect(logoutRequests).toBe(0);
+  });
+
+  test('expiry authorize 실패는 반환 경로를 지우고 현재 화면과 세션을 유지하며 alert를 표시한다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authorize-500', new Date(now.getTime() + 9 * 60 * 1000).toISOString());
+    await page.goto('/projects');
+    await expect(expiryDialog(page)).toBeVisible();
+
+    await page.getByRole('button', { name: '지금 다시 로그인' }).click();
+
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+    await expect(expiryDialog(page)).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('다시 로그인을 시작하지 못했습니다');
+    expect(await storedReturnPath(page)).toBeNull();
+  });
+
+  test('dialog는 접근 가능한 이름과 초기 focus를 제공하고 Escape로 취소된다', async ({ page }) => {
+    await page.clock.install({ time: now });
+    await mockApi(page, 'authenticated', new Date(now.getTime() + 9 * 60 * 1000).toISOString());
+    await page.goto('/projects');
+
+    await expect(expiryDialog(page)).toBeVisible();
+    await expect(page.getByRole('button', { name: '나중에' })).toBeFocused();
+    await page.keyboard.press('Escape');
+
+    await expect(expiryDialog(page)).toHaveCount(0);
+    expect(await storedReturnPath(page)).toBeNull();
+  });
+});
+
+for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
+  test(`broadcast ${action}은 같은 BrowserContext의 다른 page도 로그인으로 보낸다`, async ({ context }) => {
+    const { first, second } = await openAuthenticatedPages(context);
+    const endpoint = action === '로그아웃' ? '/api/auth/logout' : '/api/oauth/google/disconnect';
+    await first.route(`**${endpoint}`, route => route.fulfill({
+      status: 500,
+      json: { success: false },
+    }));
+    if (action === 'Google 연결 해제') {
+      first.on('dialog', dialog => dialog.accept());
+    }
+
+    await first.getByRole('button', { name: action }).click();
+
+    await expect(first).toHaveURL(/\/login$/);
+    await expect(second).toHaveURL(/\/login$/);
+  });
+}
+
+test('broadcast 채널이 없어도 현재 tab logout은 정상 동작한다', async ({ page }) => {
+  await page.addInitScript(() => {
+    Reflect.deleteProperty(window, 'BroadcastChannel');
+  });
+  await mockApi(page);
+  await page.goto('/projects');
+  expect(await page.evaluate(() => 'BroadcastChannel' in window)).toBe(false);
+
+  await page.getByRole('button', { name: '로그아웃' }).click();
+
+  await expect(page).toHaveURL(/\/login$/);
 });
