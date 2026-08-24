@@ -1,11 +1,16 @@
 package com.taskflow.security;
 
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,14 +35,15 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("발급한 토큰은 검증을 통과하고 같은 userId를 돌려준다")
+    @DisplayName("발급한 토큰은 검증을 통과하고 같은 userId와 세션 버전을 돌려준다")
     void roundTrip() {
         JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
 
-        String token = provider.generateToken(USER_ID);
+        String token = provider.generateToken(USER_ID, 3);
 
         assertThat(provider.validateToken(token)).isTrue();
         assertThat(provider.getUserIdFromToken(token)).isEqualTo(USER_ID);
+        assertThat(provider.getSessionVersion(token)).isEqualTo(3);
     }
 
     @Test
@@ -46,9 +52,30 @@ class JwtTokenProviderTest {
         JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
         Instant expiresAt = Instant.now().plusSeconds(300).truncatedTo(ChronoUnit.SECONDS);
 
-        String token = provider.generateToken(USER_ID, expiresAt);
+        String token = provider.generateToken(USER_ID, 4, expiresAt);
 
         assertThat(provider.getExpiration(token)).isEqualTo(expiresAt);
+    }
+
+    @Test
+    @DisplayName("세션 버전이 없는 기존 토큰은 버전 0으로 읽는다")
+    void legacyTokenWithoutSessionVersionUsesZero() {
+        JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
+        String token = signedToken(Map.of());
+
+        assertThat(provider.validateToken(token)).isTrue();
+        assertThat(provider.getSessionVersion(token)).isZero();
+    }
+
+    @Test
+    @DisplayName("세션 버전은 음수가 아닌 정수 숫자만 허용한다")
+    void invalidSessionVersionsAreRejected() {
+        JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
+
+        assertThat(provider.validateToken(signedToken(Map.of("sv", "1")))).isFalse();
+        assertThat(provider.validateToken(signedToken(Map.of("sv", 1.5)))).isFalse();
+        assertThat(provider.validateToken(signedToken(Map.of("sv", -1)))).isFalse();
+        assertThat(provider.validateToken(signedToken(Map.of("sv", 2_147_483_648L)))).isFalse();
     }
 
     @Test
@@ -112,5 +139,15 @@ class JwtTokenProviderTest {
         // 배포 때 원인을 빨리 찾으라고 남기는 테스트다.
         assertThatThrownBy(() -> provider("too-short", ONE_DAY_MS))
                 .isInstanceOf(io.jsonwebtoken.security.WeakKeyException.class);
+    }
+
+    private String signedToken(Map<String, Object> claims) {
+        return Jwts.builder()
+                .claims(claims)
+                .subject(String.valueOf(USER_ID))
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plusSeconds(300)))
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8)), Jwts.SIG.HS256)
+                .compact();
     }
 }

@@ -1,6 +1,7 @@
 package com.taskflow.web;
 
 import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.SecurityConfig;
 import com.taskflow.security.JwtAuthenticationFilter;
@@ -21,11 +22,15 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
@@ -106,9 +111,12 @@ class AuthControllerSecurityTest {
 
     @Test
     void logoutRequiresCsrfAndClearsSessionCookie() throws Exception {
+        User user = mock(User.class);
         given(jwtTokenProvider.validateToken(TOKEN)).willReturn(true);
         given(jwtTokenProvider.getUserIdFromToken(TOKEN)).willReturn(7L);
-        given(userRepository.isSessionActive(any(), any())).willReturn(true);
+        given(jwtTokenProvider.getSessionVersion(TOKEN)).willReturn(3);
+        given(userRepository.findById(7L)).willReturn(Optional.of(user));
+        given(user.isSessionActive(eq(3), any(LocalDateTime.class))).willReturn(true);
 
         mvc.perform(post("/api/auth/logout").cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                 .andExpect(status().isForbidden());
