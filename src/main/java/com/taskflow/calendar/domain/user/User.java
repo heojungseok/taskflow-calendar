@@ -33,6 +33,9 @@ public class User {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
+    @Column(name = "session_version", nullable = false)
+    private int sessionVersion;
+
     @Column(name = "demo_mutation_count", nullable = false, columnDefinition = "integer default 0")
     private int demoMutationCount;
 
@@ -72,8 +75,14 @@ public class User {
         return user;
     }
 
-    public boolean isSessionActive(LocalDateTime now) {
-        return provider != Provider.DEMO || expiresAt != null && expiresAt.isAfter(now);
+    public boolean isSessionActive(int tokenVersion, LocalDateTime now) {
+        return sessionVersion == tokenVersion &&
+                (provider == Provider.GOOGLE ||
+                        provider == Provider.DEMO && expiresAt != null && expiresAt.isAfter(now));
+    }
+
+    public void invalidateSessions() {
+        sessionVersion++;
     }
 
     public void incrementDemoMutationCount() {
