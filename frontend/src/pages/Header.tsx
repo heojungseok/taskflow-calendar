@@ -70,7 +70,7 @@ export default function Header() {
             onClick={() => navigate('/projects')}
             className="font-[family-name:var(--font-display)] text-[15px] font-extrabold tracking-[-0.02em] text-[var(--ink)]"
           >
-            TasKFlow
+            TaskFlow
           </button>
 
           <span aria-hidden className="w-px h-4 bg-[var(--rule)]" />
