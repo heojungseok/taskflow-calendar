@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -136,10 +137,24 @@ class AuthControllerSecurityTest {
 
         mvc.perform(post("/api/auth/logout").cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                 .andExpect(status().isForbidden());
+        verify(authService, never()).logout(any());
 
         MockHttpServletRequestBuilder logout = withCsrf(post("/api/auth/logout"));
         mvc.perform(logout.cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                 .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("TASKFLOW_SESSION", 0));
+        verify(authService).logout(7L);
+    }
+
+    @Test
+    void logoutFailureStillClearsCookieAndReturnsServerError() throws Exception {
+        stubAuthenticatedUser();
+        willThrow(new IllegalStateException("Authenticated user not found"))
+                .given(authService).logout(7L);
+
+        MockHttpServletRequestBuilder logout = withCsrf(post("/api/auth/logout"));
+        mvc.perform(logout.cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
+                .andExpect(status().isInternalServerError())
                 .andExpect(cookie().maxAge("TASKFLOW_SESSION", 0));
     }
 

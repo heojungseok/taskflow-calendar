@@ -53,8 +53,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ApiResponse<Void> logout(HttpServletResponse response) {
-        cookieService.clearSession(response);
-        return ApiResponse.success(null);
+    public ApiResponse<Void> logout(Authentication authentication, HttpServletResponse response) {
+        try {
+            authService.logout((Long) authentication.getPrincipal());
+            return ApiResponse.success(null);
+        } finally {
+            cookieService.clearSession(response);
+        }
     }
 }

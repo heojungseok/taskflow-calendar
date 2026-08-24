@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -94,5 +95,24 @@ class AuthServiceTest {
 
         assertThat(authService.getSession(USER_ID, Instant.now()))
                 .isEqualTo(SessionResponse.anonymous());
+    }
+
+    @Test
+    void logoutInvalidatesSessionsUnderUserLock() {
+        User user = mock(User.class);
+        given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
+
+        authService.logout(USER_ID);
+
+        verify(user).invalidateSessions();
+    }
+
+    @Test
+    void logoutFailsWhenAuthenticatedUserIsMissing() {
+        given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.logout(USER_ID))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Authenticated user not found");
     }
 }

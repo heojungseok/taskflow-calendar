@@ -51,22 +51,35 @@ public class GoogleOAuthService {
     public void disconnect(Long userId) {
         tokenRepository.findByUserId(userId).ifPresent(token -> {
             try {
-                revokeToken(token.getRefreshToken());
+                int status = revokeToken(token.getRefreshToken());
+                if (status < 200 || status >= 300) {
+                    log.warn("Google token revoke failed. userId={}, status={}", userId, status);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Google token revoke failed. userId={}, errorType={}",
+                        userId, e.getClass().getSimpleName());
             } catch (Exception e) {
                 log.warn("Google token revoke failed. userId={}, errorType={}",
                         userId, e.getClass().getSimpleName());
             }
         });
+
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
+        user.invalidateSessions();
         tokenRepository.deleteByUserId(userId);
     }
 
-    protected void revokeToken(String token) throws IOException, InterruptedException {
+    protected int revokeToken(String token) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(URI.create("https://oauth2.googleapis.com/revoke"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(
                         "token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
                 .build();
-        HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding());
+        return HttpClient.newHttpClient()
+                .send(request, HttpResponse.BodyHandlers.discarding())
+                .statusCode();
     }
 
     public void exchangeCodeForToken(String code, Long userId) {

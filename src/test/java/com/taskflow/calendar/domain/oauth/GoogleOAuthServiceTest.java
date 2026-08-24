@@ -146,13 +146,40 @@ class GoogleOAuthServiceTest {
     }
 
     @Test
-    void disconnectDeletesLocalTokenEvenWhenGoogleRevokeFails() throws Exception {
+    void disconnectInvalidatesSessionsAndDeletesLocalTokenWhenGoogleRevokeThrows() throws Exception {
+        User user = mock(User.class);
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         doThrow(new IOException("network")).when(service).revokeToken(anyString());
 
         service.disconnect(USER_ID);
 
+        verify(user).invalidateSessions();
         verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectInvalidatesSessionsAndDeletesLocalTokenWhenGoogleRevokeReturns500() throws Exception {
+        User user = mock(User.class);
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+        doReturn(500).when(service).revokeToken(anyString());
+
+        service.disconnect(USER_ID);
+
+        verify(user).invalidateSessions();
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectFailsWhenAuthenticatedUserIsMissing() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.empty());
+        doReturn(204).when(service).revokeToken(anyString());
+
+        assertThrows(IllegalStateException.class, () -> service.disconnect(USER_ID));
+
+        verify(tokenRepository, never()).deleteByUserId(USER_ID);
     }
 
     @Test

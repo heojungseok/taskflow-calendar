@@ -49,4 +49,11 @@ public class AuthService {
                         tokenExpiresAt))
                 .orElseGet(SessionResponse::anonymous);
     }
+
+    @Transactional
+    public void logout(Long userId) {
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
+        user.invalidateSessions();
+    }
 }
