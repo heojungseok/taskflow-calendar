@@ -363,3 +363,18 @@ test('broadcast 채널이 없어도 현재 tab logout은 정상 동작한다', a
 
   await expect(page).toHaveURL(/\/login$/);
 });
+
+test('404는 인증 요청 없이 홈과 로그인 링크를 제공한다', async ({ page }) => {
+  let sessionRequests = 0;
+  await page.route(/^https?:\/\/[^/]+\/api\//, route => {
+    if (new URL(route.request().url()).pathname === '/api/auth/session') sessionRequests++;
+    return route.fulfill({ json: { success: true, data: null } });
+  });
+
+  await page.goto('/does-not-exist');
+
+  await expect(page.getByRole('heading', { name: '페이지를 찾을 수 없습니다' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '홈으로' })).toHaveAttribute('href', '/');
+  await expect(page.getByRole('link', { name: '로그인' })).toHaveAttribute('href', '/login');
+  expect(sessionRequests).toBe(0);
+});

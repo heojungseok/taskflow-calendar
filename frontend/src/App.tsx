@@ -16,6 +16,7 @@ import { MotionConfig } from 'framer-motion';
 import SessionExpiryDialog from './components/SessionExpiryDialog';
 import { listenForSessionEnded } from './lib/authBroadcast';
 import { useNavigate } from 'react-router-dom';
+import NotFoundPage from './pages/NotFoundPage';
 
 function AuthLayout() {
   const setSession = useAuthStore((state) => state.setSession);
@@ -71,6 +72,7 @@ function App() {
         </Route>
 
         <Route path="/tasks" element={<Navigate to="/projects" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </MotionConfig>
