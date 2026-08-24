@@ -37,18 +37,16 @@ public class AuthService {
                 LocalDateTime.ofInstant(expiresAt, ZoneId.systemDefault())));
         metrics.demoSessionStarted();
         return new AuthSession(
-                jwtTokenProvider.generateToken(user.getId(), expiresAt),
+                jwtTokenProvider.generateToken(user.getId(), user.getSessionVersion(), expiresAt),
                 user.getId(), user.getProvider(), expiresAt);
     }
 
-    public SessionResponse getSession(Long userId) {
+    public SessionResponse getSession(Long userId, Instant tokenExpiresAt) {
         return userRepository.findById(userId)
                 .map(user -> new SessionResponse(
                         true,
                         user.getProvider().name(),
-                        user.getExpiresAt() == null
-                                ? null
-                                : user.getExpiresAt().atZone(ZoneId.systemDefault()).toInstant()))
+                        tokenExpiresAt))
                 .orElseGet(SessionResponse::anonymous);
     }
 }

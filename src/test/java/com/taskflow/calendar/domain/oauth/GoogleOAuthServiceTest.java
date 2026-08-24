@@ -48,6 +48,7 @@ class GoogleOAuthServiceTest {
     private GoogleOAuthService service;        // ← @Spy 제거
 
     private static final Long USER_ID = 4L;
+    private static final int SESSION_VERSION = 3;
     private OAuthGoogleToken token;
 
     @BeforeEach
@@ -175,15 +176,17 @@ class GoogleOAuthServiceTest {
         Instant expiresAt = Instant.now().plusSeconds(3600);
 
         when(user.getId()).thenReturn(USER_ID);
+        when(user.getSessionVersion()).thenReturn(SESSION_VERSION);
         when(user.getProvider()).thenReturn(Provider.GOOGLE);
         when(userRepository.findByEmail(result.getEmail())).thenReturn(Optional.of(user));
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
-        when(jwtTokenProvider.generateToken(USER_ID)).thenReturn("jwt");
+        when(jwtTokenProvider.generateToken(USER_ID, SESSION_VERSION)).thenReturn("jwt");
         when(jwtTokenProvider.getExpiration("jwt")).thenReturn(expiresAt);
 
         AuthSession session = service.loginOrRegister(result);
 
         assertEquals(new AuthSession("jwt", USER_ID, Provider.GOOGLE, expiresAt), session);
+        verify(jwtTokenProvider).generateToken(USER_ID, SESSION_VERSION);
         verify(tokenRepository).save(argThat(saved -> result.getScope().equals(saved.getScope())));
     }
 }

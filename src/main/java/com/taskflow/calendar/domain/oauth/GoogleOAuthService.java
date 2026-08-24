@@ -254,7 +254,7 @@ public class GoogleOAuthService {
         saveOrUpdateToken(user.getId(), result);
 
         // 3️⃣ JWT 발급
-        String jwt = jwtTokenProvider.generateToken(user.getId());
+        String jwt = jwtTokenProvider.generateToken(user.getId(), user.getSessionVersion());
         Instant expiresAt = jwtTokenProvider.getExpiration(jwt);
         log.info("JWT issued. userId={}", user.getId());
 

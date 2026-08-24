@@ -24,15 +24,6 @@ public class JwtTokenProvider {
         this.expirationMs = expirationMs;
     }
 
-    // Task 3에서 발급 callsite를 전환한 뒤 제거한다.
-    public String generateToken(Long userId) {
-        return generateToken(userId, 0);
-    }
-
-    public String generateToken(Long userId, Instant expiresAt) {
-        return generateToken(userId, 0, expiresAt);
-    }
-
     /**
      * userId와 세션 버전을 기반으로 JWT 생성
      */

@@ -84,7 +84,7 @@ class JwtTokenProviderTest {
         // 발급 시점에 이미 만료된 토큰
         JwtTokenProvider provider = provider(SECRET, -1_000L);
 
-        String token = provider.generateToken(USER_ID);
+        String token = provider.generateToken(USER_ID, 0);
 
         assertThat(provider.validateToken(token)).isFalse();
     }
@@ -92,7 +92,7 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("다른 시크릿으로 발급한 토큰은 통과하지 못한다")
     void tokenFromAnotherSecretIsRejected() {
-        String foreignToken = provider(OTHER_SECRET, ONE_DAY_MS).generateToken(USER_ID);
+        String foreignToken = provider(OTHER_SECRET, ONE_DAY_MS).generateToken(USER_ID, 0);
 
         assertThat(provider(SECRET, ONE_DAY_MS).validateToken(foreignToken)).isFalse();
     }
@@ -101,7 +101,7 @@ class JwtTokenProviderTest {
     @DisplayName("서명이 변조된 토큰은 통과하지 못한다")
     void tamperedTokenIsRejected() {
         JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
-        String token = provider.generateToken(USER_ID);
+        String token = provider.generateToken(USER_ID, 0);
 
         // payload 한 글자를 바꾸면 서명이 어긋난다
         String[] parts = token.split("\\.");
@@ -126,7 +126,7 @@ class JwtTokenProviderTest {
     @DisplayName("검증을 건너뛰고 userId를 꺼내려 하면 예외가 난다 — 조용히 통과시키지 않는다")
     void getUserIdThrowsOnInvalidToken() {
         JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
-        String foreignToken = provider(OTHER_SECRET, ONE_DAY_MS).generateToken(USER_ID);
+        String foreignToken = provider(OTHER_SECRET, ONE_DAY_MS).generateToken(USER_ID, 0);
 
         assertThatThrownBy(() -> provider.getUserIdFromToken(foreignToken))
                 .isInstanceOf(JwtException.class);
