@@ -1,18 +1,23 @@
 package com.taskflow.security;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.math.BigDecimal;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final SecretKey key;
     private final long expirationMs;
@@ -49,7 +54,7 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Claims claims = parseClaims(token);
-            sessionVersion(claims);
+            sessionVersion(token, claims);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             // 만료, 변조, 형식 오류 등 모두 false 반환
@@ -75,26 +80,40 @@ public class JwtTokenProvider {
     }
 
     public int getSessionVersion(String token) {
-        return sessionVersion(parseClaims(token));
+        return sessionVersion(token, parseClaims(token));
     }
 
-    private int sessionVersion(Claims claims) {
-        Object value = claims.get("sv");
-        if (value == null) {
+    private int sessionVersion(String token, Claims claims) {
+        if (!claims.containsKey("sv")) {
+            if (hasSessionVersionClaim(token)) {
+                throw new MalformedJwtException("Session version must not be null");
+            }
             return 0;
         }
-        if (!(value instanceof Number number)) {
-            throw new MalformedJwtException("Session version must be a number");
+        Object value = claims.get("sv");
+        int sessionVersion;
+        if (value instanceof Integer integer) {
+            sessionVersion = integer;
+        } else if (value instanceof Long longValue
+                && longValue >= 0
+                && longValue <= Integer.MAX_VALUE) {
+            sessionVersion = longValue.intValue();
+        } else {
+            throw new MalformedJwtException("Session version must be an integer");
         }
+        if (sessionVersion < 0) {
+            throw new MalformedJwtException("Session version must not be negative");
+        }
+        return sessionVersion;
+    }
 
+    private boolean hasSessionVersionClaim(String token) {
         try {
-            int sessionVersion = new BigDecimal(number.toString()).intValueExact();
-            if (sessionVersion < 0) {
-                throw new MalformedJwtException("Session version must not be negative");
-            }
-            return sessionVersion;
-        } catch (NumberFormatException | ArithmeticException e) {
-            throw new MalformedJwtException("Session version must be an integer", e);
+            String[] parts = token.split("\\.", -1);
+            JsonNode payload = JSON.readTree(Base64.getUrlDecoder().decode(parts[1]));
+            return payload != null && payload.has("sv");
+        } catch (IOException | IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            throw new MalformedJwtException("Invalid JWT payload", e);
         }
     }
 

@@ -6,9 +6,13 @@ import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 
@@ -73,9 +77,18 @@ class JwtTokenProviderTest {
         JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
 
         assertThat(provider.validateToken(signedToken(Map.of("sv", "1")))).isFalse();
+        assertThat(provider.validateToken(signedToken(Map.of("sv", 1.0)))).isFalse();
         assertThat(provider.validateToken(signedToken(Map.of("sv", 1.5)))).isFalse();
         assertThat(provider.validateToken(signedToken(Map.of("sv", -1)))).isFalse();
         assertThat(provider.validateToken(signedToken(Map.of("sv", 2_147_483_648L)))).isFalse();
+    }
+
+    @Test
+    @DisplayName("명시적인 null 세션 버전은 누락된 기존 claim으로 취급하지 않는다")
+    void explicitNullSessionVersionIsRejected() {
+        JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
+
+        assertThat(provider.validateToken(signedTokenWithNullSessionVersion())).isFalse();
     }
 
     @Test
@@ -149,5 +162,21 @@ class JwtTokenProviderTest {
                 .expiration(Date.from(Instant.now().plusSeconds(300)))
                 .signWith(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8)), Jwts.SIG.HS256)
                 .compact();
+    }
+
+    private String signedTokenWithNullSessionVersion() {
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        String header = encoder.encodeToString("{\"alg\":\"HS256\"}".getBytes(StandardCharsets.UTF_8));
+        String payloadJson = "{\"sub\":\"" + USER_ID + "\",\"exp\":"
+                + Instant.now().plusSeconds(300).getEpochSecond() + ",\"sv\":null}";
+        String payload = encoder.encodeToString(payloadJson.getBytes(StandardCharsets.UTF_8));
+        String content = header + "." + payload;
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return content + "." + encoder.encodeToString(mac.doFinal(content.getBytes(StandardCharsets.US_ASCII)));
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
