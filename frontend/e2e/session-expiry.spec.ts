@@ -560,7 +560,7 @@ for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
     const endpoint = action === '로그아웃' ? '/api/auth/logout' : '/api/oauth/google/disconnect';
     await first.route(`**${endpoint}`, route => route.fulfill({
       status: 200,
-      json: { success: true },
+      json: { success: true, data: action === 'Google 연결 해제' ? true : null },
     }));
     if (action === 'Google 연결 해제') {
       first.on('dialog', dialog => dialog.accept());
@@ -572,6 +572,31 @@ for (const action of ['로그아웃', 'Google 연결 해제'] as const) {
     await expect(second).toHaveURL(/\/login$/);
   });
 }
+
+test('Google 토큰 폐기 미확인을 안내하고 두 page의 로컬 세션을 종료한다', async ({ context }) => {
+  const { first, second } = await openAuthenticatedPages(context);
+  await first.route('**/api/oauth/google/disconnect', route => route.fulfill({
+    status: 200,
+    json: { success: true, data: false },
+  }));
+  const alerts: string[] = [];
+  first.on('dialog', async dialog => {
+    if (dialog.type() === 'confirm') {
+      await dialog.accept();
+    } else {
+      alerts.push(dialog.message());
+      await dialog.accept();
+    }
+  });
+
+  await first.getByRole('button', { name: 'Google 연결 해제' }).click();
+
+  await expect.poll(() => alerts).toHaveLength(1);
+  expect(alerts[0]).toContain('Google 계정');
+  expect(alerts[0]).toContain('TaskFlow 액세스를 직접 삭제');
+  await expect(first).toHaveURL(/\/login$/);
+  await expect(second).toHaveURL(/\/login$/);
+});
 
 const failedEndSessionCases = [
   { name: '403', status: 403 },

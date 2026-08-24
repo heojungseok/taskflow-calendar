@@ -155,6 +155,32 @@ class GoogleOAuthControllerTest {
                 .andExpect(cookie().maxAge(SessionCookieService.SESSION_COOKIE, 0));
     }
 
+    @Test
+    void disconnectReturnsConfirmedGoogleRevocation() throws Exception {
+        stubAuthenticatedUser();
+        given(googleOAuthService.disconnect(7L)).willReturn(true);
+
+        mvc.perform(post("/api/oauth/google/disconnect")
+                        .with(csrf())
+                        .cookie(new Cookie(SessionCookieService.SESSION_COOKIE, TOKEN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(true))
+                .andExpect(cookie().maxAge(SessionCookieService.SESSION_COOKIE, 0));
+    }
+
+    @Test
+    void disconnectReturnsUnconfirmedGoogleRevocation() throws Exception {
+        stubAuthenticatedUser();
+        given(googleOAuthService.disconnect(7L)).willReturn(false);
+
+        mvc.perform(post("/api/oauth/google/disconnect")
+                        .with(csrf())
+                        .cookie(new Cookie(SessionCookieService.SESSION_COOKIE, TOKEN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(false))
+                .andExpect(cookie().maxAge(SessionCookieService.SESSION_COOKIE, 0));
+    }
+
     private void stubAuthenticatedUser() {
         User user = mock(User.class);
         given(jwtTokenProvider.validateToken(TOKEN)).willReturn(true);

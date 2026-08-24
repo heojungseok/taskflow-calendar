@@ -188,7 +188,7 @@ class GoogleOAuthServiceTest {
         when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         doThrow(new IOException("network")).when(service).revokeToken(anyString());
 
-        service.disconnect(USER_ID);
+        assertFalse(service.disconnect(USER_ID));
 
         verify(user).invalidateSessions();
         verify(tokenRepository).deleteByUserId(USER_ID);
@@ -201,7 +201,7 @@ class GoogleOAuthServiceTest {
         when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         doThrow(new HttpTimeoutException("timeout")).when(service).revokeToken(anyString());
 
-        service.disconnect(USER_ID);
+        assertFalse(service.disconnect(USER_ID));
 
         verify(user).invalidateSessions();
         verify(tokenRepository).deleteByUserId(USER_ID);
@@ -214,7 +214,32 @@ class GoogleOAuthServiceTest {
         when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         doReturn(500).when(service).revokeToken(anyString());
 
-        service.disconnect(USER_ID);
+        assertFalse(service.disconnect(USER_ID));
+
+        verify(user).invalidateSessions();
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectConfirmsSuccessfulGoogleRevoke() throws Exception {
+        User user = mock(User.class);
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+        doReturn(204).when(service).revokeToken(anyString());
+
+        assertTrue(service.disconnect(USER_ID));
+
+        verify(user).invalidateSessions();
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectWithoutStoredTokenIsAlreadyComplete() {
+        User user = mock(User.class);
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+
+        assertTrue(service.disconnect(USER_ID));
 
         verify(user).invalidateSessions();
         verify(tokenRepository).deleteByUserId(USER_ID);

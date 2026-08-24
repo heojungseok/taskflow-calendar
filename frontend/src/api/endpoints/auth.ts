@@ -33,6 +33,7 @@ export const authApi = {
     await apiClient.post('/auth/logout');
   },
   disconnectGoogle: async () => {
-    await apiClient.post('/oauth/google/disconnect');
+    const response = await apiClient.post<ApiResponse<boolean>>('/oauth/google/disconnect');
+    return response.data.data;
   },
 };

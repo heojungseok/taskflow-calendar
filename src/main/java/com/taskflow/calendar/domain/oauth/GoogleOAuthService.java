@@ -52,27 +52,33 @@ public class GoogleOAuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public void disconnect(Long userId) {
-        tokenRepository.findByUserId(userId).ifPresent(token -> {
+    public boolean disconnect(Long userId) {
+        boolean revocationConfirmed = true;
+        Optional<OAuthGoogleToken> storedToken = tokenRepository.findByUserId(userId);
+        if (storedToken.isPresent()) {
             try {
-                int status = revokeToken(token.getRefreshToken());
-                if (status < 200 || status >= 300) {
+                int status = revokeToken(storedToken.get().getRefreshToken());
+                revocationConfirmed = status >= 200 && status < 300;
+                if (!revocationConfirmed) {
                     log.warn("Google token revoke failed. userId={}, status={}", userId, status);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                revocationConfirmed = false;
                 log.warn("Google token revoke failed. userId={}, errorType={}",
                         userId, e.getClass().getSimpleName());
             } catch (Exception e) {
+                revocationConfirmed = false;
                 log.warn("Google token revoke failed. userId={}, errorType={}",
                         userId, e.getClass().getSimpleName());
             }
-        });
+        }
 
         User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
         user.invalidateSessions();
         tokenRepository.deleteByUserId(userId);
+        return revocationConfirmed;
     }
 
     protected int revokeToken(String token) throws IOException, InterruptedException {

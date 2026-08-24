@@ -50,7 +50,10 @@ export default function Header() {
 
     setDisconnecting(true);
     try {
-      await authApi.disconnectGoogle();
+      const revocationConfirmed = await authApi.disconnectGoogle();
+      if (!revocationConfirmed) {
+        window.alert('TaskFlow의 로컬 연결은 해제했지만 Google 측 토큰 폐기를 확인하지 못했습니다. Google 계정의 보안 설정에서 TaskFlow 액세스를 직접 삭제해주세요.');
+      }
     } catch {
       await reconcileFailedTermination('연결 해제');
       return;
