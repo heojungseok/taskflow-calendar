@@ -404,7 +404,7 @@ test.describe('authenticated public entry', () => {
       history.pushState({}, '', '/');
       dispatchEvent(new PopStateEvent('popstate'));
     });
-    await expect(page.getByText('쓰는 대로, 맞춰진다.')).toBeVisible();
+    await expect(page.getByTestId('home-slogan')).toHaveText(/맞춰진다\.\s*쓰는 대로\./);
     authenticated = true;
 
     await page.evaluate(() => {
