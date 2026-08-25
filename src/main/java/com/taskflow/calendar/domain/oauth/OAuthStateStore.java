@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -18,7 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OAuthStateStore {
 
     private static final int STATE_BYTES = 32;
-    private final Map<String, Instant> stateMap = new ConcurrentHashMap<>();
+    public enum OAuthAttempt {
+        NORMAL,
+        CONSENT_RETRY
+    }
+
+    private record StateEntry(Instant createdAt, OAuthAttempt attempt) {}
+
+    private final Map<String, StateEntry> stateMap = new ConcurrentHashMap<>();
     private final SecureRandom random = new SecureRandom();
     private final Duration ttl;
     private final int capacity;
@@ -37,9 +45,9 @@ public class OAuthStateStore {
     /**
      * State 생성 (UUID)
      */
-    public synchronized String generateState() {
+    public synchronized String generateState(OAuthAttempt attempt) {
         Instant now = clock.instant();
-        stateMap.entrySet().removeIf(entry -> !entry.getValue().plus(ttl).isAfter(now));
+        stateMap.entrySet().removeIf(entry -> !entry.getValue().createdAt().plus(ttl).isAfter(now));
         if (stateMap.size() >= capacity) {
             throw new IllegalStateException("OAuth state capacity exceeded");
         }
@@ -47,7 +55,7 @@ public class OAuthStateStore {
         byte[] bytes = new byte[STATE_BYTES];
         random.nextBytes(bytes);
         String state = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        stateMap.put(state, now);
+        stateMap.put(state, new StateEntry(now, attempt));
         return state;
     }
 
@@ -55,11 +63,12 @@ public class OAuthStateStore {
      * State 검증 및 삭제 (1회용)
      * 10분 이내 생성된 state만 유효
      */
-    public boolean validateState(String state) {
-        Instant createdAt = stateMap.remove(state);
-        if (createdAt == null) {
-            return false;
+    public Optional<OAuthAttempt> consumeState(String state) {
+        StateEntry entry = stateMap.remove(state);
+        if (entry == null || !entry.createdAt().plus(ttl).isAfter(clock.instant())) {
+            return Optional.empty();
         }
-        return createdAt.plus(ttl).isAfter(clock.instant());
+        return Optional.of(entry.attempt());
     }
+
 }

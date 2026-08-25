@@ -3,20 +3,49 @@ import { motion } from 'framer-motion';
 import { cx, clsx, PIPELINE } from '@/styles/cx';
 import { authApi } from '@/api/endpoints/auth';
 import { useAuthStore } from '@/store/authStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MOTION } from '@/styles/motion';
 import { clearReturnPath } from '@/lib/authReturnPath';
 
+const OAUTH_ERRORS = {
+  consent_cancelled: {
+    message: 'Google 권한 확인이 취소되었습니다. 로그인하려면 다시 시도해주세요.',
+    reconsent: false,
+  },
+  calendar_permission_required: {
+    message: 'Google Calendar 권한이 필요합니다. 권한을 다시 확인해주세요.',
+    reconsent: true,
+  },
+  refresh_token_unavailable: {
+    message: 'Google 연결을 복구하지 못했습니다. 권한을 다시 확인하거나 Google 계정에서 TaskFlow 액세스를 삭제한 뒤 다시 시도해주세요.',
+    reconsent: true,
+  },
+  oauth_failed: {
+    message: 'Google 로그인에 실패했습니다. 다시 시도해주세요.',
+    reconsent: false,
+  },
+} as const;
+
+function oauthError(code: string | null) {
+  return code && code in OAUTH_ERRORS
+    ? OAUTH_ERRORS[code as keyof typeof OAUTH_ERRORS]
+    : code ? OAUTH_ERRORS.oauth_failed : null;
+}
+
 export default function Login() {
+  const [searchParams] = useSearchParams();
+  const initialOAuthError = oauthError(searchParams.get('error'));
   const [isLoading, setIsLoading] = useState(false);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialOAuthError?.message ?? '');
+  const [canReconsent, setCanReconsent] = useState(initialOAuthError?.reconsent ?? false);
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
 
   const handleDemoLogin = async () => {
     clearReturnPath();
     setError('');
+    setCanReconsent(false);
     setIsDemoLoading(true);
     try {
       setSession(await authApi.demo());
@@ -29,12 +58,26 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     setError('');
+    setCanReconsent(false);
     setIsLoading(true);
     try {
       window.location.href = await authApi.googleAuthorizeUrl();
     } catch (err) {
       console.error('Failed to get Google OAuth URL:', err);
       setError('Google 로그인을 시작할 수 없습니다. 잠시 후 다시 시도하세요.');
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleReconsent = async () => {
+    setError('');
+    setCanReconsent(false);
+    setIsLoading(true);
+    try {
+      window.location.href = await authApi.googleReconsentUrl();
+    } catch (err) {
+      console.error('Failed to restart Google consent:', err);
+      setError('Google 권한 확인을 시작할 수 없습니다. 잠시 후 다시 시도하세요.');
       setIsLoading(false);
     }
   };
@@ -97,6 +140,15 @@ export default function Login() {
           {error && (
             <div role="alert" className={clsx(cx.errorBox, 'mb-3 text-left')}>
               {error}
+              {canReconsent && (
+                <button
+                  type="button"
+                  onClick={handleGoogleReconsent}
+                  className={clsx(cx.btn.secondary, 'mt-3 w-full py-2')}
+                >
+                  Google 권한 다시 확인
+                </button>
+              )}
             </div>
           )}
 

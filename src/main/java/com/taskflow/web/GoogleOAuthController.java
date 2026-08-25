@@ -5,6 +5,7 @@ import com.taskflow.calendar.domain.oauth.OAuthStateStore;
 import com.taskflow.calendar.domain.oauth.dto.AuthorizeUrlResponse;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
+import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.web.dto.auth.AuthSession;
@@ -26,6 +27,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.CONSENT_RETRY;
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.NORMAL;
 
 /**
  * Google OAuth 2.0 인증 Controller
@@ -50,16 +54,32 @@ public class GoogleOAuthController {
      */
     @GetMapping("/authorize")
     public ApiResponse<AuthorizeUrlResponse> getAuthorizeUrl(HttpServletResponse response) {
+        return createAuthorizeResponse(response, NORMAL);
+    }
+
+    @GetMapping("/reconsent")
+    public ApiResponse<AuthorizeUrlResponse> getReconsentUrl(HttpServletResponse response) {
+        return createAuthorizeResponse(response, CONSENT_RETRY);
+    }
+
+    private ApiResponse<AuthorizeUrlResponse> createAuthorizeResponse(
+            HttpServletResponse response,
+            OAuthStateStore.OAuthAttempt attempt
+    ) {
         String state;
         try {
-            state = stateStore.generateState();
+            state = stateStore.generateState(attempt);
         } catch (IllegalStateException e) {
             throw new org.springframework.web.server.ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE, "OAuth temporarily unavailable");
         }
         cookieService.setOAuthState(response, state);
 
-        String authorizeUrl = UriComponentsBuilder
+        return ApiResponse.success(new AuthorizeUrlResponse(buildAuthorizeUrl(state, attempt)));
+    }
+
+    private String buildAuthorizeUrl(String state, OAuthStateStore.OAuthAttempt attempt) {
+        UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl(properties.getAuthorizationUri())
                 .queryParam("client_id", properties.getClientId())
                 .queryParam("redirect_uri", properties.getRedirectUri())
@@ -67,10 +87,12 @@ public class GoogleOAuthController {
                 .queryParam("scope", properties.getScope())
                 .queryParam("state", state)
                 .queryParam("access_type", "offline")
-                .queryParam("prompt", "consent")
-                .toUriString();
+                .queryParam("include_granted_scopes", "true");
 
-        return ApiResponse.success(new AuthorizeUrlResponse(authorizeUrl));
+        if (attempt == CONSENT_RETRY) {
+            builder.queryParam("prompt", "consent");
+        }
+        return builder.toUriString();
     }
 
     /**
@@ -85,11 +107,29 @@ public class GoogleOAuthController {
             @CookieValue(name = SessionCookieService.OAUTH_STATE_COOKIE, required = false) String cookieState,
             HttpServletResponse response
     ) {
+        OAuthStateStore.OAuthAttempt attempt;
         try {
-            if (oauthError != null || code == null
-                    || !sameState(state, cookieState) || !stateStore.validateState(state)) {
+            if (!sameState(state, cookieState)) {
                 throw new IllegalArgumentException("Invalid or expired OAuth state");
             }
+            attempt = stateStore.consumeState(state)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid or expired OAuth state"));
+        } catch (Exception e) {
+            cookieService.clearOAuthState(response);
+            return redirectToFrontendError("oauth_failed");
+        }
+
+        cookieService.clearOAuthState(response);
+
+        if (oauthError != null) {
+            return redirectToFrontendError(
+                    "access_denied".equals(oauthError) ? "consent_cancelled" : "oauth_failed");
+        }
+        if (code == null || code.isBlank()) {
+            return redirectToFrontendError("oauth_failed");
+        }
+
+        try {
 
             // 2️⃣ Google Token + UserInfo 획득
             GoogleOAuthResult result = googleOAuthService.exchangeCodeAndGetUserInfo(code);
@@ -102,21 +142,32 @@ public class GoogleOAuthController {
                     .location(URI.create(frontendBaseUrl + "/oauth/callback"))
                     .build();
 
+        } catch (MissingRefreshTokenException e) {
+            if (attempt == NORMAL) {
+                try {
+                    String retryState = stateStore.generateState(CONSENT_RETRY);
+                    cookieService.setOAuthState(response, retryState);
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(URI.create(buildAuthorizeUrl(retryState, CONSENT_RETRY)))
+                            .build();
+                } catch (IllegalStateException stateCapacityExceeded) {
+                    return redirectToFrontendError("oauth_failed");
+                }
+            }
+            return redirectToFrontendError("refresh_token_unavailable");
         } catch (MissingRequiredGoogleScopeException e) {
             log.warn("OAuth callback failed. errorCode=calendar_permission_required");
-
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(frontendBaseUrl + "/oauth/callback?error=calendar_permission_required"))
-                    .build();
+            return redirectToFrontendError("calendar_permission_required");
         } catch (Exception e) {
             log.warn("OAuth callback failed. errorCode=oauth_failed");
-
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(frontendBaseUrl + "/oauth/callback?error=oauth_failed"))
-                    .build();
-        } finally {
-            cookieService.clearOAuthState(response);
+            return redirectToFrontendError("oauth_failed");
         }
+    }
+
+    private ResponseEntity<Void> redirectToFrontendError(String errorCode) {
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(frontendBaseUrl + "/oauth/callback?error=" + errorCode))
+                .build();
     }
 
     private boolean sameState(String queryState, String cookieState) {

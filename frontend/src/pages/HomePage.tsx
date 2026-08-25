@@ -52,7 +52,7 @@ export default function HomePage() {
                             import unrelated calendar events.
                         </span>
                     </motion.p>
-                    <motion.a {...step(3)} href="/login"
+                    <motion.a {...step(3)} href="/projects"
                               className={clsx(cx.btn.primary, 'mt-8 inline-flex px-5 py-3 text-[14px]')}>
                         TaskFlow 시작하기
                     </motion.a>

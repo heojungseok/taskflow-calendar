@@ -4,6 +4,7 @@ import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.oauth.OAuthStateStore;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
+import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
@@ -31,6 +32,9 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.CONSENT_RETRY;
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.NORMAL;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,10 +59,8 @@ class GoogleOAuthControllerTest {
 
     @Test
     void authorizeBindsStateToHttpOnlyCallbackCookie() throws Exception {
-        given(stateStore.generateState()).willReturn("state-value");
-        given(properties.getAuthorizationUri()).willReturn("https://accounts.google.test/o/oauth2/auth");
-        given(properties.getScope()).willReturn(
-                "openid https://www.googleapis.com/auth/calendar.events.owned");
+        given(stateStore.generateState(NORMAL)).willReturn("state-value");
+        stubOAuthProperties();
 
         mvc.perform(get("/api/oauth/google/authorize"))
                 .andExpect(status().isOk())
@@ -66,12 +68,29 @@ class GoogleOAuthControllerTest {
                 .andExpect(cookie().httpOnly("OAUTH_STATE", true))
                 .andExpect(cookie().path("OAUTH_STATE", "/api/oauth/google/callback"))
                 .andExpect(jsonPath("$.data.authorizeUrl")
-                        .value(org.hamcrest.Matchers.containsString("calendar.events.owned")));
+                        .value(org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.containsString("calendar.events.owned"),
+                                org.hamcrest.Matchers.containsString("access_type=offline"),
+                                org.hamcrest.Matchers.containsString("include_granted_scopes=true"),
+                                org.hamcrest.Matchers.not(
+                                        org.hamcrest.Matchers.containsString("prompt=consent")))));
+    }
+
+    @Test
+    void explicitReconsentUsesServerMarkedStateAndConsentPrompt() throws Exception {
+        given(stateStore.generateState(CONSENT_RETRY)).willReturn("retry-state");
+        stubOAuthProperties();
+
+        mvc.perform(get("/api/oauth/google/reconsent"))
+                .andExpect(status().isOk())
+                .andExpect(cookie().value("OAUTH_STATE", "retry-state"))
+                .andExpect(jsonPath("$.data.authorizeUrl")
+                        .value(org.hamcrest.Matchers.containsString("prompt=consent")));
     }
 
     @Test
     void authorizeRejectsWhenStateStoreIsFull() throws Exception {
-        given(stateStore.generateState()).willThrow(new IllegalStateException("full"));
+        given(stateStore.generateState(NORMAL)).willThrow(new IllegalStateException("full"));
 
         mvc.perform(get("/api/oauth/google/authorize"))
                 .andExpect(status().isServiceUnavailable());
@@ -82,7 +101,7 @@ class GoogleOAuthControllerTest {
         GoogleOAuthResult result = new GoogleOAuthResult(
                 "user@example.test", "User", "access", "refresh", 3600L, "scope");
         Instant expiresAt = Instant.now().plusSeconds(3600);
-        given(stateStore.validateState("same")).willReturn(true);
+        given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
         given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
         given(googleOAuthService.loginOrRegister(result)).willReturn(
                 new AuthSession("secret-jwt", 1L, Provider.GOOGLE, expiresAt));
@@ -108,26 +127,31 @@ class GoogleOAuthControllerTest {
                 .andExpect(header().string("Location", "http://frontend.test/oauth/callback?error=oauth_failed"))
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
 
-        verify(stateStore, never()).validateState(any());
+        verify(stateStore, never()).consumeState(any());
         verify(googleOAuthService, never()).exchangeCodeAndGetUserInfo(any());
     }
 
     @Test
     void deniedCallbackAlsoClearsStateCookie() throws Exception {
+        given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
+
         mvc.perform(get("/api/oauth/google/callback")
                         .param("state", "same")
                         .param("error", "access_denied")
                         .cookie(new Cookie("OAUTH_STATE", "same")))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location", "http://frontend.test/oauth/callback?error=oauth_failed"))
+                .andExpect(header().string("Location", "http://frontend.test/oauth/callback?error=consent_cancelled"))
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
+
+        verify(stateStore).consumeState("same");
+        verify(googleOAuthService, never()).exchangeCodeAndGetUserInfo(any());
     }
 
     @Test
     void missingCalendarPermissionUsesSpecificError() throws Exception {
         GoogleOAuthResult result = new GoogleOAuthResult(
                 "user@example.test", "User", "access", "refresh", 3600L, "openid");
-        given(stateStore.validateState("same")).willReturn(true);
+        given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
         given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
         given(googleOAuthService.loginOrRegister(result))
                 .willThrow(new MissingRequiredGoogleScopeException("calendar.events.owned"));
@@ -140,6 +164,49 @@ class GoogleOAuthControllerTest {
                 .andExpect(header().string("Location",
                         "http://frontend.test/oauth/callback?error=calendar_permission_required"))
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
+    }
+
+    @Test
+    void missingRefreshTokenAutomaticallyRedirectsToOneConsentRetry() throws Exception {
+        GoogleOAuthResult result = oauthResult();
+        given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
+        given(stateStore.generateState(CONSENT_RETRY)).willReturn("retry-state");
+        given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
+        given(googleOAuthService.loginOrRegister(result)).willThrow(new MissingRefreshTokenException());
+        stubOAuthProperties();
+
+        mvc.perform(get("/api/oauth/google/callback")
+                        .param("state", "same")
+                        .param("code", "code")
+                        .cookie(new Cookie("OAUTH_STATE", "same")))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location",
+                        org.hamcrest.Matchers.containsString("prompt=consent")))
+                .andExpect(resultMatcher -> {
+                    var cookies = resultMatcher.getResponse().getHeaders("Set-Cookie");
+                    assertThat(cookies.get(cookies.size() - 1))
+                            .contains("OAUTH_STATE=retry-state")
+                            .doesNotContain("Max-Age=0");
+                });
+    }
+
+    @Test
+    void missingRefreshTokenAfterConsentRetryStopsWithFixedError() throws Exception {
+        GoogleOAuthResult result = oauthResult();
+        given(stateStore.consumeState("same")).willReturn(Optional.of(CONSENT_RETRY));
+        given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
+        given(googleOAuthService.loginOrRegister(result)).willThrow(new MissingRefreshTokenException());
+
+        mvc.perform(get("/api/oauth/google/callback")
+                        .param("state", "same")
+                        .param("code", "code")
+                        .cookie(new Cookie("OAUTH_STATE", "same")))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location",
+                        "http://frontend.test/oauth/callback?error=refresh_token_unavailable"))
+                .andExpect(cookie().maxAge("OAUTH_STATE", 0));
+
+        verify(stateStore, never()).generateState(any());
     }
 
     @Test
@@ -188,5 +255,19 @@ class GoogleOAuthControllerTest {
         given(jwtTokenProvider.getSessionVersion(TOKEN)).willReturn(3);
         given(userRepository.findById(7L)).willReturn(Optional.of(user));
         given(user.isSessionActive(eq(3), any(LocalDateTime.class))).willReturn(true);
+    }
+
+    private GoogleOAuthResult oauthResult() {
+        return new GoogleOAuthResult(
+                "user@example.test", "User", "access", null, 3600L,
+                "openid https://www.googleapis.com/auth/calendar.events.owned");
+    }
+
+    private void stubOAuthProperties() {
+        given(properties.getAuthorizationUri()).willReturn("https://accounts.google.test/o/oauth2/auth");
+        given(properties.getClientId()).willReturn("client-id");
+        given(properties.getRedirectUri()).willReturn("http://backend.test/api/oauth/google/callback");
+        given(properties.getScope()).willReturn(
+                "openid https://www.googleapis.com/auth/calendar.events.owned");
     }
 }

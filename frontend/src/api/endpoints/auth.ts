@@ -2,18 +2,20 @@ import apiClient from '../client';
 import type { ApiResponse } from '../types';
 import type { Session } from '@/store/authStore';
 
+async function googleOAuthUrl(path: string, signal?: AbortSignal) {
+  const response = await apiClient.get<ApiResponse<{ authorizeUrl: string }>>(path, {
+    signal,
+    validateStatus: status => (status >= 200 && status < 300) || status === 401,
+  });
+  if (response.status === 401) throw new Error('Google authorization requires authentication');
+  return response.data.data.authorizeUrl;
+}
+
 export const authApi = {
-  googleAuthorizeUrl: async (signal?: AbortSignal) => {
-    const response = await apiClient.get<ApiResponse<{ authorizeUrl: string }>>(
-      '/oauth/google/authorize',
-      {
-        signal,
-        validateStatus: status => (status >= 200 && status < 300) || status === 401,
-      }
-    );
-    if (response.status === 401) throw new Error('Google authorization requires authentication');
-    return response.data.data.authorizeUrl;
-  },
+  googleAuthorizeUrl: (signal?: AbortSignal) =>
+    googleOAuthUrl('/oauth/google/authorize', signal),
+  googleReconsentUrl: (signal?: AbortSignal) =>
+    googleOAuthUrl('/oauth/google/reconsent', signal),
   session: async () => {
     const response = await apiClient.get<ApiResponse<Session>>('/auth/session');
     return response.data.data;

@@ -58,6 +58,7 @@ public class SecurityConfig {
                         // Google OAuth 진입점만 공개. 토큰을 받기 전 단계라 인증을 걸 수 없다.
                         .requestMatchers(HttpMethod.GET,
                                 "/api/oauth/google/authorize",
+                                "/api/oauth/google/reconsent",
                                 "/api/oauth/google/callback",
                                 "/api/auth/session",
                                 "/actuator/health/**",

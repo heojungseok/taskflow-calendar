@@ -22,7 +22,7 @@ export default function LegalPage({ title, effectiveDate, en, ko }: Props) {
     <main className="min-h-screen bg-[var(--paper)] px-6 py-12 text-[var(--ink)]">
       <article className="mx-auto max-w-3xl">
         <a
-          href="/"
+          href="/projects"
           className="font-[family-name:var(--font-display)] text-[15px] font-extrabold tracking-[-0.02em]"
         >
           TaskFlow

@@ -10,6 +10,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
+import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
@@ -331,8 +332,8 @@ public class GoogleOAuthService {
             );
             log.info("Updated existing OAuth token. userId={}", userId);
         } else {
-            if (result.getRefreshToken() == null) {
-                throw new IllegalArgumentException("Refresh token required for initial authentication");
+            if (result.getRefreshToken() == null || result.getRefreshToken().isBlank()) {
+                throw new MissingRefreshTokenException();
             }
             OAuthGoogleToken token = OAuthGoogleToken.create(
                     userId,

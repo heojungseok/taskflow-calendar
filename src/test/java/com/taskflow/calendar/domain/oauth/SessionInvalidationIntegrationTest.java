@@ -3,6 +3,8 @@ package com.taskflow.calendar.domain.oauth;
 import com.google.api.client.http.HttpResponseException;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
+import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.service.AuthService;
@@ -95,6 +97,19 @@ class SessionInvalidationIntegrationTest {
         String newToken = jwtTokenProvider.generateToken(
                 refreshed.getId(), refreshed.getSessionVersion());
         assertOutboxStatus(newToken, 200);
+    }
+
+    @Test
+    void missingRefreshTokenRollsBackNewGoogleUser() {
+        String email = "missing-refresh-" + UUID.randomUUID() + "@example.test";
+        GoogleOAuthResult result = new GoogleOAuthResult(
+                email, "Missing Refresh", "access-token", " ", 3600L,
+                "openid https://www.googleapis.com/auth/calendar.events.owned");
+
+        assertThatThrownBy(() -> googleOAuthService.loginOrRegister(result))
+                .isInstanceOf(MissingRefreshTokenException.class);
+
+        assertThat(userRepository.findByEmail(email)).isEmpty();
     }
 
     private User saveGoogleUser() {

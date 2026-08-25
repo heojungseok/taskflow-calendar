@@ -4,6 +4,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpResponseException;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
+import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
@@ -289,6 +290,48 @@ class GoogleOAuthServiceTest {
         assertEquals(new AuthSession("jwt", USER_ID, Provider.GOOGLE, expiresAt), session);
         verify(jwtTokenProvider).generateToken(USER_ID, SESSION_VERSION);
         verify(tokenRepository).save(argThat(saved -> result.getScope().equals(saved.getScope())));
+    }
+
+    @Test
+    void loginPreservesStoredRefreshTokenWhenGoogleOmitsIt() {
+        GoogleOAuthResult result = new GoogleOAuthResult(
+                "user@example.com", "User", "new-access", null, 3600L,
+                "openid https://www.googleapis.com/auth/calendar.events.owned");
+        User user = mock(User.class);
+
+        when(user.getId()).thenReturn(USER_ID);
+        when(user.getSessionVersion()).thenReturn(SESSION_VERSION);
+        when(user.getProvider()).thenReturn(Provider.GOOGLE);
+        when(userRepository.findByEmail(result.getEmail())).thenReturn(Optional.of(user));
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(jwtTokenProvider.generateToken(USER_ID, SESSION_VERSION)).thenReturn("jwt");
+        when(jwtTokenProvider.getExpiration("jwt")).thenReturn(Instant.now().plusSeconds(3600));
+
+        service.loginOrRegister(result);
+
+        assertEquals("valid-refresh-token", token.getRefreshToken());
+        assertEquals("new-access", token.getAccessToken());
+        verify(tokenRepository, never()).save(any());
+    }
+
+    @Test
+    void loginRejectsNullOrBlankRefreshTokenWhenNoneIsStored() {
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(USER_ID);
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+
+        for (String refreshToken : new String[]{null, "", " "}) {
+            GoogleOAuthResult result = new GoogleOAuthResult(
+                    "user@example.com", "User", "access", refreshToken, 3600L,
+                    "openid https://www.googleapis.com/auth/calendar.events.owned");
+
+            assertThrows(MissingRefreshTokenException.class,
+                    () -> service.loginOrRegister(result));
+        }
+
+        verify(tokenRepository, never()).save(any());
+        verifyNoInteractions(jwtTokenProvider);
     }
 
     private HttpResponseException tokenError(int status, String error) {

@@ -87,6 +87,12 @@ async function mockApi(
       });
     }
 
+    if (path === '/api/oauth/google/reconsent') {
+      return route.fulfill({
+        json: { success: true, data: { authorizeUrl: '/oauth/callback?error=oauth_failed' } },
+      });
+    }
+
     return route.fulfill({ json: { success: true, data: null } });
   });
 }
@@ -187,15 +193,54 @@ test.describe('return path', () => {
     });
   }
 
-  test('OAuth callback 오류는 저장값을 삭제한다', async ({ page }) => {
+  test('OAuth callback 오류는 복귀 경로를 보존하고 alert 없이 로그인 화면에 표시한다', async ({ page }) => {
     await mockApi(page);
     await seedReturnPath(page, JSON.stringify({ path: ORIGINAL_PATH, createdAt: Date.now() }));
-    page.on('dialog', dialog => dialog.accept());
+    let dialogs = 0;
+    page.on('dialog', dialog => {
+      dialogs++;
+      return dialog.dismiss();
+    });
 
-    await page.goto('/oauth/callback?error=access_denied');
+    await page.goto('/oauth/callback?error=consent_cancelled');
 
-    await expect(page).toHaveURL(/\/login$/);
-    expect(await storedReturnPath(page)).toBeNull();
+    await expect(page).toHaveURL(/\/login\?error=consent_cancelled$/);
+    await expect(page.getByRole('alert')).toContainText('Google 권한 확인이 취소되었습니다.');
+    expect(await storedReturnPath(page)).not.toBeNull();
+    expect(dialogs).toBe(0);
+  });
+
+  test('복구 가능한 OAuth 오류는 서버의 명시적 재동의 endpoint를 사용한다', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/login?error=refresh_token_unavailable');
+
+    await expect(page.getByRole('alert')).toContainText('Google 연결을 복구하지 못했습니다.');
+    const request = page.waitForRequest(request =>
+      new URL(request.url()).pathname === '/api/oauth/google/reconsent'
+    );
+    await page.getByRole('button', { name: 'Google 권한 다시 확인' }).click();
+
+    await request;
+  });
+
+  test('Calendar 권한 누락도 명시적 재동의 버튼으로 복구한다', async ({ page }) => {
+    await mockApi(page);
+
+    await page.goto('/login?error=calendar_permission_required');
+
+    await expect(page.getByRole('alert')).toContainText('Google Calendar 권한이 필요합니다.');
+    await expect(page.getByRole('button', { name: 'Google 권한 다시 확인' })).toBeVisible();
+  });
+
+  test('미등록 OAuth 오류 코드는 서버 문구를 노출하지 않고 일반 오류로 제한한다', async ({ page }) => {
+    await mockApi(page);
+
+    await page.goto('/oauth/callback?error=secret_server_detail');
+
+    await expect(page).toHaveURL(/\/login\?error=oauth_failed$/);
+    await expect(page.getByRole('alert')).toHaveText('Google 로그인에 실패했습니다. 다시 시도해주세요.');
+    await expect(page.getByRole('button', { name: 'Google 권한 다시 확인' })).toHaveCount(0);
+    await expect(page.getByText('secret_server_detail')).toHaveCount(0);
   });
 
   test('OAuth session 확인 실패는 저장값을 삭제한다', async ({ page }) => {
@@ -231,6 +276,29 @@ test.describe('return path', () => {
     await page.goto(ORIGINAL_PATH);
 
     await expect(page).toHaveURL(/\/login$/);
+  });
+});
+
+test.describe('authenticated public entry', () => {
+  for (const path of ['/privacy', '/terms']) {
+    test(`${path} 로고는 살아 있는 세션을 프로젝트 목록으로 보낸다`, async ({ page }) => {
+      await mockApi(page);
+      await page.goto(path);
+
+      await page.getByRole('link', { name: 'TaskFlow' }).click();
+
+      await expect(page).toHaveURL(/\/projects$/);
+      await expect(page.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+    });
+  }
+
+  test('홈 시작 CTA는 살아 있는 세션을 프로젝트 목록으로 보낸다', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'TaskFlow 시작하기' }).click();
+
+    await expect(page).toHaveURL(/\/projects$/);
   });
 });
 
