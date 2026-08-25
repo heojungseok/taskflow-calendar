@@ -11,13 +11,61 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import { useAuthStore } from './store/authStore';
 import { authApi } from './api/endpoints/auth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import SessionExpiryDialog from './components/SessionExpiryDialog';
 import { listenForSessionEnded } from './lib/authBroadcast';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import NotFoundPage from './pages/NotFoundPage';
 import { saveReturnPath } from './lib/authReturnPath';
+import { isOAuthError } from './lib/oauthErrors';
+
+function SessionLoading() {
+  return (
+    <main className="min-h-screen grid place-items-center" role="status" aria-live="polite">
+      불러오는 중
+    </main>
+  );
+}
+
+function LoginRoute() {
+  const authenticated = useAuthStore((state) => state.authenticated);
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const hasOAuthError = isOAuthError(searchParams.get('error'));
+  const sessionChecked = (location.state as { sessionChecked?: boolean } | null)?.sessionChecked;
+
+  if (hasOAuthError || (sessionChecked && !authenticated)) return <Login />;
+  return <CheckedLoginRoute />;
+}
+
+function CheckedLoginRoute() {
+  const setSession = useAuthStore((state) => state.setSession);
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const authenticated = useAuthStore((state) => state.authenticated);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    authApi.session()
+      .then(session => {
+        if (active) setSession(session);
+      })
+      .catch(() => {
+        if (active) clearSession();
+      })
+      .finally(() => {
+        if (active) setChecking(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [setSession, clearSession]);
+
+  if (checking) return <SessionLoading />;
+
+  return authenticated ? <Navigate to="/projects" replace /> : <Login />;
+}
 
 function AuthLayout() {
   const setSession = useAuthStore((state) => state.setSession);
@@ -44,15 +92,15 @@ function AuthLayout() {
 
   useEffect(() => listenForSessionEnded(() => {
     clearSession();
-    navigate('/login', { replace: true });
+    navigate('/login', { replace: true, state: { sessionChecked: true } });
   }), [clearSession, navigate]);
 
   if (!initialized) {
-    return <div className="min-h-screen grid place-items-center">불러오는 중</div>;
+    return <SessionLoading />;
   }
 
   if (!authenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ sessionChecked: true }} />;
   }
 
   return (
@@ -71,7 +119,7 @@ function App() {
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
         <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<LoginRoute />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />

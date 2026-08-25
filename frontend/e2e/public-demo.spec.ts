@@ -25,16 +25,12 @@ test('public homepage and terms do not require a session', async ({ page }) => {
   });
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /쓰는 대로/ })).toBeVisible();
+  await expect(page.getByText('쓰는 대로, 맞춰진다.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
 
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms of Service' })).toBeVisible();
-
-  await page.goto('/login');
-  await expect(page.getByRole('button').nth(0)).toContainText('Google로 로그인');
-  await expect(page.getByRole('button').nth(1)).toContainText('데모로 둘러보기');
   expect(sessionRequested).toBe(false);
 });
 

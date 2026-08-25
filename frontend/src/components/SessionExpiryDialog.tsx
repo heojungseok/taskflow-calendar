@@ -76,7 +76,7 @@ export default function SessionExpiryDialog() {
           }
           saveReturnPath();
           clearSession();
-          navigate('/login', { replace: true });
+          navigate('/login', { replace: true, state: { sessionChecked: true } });
         } catch {
           return;
         } finally {

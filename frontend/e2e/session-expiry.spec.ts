@@ -11,13 +11,14 @@ async function mockApi(
   expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString()
 ) {
   let resourceFailures = 0;
+  let demoAuthenticated = false;
 
   await page.route(/^https?:\/\/[^/]+\/api\//, async route => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
 
     if (path === '/api/auth/session') {
-      if (mode === 'session-anonymous') {
+      if ((mode === 'session-anonymous' && !demoAuthenticated) || (mode === 'resource-401' && resourceFailures > 0)) {
         return route.fulfill({
           json: {
             success: true,
@@ -40,6 +41,7 @@ async function mockApi(
     }
 
     if (path === '/api/auth/demo' && request.method() === 'POST') {
+      demoAuthenticated = true;
       return route.fulfill({
         json: {
           success: true,
@@ -111,7 +113,7 @@ async function openAuthenticatedPages(context: BrowserContext) {
 }
 
 async function seedReturnPath(page: Page, raw: string) {
-  await page.goto('/login');
+  await page.goto('/');
   await page.evaluate(({ key, value }) => sessionStorage.setItem(key, value), {
     key: RETURN_PATH_KEY,
     value: raw,
@@ -164,7 +166,7 @@ test.describe('return path', () => {
     expect(await storedReturnPath(page)).toBeNull();
 
     await page.goBack();
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/$/);
   });
 
   const invalidRecords = [
@@ -194,7 +196,7 @@ test.describe('return path', () => {
   }
 
   test('OAuth callback 오류는 복귀 경로를 보존하고 alert 없이 로그인 화면에 표시한다', async ({ page }) => {
-    await mockApi(page);
+    await mockApi(page, 'session-anonymous');
     await seedReturnPath(page, JSON.stringify({ path: ORIGINAL_PATH, createdAt: Date.now() }));
     let dialogs = 0;
     page.on('dialog', dialog => {
@@ -211,7 +213,7 @@ test.describe('return path', () => {
   });
 
   test('복구 가능한 OAuth 오류는 서버의 명시적 재동의 endpoint를 사용한다', async ({ page }) => {
-    await mockApi(page);
+    await mockApi(page, 'session-anonymous');
     await page.goto('/login?error=refresh_token_unavailable');
 
     await expect(page.getByRole('alert')).toContainText('Google 연결을 복구하지 못했습니다.');
@@ -224,7 +226,7 @@ test.describe('return path', () => {
   });
 
   test('Calendar 권한 누락도 명시적 재동의 버튼으로 복구한다', async ({ page }) => {
-    await mockApi(page);
+    await mockApi(page, 'session-anonymous');
 
     await page.goto('/login?error=calendar_permission_required');
 
@@ -233,7 +235,7 @@ test.describe('return path', () => {
   });
 
   test('미등록 OAuth 오류 코드는 서버 문구를 노출하지 않고 일반 오류로 제한한다', async ({ page }) => {
-    await mockApi(page);
+    await mockApi(page, 'session-anonymous');
 
     await page.goto('/oauth/callback?error=secret_server_detail');
 
@@ -254,8 +256,9 @@ test.describe('return path', () => {
   });
 
   test('DEMO 로그인은 저장값을 삭제한다', async ({ page }) => {
-    await mockApi(page);
+    await mockApi(page, 'session-anonymous');
     await seedReturnPath(page, JSON.stringify({ path: ORIGINAL_PATH, createdAt: Date.now() }));
+    await page.goto('/login');
 
     await page.getByRole('button', { name: '데모로 둘러보기' }).click();
 
@@ -280,6 +283,105 @@ test.describe('return path', () => {
 });
 
 test.describe('authenticated public entry', () => {
+  test('로그인 경로 직접 진입은 살아 있는 세션을 프로젝트 목록으로 보낸다', async ({ page }) => {
+    await mockApi(page);
+
+    await page.goto('/login');
+
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+  });
+
+  test('OAuth 오류 query는 살아 있는 세션에서도 복구 안내를 보존한다', async ({ page }) => {
+    await mockApi(page);
+
+    await page.goto('/login?error=refresh_token_unavailable');
+
+    await expect(page).toHaveURL(/\/login\?error=refresh_token_unavailable$/);
+    await expect(page.getByRole('alert')).toContainText('Google 연결을 복구하지 못했습니다.');
+  });
+
+  for (const query of ['error=', 'error=unknown']) {
+    test(`유효하지 않은 ${query} query는 세션 확인을 우회하지 않는다`, async ({ page }) => {
+      await mockApi(page);
+
+      await page.goto(`/login?${query}`);
+
+      await expect(page).toHaveURL(/\/projects$/);
+    });
+  }
+
+  test('이미 익명으로 초기화된 탭도 login 재진입 때 서버 세션을 다시 확인한다', async ({ page }) => {
+    let authenticated = false;
+    await page.route(/^https?:\/\/[^/]+\/api\//, route => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === '/api/auth/session') {
+        return route.fulfill({
+          json: {
+            success: true,
+            data: {
+              authenticated,
+              userType: authenticated ? 'GOOGLE' : null,
+              expiresAt: authenticated ? new Date(Date.now() + 60_000).toISOString() : null,
+            },
+          },
+        });
+      }
+      if (path === '/api/projects') {
+        return route.fulfill({ json: { success: true, data: [] } });
+      }
+      return route.fulfill({ json: { success: true, data: null } });
+    });
+
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Google로 로그인' })).toBeVisible();
+    await page.evaluate(() => {
+      history.pushState({}, '', '/');
+      dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await expect(page.getByText('쓰는 대로, 맞춰진다.')).toBeVisible();
+    authenticated = true;
+
+    await page.evaluate(() => {
+      history.pushState({}, '', '/login');
+      dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    await expect(page).toHaveURL(/\/projects$/);
+  });
+
+  test('login 세션 확인 중에는 접근 가능한 상태를 표시한다', async ({ page }) => {
+    let releaseSession!: () => void;
+    const pendingSession = new Promise<void>(resolve => {
+      releaseSession = resolve;
+    });
+    await page.route('**/api/auth/session', async route => {
+      await pendingSession;
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { authenticated: false, userType: null, expiresAt: null },
+        },
+      });
+    });
+
+    await page.goto('/login');
+    await expect(page.getByRole('status')).toHaveText('불러오는 중');
+    releaseSession();
+
+    await expect(page.getByRole('button', { name: 'Google로 로그인' })).toBeVisible();
+  });
+
+  for (const mode of ['session-401', 'session-500'] as const) {
+    test(`login 세션 확인 ${mode}은 로그인 화면으로 안전하게 종료한다`, async ({ page }) => {
+      await mockApi(page, mode);
+
+      await page.goto('/login');
+
+      await expect(page.getByRole('button', { name: 'Google로 로그인' })).toBeVisible();
+    });
+  }
+
   for (const path of ['/privacy', '/terms']) {
     test(`${path} 로고는 살아 있는 세션을 프로젝트 목록으로 보낸다`, async ({ page }) => {
       await mockApi(page);
@@ -299,6 +401,15 @@ test.describe('authenticated public entry', () => {
     await page.getByRole('link', { name: 'TaskFlow 시작하기' }).click();
 
     await expect(page).toHaveURL(/\/projects$/);
+  });
+
+  test('비로그인 로그인 화면 로고는 공개 홈으로 보낸다', async ({ page }) => {
+    await mockApi(page, 'session-anonymous');
+    await page.goto('/login');
+
+    await page.getByRole('link', { name: 'TaskFlow', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/$/);
   });
 });
 

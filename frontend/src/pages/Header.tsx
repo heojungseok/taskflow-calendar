@@ -15,7 +15,7 @@ export default function Header() {
   const finishSession = () => {
     broadcastSessionEnded();
     clearSession();
-    navigate('/login');
+    navigate('/login', { state: { sessionChecked: true } });
   };
 
   const reconcileFailedTermination = async (action: string) => {
