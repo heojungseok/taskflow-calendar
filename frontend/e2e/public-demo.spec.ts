@@ -25,13 +25,35 @@ test('public homepage and terms do not require a session', async ({ page }) => {
   });
 
   await page.goto('/');
-  await expect(page.getByText('쓰는 대로, 맞춰진다.')).toBeVisible();
+  await expect(page.getByTestId('home-slogan')).toHaveText(/맞춰진다\.\s*쓰는 대로\./);
   await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
 
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms of Service' })).toBeVisible();
   expect(sessionRequested).toBe(false);
+});
+
+test('home intro covers the bright viewport before revealing the page', async ({ page }) => {
+  await page.goto('/');
+
+  const overlay = page.getByTestId('home-entry-overlay');
+  await expect(overlay).toBeVisible();
+  await expect(overlay).toHaveCSS('background-color', 'rgb(247, 248, 246)');
+
+  const box = await overlay.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).toMatchObject({ x: 0, y: 0, width: viewport!.width, height: viewport!.height });
+  await expect(overlay).toHaveCount(0, { timeout: 5_000 });
+});
+
+test('home keeps one point cell inside the TaskFlow wordmark', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+
+  await expect(page.getByRole('img', { name: 'TaskFlow' })).toBeVisible();
+  await expect(page.getByTestId('home-wordmark-slot')).toHaveCount(1);
+  await expect(page.getByTestId('home-slogan')).toHaveText(/맞춰진다\.\s*쓰는 대로\./);
 });
 
 test('browser project creation forwards the CSRF token', async ({ page }) => {
