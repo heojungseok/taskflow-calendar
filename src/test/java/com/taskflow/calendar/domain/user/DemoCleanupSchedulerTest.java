@@ -1,6 +1,8 @@
 package com.taskflow.calendar.domain.user;
 
+import com.taskflow.observability.TaskFlowMetrics;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import java.util.List;
 
@@ -10,9 +12,28 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import com.taskflow.observability.TaskFlowMetrics;
 
 class DemoCleanupSchedulerTest {
+
+    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withUserConfiguration(DemoCleanupScheduler.class)
+            .withBean(UserRepository.class, () -> mock(UserRepository.class))
+            .withBean(DemoCleanupService.class, () -> mock(DemoCleanupService.class))
+            .withBean(TaskFlowMetrics.class, () -> mock(TaskFlowMetrics.class));
+
+    @Test
+    void cleanupSchedulerCanBeDisabledForRecoveryVerification() {
+        contextRunner
+                .withPropertyValues("taskflow.demo.cleanup.enabled=false")
+                .run(context -> org.assertj.core.api.Assertions.assertThat(context)
+                        .doesNotHaveBean(DemoCleanupScheduler.class));
+    }
+
+    @Test
+    void cleanupSchedulerRemainsEnabledByDefault() {
+        contextRunner.run(context -> org.assertj.core.api.Assertions.assertThat(context)
+                .hasSingleBean(DemoCleanupScheduler.class));
+    }
 
     @Test
     void oneUserFailureDoesNotStopNextUser() {
