@@ -53,7 +53,7 @@ jwt:
   # 기본값을 두지 않는다. 저장소에 박힌 시크릿은 곧 인증 우회다.
   # 없으면 기동에 실패한다 - 그게 맞는 동작이다.
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}  # 24 hours in ms
+  expiration: ${JWT_EXPIRATION:43200000}  # 12 hours in ms
 
 token:
   encryption:

@@ -1,12 +1,14 @@
 package com.taskflow.web;
 
 import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.SecurityConfig;
 import com.taskflow.security.JwtAuthenticationFilter;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.service.AuthService;
 import com.taskflow.web.dto.auth.AuthSession;
+import com.taskflow.web.dto.auth.SessionResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -21,11 +23,18 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
@@ -60,6 +69,24 @@ class AuthControllerSecurityTest {
                 .andExpect(cookie().exists("XSRF-TOKEN"))
                 .andExpect(cookie().secure("XSRF-TOKEN", true))
                 .andExpect(jsonPath("$.data.authenticated").value(false));
+        verify(jwtTokenProvider, never()).getExpiration(any());
+    }
+
+    @Test
+    void authenticatedSessionUsesJwtExpiration() throws Exception {
+        Instant expiresAt = Instant.parse("2026-08-25T03:00:00Z");
+        stubAuthenticatedUser();
+        given(jwtTokenProvider.getExpiration(TOKEN)).willReturn(expiresAt);
+        given(authService.getSession(7L, expiresAt))
+                .willReturn(new SessionResponse(true, "GOOGLE", expiresAt));
+
+        mvc.perform(get("/api/auth/session").cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.authenticated").value(true))
+                .andExpect(jsonPath("$.data.userType").value("GOOGLE"))
+                .andExpect(jsonPath("$.data.expiresAt").value(expiresAt.toString()));
+
+        verify(authService).getSession(7L, expiresAt);
     }
 
     @Test
@@ -106,17 +133,38 @@ class AuthControllerSecurityTest {
 
     @Test
     void logoutRequiresCsrfAndClearsSessionCookie() throws Exception {
-        given(jwtTokenProvider.validateToken(TOKEN)).willReturn(true);
-        given(jwtTokenProvider.getUserIdFromToken(TOKEN)).willReturn(7L);
-        given(userRepository.isSessionActive(any(), any())).willReturn(true);
+        stubAuthenticatedUser();
 
         mvc.perform(post("/api/auth/logout").cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                 .andExpect(status().isForbidden());
+        verify(authService, never()).logout(any());
 
         MockHttpServletRequestBuilder logout = withCsrf(post("/api/auth/logout"));
         mvc.perform(logout.cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().maxAge("TASKFLOW_SESSION", 0));
+        verify(authService).logout(7L);
+    }
+
+    @Test
+    void logoutFailureStillClearsCookieAndReturnsServerError() throws Exception {
+        stubAuthenticatedUser();
+        willThrow(new IllegalStateException("Authenticated user not found"))
+                .given(authService).logout(7L);
+
+        MockHttpServletRequestBuilder logout = withCsrf(post("/api/auth/logout"));
+        mvc.perform(logout.cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(cookie().maxAge("TASKFLOW_SESSION", 0));
+    }
+
+    private void stubAuthenticatedUser() {
+        User user = mock(User.class);
+        given(jwtTokenProvider.validateToken(TOKEN)).willReturn(true);
+        given(jwtTokenProvider.getUserIdFromToken(TOKEN)).willReturn(7L);
+        given(jwtTokenProvider.getSessionVersion(TOKEN)).willReturn(3);
+        given(userRepository.findById(7L)).willReturn(Optional.of(user));
+        given(user.isSessionActive(eq(3), any(LocalDateTime.class))).willReturn(true);
     }
 
     private MockHttpServletRequestBuilder withCsrf(MockHttpServletRequestBuilder request) throws Exception {

@@ -126,10 +126,10 @@ public class GoogleOAuthController {
     }
 
     @PostMapping("/disconnect")
-    public ApiResponse<Void> disconnect(Authentication authentication, HttpServletResponse response) {
+    public ApiResponse<Boolean> disconnect(Authentication authentication, HttpServletResponse response) {
         try {
-            googleOAuthService.disconnect((Long) authentication.getPrincipal());
-            return ApiResponse.success(null);
+            return ApiResponse.success(
+                    googleOAuthService.disconnect((Long) authentication.getPrincipal()));
         } finally {
             cookieService.clearSession(response);
         }

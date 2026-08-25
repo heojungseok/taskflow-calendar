@@ -2,18 +2,6 @@ import apiClient from '../client';
 import type { ApiResponse } from '../types';
 import type { OutboxEntry } from '@/types/outbox';
 
-// ===== Google OAuth =====
-
-export const oauthApi = {
-  // GET /api/oauth/google/authorize
-  getAuthorizeUrl: async (): Promise<string> => {
-    const response = await apiClient.get<ApiResponse<{ authorizeUrl: string }>>(
-      '/oauth/google/authorize'
-    );
-    return response.data.data.authorizeUrl;
-  },
-};
-
 // ===== 사용자별 Outbox 관측 =====
 
 export const outboxApi = {

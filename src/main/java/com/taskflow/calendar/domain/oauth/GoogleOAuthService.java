@@ -1,5 +1,6 @@
 package com.taskflow.calendar.domain.oauth;
 
+import com.google.api.client.auth.oauth2.TokenErrorResponse;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.Instant;
 import java.util.Arrays;
@@ -42,31 +45,54 @@ public class GoogleOAuthService {
 
     private static final String CALENDAR_EVENTS_SCOPE =
             "https://www.googleapis.com/auth/calendar.events.owned";
+    private static final Duration REVOKE_TIMEOUT = Duration.ofSeconds(5);
 
     private final GoogleOAuthProperties properties;
     private final OAuthGoogleTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public void disconnect(Long userId) {
-        tokenRepository.findByUserId(userId).ifPresent(token -> {
+    public boolean disconnect(Long userId) {
+        boolean revocationConfirmed = true;
+        Optional<OAuthGoogleToken> storedToken = tokenRepository.findByUserId(userId);
+        if (storedToken.isPresent()) {
             try {
-                revokeToken(token.getRefreshToken());
+                int status = revokeToken(storedToken.get().getRefreshToken());
+                revocationConfirmed = status >= 200 && status < 300;
+                if (!revocationConfirmed) {
+                    log.warn("Google token revoke failed. userId={}, status={}", userId, status);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                revocationConfirmed = false;
+                log.warn("Google token revoke failed. userId={}, errorType={}",
+                        userId, e.getClass().getSimpleName());
             } catch (Exception e) {
+                revocationConfirmed = false;
                 log.warn("Google token revoke failed. userId={}, errorType={}",
                         userId, e.getClass().getSimpleName());
             }
-        });
+        }
+
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
+        user.invalidateSessions();
         tokenRepository.deleteByUserId(userId);
+        return revocationConfirmed;
     }
 
-    protected void revokeToken(String token) throws IOException, InterruptedException {
+    protected int revokeToken(String token) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(URI.create("https://oauth2.googleapis.com/revoke"))
+                .timeout(REVOKE_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(
                         "token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
                 .build();
-        HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding());
+        return HttpClient.newBuilder()
+                .connectTimeout(REVOKE_TIMEOUT)
+                .build()
+                .send(request, HttpResponse.BodyHandlers.discarding())
+                .statusCode();
     }
 
     public void exchangeCodeForToken(String code, Long userId) {
@@ -137,6 +163,9 @@ public class GoogleOAuthService {
      * @throws NonRetryableIntegrationException refresh token 만료/폐기 시
      * @throws RetryableIntegrationException 일시적 네트워크 오류 시
      */
+    @Transactional(
+            propagation = Propagation.REQUIRES_NEW,
+            noRollbackFor = NonRetryableIntegrationException.class)
     public void refreshAccessToken(Long userId) {
         log.info("Refreshing access token. userId={}", userId);
 
@@ -156,6 +185,9 @@ public class GoogleOAuthService {
         } catch (OptimisticLockingFailureException e) {
             log.info("Token already refreshed by another thread");
         } catch (HttpResponseException e) {
+            if (isInvalidGrant(e)) {
+                tokenRepository.deleteByUserId(userId);
+            }
             if (e.getStatusCode() == 400 || e.getStatusCode() == 401) {
                 throw new NonRetryableIntegrationException("Refresh token 만료 또는 폐기.", e.getStatusCode(), e);
             }
@@ -164,6 +196,19 @@ public class GoogleOAuthService {
             throw new RetryableIntegrationException("Token refresh 실패", e);
         }
 
+    }
+
+    private boolean isInvalidGrant(HttpResponseException exception) {
+        if (exception.getStatusCode() != 400 || exception.getContent() == null) {
+            return false;
+        }
+        try {
+            TokenErrorResponse error = JacksonFactory.getDefaultInstance()
+                    .fromString(exception.getContent(), TokenErrorResponse.class);
+            return "invalid_grant".equals(error.getError());
+        } catch (IOException ignored) {
+            return false;
+        }
     }
 
     /**
@@ -254,7 +299,7 @@ public class GoogleOAuthService {
         saveOrUpdateToken(user.getId(), result);
 
         // 3️⃣ JWT 발급
-        String jwt = jwtTokenProvider.generateToken(user.getId());
+        String jwt = jwtTokenProvider.generateToken(user.getId(), user.getSessionVersion());
         Instant expiresAt = jwtTokenProvider.getExpiration(jwt);
         log.info("JWT issued. userId={}", user.getId());
 

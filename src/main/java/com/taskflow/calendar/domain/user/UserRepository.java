@@ -17,11 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 추후 확장: provider별 조회
     Optional<User> findByEmailAndProvider(String email, Provider provider);
 
-    @Query("select count(u) > 0 from User u where u.id = :id and (" +
-            "u.provider = com.taskflow.calendar.domain.user.Provider.GOOGLE or " +
-            "(u.provider = com.taskflow.calendar.domain.user.Provider.DEMO and u.expiresAt > :now))")
-    boolean isSessionActive(@Param("id") Long id, @Param("now") LocalDateTime now);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") Long id);

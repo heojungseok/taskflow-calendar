@@ -2,6 +2,7 @@ package com.taskflow.web;
 
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
+import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.SecurityConfig;
 import com.taskflow.security.JwtTokenProvider;
@@ -17,11 +18,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.servlet.http.Cookie;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,6 +43,7 @@ class OutboxControllerSecurityTest {
     private static final String BASE = "/api/calendar-outbox";
     private static final String TOKEN = "valid-token";
     private static final Long USER_ID = 7L;
+    private static final int TOKEN_VERSION = 3;
 
     @Autowired
     MockMvc mvc;
@@ -52,11 +57,16 @@ class OutboxControllerSecurityTest {
     @MockitoBean
     UserRepository userRepository;
 
+    private User user;
+
     @BeforeEach
     void stubToken() {
+        user = mock(User.class);
         given(jwtTokenProvider.validateToken(TOKEN)).willReturn(true);
         given(jwtTokenProvider.getUserIdFromToken(TOKEN)).willReturn(USER_ID);
-        given(userRepository.isSessionActive(any(), any())).willReturn(true);
+        given(jwtTokenProvider.getSessionVersion(TOKEN)).willReturn(TOKEN_VERSION);
+        given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
+        given(user.isSessionActive(eq(TOKEN_VERSION), any(LocalDateTime.class))).willReturn(true);
     }
 
     @Nested
@@ -77,6 +87,16 @@ class OutboxControllerSecurityTest {
 
             mvc.perform(get(BASE).cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                     .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("사용자 도메인이 세션을 무효로 판정하면 401")
+        void inactiveDomainSessionIsUnauthorized() throws Exception {
+            given(user.isSessionActive(eq(TOKEN_VERSION), any(LocalDateTime.class))).willReturn(false);
+
+            mvc.perform(get(BASE).cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
+                    .andExpect(status().isUnauthorized());
+            verify(outboxService, never()).listOutboxes(any(), any(), any());
         }
     }
 

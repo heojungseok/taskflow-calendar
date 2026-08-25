@@ -13,16 +13,39 @@ import { useAuthStore } from './store/authStore';
 import { authApi } from './api/endpoints/auth';
 import { useEffect } from 'react';
 import { MotionConfig } from 'framer-motion';
+import SessionExpiryDialog from './components/SessionExpiryDialog';
+import { listenForSessionEnded } from './lib/authBroadcast';
+import { useNavigate } from 'react-router-dom';
+import NotFoundPage from './pages/NotFoundPage';
+import { saveReturnPath } from './lib/authReturnPath';
 
 function AuthLayout() {
   const setSession = useAuthStore((state) => state.setSession);
   const clearSession = useAuthStore((state) => state.clearSession);
   const initialized = useAuthStore((state) => state.initialized);
   const authenticated = useAuthStore((state) => state.authenticated);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    authApi.session().then(setSession).catch(clearSession);
+    let active = true;
+    authApi.session()
+      .then(session => {
+        if (!active) return;
+        if (!session.authenticated) saveReturnPath();
+        setSession(session);
+      })
+      .catch(() => {
+        if (active) clearSession();
+      });
+    return () => {
+      active = false;
+    };
   }, [setSession, clearSession]);
+
+  useEffect(() => listenForSessionEnded(() => {
+    clearSession();
+    navigate('/login', { replace: true });
+  }), [clearSession, navigate]);
 
   if (!initialized) {
     return <div className="min-h-screen grid place-items-center">불러오는 중</div>;
@@ -38,6 +61,7 @@ function AuthLayout() {
       <main className="max-w-5xl mx-auto px-6 py-10">
         <Outlet />
       </main>
+      <SessionExpiryDialog />
     </div>
   );
 }
@@ -61,6 +85,7 @@ function App() {
         </Route>
 
         <Route path="/tasks" element={<Navigate to="/projects" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </MotionConfig>

@@ -24,6 +24,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import java.time.LocalDateTime;
 import java.time.Instant;
 import java.io.IOException;
+import java.net.http.HttpTimeoutException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,6 +49,7 @@ class GoogleOAuthServiceTest {
     private GoogleOAuthService service;        // ← @Spy 제거
 
     private static final Long USER_ID = 4L;
+    private static final int SESSION_VERSION = 3;
     private OAuthGoogleToken token;
 
     @BeforeEach
@@ -93,19 +95,54 @@ class GoogleOAuthServiceTest {
     // ② Refresh Token 만료 (NonRetryable)
     // =========================================================
     @Test
-    @DisplayName("refreshAccessToken_RefreshToken만료_NonRetryableException 발생")
-    void refreshAccessToken_RefreshToken만료() throws Exception {
-        // given
+    @DisplayName("invalid_grant면 재시도하지 않고 로컬 토큰을 삭제한다")
+    void refreshAccessToken_InvalidGrantDeletesLocalToken() throws Exception {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
-
-        // ✅ requestTokenRefresh에서 HttpResponseException 발생 (400)
-        doThrow(new HttpResponseException.Builder(
-                400, "Bad Request", new com.google.api.client.http.HttpHeaders()).build())
+        doThrow(tokenError(400, "invalid_grant"))
                 .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
 
-        // when & then
         assertThrows(NonRetryableIntegrationException.class,
                 () -> service.refreshAccessToken(USER_ID));
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    @DisplayName("invalid_client는 재시도하지 않지만 로컬 토큰을 보존한다")
+    void refreshAccessToken_InvalidClientKeepsLocalToken() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        doThrow(tokenError(400, "invalid_client"))
+                .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+
+        assertThrows(NonRetryableIntegrationException.class,
+                () -> service.refreshAccessToken(USER_ID));
+        verify(tokenRepository, never()).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    @DisplayName("400 오류 응답을 파싱할 수 없으면 로컬 토큰을 보존한다")
+    void refreshAccessToken_MalformedErrorKeepsLocalToken() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        HttpResponseException malformed = new HttpResponseException.Builder(
+                400, "Google token error", new com.google.api.client.http.HttpHeaders())
+                .setContent("not-json")
+                .build();
+        doThrow(malformed).when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+
+        assertThrows(NonRetryableIntegrationException.class,
+                () -> service.refreshAccessToken(USER_ID));
+        verify(tokenRepository, never()).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    @DisplayName("Google 500 응답은 재시도하고 로컬 토큰을 보존한다")
+    void refreshAccessToken_ServerErrorKeepsLocalToken() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        doThrow(tokenError(500, "server_error"))
+                .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+
+        assertThrows(RetryableIntegrationException.class,
+                () -> service.refreshAccessToken(USER_ID));
+        verify(tokenRepository, never()).deleteByUserId(USER_ID);
     }
 
     // =========================================================
@@ -145,13 +182,78 @@ class GoogleOAuthServiceTest {
     }
 
     @Test
-    void disconnectDeletesLocalTokenEvenWhenGoogleRevokeFails() throws Exception {
+    void disconnectInvalidatesSessionsAndDeletesLocalTokenWhenGoogleRevokeThrows() throws Exception {
+        User user = mock(User.class);
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         doThrow(new IOException("network")).when(service).revokeToken(anyString());
 
-        service.disconnect(USER_ID);
+        assertFalse(service.disconnect(USER_ID));
 
+        verify(user).invalidateSessions();
         verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectInvalidatesSessionsAndDeletesLocalTokenWhenGoogleRevokeTimesOut() throws Exception {
+        User user = mock(User.class);
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+        doThrow(new HttpTimeoutException("timeout")).when(service).revokeToken(anyString());
+
+        assertFalse(service.disconnect(USER_ID));
+
+        verify(user).invalidateSessions();
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectInvalidatesSessionsAndDeletesLocalTokenWhenGoogleRevokeReturns500() throws Exception {
+        User user = mock(User.class);
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+        doReturn(500).when(service).revokeToken(anyString());
+
+        assertFalse(service.disconnect(USER_ID));
+
+        verify(user).invalidateSessions();
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectConfirmsSuccessfulGoogleRevoke() throws Exception {
+        User user = mock(User.class);
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+        doReturn(204).when(service).revokeToken(anyString());
+
+        assertTrue(service.disconnect(USER_ID));
+
+        verify(user).invalidateSessions();
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectWithoutStoredTokenIsAlreadyComplete() {
+        User user = mock(User.class);
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+
+        assertTrue(service.disconnect(USER_ID));
+
+        verify(user).invalidateSessions();
+        verify(tokenRepository).deleteByUserId(USER_ID);
+    }
+
+    @Test
+    void disconnectFailsWhenAuthenticatedUserIsMissing() throws Exception {
+        when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.empty());
+        doReturn(204).when(service).revokeToken(anyString());
+
+        assertThrows(IllegalStateException.class, () -> service.disconnect(USER_ID));
+
+        verify(tokenRepository, never()).deleteByUserId(USER_ID);
     }
 
     @Test
@@ -175,15 +277,24 @@ class GoogleOAuthServiceTest {
         Instant expiresAt = Instant.now().plusSeconds(3600);
 
         when(user.getId()).thenReturn(USER_ID);
+        when(user.getSessionVersion()).thenReturn(SESSION_VERSION);
         when(user.getProvider()).thenReturn(Provider.GOOGLE);
         when(userRepository.findByEmail(result.getEmail())).thenReturn(Optional.of(user));
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
-        when(jwtTokenProvider.generateToken(USER_ID)).thenReturn("jwt");
+        when(jwtTokenProvider.generateToken(USER_ID, SESSION_VERSION)).thenReturn("jwt");
         when(jwtTokenProvider.getExpiration("jwt")).thenReturn(expiresAt);
 
         AuthSession session = service.loginOrRegister(result);
 
         assertEquals(new AuthSession("jwt", USER_ID, Provider.GOOGLE, expiresAt), session);
+        verify(jwtTokenProvider).generateToken(USER_ID, SESSION_VERSION);
         verify(tokenRepository).save(argThat(saved -> result.getScope().equals(saved.getScope())));
+    }
+
+    private HttpResponseException tokenError(int status, String error) {
+        return new HttpResponseException.Builder(
+                status, "Google token error", new com.google.api.client.http.HttpHeaders())
+                .setContent("{\"error\":\"" + error + "\"}")
+                .build();
     }
 }

@@ -39,7 +39,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtTokenProvider.validateToken(token)) {
             // 3. userId 추출
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            if (!userRepository.isSessionActive(userId, LocalDateTime.now())) {
+            int tokenVersion = jwtTokenProvider.getSessionVersion(token);
+            boolean sessionActive = userRepository.findById(userId)
+                    .map(user -> user.isSessionActive(tokenVersion, LocalDateTime.now()))
+                    .orElse(false);
+            if (!sessionActive) {
                 filterChain.doFilter(request, response);
                 return;
             }

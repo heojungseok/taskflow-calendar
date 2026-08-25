@@ -3,6 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import { cx, clsx } from '@/styles/cx';
 import { authApi } from '@/api/endpoints/auth';
 import { useState } from 'react';
+import { broadcastSessionEnded } from '@/lib/authBroadcast';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -11,13 +12,35 @@ export default function Header() {
   const userType = useAuthStore((state) => state.userType);
   const [disconnecting, setDisconnecting] = useState(false);
 
+  const finishSession = () => {
+    broadcastSessionEnded();
+    clearSession();
+    navigate('/login');
+  };
+
+  const reconcileFailedTermination = async (action: string) => {
+    const unknownMessage = `${action} 처리 결과를 확인하지 못했습니다. 현재 화면을 유지합니다.`;
+    try {
+      const session = await authApi.sessionOrNull();
+      if (!session?.authenticated) {
+        window.alert(`${action} 요청이 실패해 서버 처리 여부를 확인하지 못했습니다. 다시 로그인한 뒤 ${action}을 다시 시도해주세요.`);
+        finishSession();
+      } else {
+        window.alert(unknownMessage);
+      }
+    } catch {
+      window.alert(unknownMessage);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await authApi.logout();
-    } finally {
-      clearSession();
-      navigate('/login');
+    } catch {
+      await reconcileFailedTermination('로그아웃');
+      return;
     }
+    finishSession();
   };
 
   const handleDisconnect = async () => {
@@ -27,13 +50,17 @@ export default function Header() {
 
     setDisconnecting(true);
     try {
-      await authApi.disconnectGoogle();
+      const revocationConfirmed = await authApi.disconnectGoogle();
+      if (!revocationConfirmed) {
+        window.alert('TaskFlow의 로컬 연결은 해제했지만 Google 측 토큰 폐기를 확인하지 못했습니다. Google 계정의 보안 설정에서 TaskFlow 액세스를 직접 삭제해주세요.');
+      }
     } catch {
-      window.alert('연결 해제 결과를 확인하지 못했습니다. 다시 로그인한 뒤 상태를 확인해주세요.');
+      await reconcileFailedTermination('연결 해제');
+      return;
     } finally {
-      clearSession();
-      navigate('/login');
+      setDisconnecting(false);
     }
+    finishSession();
   };
 
   // 현재 위치는 색이 아니라 밑줄로 알린다 — 색은 상태 전용이므로
