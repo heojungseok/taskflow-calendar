@@ -13,8 +13,8 @@ export default function Header() {
   const [disconnecting, setDisconnecting] = useState(false);
 
   const finishSession = () => {
-    broadcastSessionEnded();
     clearSession();
+    broadcastSessionEnded();
     navigate('/login', { state: { sessionChecked: true } });
   };
 
@@ -22,7 +22,9 @@ export default function Header() {
     const unknownMessage = `${action} 처리 결과를 확인하지 못했습니다. 현재 화면을 유지합니다.`;
     try {
       const session = await authApi.sessionOrNull();
-      if (!session?.authenticated) {
+      if (session === undefined) {
+        window.alert(unknownMessage);
+      } else if (!session?.authenticated) {
         window.alert(`${action} 요청이 실패해 서버 처리 여부를 확인하지 못했습니다. 다시 로그인한 뒤 ${action}을 다시 시도해주세요.`);
         finishSession();
       } else {

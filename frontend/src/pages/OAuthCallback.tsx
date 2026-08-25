@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/endpoints/auth';
 import { cx, clsx } from '@/styles/cx';
 import { clearReturnPath, consumeReturnPath } from '@/lib/authReturnPath';
+import { isOAuthError } from '@/lib/oauthErrors';
 
 /**
  * Google OAuth 콜백 처리 페이지
@@ -21,16 +22,11 @@ export default function OAuthCallback() {
     const error = searchParams.get('error');
 
     if (error) {
-      const allowedErrors = new Set([
-        'consent_cancelled',
-        'calendar_permission_required',
-        'refresh_token_unavailable',
-        'oauth_failed',
-      ]);
-      navigate(`/login?error=${allowedErrors.has(error) ? error : 'oauth_failed'}`, { replace: true });
+      navigate(`/login?error=${isOAuthError(error) ? error : 'oauth_failed'}`, { replace: true });
     } else {
       authApi.session()
         .then((session) => {
+          if (!session) return;
           setSession(session);
           if (session.authenticated) {
             navigate(consumeReturnPath(), { replace: true });

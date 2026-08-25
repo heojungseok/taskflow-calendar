@@ -1,4 +1,13 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import Login from './pages/Login';
 import OAuthCallback from './pages/OAuthCallback';
 import ProjectsPage from './pages/ProjectsPage';
@@ -15,7 +24,6 @@ import { useEffect, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import SessionExpiryDialog from './components/SessionExpiryDialog';
 import { listenForSessionEnded } from './lib/authBroadcast';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import NotFoundPage from './pages/NotFoundPage';
 import { saveReturnPath } from './lib/authReturnPath';
 import { isOAuthError } from './lib/oauthErrors';
@@ -26,6 +34,18 @@ function SessionLoading() {
       불러오는 중
     </main>
   );
+}
+
+function SessionEndedBoundary() {
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const navigate = useNavigate();
+
+  useEffect(() => listenForSessionEnded(() => {
+    clearSession();
+    navigate('/login', { replace: true, state: { sessionChecked: true } });
+  }), [clearSession, navigate]);
+
+  return null;
 }
 
 function LoginRoute() {
@@ -49,7 +69,7 @@ function CheckedLoginRoute() {
     let active = true;
     authApi.session()
       .then(session => {
-        if (active) setSession(session);
+        if (active && session) setSession(session);
       })
       .catch(() => {
         if (active) clearSession();
@@ -72,13 +92,12 @@ function AuthLayout() {
   const clearSession = useAuthStore((state) => state.clearSession);
   const initialized = useAuthStore((state) => state.initialized);
   const authenticated = useAuthStore((state) => state.authenticated);
-  const navigate = useNavigate();
 
   useEffect(() => {
     let active = true;
     authApi.session()
       .then(session => {
-        if (!active) return;
+        if (!active || !session) return;
         if (!session.authenticated) saveReturnPath();
         setSession(session);
       })
@@ -89,11 +108,6 @@ function AuthLayout() {
       active = false;
     };
   }, [setSession, clearSession]);
-
-  useEffect(() => listenForSessionEnded(() => {
-    clearSession();
-    navigate('/login', { replace: true, state: { sessionChecked: true } });
-  }), [clearSession, navigate]);
 
   if (!initialized) {
     return <SessionLoading />;
@@ -118,6 +132,7 @@ function App() {
   return (
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
+        <SessionEndedBoundary />
         <Routes>
         <Route path="/login" element={<LoginRoute />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
