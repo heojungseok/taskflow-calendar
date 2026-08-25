@@ -141,7 +141,7 @@ BEGIN
 END $$;
 
 UPDATE users
-SET expires_at = TIMESTAMP '2026-08-26 12:34:56.123456'
+SET expires_at = TIMESTAMP '2099-08-26 12:34:56.123456'
 WHERE email = 'migration-demo@example.test';
 
 INSERT INTO users (created_at, email, name, updated_at, provider, expires_at)
@@ -150,6 +150,18 @@ VALUES
      'DEMO', TIMESTAMP '2026-08-25 12:34:56.654321'),
     (CURRENT_TIMESTAMP, 'migration-null-expiry@example.test', 'Null Expiry', CURRENT_TIMESTAMP,
      'DEMO', NULL);
+
+DO $$
+BEGIN
+    IF NOT (SELECT expires_at > CURRENT_TIMESTAMP
+            FROM users WHERE email = 'migration-demo@example.test') THEN
+        RAISE EXCEPTION 'Active DEMO fixture is not active before V4';
+    END IF;
+    IF NOT (SELECT expires_at < CURRENT_TIMESTAMP
+            FROM users WHERE email = 'migration-expired-demo@example.test') THEN
+        RAISE EXCEPTION 'Expired DEMO fixture is not expired before V4';
+    END IF;
+END $$;
 SQL
 
 EXPECTED_ACTIVE_EPOCH=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
@@ -197,6 +209,14 @@ BEGIN
             IS NOT NULL THEN
         RAISE EXCEPTION 'NULL expiry changed during V4';
     END IF;
+    IF NOT (SELECT expires_at > CURRENT_TIMESTAMP
+            FROM users WHERE email = 'migration-demo@example.test') THEN
+        RAISE EXCEPTION 'Active DEMO fixture is not active after V4';
+    END IF;
+    IF NOT (SELECT expires_at < CURRENT_TIMESTAMP
+            FROM users WHERE email = 'migration-expired-demo@example.test') THEN
+        RAISE EXCEPTION 'Expired DEMO fixture is not expired after V4';
+    END IF;
 END $$;
 SQL
 }
@@ -218,8 +238,17 @@ BEGIN
     IF NOT has_schema_privilege('taskflow_app', 'public', 'USAGE') THEN
         RAISE EXCEPTION 'taskflow_app lacks public schema usage';
     END IF;
-    IF NOT has_table_privilege('taskflow_app', 'public.users', 'SELECT,INSERT,UPDATE,DELETE') THEN
-        RAISE EXCEPTION 'taskflow_app lacks users table privileges';
+    IF EXISTS (
+        SELECT 1
+        FROM pg_tables
+        WHERE schemaname = 'public'
+          AND tablename <> 'flyway_schema_history'
+          AND NOT (
+              has_table_privilege('taskflow_app', format('%I.%I', schemaname, tablename), 'SELECT')
+              AND has_table_privilege('taskflow_app', format('%I.%I', schemaname, tablename), 'INSERT')
+              AND has_table_privilege('taskflow_app', format('%I.%I', schemaname, tablename), 'UPDATE')
+              AND has_table_privilege('taskflow_app', format('%I.%I', schemaname, tablename), 'DELETE'))) THEN
+        RAISE EXCEPTION 'taskflow_app lacks runtime table privileges';
     END IF;
     IF EXISTS (
         SELECT 1
@@ -227,8 +256,13 @@ BEGIN
         JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE n.nspname = 'public'
           AND c.relkind = 'S'
-          AND NOT has_sequence_privilege(
-              'taskflow_app', format('%I.%I', n.nspname, c.relname), 'USAGE,SELECT,UPDATE')) THEN
+          AND NOT (
+              has_sequence_privilege(
+                  'taskflow_app', format('%I.%I', n.nspname, c.relname), 'USAGE')
+              AND has_sequence_privilege(
+                  'taskflow_app', format('%I.%I', n.nspname, c.relname), 'SELECT')
+              AND has_sequence_privilege(
+                  'taskflow_app', format('%I.%I', n.nspname, c.relname), 'UPDATE'))) THEN
         RAISE EXCEPTION 'taskflow_app lacks sequence privileges';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
