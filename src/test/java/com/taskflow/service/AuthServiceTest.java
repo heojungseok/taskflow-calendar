@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,23 +57,23 @@ class AuthServiceTest {
         given(userRepository.save(any(User.class))).willReturn(savedUser);
         given(jwtTokenProvider.generateToken(eq(USER_ID), eq(SESSION_VERSION), any(Instant.class)))
                 .willReturn("jwt");
-        Instant before = Instant.now();
+        Instant before = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
         AuthSession session = authService.createDemoSession();
 
-        Instant after = Instant.now();
+        Instant after = Instant.now().truncatedTo(ChronoUnit.SECONDS);
         ArgumentCaptor<Instant> expiresAtCaptor = ArgumentCaptor.forClass(Instant.class);
         verify(jwtTokenProvider).generateToken(eq(USER_ID), eq(SESSION_VERSION), expiresAtCaptor.capture());
         Instant expiresAt = expiresAtCaptor.getValue();
         assertThat(expiresAt)
                 .isAfterOrEqualTo(before.plusSeconds(86_400))
                 .isBeforeOrEqualTo(after.plusSeconds(86_400));
+        assertThat(expiresAt.getNano()).isZero();
         assertThat(session).isEqualTo(new AuthSession("jwt", USER_ID, Provider.DEMO, expiresAt));
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(userCaptor.capture());
-        assertThat(userCaptor.getValue().getExpiresAt().atZone(ZoneId.systemDefault()).toInstant())
-                .isEqualTo(expiresAt);
+        assertThat(userCaptor.getValue().getExpiresAt()).isEqualTo(expiresAt);
         verify(metrics).demoSessionStarted();
     }
 

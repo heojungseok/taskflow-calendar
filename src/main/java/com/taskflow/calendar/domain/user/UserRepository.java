@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.List;
 import jakarta.persistence.LockModeType;
@@ -22,5 +22,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByIdForUpdate(@Param("id") Long id);
 
     List<User> findTop100ByProviderAndExpiresAtLessThanEqualOrderByExpiresAtAsc(
-            Provider provider, LocalDateTime expiresAt);
+            Provider provider, Instant expiresAt);
 }

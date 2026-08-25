@@ -11,10 +11,13 @@ FLYWAY_IMAGE="flyway/flyway:11.13-alpine@sha256:ed275452f578feab0d94f8660da7ced3
 BOOTSTRAP_PASSWORD="session-migration-bootstrap-test-only"
 OWNER_PASSWORD="session-migration-owner-test-only"
 APP_PASSWORD="session-migration-app-test-only"
+BACKUP_DIR=$(mktemp -d)
+V3_DUMP="$BACKUP_DIR/taskflow-v3.dump"
 
 cleanup() {
-    docker rm -f "$POSTGRES_CONTAINER" >/dev/null 2>&1 || true
+    docker rm -f -v "$POSTGRES_CONTAINER" >/dev/null 2>&1 || true
     docker network rm "$NETWORK" >/dev/null 2>&1 || true
+    rm -r "$BACKUP_DIR" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
@@ -44,16 +47,18 @@ until docker exec "$POSTGRES_CONTAINER" \
 done
 
 run_flyway() {
+    database="$1"
+    shift
     docker run --rm \
         --network "$NETWORK" \
-        -e FLYWAY_URL="jdbc:postgresql://$POSTGRES_CONTAINER:5432/taskflow" \
+        -e FLYWAY_URL="jdbc:postgresql://$POSTGRES_CONTAINER:5432/$database" \
         -e FLYWAY_USER=taskflow_owner \
         -e FLYWAY_PASSWORD="$OWNER_PASSWORD" \
         -v "$PROJECT_ROOT/deploy/db/migration:/flyway/sql:ro" \
         "$FLYWAY_IMAGE" "$@"
 }
 
-run_flyway -target=2 migrate
+run_flyway taskflow -target=2 migrate
 
 docker exec -i -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
     psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname taskflow <<'SQL'
@@ -94,7 +99,7 @@ INSERT INTO users (created_at, email, name, updated_at, provider) VALUES
     (CURRENT_TIMESTAMP, 'migration-null@example.test', 'Null Provider', CURRENT_TIMESTAMP, NULL);
 SQL
 
-run_flyway migrate
+run_flyway taskflow -target=3 migrate
 
 docker exec -i -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
     psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname taskflow <<'SQL'
@@ -134,7 +139,70 @@ BEGIN
         RAISE EXCEPTION 'New Google user did not receive default session version';
     END IF;
 END $$;
+
+UPDATE users
+SET expires_at = TIMESTAMP '2026-08-26 12:34:56.123456'
+WHERE email = 'migration-demo@example.test';
+
+INSERT INTO users (created_at, email, name, updated_at, provider, expires_at)
+VALUES
+    (CURRENT_TIMESTAMP, 'migration-expired-demo@example.test', 'Expired Demo', CURRENT_TIMESTAMP,
+     'DEMO', TIMESTAMP '2026-08-25 12:34:56.654321'),
+    (CURRENT_TIMESTAMP, 'migration-null-expiry@example.test', 'Null Expiry', CURRENT_TIMESTAMP,
+     'DEMO', NULL);
 SQL
+
+EXPECTED_EPOCH=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+    psql --tuples-only --no-align --username taskflow_bootstrap --dbname taskflow \
+    --command="SELECT EXTRACT(EPOCH FROM expires_at AT TIME ZONE 'UTC') FROM users WHERE email = 'migration-demo@example.test'")
+
+docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+    pg_dump --format=custom --username taskflow_bootstrap --dbname taskflow > "$V3_DUMP"
+
+run_flyway taskflow -target=4 migrate
+
+verify_v4() {
+    database="$1"
+    actual_epoch=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+        psql --tuples-only --no-align --username taskflow_bootstrap --dbname "$database" \
+        --command="SELECT EXTRACT(EPOCH FROM expires_at) FROM users WHERE email = 'migration-demo@example.test'")
+    if [ "$actual_epoch" != "$EXPECTED_EPOCH" ]; then
+        echo "DEMO expiry epoch changed: expected=$EXPECTED_EPOCH actual=$actual_epoch" >&2
+        exit 1
+    fi
+
+    docker exec -i -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+        psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname "$database" <<'SQL'
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'users'
+          AND column_name = 'expires_at'
+          AND data_type = 'timestamp with time zone') THEN
+        RAISE EXCEPTION 'users.expires_at is not TIMESTAMPTZ';
+    END IF;
+    IF (SELECT expires_at FROM users WHERE email = 'migration-null-expiry@example.test')
+            IS NOT NULL THEN
+        RAISE EXCEPTION 'NULL expiry changed during V4';
+    END IF;
+END $$;
+SQL
+}
+
+verify_v4 taskflow
+
+docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+    createdb --username taskflow_bootstrap --owner taskflow_owner taskflow_restore
+docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+    psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname taskflow_restore \
+    --command='CREATE EXTENSION IF NOT EXISTS vector' >/dev/null
+docker exec -i -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+    pg_restore --username taskflow_bootstrap --dbname taskflow_restore \
+    < "$V3_DUMP"
+run_flyway taskflow_restore -target=4 migrate
+verify_v4 taskflow_restore
 
 PORT=$(docker port "$POSTGRES_CONTAINER" 5432/tcp | sed -n '1s/.*://p')
 if [ -z "$PORT" ]; then
@@ -143,10 +211,43 @@ if [ -z "$PORT" ]; then
 fi
 
 cd "$PROJECT_ROOT"
-DB_URL="jdbc:postgresql://127.0.0.1:$PORT/taskflow" \
-DB_USERNAME=taskflow_app \
-DB_PASSWORD="$APP_PASSWORD" \
-JPA_DDL_AUTO=validate \
-./gradlew test --tests 'com.taskflow.calendar.domain.oauth.SessionInvalidationIntegrationTest'
 
-echo "PASS: session_version migration and replay verification"
+run_application_tests() {
+    database="$1"
+    jvm_timezone="$2"
+    database_timezone="$3"
+    docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+        psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname postgres \
+        --command="ALTER DATABASE $database SET timezone TO '$database_timezone'" >/dev/null
+    JAVA_TOOL_OPTIONS="-Duser.timezone=$jvm_timezone" \
+    DB_URL="jdbc:postgresql://127.0.0.1:$PORT/$database" \
+    DB_USERNAME=taskflow_app \
+    DB_PASSWORD="$APP_PASSWORD" \
+    JPA_DDL_AUTO=validate \
+    ./gradlew --no-daemon --rerun-tasks test \
+        --tests 'com.taskflow.calendar.domain.user.DemoExpiryIntegrationTest' \
+        --tests 'com.taskflow.calendar.domain.user.DemoCleanupRepositoryTest' \
+        --tests 'com.taskflow.calendar.domain.oauth.SessionInvalidationIntegrationTest'
+}
+
+run_full_build() {
+    database="$1"
+    jvm_timezone="$2"
+    database_timezone="$3"
+    docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+        psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname postgres \
+        --command="ALTER DATABASE $database SET timezone TO '$database_timezone'" >/dev/null
+    JAVA_TOOL_OPTIONS="-Duser.timezone=$jvm_timezone" \
+    DB_URL="jdbc:postgresql://127.0.0.1:$PORT/$database" \
+    DB_USERNAME=taskflow_owner \
+    DB_PASSWORD="$OWNER_PASSWORD" \
+    JPA_DDL_AUTO=validate \
+    ./gradlew --no-daemon --rerun-tasks build
+}
+
+run_application_tests taskflow Asia/Seoul UTC
+run_application_tests taskflow America/New_York Asia/Seoul
+run_application_tests taskflow UTC America/New_York
+run_full_build taskflow_restore UTC UTC
+
+echo "PASS: session migrations, DEMO expiry preservation, restore-forward, timezone matrix, and full build"

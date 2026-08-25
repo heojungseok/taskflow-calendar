@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.servlet.http.Cookie;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,7 +66,7 @@ class OutboxControllerSecurityTest {
         given(jwtTokenProvider.getUserIdFromToken(TOKEN)).willReturn(USER_ID);
         given(jwtTokenProvider.getSessionVersion(TOKEN)).willReturn(TOKEN_VERSION);
         given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
-        given(user.isSessionActive(eq(TOKEN_VERSION), any(LocalDateTime.class))).willReturn(true);
+        given(user.isSessionActive(eq(TOKEN_VERSION), any(Instant.class))).willReturn(true);
     }
 
     @Nested
@@ -92,7 +92,7 @@ class OutboxControllerSecurityTest {
         @Test
         @DisplayName("사용자 도메인이 세션을 무효로 판정하면 401")
         void inactiveDomainSessionIsUnauthorized() throws Exception {
-            given(user.isSessionActive(eq(TOKEN_VERSION), any(LocalDateTime.class))).willReturn(false);
+            given(user.isSessionActive(eq(TOKEN_VERSION), any(Instant.class))).willReturn(false);
 
             mvc.perform(get(BASE).cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                     .andExpect(status().isUnauthorized());
