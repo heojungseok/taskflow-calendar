@@ -63,6 +63,7 @@ export default function SessionExpiryDialog() {
         try {
           const session = await authApi.sessionOrNull();
           if (!active) return;
+          if (session === undefined) return;
           if (session?.authenticated) {
             setSession(session);
             return;

@@ -1,6 +1,10 @@
 import apiClient from '../client';
 import type { ApiResponse } from '../types';
-import type { Session } from '@/store/authStore';
+import { useAuthStore, type Session } from '@/store/authStore';
+
+function ifCurrentGeneration<T>(generation: number, value: T) {
+  return generation === useAuthStore.getState().generation ? value : undefined;
+}
 
 async function googleOAuthUrl(path: string, signal?: AbortSignal) {
   const response = await apiClient.get<ApiResponse<{ authorizeUrl: string }>>(path, {
@@ -17,14 +21,19 @@ export const authApi = {
   googleReconsentUrl: (signal?: AbortSignal) =>
     googleOAuthUrl('/oauth/google/reconsent', signal),
   session: async () => {
+    const generation = useAuthStore.getState().generation;
     const response = await apiClient.get<ApiResponse<Session>>('/auth/session');
-    return response.data.data;
+    return ifCurrentGeneration(generation, response.data.data);
   },
   sessionOrNull: async () => {
+    const generation = useAuthStore.getState().generation;
     const response = await apiClient.get<ApiResponse<Session>>('/auth/session', {
       validateStatus: status => (status >= 200 && status < 300) || status === 401,
     });
-    return response.status === 401 ? null : response.data.data;
+    return ifCurrentGeneration(
+      generation,
+      response.status === 401 ? null : response.data.data
+    );
   },
   demo: async () => {
     await apiClient.get('/auth/session');

@@ -124,6 +124,71 @@ async function storedReturnPath(page: Page) {
   return page.evaluate(key => sessionStorage.getItem(key), RETURN_PATH_KEY);
 }
 
+function observeSessionEnded(page: Page) {
+  return page.evaluate(() => new Promise<void>(resolve => {
+    const channel = new BroadcastChannel('taskflow-auth');
+    channel.addEventListener('message', event => {
+      if (event.data !== 'session-ended') return;
+      channel.close();
+      resolve();
+    });
+  }));
+}
+
+function clientAuthenticated(page: Page) {
+  return page.evaluate(async modulePath => {
+    const module = await import(modulePath);
+    return module.useAuthStore.getState().authenticated;
+  }, '/src/store/authStore.ts');
+}
+
+async function expectStaleSessionIgnored(
+  context: BrowserContext,
+  entryPath: '/login' | '/oauth/callback',
+  loadingText: string
+) {
+  const target = await context.newPage();
+  const broadcaster = await context.newPage();
+  await mockApi(target);
+  await mockApi(broadcaster);
+  let releaseSession!: () => void;
+  let finishSession!: () => void;
+  const sessionReleased = new Promise<void>(resolve => { releaseSession = resolve; });
+  const sessionFinished = new Promise<void>(resolve => { finishSession = resolve; });
+  let protectedRequests = 0;
+  target.on('request', request => {
+    if (new URL(request.url()).pathname.startsWith('/api/projects')) protectedRequests++;
+  });
+  await target.route('**/api/auth/session', async route => {
+    await sessionReleased;
+    await route.fulfill({
+      json: {
+        success: true,
+        data: {
+          authenticated: true,
+          userType: 'GOOGLE',
+          expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+        },
+      },
+    });
+    finishSession();
+  });
+  await target.goto(entryPath);
+  await expect(target.getByText(loadingText)).toBeVisible();
+  await broadcaster.goto('/projects');
+  await expect(broadcaster.getByRole('heading', { name: '프로젝트', exact: true })).toBeVisible();
+  const sessionEnded = observeSessionEnded(target);
+
+  await broadcaster.getByRole('button', { name: '로그아웃' }).click();
+  await sessionEnded;
+  releaseSession();
+  await sessionFinished;
+
+  await expect(target).toHaveURL(/\/login$/);
+  await expect.poll(() => clientAuthenticated(target)).toBe(false);
+  expect(protectedRequests).toBe(0);
+}
+
 test.describe('return path', () => {
   test('200 익명 세션은 query와 hash를 포함한 보호 경로를 저장하고 로그인으로 이동한다', async ({ page }) => {
     await mockApi(page, 'session-anonymous');
@@ -961,10 +1026,15 @@ test('stale initial session 응답은 다른 page의 session-ended 뒤 인증을
   releaseSession();
   await sessionFinished;
 
-  await expect.poll(() => target.evaluate(async modulePath => {
-    const module = await import(modulePath);
-    return module.useAuthStore.getState().authenticated;
-  }, '/src/store/authStore.ts')).toBe(false);
+  await expect.poll(() => clientAuthenticated(target)).toBe(false);
+});
+
+test('login session 지연 응답은 다른 page의 session-ended 뒤 인증과 보호 요청을 복원하지 않는다', async ({ context }) => {
+  await expectStaleSessionIgnored(context, '/login', '불러오는 중');
+});
+
+test('OAuth callback session 지연 응답은 다른 page의 session-ended 뒤 인증과 보호 요청을 복원하지 않는다', async ({ context }) => {
+  await expectStaleSessionIgnored(context, '/oauth/callback', '로그인하는 중');
 });
 
 test('broadcast 채널이 없어도 현재 tab logout은 정상 동작한다', async ({ page }) => {
