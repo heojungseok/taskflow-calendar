@@ -301,7 +301,7 @@ test.describe('authenticated public entry', () => {
     await expect(page.getByRole('alert')).toContainText('Google 연결을 복구하지 못했습니다.');
   });
 
-  for (const query of ['error=', 'error=unknown']) {
+  for (const query of ['error=', 'error=unknown', 'error=toString']) {
     test(`유효하지 않은 ${query} query는 세션 확인을 우회하지 않는다`, async ({ page }) => {
       await mockApi(page);
 

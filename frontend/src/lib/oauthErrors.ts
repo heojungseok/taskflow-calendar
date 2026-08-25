@@ -18,7 +18,7 @@ const OAUTH_ERRORS = {
 } as const;
 
 export function isOAuthError(code: string | null) {
-  return code !== null && code in OAUTH_ERRORS;
+  return code !== null && Object.hasOwn(OAUTH_ERRORS, code);
 }
 
 export function oauthError(code: string | null) {
