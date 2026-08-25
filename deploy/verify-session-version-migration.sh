@@ -152,9 +152,12 @@ VALUES
      'DEMO', NULL);
 SQL
 
-EXPECTED_EPOCH=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+EXPECTED_ACTIVE_EPOCH=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
     psql --tuples-only --no-align --username taskflow_bootstrap --dbname taskflow \
     --command="SELECT EXTRACT(EPOCH FROM expires_at AT TIME ZONE 'UTC') FROM users WHERE email = 'migration-demo@example.test'")
+EXPECTED_EXPIRED_EPOCH=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+    psql --tuples-only --no-align --username taskflow_bootstrap --dbname taskflow \
+    --command="SELECT EXTRACT(EPOCH FROM expires_at AT TIME ZONE 'UTC') FROM users WHERE email = 'migration-expired-demo@example.test'")
 
 docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
     pg_dump --format=custom --username taskflow_bootstrap --dbname taskflow > "$V3_DUMP"
@@ -163,11 +166,18 @@ run_flyway taskflow -target=4 migrate
 
 verify_v4() {
     database="$1"
-    actual_epoch=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+    actual_active_epoch=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
         psql --tuples-only --no-align --username taskflow_bootstrap --dbname "$database" \
         --command="SELECT EXTRACT(EPOCH FROM expires_at) FROM users WHERE email = 'migration-demo@example.test'")
-    if [ "$actual_epoch" != "$EXPECTED_EPOCH" ]; then
-        echo "DEMO expiry epoch changed: expected=$EXPECTED_EPOCH actual=$actual_epoch" >&2
+    if [ "$actual_active_epoch" != "$EXPECTED_ACTIVE_EPOCH" ]; then
+        echo "Active DEMO expiry epoch changed: expected=$EXPECTED_ACTIVE_EPOCH actual=$actual_active_epoch" >&2
+        exit 1
+    fi
+    actual_expired_epoch=$(docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+        psql --tuples-only --no-align --username taskflow_bootstrap --dbname "$database" \
+        --command="SELECT EXTRACT(EPOCH FROM expires_at) FROM users WHERE email = 'migration-expired-demo@example.test'")
+    if [ "$actual_expired_epoch" != "$EXPECTED_EXPIRED_EPOCH" ]; then
+        echo "Expired DEMO expiry epoch changed: expected=$EXPECTED_EXPIRED_EPOCH actual=$actual_expired_epoch" >&2
         exit 1
     fi
 
@@ -191,6 +201,43 @@ END $$;
 SQL
 }
 
+verify_restore_access() {
+    database="$1"
+    docker exec -i -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
+        psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname "$database" <<'SQL'
+DO $$
+BEGIN
+    IF (SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = current_database())
+            IS DISTINCT FROM 'taskflow_owner' THEN
+        RAISE EXCEPTION 'Unexpected database owner';
+    END IF;
+    IF (SELECT tableowner FROM pg_tables WHERE schemaname = 'public' AND tablename = 'users')
+            IS DISTINCT FROM 'taskflow_owner' THEN
+        RAISE EXCEPTION 'Unexpected users table owner';
+    END IF;
+    IF NOT has_schema_privilege('taskflow_app', 'public', 'USAGE') THEN
+        RAISE EXCEPTION 'taskflow_app lacks public schema usage';
+    END IF;
+    IF NOT has_table_privilege('taskflow_app', 'public.users', 'SELECT,INSERT,UPDATE,DELETE') THEN
+        RAISE EXCEPTION 'taskflow_app lacks users table privileges';
+    END IF;
+    IF EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relkind = 'S'
+          AND NOT has_sequence_privilege(
+              'taskflow_app', format('%I.%I', n.nspname, c.relname), 'USAGE,SELECT,UPDATE')) THEN
+        RAISE EXCEPTION 'taskflow_app lacks sequence privileges';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
+        RAISE EXCEPTION 'vector extension is missing';
+    END IF;
+END $$;
+SQL
+}
+
 verify_v4 taskflow
 
 docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
@@ -203,6 +250,7 @@ docker exec -i -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
     < "$V3_DUMP"
 run_flyway taskflow_restore -target=4 migrate
 verify_v4 taskflow_restore
+verify_restore_access taskflow_restore
 
 PORT=$(docker port "$POSTGRES_CONTAINER" 5432/tcp | sed -n '1s/.*://p')
 if [ -z "$PORT" ]; then
@@ -248,6 +296,7 @@ run_full_build() {
 run_application_tests taskflow Asia/Seoul UTC
 run_application_tests taskflow America/New_York Asia/Seoul
 run_application_tests taskflow UTC America/New_York
+run_application_tests taskflow_restore UTC UTC
 run_full_build taskflow_restore UTC UTC
 
 echo "PASS: session migrations, DEMO expiry preservation, restore-forward, timezone matrix, and full build"
