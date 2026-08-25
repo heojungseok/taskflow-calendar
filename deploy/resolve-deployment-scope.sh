@@ -63,7 +63,7 @@ frontend_changed=false
 full_changed=false
 
 if has_changes "$backend_sha" \
-    Dockerfile .dockerignore build.gradle settings.gradle gradle gradlew gradlew.bat \
+    Dockerfile .dockerignore build.gradle settings.gradle gradle gradle.lockfile gradlew gradlew.bat \
     src/main deploy/db/migration; then
   backend_changed=true
 fi
@@ -77,8 +77,12 @@ if has_changes "$frontend_sha" \
   frontend_changed=true
 fi
 
-if has_changes "$backend_sha" compose.production.yml || \
-    has_changes "$frontend_sha" compose.production.yml; then
+if has_changes "$backend_sha" \
+      compose.production.yml deploy/grafana deploy/postgres/init-roles.sh \
+      deploy/prometheus/prometheus.yml || \
+    has_changes "$frontend_sha" \
+      compose.production.yml deploy/grafana deploy/postgres/init-roles.sh \
+      deploy/prometheus/prometheus.yml; then
   full_changed=true
 fi
 
