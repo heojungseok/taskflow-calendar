@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">TaskFlow</title>
+  <rect width="120" height="120" fill="#202522"/>
+  <path
+    d="M20 60 C32 42 47 42 60 60 S88 78 100 60"
+    fill="none"
+    stroke="#F7F8F6"
+    stroke-width="14"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
