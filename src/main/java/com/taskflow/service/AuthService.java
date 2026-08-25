@@ -10,8 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -31,10 +30,10 @@ public class AuthService {
 
     @Transactional
     public AuthSession createDemoSession() {
-        Instant expiresAt = Instant.now().plusSeconds(86_400);
+        Instant expiresAt = Instant.now().plusSeconds(86_400).truncatedTo(ChronoUnit.SECONDS);
         User user = userRepository.save(User.createDemoUser(
                 UUID.randomUUID().toString(),
-                LocalDateTime.ofInstant(expiresAt, ZoneId.systemDefault())));
+                expiresAt));
         metrics.demoSessionStarted();
         return new AuthSession(
                 jwtTokenProvider.generateToken(user.getId(), user.getSessionVersion(), expiresAt),

@@ -6,6 +6,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,7 +32,7 @@ public class User {
     private String password;
 
     @Column(name = "expires_at")
-    private LocalDateTime expiresAt;
+    private Instant expiresAt;
 
     @Column(name = "session_version", nullable = false)
     private int sessionVersion;
@@ -66,7 +67,7 @@ public class User {
         return user;
     }
 
-    public static User createDemoUser(String id, LocalDateTime expiresAt) {
+    public static User createDemoUser(String id, Instant expiresAt) {
         User user = new User();
         user.email = id + "@demo.taskflow.local";
         user.name = "방문자";
@@ -75,7 +76,7 @@ public class User {
         return user;
     }
 
-    public boolean isSessionActive(int tokenVersion, LocalDateTime now) {
+    public boolean isSessionActive(int tokenVersion, Instant now) {
         return sessionVersion == tokenVersion &&
                 (provider == Provider.GOOGLE ||
                         provider == Provider.DEMO && expiresAt != null && expiresAt.isAfter(now));

@@ -18,7 +18,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,8 +37,8 @@ class DemoCleanupRepositoryTest {
 
     @Test
     void cleanupQueriesRemoveOwnedGraphInOneTransaction() {
-        LocalDateTime threshold = LocalDateTime.now();
-        User user = users.save(User.createDemoUser("cleanup-repository", threshold.minusMinutes(1)));
+        Instant threshold = Instant.now();
+        User user = users.save(User.createDemoUser("cleanup-repository", threshold.minusSeconds(60)));
         Project project = projects.save(Project.of("cleanup", user.getId()));
         Task task = tasks.save(Task.createTask(project, "cleanup", null, user,
                 null, null, false));

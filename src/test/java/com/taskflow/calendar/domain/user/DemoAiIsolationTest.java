@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,7 +44,7 @@ class DemoAiIsolationTest {
 
     private final Long userId = 1L;
     private final Long projectId = 2L;
-    private final User demo = User.createDemoUser("demo", LocalDateTime.now().plusHours(1));
+    private final User demo = User.createDemoUser("demo", Instant.now().plusSeconds(3_600));
     private final Project project = Project.of("Demo", userId);
 
     @BeforeEach

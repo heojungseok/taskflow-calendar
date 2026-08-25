@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class DemoCleanupService {
     private final OAuthGoogleTokenRepository tokenRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean cleanup(Long userId, LocalDateTime expiredBefore) {
+    public boolean cleanup(Long userId, Instant expiredBefore) {
         User user = userRepository.findByIdForUpdate(userId).orElse(null);
         if (user == null || user.getProvider() != Provider.DEMO
                 || user.getExpiresAt() == null || user.getExpiresAt().isAfter(expiredBefore)) {

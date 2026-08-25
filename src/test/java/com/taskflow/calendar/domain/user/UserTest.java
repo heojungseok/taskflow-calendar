@@ -2,7 +2,7 @@ package com.taskflow.calendar.domain.user;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,7 +10,7 @@ class UserTest {
 
     @Test
     void demoUserUsesFixedExpiryAndNoSeedDataIdentity() {
-        LocalDateTime expiresAt = LocalDateTime.of(2026, 8, 20, 12, 0);
+        Instant expiresAt = Instant.parse("2026-08-20T12:00:00Z");
 
         User user = User.createDemoUser("demo-id", expiresAt);
 
@@ -26,7 +26,7 @@ class UserTest {
     @Test
     void invalidatingGoogleSessionsRejectsOldVersionAndAcceptsNewVersion() {
         User user = User.createGoogleUser("user@example.com", "User");
-        LocalDateTime now = LocalDateTime.of(2026, 8, 20, 12, 0);
+        Instant now = Instant.parse("2026-08-20T12:00:00Z");
 
         assertThat(user.isSessionActive(0, now)).isTrue();
 

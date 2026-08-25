@@ -12,7 +12,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -33,14 +33,14 @@ class DemoCleanupServiceTest {
     @Mock ProjectRepository projectRepository;
     @Mock OAuthGoogleTokenRepository tokenRepository;
     DemoCleanupService service;
-    LocalDateTime threshold;
+    Instant threshold;
     User user;
 
     @BeforeEach
     void setUp() {
         service = new DemoCleanupService(userRepository, outboxRepository, historyRepository,
                 taskRepository, projectRepository, tokenRepository);
-        threshold = LocalDateTime.of(2026, 8, 19, 12, 0);
+        threshold = Instant.parse("2026-08-19T12:00:00Z");
         user = mock(User.class);
         given(user.getProvider()).willReturn(Provider.DEMO);
         given(user.getExpiresAt()).willReturn(threshold.minusSeconds(1));

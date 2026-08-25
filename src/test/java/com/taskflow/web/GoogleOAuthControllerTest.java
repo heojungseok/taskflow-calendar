@@ -22,7 +22,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -254,7 +253,7 @@ class GoogleOAuthControllerTest {
         given(jwtTokenProvider.getUserIdFromToken(TOKEN)).willReturn(7L);
         given(jwtTokenProvider.getSessionVersion(TOKEN)).willReturn(3);
         given(userRepository.findById(7L)).willReturn(Optional.of(user));
-        given(user.isSessionActive(eq(3), any(LocalDateTime.class))).willReturn(true);
+        given(user.isSessionActive(eq(3), any(Instant.class))).willReturn(true);
     }
 
     private GoogleOAuthResult oauthResult() {

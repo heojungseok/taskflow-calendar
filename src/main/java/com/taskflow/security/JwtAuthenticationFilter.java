@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Cookie;
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collections;
 
 @Slf4j
@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
             int tokenVersion = jwtTokenProvider.getSessionVersion(token);
             boolean sessionActive = userRepository.findById(userId)
-                    .map(user -> user.isSessionActive(tokenVersion, LocalDateTime.now()))
+                    .map(user -> user.isSessionActive(tokenVersion, Instant.now()))
                     .orElse(false);
             if (!sessionActive) {
                 filterChain.doFilter(request, response);
