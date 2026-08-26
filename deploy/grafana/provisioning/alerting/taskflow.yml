@@ -16,30 +16,50 @@ templates:
   - orgId: 1
     name: taskflow-discord
     template: |
-      {{ define "taskflow.discord.title" }}{{ if eq .Status "firing" }}[장애][{{ .CommonLabels.severity | toUpper }}] TaskFlow {{ .CommonLabels.environment }} · {{ .CommonAnnotations.summary }}{{ else }}[복구][{{ .CommonLabels.severity | toUpper }}] TaskFlow {{ .CommonLabels.environment }} · {{ .CommonAnnotations.summary }}{{ end }}{{ end }}
+      {{ define "taskflow.discord.title" }}
+      {{- $severity := "WARNING" -}}
+      {{- range .Alerts -}}{{ if eq .Labels.severity "critical" }}{{ $severity = "CRITICAL" }}{{ end }}{{ end -}}
+      {{- if gt (len .Alerts.Firing) 0 -}}[장애][{{ $severity }}] TaskFlow {{ .GroupLabels.environment }} · {{ len .Alerts.Firing }}건{{- else -}}[복구][{{ $severity }}] TaskFlow {{ .GroupLabels.environment }} · {{ len .Alerts.Resolved }}건{{- end -}}
+      {{ end }}
       {{ define "taskflow.discord.message" }}
-      {{- if eq .Status "firing" }}
-      **영향** {{ .CommonAnnotations.impact }}
+      {{- if gt (len .Alerts.Firing) 0 }}
+      **현재 상태** 발생 {{ len .Alerts.Firing }}건{{ if gt (len .Alerts.Resolved) 0 }} / 복구 {{ len .Alerts.Resolved }}건{{ end }}
       {{- range .Alerts.Firing }}
+
+      ### [발생] {{ .Annotations.summary }}
       **발생 시각** {{ .StartsAt | tz "Asia/Seoul" | date "2006-01-02 15:04:05 MST" }}
+      **대상** {{ .Labels.service }} / {{ .Labels.environment }}
+      **영향** {{ .Annotations.impact }}
+      **권장 조치** {{ .Annotations.action }}
+      **1차 확인** 공개 데모 origin의 `{{ .Annotations.check_url }}`
+      {{- if .PanelURL }}
+      **Grafana** [관련 패널 열기]({{ .PanelURL }})
+      {{- else if .DashboardURL }}
+      **Grafana** [대시보드 열기]({{ .DashboardURL }})
       {{- end }}
-      **대상** {{ .CommonLabels.service }} / {{ .CommonLabels.environment }}
-      **권장 조치** {{ .CommonAnnotations.action }}
-      **1차 가용성 확인** 공개 데모 origin의 `{{ .CommonAnnotations.check_url }}`
+      {{- end }}
       {{- else }}
-      {{- range .Alerts.Resolved }}
-      **복구 시각** {{ .EndsAt | tz "Asia/Seoul" | date "2006-01-02 15:04:05 MST" }}
+      **현재 상태** 복구 {{ len .Alerts.Resolved }}건
       {{- end }}
-      **대상** {{ .CommonLabels.service }} / {{ .CommonLabels.environment }}
+      {{- range .Alerts.Resolved }}
+
+      ### [복구] {{ .Annotations.summary }}
+      **복구 시각** {{ .EndsAt | tz "Asia/Seoul" | date "2006-01-02 15:04:05 MST" }}
+      **대상** {{ .Labels.service }} / {{ .Labels.environment }}
       **결과** 정상 상태로 돌아왔습니다.
-      **1차 가용성 확인** 공개 데모 origin의 `{{ .CommonAnnotations.check_url }}`
+      **1차 확인** 공개 데모 origin의 `{{ .Annotations.check_url }}`
+      {{- if .PanelURL }}
+      **Grafana** [관련 패널 열기]({{ .PanelURL }})
+      {{- else if .DashboardURL }}
+      **Grafana** [대시보드 열기]({{ .DashboardURL }})
+      {{- end }}
       {{- end }}
       {{ end }}
 
 policies:
   - orgId: 1
     receiver: Discord
-    group_by: [alertname, environment]
+    group_by: [environment]
     group_wait: 30s
     repeat_interval: 4h
 
@@ -50,18 +70,22 @@ groups:
     interval: 1m
     rules:
       - uid: taskflow-demo-usage
+        title: demo usage
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
         labels:
           environment: public-demo
           service: gateway
           severity: warning
         annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "12"
           summary: 공개 데모 사용량 증가
-          impact: 공개 데모 트래픽이 운영 한도에 가까워질 수 있습니다.
-          action: 요청량과 rate limit 동작을 확인하세요.
+          impact: 신규 DEMO 세션과 Google 미연결 Calendar skip이 함께 늘어 공개 데모 처리량과 외부 API 사용 한도에 부담이 생길 수 있습니다.
+          action: DEMO 시작·Task 생성 추이와 rate limit 차단 로그를 확인하고 지속되면 데모 세션 생성 제한을 임시로 낮추세요.
           check_url: /healthz
-        title: demo usage
-        condition: C
-        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
@@ -73,19 +97,24 @@ groups:
           - refId: C
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
       - uid: taskflow-abuse
+        title: demo traffic spike
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
         labels:
           environment: public-demo
           service: gateway
           severity: warning
         annotations:
-          summary: 비정상 요청 패턴 감지
-          impact: 공개 데모의 정상 사용자가 제한될 수 있습니다.
-          action: 요청 패턴과 rate limit 차단 현황을 확인하세요.
+          __dashboardUid__: taskflow
+          __panelId__: "13"
+          summary: DEMO 트래픽 급증
+          impact: 10분 내 DEMO 세션 또는 Google 미연결 요청이 급증해 정상 사용자의 요청이 제한되거나 서버 부하가 커질 수 있습니다.
+          action: 요청 IP·rate limit 차단 현황을 확인하고 비정상 반복이면 해당 경로 제한을 강화하세요.
           check_url: /healthz
-        title: abuse
-        condition: C
-        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
@@ -97,20 +126,25 @@ groups:
           - refId: C
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
       - uid: taskflow-worker-backlog
+        title: worker backlog
+        condition: C
+        for: 2m
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
         labels:
           environment: public-demo
           service: worker
           severity: warning
         annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "17"
           summary: Worker 처리 지연
-          impact: 비동기 작업 반영이 늦어질 수 있습니다.
-          action: Worker 상태와 대기 작업량을 확인하세요.
+          impact: 처리 가능한 Outbox 이벤트가 2분 넘게 대기해 Calendar 반영이 늦어질 수 있습니다.
+          action: Backend worker 로그와 Outbox 실패 사유를 확인하고 일시 장애면 worker 재기동 후 대기 시간이 감소하는지 확인하세요.
           check_url: /healthz
-        title: worker backlog
-        condition: C
-        for: 2m
-        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
@@ -122,21 +156,25 @@ groups:
           - refId: C
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [120]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
       - uid: taskflow-backend-down
+        title: backend metrics collection down
+        condition: C
+        for: 2m
+        noDataState: Alerting
+        execErrState: Error
+        isPaused: false
         labels:
           environment: public-demo
           service: backend
           severity: critical
         annotations:
-          summary: Backend 응답 중단
-          impact: 공개 API와 주요 기능을 사용할 수 없습니다.
-          action: Backend 컨테이너 상태와 최근 로그를 확인하세요.
-          check_url: /healthz
-        title: backend down
-        condition: C
-        for: 2m
-        noDataState: Alerting
-        isPaused: false
+          __dashboardUid__: taskflow
+          __panelId__: "2"
+          summary: Backend 메트릭 수집 중단
+          impact: Prometheus가 Backend Actuator 메트릭을 2분 이상 수집하지 못해 실제 API 장애 여부와 운영 상태를 판단할 수 없습니다.
+          action: 먼저 공개 origin의 세션 확인 주소로 API 응답을 확인한 뒤 Backend 컨테이너·9091 포트·Prometheus target 상태와 최근 로그를 순서대로 확인하세요.
+          check_url: /api/auth/session
         data:
           - refId: A
             datasourceUid: prometheus
@@ -148,19 +186,24 @@ groups:
           - refId: C
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: lt, params: [1]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
       - uid: taskflow-cleanup-failure
+        title: cleanup failure
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
         labels:
           environment: public-demo
           service: cleanup
           severity: warning
         annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "18"
           summary: Cleanup 작업 실패
-          impact: 만료된 데모 데이터가 남을 수 있습니다.
-          action: Cleanup 로그를 확인하고 작업을 다시 실행하세요.
+          impact: 만료된 DEMO 사용자와 연결 데이터가 남아 저장 공간과 공개 데모 운영 한도에 영향을 줄 수 있습니다.
+          action: Cleanup 예외 로그를 확인하고 원인을 해결한 뒤 스케줄러를 재실행해 만료 사용자 수가 감소하는지 확인하세요.
           check_url: /healthz
-        title: cleanup failure
-        condition: C
-        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
@@ -172,20 +215,25 @@ groups:
           - refId: C
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
       - uid: taskflow-cleanup-overdue
+        title: cleanup overdue
+        condition: C
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
         labels:
           environment: public-demo
           service: cleanup
           severity: warning
         annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "19"
           summary: Cleanup 실행 지연
-          impact: 만료된 데모 데이터 정리가 늦어지고 있습니다.
-          action: 스케줄러 상태와 마지막 성공 시각을 확인하세요.
+          impact: 만료된 DEMO 데이터가 10분 넘게 남아 있어 정리 스케줄러가 멈췄거나 처리 속도가 부족할 수 있습니다.
+          action: Cleanup 스케줄러 활성화 여부와 마지막 실행 로그를 확인하고 누락이면 즉시 한 번 실행하세요.
           check_url: /healthz
-        title: cleanup overdue
-        condition: C
-        for: 5m
-        isPaused: false
         data:
           - refId: A
             datasourceUid: prometheus
@@ -197,3 +245,61 @@ groups:
           - refId: C
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [600]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-gemini-quota-exhausted
+        title: gemini quota exhausted
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: gemini
+          severity: critical
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "24"
+          summary: 'Gemini quota 소진 ({{ $labels.feature }})'
+          impact: 해당 Gemini 기능의 요청이 quota 소진으로 실패해 요약·추천·검색 보조 결과를 제공하지 못할 수 있습니다.
+          action: Gemini 사용량과 결제·quota 설정을 확인하고 복구 전까지 해당 기능의 재시도 요청을 줄이세요.
+          check_url: /api/auth/session
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'sum by (feature) (increase(gemini_calls_total{outcome="failure",error_code="LLM_QUOTA_EXHAUSTED"}[5m]))', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-gemini-repeated-failures
+        title: gemini repeated failures
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: gemini
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "22"
+          summary: 'Gemini 반복 실패 ({{ $labels.feature }})'
+          impact: 같은 Gemini 기능이 10분 동안 3회 이상 실패해 사용자 기능이 반복적으로 대체 경로나 오류 응답으로 전환될 수 있습니다.
+          action: 기능별 error_code와 Backend 로그를 확인하고 설정 오류면 키·모델을 수정하며 일시 오류면 재시도 간격과 Google 상태를 확인하세요.
+          check_url: /api/auth/session
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 600, to: 0}
+            model: {refId: A, expr: 'sum by (feature) (increase(gemini_calls_total{outcome="failure"}[10m]))', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [2]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
