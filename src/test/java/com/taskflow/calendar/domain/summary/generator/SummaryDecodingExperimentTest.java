@@ -8,6 +8,8 @@ import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiSummaryProperties;
+import com.taskflow.observability.TaskFlowMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -44,7 +46,8 @@ class SummaryDecodingExperimentTest {
     @DisplayName("summary decoding 조합별 live 실험 결과를 자동 보고서로 저장한다")
     void generateExperimentReport() throws IOException {
         GeminiSummaryProperties properties = createProperties();
-        GeminiWeeklySummaryGenerator generator = new GeminiWeeklySummaryGenerator(properties, objectMapper);
+        GeminiWeeklySummaryGenerator generator = new GeminiWeeklySummaryGenerator(
+                properties, objectMapper, new TaskFlowMetrics(new SimpleMeterRegistry()));
         List<ExperimentScenario> scenarios = List.of(
                 releaseScenario(),
                 onboardingScenario()

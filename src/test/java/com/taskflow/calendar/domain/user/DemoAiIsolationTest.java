@@ -22,6 +22,8 @@ import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.config.GeminiRecommendationProperties;
 import com.taskflow.config.GeminiSearchProperties;
 import com.taskflow.config.GeminiSummaryProperties;
+import com.taskflow.observability.TaskFlowMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -130,7 +132,8 @@ class DemoAiIsolationTest {
         given(users.findById(userId)).willReturn(Optional.of(demo));
 
         TaskSearchEmbeddingService service = new TaskSearchEmbeddingService(
-                properties, mock(ObjectMapper.class), store, tasks, users);
+                properties, mock(ObjectMapper.class), store, tasks, users,
+                new TaskFlowMetrics(new SimpleMeterRegistry()));
 
         service.ensureEmbeddings(List.of(task));
 

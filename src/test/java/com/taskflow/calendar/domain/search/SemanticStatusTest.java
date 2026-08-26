@@ -1,6 +1,8 @@
 package com.taskflow.calendar.domain.search;
 
 import com.taskflow.config.GeminiSearchProperties;
+import com.taskflow.observability.TaskFlowMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +25,9 @@ class SemanticStatusTest {
         TaskSearchEmbeddingStore store = mock(TaskSearchEmbeddingStore.class);
         when(store.isAvailable()).thenReturn(storeAvailable);
 
-        return new TaskSearchEmbeddingService(properties, null, store, null, null);
+        return new TaskSearchEmbeddingService(
+                properties, null, store, null, null,
+                new TaskFlowMetrics(new SimpleMeterRegistry()));
     }
 
     @Test

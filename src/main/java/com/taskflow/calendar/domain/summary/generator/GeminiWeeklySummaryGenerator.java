@@ -14,7 +14,7 @@ import com.taskflow.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import io.micrometer.core.annotation.Timed;
+import com.taskflow.observability.TaskFlowMetrics;
 
 import java.io.IOException;
 import java.net.URI;
@@ -42,12 +42,12 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
     private final GeminiSummaryProperties properties;
     private final ObjectMapper objectMapper;
+    private final TaskFlowMetrics metrics;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     @Override
-    @Timed(value = "gemini_calls", extraTags = {"feature", "weekly_summary"})
     public WeeklySummarySectionsResult generate(Project project,
                                                 List<SummaryTaskSnapshot> syncedTasks,
                                                 int syncedTotalTaskCount,
@@ -73,6 +73,18 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                                                      int unsyncedTotalTaskCount,
                                                      LocalDate weekStart,
                                                      LocalDate weekEnd) {
+        return metrics.observeGeminiCall("weekly_summary", () -> generateUnobserved(
+                project, syncedTasks, syncedTotalTaskCount, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd
+        ));
+    }
+
+    private SummaryGenerationTelemetry generateUnobserved(Project project,
+                                                           List<SummaryTaskSnapshot> syncedTasks,
+                                                           int syncedTotalTaskCount,
+                                                           List<SummaryTaskSnapshot> unsyncedTasks,
+                                                           int unsyncedTotalTaskCount,
+                                                           LocalDate weekStart,
+                                                           LocalDate weekEnd) {
         validateConfiguration();
 
         PreparedRequest preparedRequest = prepareRequest(

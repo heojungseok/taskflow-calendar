@@ -1,11 +1,14 @@
 package com.taskflow.observability;
 
+import com.taskflow.common.exception.BusinessException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 @Component
 public class TaskFlowMetrics {
@@ -46,6 +49,30 @@ public class TaskFlowMetrics {
 
     public void outboxProcessed(String outcome, String reason) {
         registry.counter("outbox_processed_total", "outcome", outcome, "reason", reason).increment();
+    }
+
+    public <T> T observeGeminiCall(String feature, Supplier<T> call) {
+        long startedAt = System.nanoTime();
+        String outcome = "success";
+        String errorCode = "none";
+        try {
+            return call.get();
+        } catch (BusinessException e) {
+            outcome = "failure";
+            errorCode = e.getErrorCode().getCode();
+            throw e;
+        } catch (RuntimeException e) {
+            outcome = "failure";
+            errorCode = "UNCLASSIFIED";
+            throw e;
+        } finally {
+            registry.counter("gemini_calls_total",
+                    "feature", feature,
+                    "outcome", outcome,
+                    "error_code", errorCode).increment();
+            registry.timer("gemini_calls", "feature", feature)
+                    .record(System.nanoTime() - startedAt, TimeUnit.NANOSECONDS);
+        }
     }
 
     public void setOldestExpiredAgeSeconds(long seconds) {
