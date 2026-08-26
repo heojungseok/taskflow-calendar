@@ -13,6 +13,9 @@ cat > "$config"
 jq -e '
   .name == "taskflow-public"
   and (.services | all(.container_name == null))
+  and .services.backend.image == "taskflow-backend:replace-with-exact-backend-git-sha"
+  and .services["http-verify"].image == "taskflow-backend:replace-with-exact-backend-git-sha"
+  and .services.nginx.image == "taskflow-frontend:replace-with-exact-frontend-git-sha"
   and .volumes["postgres-data"].name == "taskflow-public-postgres-data"
   and .volumes["prometheus-data"].name == "taskflow-public-prometheus-data"
   and ([.services[] | .ports[]? | .host_ip] | all(. == "127.0.0.1"))

@@ -43,7 +43,7 @@ services:
     logging: *logging
 
   backend:
-    image: taskflow-backend:${GIT_SHA:?required}
+    image: taskflow-backend:${BACKEND_GIT_SHA:?required}
     build: { context: ., dockerfile: Dockerfile }
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -131,7 +131,7 @@ services:
     logging: *logging
 
   nginx:
-    image: taskflow-frontend:${GIT_SHA:?required}
+    image: taskflow-frontend:${FRONTEND_GIT_SHA:?required}
     build: { context: frontend, dockerfile: Dockerfile }
     networks: [edge]
     ports: ["127.0.0.1:${TASKFLOW_HTTP_PORT:-8088}:8080"]
@@ -161,7 +161,7 @@ services:
 
   http-verify:
     profiles: [verify]
-    image: taskflow-backend:${GIT_SHA:?required}
+    image: taskflow-backend:${BACKEND_GIT_SHA:?required}
     entrypoint: [curl, --fail, --silent, --show-error]
     networks: [monitoring]
 
