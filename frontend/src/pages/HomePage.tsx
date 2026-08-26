@@ -1,4 +1,4 @@
-import {useCallback, useState} from 'react';
+import {useCallback, useRef, useState} from 'react';
 import {motion, useReducedMotion} from 'framer-motion';
 import HomeWordmark from '@/components/HomeWordmark';
 import {cx, clsx} from '@/styles/cx';
@@ -26,8 +26,18 @@ export default function HomePage() {
     const reduceMotion = useReducedMotion();
     const [slot, setSlot] = useState<SlotFrame | null>(null);
     const [overlayDone, setOverlayDone] = useState(false);
+    const slotRef = useRef<SlotFrame | null>(null);
+    const overlayRef = useRef<HTMLDivElement>(null);
 
-    const setSlotLayout = useCallback((rect: DOMRect) => {
+    const setSlotLayout = useCallback((rect: DOMRect, immediate = false) => {
+        if (immediate && slotRef.current) {
+            if (overlayRef.current) {
+                overlayRef.current.style.translate = `0 ${rect.top - slotRef.current.top}px`;
+            }
+            return;
+        }
+
+        if (overlayRef.current) overlayRef.current.style.translate = 'none';
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + window.scrollY + rect.height / 2;
         const pageWidth = document.documentElement.scrollWidth;
@@ -44,6 +54,7 @@ export default function HomePage() {
                 Math.max(centerY, pageHeight - centerY),
             ) * 1.013,
         };
+        slotRef.current = next;
 
         setSlot(current => current
             && Math.abs(current.left - next.left) < 0.25
@@ -68,6 +79,7 @@ export default function HomePage() {
         <>
             {!reduceMotion && !overlayDone && (
                 <motion.div
+                    ref={overlayRef}
                     data-testid="home-entry-overlay"
                     aria-hidden="true"
                     className="pointer-events-none fixed inset-0 z-[100]"
@@ -139,7 +151,10 @@ export default function HomePage() {
                             할 일은 간단히, 일정은 정확하게
                         </p>
                         <h1 className="mt-4 w-full max-w-[720px]">
-                            <HomeWordmark onSlotLayout={setSlotLayout}/>
+                            <HomeWordmark
+                                onSlotLayout={setSlotLayout}
+                                trackScroll={!overlayDone && !reduceMotion}
+                            />
                         </h1>
 
                         <p data-testid="home-slogan" className="mt-4 text-left font-[family-name:var(--font-display)] text-[clamp(30px,5vw,52px)] font-extrabold leading-tight tracking-[-0.04em]">

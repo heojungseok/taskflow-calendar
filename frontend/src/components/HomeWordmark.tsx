@@ -10,23 +10,30 @@ const CAP_HEIGHT = {
   transform: 'scaleY(1.08)',
 } as const;
 
-export default function HomeWordmark({onSlotLayout}: {onSlotLayout: (rect: DOMRect) => void}) {
+type Props = {
+  onSlotLayout: (rect: DOMRect, immediate?: boolean) => void;
+  trackScroll: boolean;
+};
+
+export default function HomeWordmark({onSlotLayout, trackScroll}: Props) {
   const slotRef = useRef<SVGRectElement>(null);
 
   useLayoutEffect(() => {
-    const measure = () => {
-      if (slotRef.current) onSlotLayout(slotRef.current.getBoundingClientRect());
+    const measureRect = (immediate: boolean) => {
+      if (slotRef.current) onSlotLayout(slotRef.current.getBoundingClientRect(), immediate);
     };
+    const measure = () => measureRect(false);
+    const measureScroll = () => measureRect(true);
 
     measure();
     void document.fonts.ready.then(measure);
     window.addEventListener('resize', measure);
-    window.addEventListener('scroll', measure, {passive: true});
+    if (trackScroll) window.addEventListener('scroll', measureScroll, {passive: true});
     return () => {
       window.removeEventListener('resize', measure);
-      window.removeEventListener('scroll', measure);
+      window.removeEventListener('scroll', measureScroll);
     };
-  }, [onSlotLayout]);
+  }, [onSlotLayout, trackScroll]);
 
   return (
     <svg

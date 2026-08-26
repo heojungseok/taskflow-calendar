@@ -61,7 +61,8 @@ test('home intro covers the bright viewport before revealing the page', async ({
   await expect.poll(pointAlignmentError, { timeout: 2_500 }).toBeLessThan(1);
   await expect(overlay).toHaveCSS('background-color', 'rgb(20, 22, 26)');
   await page.evaluate(() => window.scrollTo(0, 200));
-  await expect.poll(pointAlignmentError).toBeLessThan(1);
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  expect(await pointAlignmentError()).toBeLessThan(1);
   await page.evaluate(() => window.scrollTo(0, 0));
 
   await expect.poll(async () => {
