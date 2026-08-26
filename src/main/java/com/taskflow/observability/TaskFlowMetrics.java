@@ -20,9 +20,9 @@ public class TaskFlowMetrics {
     private final Counter demoTasksCreated;
     private final AtomicLong oldestExpiredAgeSeconds = new AtomicLong();
     private final AtomicLong oldestProcessableAgeSeconds = new AtomicLong();
-    private final AtomicLong googleUsersRegistered = new AtomicLong();
-    private final AtomicLong googleUsersCreated24h = new AtomicLong();
-    private final AtomicLong demoSessionsActive = new AtomicLong();
+    private final AtomicLong googleUsersRegistered = new AtomicLong(-1);
+    private final AtomicLong googleUsersCreated24h = new AtomicLong(-1);
+    private final AtomicLong demoSessionsActive = new AtomicLong(-1);
 
     public TaskFlowMetrics(MeterRegistry registry) {
         this.registry = registry;
@@ -34,11 +34,14 @@ public class TaskFlowMetrics {
                 .register(registry);
         Gauge.builder("outbox_oldest_processable_age_seconds", oldestProcessableAgeSeconds, AtomicLong::get)
                 .register(registry);
-        Gauge.builder("taskflow_google_users_registered", googleUsersRegistered, AtomicLong::get)
+        Gauge.builder("taskflow_google_users_registered", googleUsersRegistered,
+                        value -> value.get() < 0 ? Double.NaN : value.get())
                 .register(registry);
-        Gauge.builder("taskflow_google_users_created_24h", googleUsersCreated24h, AtomicLong::get)
+        Gauge.builder("taskflow_google_users_created_24h", googleUsersCreated24h,
+                        value -> value.get() < 0 ? Double.NaN : value.get())
                 .register(registry);
-        Gauge.builder("taskflow_demo_sessions_active", demoSessionsActive, AtomicLong::get)
+        Gauge.builder("taskflow_demo_sessions_active", demoSessionsActive,
+                        value -> value.get() < 0 ? Double.NaN : value.get())
                 .register(registry);
     }
 

@@ -47,6 +47,10 @@ class TaskFlowMetricsTest {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
         TaskFlowMetrics metrics = new TaskFlowMetrics(registry);
 
+        assertThat(registry.get("taskflow_google_users_registered").gauge().value()).isNaN();
+        assertThat(registry.get("taskflow_google_users_created_24h").gauge().value()).isNaN();
+        assertThat(registry.get("taskflow_demo_sessions_active").gauge().value()).isNaN();
+
         metrics.demoSessionStarted();
         metrics.demoTaskCreated();
         metrics.demoUserExpired();

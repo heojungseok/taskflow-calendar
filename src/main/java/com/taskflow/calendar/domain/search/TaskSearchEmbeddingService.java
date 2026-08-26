@@ -194,24 +194,7 @@ public class TaskSearchEmbeddingService {
             }
 
             JsonNode root = objectMapper.readTree(response.body());
-            JsonNode embeddings = root.path("embeddings");
-            if (!embeddings.isArray()) {
-                throw new TaskSearchGenerationException(
-                        ErrorCode.LLM_INVALID_RESPONSE,
-                        "Gemini embedding response did not contain embeddings"
-                );
-            }
-
-            List<List<Double>> vectors = new ArrayList<>();
-            for (JsonNode embeddingNode : embeddings) {
-                JsonNode valuesNode = embeddingNode.path("values");
-                List<Double> vector = new ArrayList<>();
-                for (JsonNode valueNode : valuesNode) {
-                    vector.add(valueNode.asDouble());
-                }
-                vectors.add(vector);
-            }
-            return vectors;
+            return parseEmbeddings(root, documents.size());
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
@@ -221,6 +204,37 @@ public class TaskSearchEmbeddingService {
                     "Gemini embedding request failed"
             );
         }
+    }
+
+    List<List<Double>> parseEmbeddings(JsonNode root, int expectedCount) {
+        JsonNode embeddings = root.path("embeddings");
+        if (!embeddings.isArray() || embeddings.size() != expectedCount) {
+            throw invalidEmbeddingResponse();
+        }
+
+        List<List<Double>> vectors = new ArrayList<>();
+        for (JsonNode embeddingNode : embeddings) {
+            JsonNode values = embeddingNode.path("values");
+            if (!values.isArray() || values.size() != properties.getEmbeddingDimensions()) {
+                throw invalidEmbeddingResponse();
+            }
+            List<Double> vector = new ArrayList<>(values.size());
+            for (JsonNode value : values) {
+                if (!value.isNumber()) {
+                    throw invalidEmbeddingResponse();
+                }
+                vector.add(value.asDouble());
+            }
+            vectors.add(vector);
+        }
+        return vectors;
+    }
+
+    private TaskSearchGenerationException invalidEmbeddingResponse() {
+        return new TaskSearchGenerationException(
+                ErrorCode.LLM_INVALID_RESPONSE,
+                "Gemini embedding response was incomplete"
+        );
     }
 
     private TaskSearchGenerationException embeddingFailure(int statusCode, String responseBody) {

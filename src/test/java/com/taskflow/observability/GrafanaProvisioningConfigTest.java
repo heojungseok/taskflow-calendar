@@ -32,6 +32,9 @@ class GrafanaProvisioningConfigTest {
         assertThat(panelTitles(dashboard)).contains(
                 "Backend UP", "HTTP p95", "HTTP 5xx", "Google 가입 사용자", "Google 신규 사용자 (24h)",
                 "활성 DEMO 세션", "Gemini 호출", "Gemini p95", "Cache 처리율", "JVM heap", "Hikari pending");
+        assertThat(List.of("HTTP p95", "HTTP 5xx", "Gemini 실패 (10m)"))
+                .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title).path("type").asText())
+                        .isEqualTo("timeseries"));
     }
 
     @Test
@@ -50,7 +53,10 @@ class GrafanaProvisioningConfigTest {
                 .contains("summary: DEMO 트래픽 급증", "summary: Backend 메트릭 수집 중단")
                 .contains("check_url: /api/auth/session", "noDataState: Alerting", "noDataState: OK")
                 .contains("__dashboardUid__: taskflow", "__panelId__: \"2\"")
-                .doesNotContain("\n        dashboardUid:", "\n        panelId:");
+                .contains("**결과** 알럿 상태가 정상화됐습니다.", "**추가 확인 필요**")
+                .contains("{{ len .Alerts }}건", "{{ $externalURL }}d/taskflow/taskflow")
+                .doesNotContain("\n        dashboardUid:", "\n        panelId:", "__panelId__: \"13\"")
+                .doesNotContain("정상 상태로 돌아왔습니다", "키·모델을 수정", "/ {{ .Labels.environment }}");
         assertThat(alerts.lines()
                 .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
                 .count())
@@ -70,5 +76,18 @@ class GrafanaProvisioningConfigTest {
             }
             collectPanelTitles(panel.path("panels"), titles);
         });
+    }
+
+    private JsonNode findPanel(JsonNode panels, String title) {
+        for (JsonNode panel : panels) {
+            if (title.equals(panel.path("title").asText())) {
+                return panel;
+            }
+            JsonNode nested = findPanel(panel.path("panels"), title);
+            if (!nested.isMissingNode()) {
+                return nested;
+            }
+        }
+        return com.fasterxml.jackson.databind.node.MissingNode.getInstance();
     }
 }
