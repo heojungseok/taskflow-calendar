@@ -8,26 +8,21 @@ import axios, { AxiosError } from 'axios';
 import { tasksApi } from '@/api/endpoints/tasks';
 import { projectsApi } from '@/api/endpoints/projects';
 import type { ApiResponse } from '@/api/types';
-import type { Task, TaskStatus, TaskCreateRequest, TaskUpdateRequest, TaskHistory, OutboxStatus } from '@/types/task';
+import type { Task, TaskStatus, TaskCreateRequest, TaskUpdateRequest, TaskHistory } from '@/types/task';
 import type { ProjectTaskRecommendation, ProjectTaskRecommendationItem, ProjectWeeklySummary, ProjectWeeklySummarySection } from '@/types/project';
 import { cx, clsx, SYNC_STATE, SYNC_BADGE_TONE } from '@/styles/cx';
 import { MOTION } from '@/styles/motion';
+import {
+  OUTBOX_BADGE,
+  OUTBOX_STATUS_LABEL,
+  TASK_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
+  TASK_CHANGE_TYPE_LABEL as CHANGE_TYPE_LABEL,
+  TASK_STATUS_LABEL as STATUS_LABEL,
+  formatTaskDateTime as fmt,
+  toDateTimeLocal as toLocal,
+} from '@/lib/taskUi';
 
 // ── 상수 ──────────────────────────────────────────────────
-
-const STATUS_LABEL: Record<TaskStatus, string> = {
-  REQUESTED: '요청됨',
-  IN_PROGRESS: '진행 중',
-  DONE: '완료',
-  BLOCKED: '차단됨',
-};
-
-const ALLOWED_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
-  REQUESTED:   ['IN_PROGRESS', 'BLOCKED'],
-  IN_PROGRESS: ['DONE', 'BLOCKED'],
-  BLOCKED:     ['IN_PROGRESS'],
-  DONE:        [],
-};
 
 const STATUS_FILTERS = [
   { label: '전체',     value: '' },
@@ -36,35 +31,6 @@ const STATUS_FILTERS = [
   { label: '완료',     value: 'DONE' },
   { label: '차단됨',   value: 'BLOCKED' },
 ];
-
-const CHANGE_TYPE_LABEL: Record<string, string> = {
-  STATUS: '상태 변경',
-  ASSIGNEE: '담당자 변경',
-  SCHEDULE: '일정 변경',
-  CONTENT: '내용 변경',
-};
-
-const OUTBOX_STATUS_LABEL: Record<OutboxStatus, string> = {
-  PENDING: '대기 중',
-  PROCESSING: '처리 중',
-  SUCCESS: '성공',
-  FAILED: '실패',
-  SKIPPED: '건너뜀',
-};
-
-const OUTBOX_BADGE: Record<OutboxStatus, string> = {
-  PENDING: 'bg-[var(--st-pending-bg)] text-[var(--st-pending)]',
-  PROCESSING: 'bg-[var(--st-running-bg)] text-[var(--st-running)]',
-  SUCCESS: 'bg-[var(--st-done-bg)] text-[var(--st-done)]',
-  FAILED: 'bg-[var(--st-failed-bg)] text-[var(--st-failed)]',
-  SKIPPED: 'bg-[var(--sunken)] text-[var(--ink-3)]',
-};
-
-const fmt = (iso?: string | null) => iso
-  ? new Date(iso).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-  : '—';
-
-const toLocal = (iso?: string | null) => iso?.slice(0, 16) ?? '';
 
 type SummaryApiError = AxiosError<ApiResponse<never>>;
 
