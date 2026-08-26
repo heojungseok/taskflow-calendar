@@ -17,6 +17,9 @@ public class TaskFlowMetrics {
     private final Counter demoTasksCreated;
     private final AtomicLong oldestExpiredAgeSeconds = new AtomicLong();
     private final AtomicLong oldestProcessableAgeSeconds = new AtomicLong();
+    private final AtomicLong googleUsersRegistered = new AtomicLong();
+    private final AtomicLong googleUsersCreated24h = new AtomicLong();
+    private final AtomicLong demoSessionsActive = new AtomicLong();
 
     public TaskFlowMetrics(MeterRegistry registry) {
         this.registry = registry;
@@ -27,6 +30,12 @@ public class TaskFlowMetrics {
         Gauge.builder("demo_oldest_expired_age_seconds", oldestExpiredAgeSeconds, AtomicLong::get)
                 .register(registry);
         Gauge.builder("outbox_oldest_processable_age_seconds", oldestProcessableAgeSeconds, AtomicLong::get)
+                .register(registry);
+        Gauge.builder("taskflow_google_users_registered", googleUsersRegistered, AtomicLong::get)
+                .register(registry);
+        Gauge.builder("taskflow_google_users_created_24h", googleUsersCreated24h, AtomicLong::get)
+                .register(registry);
+        Gauge.builder("taskflow_demo_sessions_active", demoSessionsActive, AtomicLong::get)
                 .register(registry);
     }
 
@@ -45,5 +54,11 @@ public class TaskFlowMetrics {
 
     public void setOldestProcessableAgeSeconds(long seconds) {
         oldestProcessableAgeSeconds.set(Math.max(0, seconds));
+    }
+
+    public void setUserCounts(long googleRegistered, long googleCreated24h, long demoActive) {
+        googleUsersRegistered.set(Math.max(0, googleRegistered));
+        googleUsersCreated24h.set(Math.max(0, googleCreated24h));
+        demoSessionsActive.set(Math.max(0, demoActive));
     }
 }
