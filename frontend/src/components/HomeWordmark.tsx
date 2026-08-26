@@ -1,6 +1,6 @@
 import {useLayoutEffect, useRef} from 'react';
 
-const SLOT_X = 256;
+const SLOT_X = 1;
 const SLOT_Y = 14;
 const SLOT_WIDTH = 11;
 const SLOT_HEIGHT = 8.5;
