@@ -45,6 +45,20 @@ test('home intro covers the bright viewport before revealing the page', async ({
   const viewport = page.viewportSize();
   expect(box).toMatchObject({ x: 0, y: 0, width: viewport!.width, height: viewport!.height });
   await expect(overlay).toHaveCount(0, { timeout: 5_000 });
+
+  const waveCoversPage = () => page.locator('main').locator('..').evaluate(element => {
+    const match = getComputedStyle(element).clipPath.match(/^circle\(([\d.]+)px at ([\d.]+)px ([\d.]+)px\)$/);
+    if (!match) return false;
+
+    const [, radius, centerX, centerY] = match.map(Number);
+    const root = document.documentElement;
+    const requiredRadius = Math.hypot(
+      Math.max(centerX, root.scrollWidth - centerX),
+      Math.max(centerY, root.scrollHeight - centerY),
+    );
+    return radius >= requiredRadius - 1;
+  });
+  await expect.poll(waveCoversPage, { timeout: 6_000 }).toBe(true);
 });
 
 test('home keeps one point cell inside the TaskFlow wordmark', async ({ page }) => {
