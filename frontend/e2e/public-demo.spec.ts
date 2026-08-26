@@ -41,12 +41,11 @@ test('home intro covers the bright viewport before revealing the page', async ({
   await expect(overlay).toBeVisible();
   await expect(overlay).toHaveCSS('background-color', 'rgb(247, 248, 246)');
 
-  const box = await overlay.boundingBox();
-  const viewport = page.viewportSize();
-  expect(box).toMatchObject({ x: 0, y: 0, width: viewport!.width, height: viewport!.height });
+  await expect(overlay).toHaveCSS('position', 'fixed');
+  await expect(overlay).toHaveClass(/inset-0/);
 
   const pointCell = page.getByTestId('home-wordmark-slot');
-  await expect.poll(async () => {
+  const pointAlignmentError = async () => {
     const [overlayBox, pointBox] = await Promise.all([
       overlay.boundingBox(),
       pointCell.boundingBox(),
@@ -58,8 +57,12 @@ test('home intro covers the bright viewport before revealing the page', async ({
       Math.abs(overlayBox.width - pointBox.width),
       Math.abs(overlayBox.height - pointBox.height),
     );
-  }, { timeout: 2_500 }).toBeLessThan(1);
+  };
+  await expect.poll(pointAlignmentError, { timeout: 2_500 }).toBeLessThan(1);
   await expect(overlay).toHaveCSS('background-color', 'rgb(20, 22, 26)');
+  await page.evaluate(() => window.scrollTo(0, 200));
+  await expect.poll(pointAlignmentError).toBeLessThan(1);
+  await page.evaluate(() => window.scrollTo(0, 0));
 
   await expect.poll(async () => {
     const homeWave = page.getByTestId('home-wave');

@@ -21,7 +21,11 @@ export default function HomeWordmark({onSlotLayout}: {onSlotLayout: (rect: DOMRe
     measure();
     void document.fonts.ready.then(measure);
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    window.addEventListener('scroll', measure, {passive: true});
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure);
+    };
   }, [onSlotLayout]);
 
   return (
