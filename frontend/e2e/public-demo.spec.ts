@@ -41,24 +41,72 @@ test('home intro covers the bright viewport before revealing the page', async ({
   await expect(overlay).toBeVisible();
   await expect(overlay).toHaveCSS('background-color', 'rgb(247, 248, 246)');
 
-  const box = await overlay.boundingBox();
-  const viewport = page.viewportSize();
-  expect(box).toMatchObject({ x: 0, y: 0, width: viewport!.width, height: viewport!.height });
-  await expect(overlay).toHaveCount(0, { timeout: 5_000 });
+  await expect(overlay).toHaveCSS('position', 'fixed');
+  await expect(overlay).toHaveClass(/inset-0/);
 
-  const waveCoversPage = () => page.locator('main').locator('..').evaluate(element => {
-    const match = getComputedStyle(element).clipPath.match(/^circle\(([\d.]+)px at ([\d.]+)px ([\d.]+)px\)$/);
+  const pointCell = page.getByTestId('home-wordmark-slot');
+  const pointAlignmentError = async () => {
+    const [overlayBox, pointBox] = await Promise.all([
+      overlay.boundingBox(),
+      pointCell.boundingBox(),
+    ]);
+    if (!overlayBox || !pointBox) return Number.POSITIVE_INFINITY;
+    return Math.max(
+      Math.abs(overlayBox.x - pointBox.x),
+      Math.abs(overlayBox.y - pointBox.y),
+      Math.abs(overlayBox.width - pointBox.width),
+      Math.abs(overlayBox.height - pointBox.height),
+    );
+  };
+  await expect.poll(pointAlignmentError, { timeout: 2_500 }).toBeLessThan(1);
+  await expect(overlay).toHaveCSS('background-color', 'rgb(20, 22, 26)');
+  await page.evaluate(() => window.scrollTo(0, 200));
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  expect(await pointAlignmentError()).toBeLessThan(1);
+  await page.evaluate(() => window.scrollTo(0, 0));
+
+  await expect.poll(async () => {
+    const homeWave = page.getByTestId('home-wave');
+    const [clipPath, waveBox, pointBox] = await Promise.all([
+      homeWave.evaluate(element => getComputedStyle(element).clipPath),
+      homeWave.boundingBox(),
+      pointCell.boundingBox(),
+    ]);
+    const match = clipPath.match(/^circle\(([\d.]+)px at ([\d.]+)px ([\d.]+)px\)$/);
+    if (!match || !waveBox || !pointBox || Number(match[1]) <= 0) {
+      return Number.POSITIVE_INFINITY;
+    }
+    return Math.max(
+      Math.abs(waveBox.x + Number(match[2]) - pointBox.x - pointBox.width / 2),
+      Math.abs(waveBox.y + Number(match[3]) - pointBox.y - pointBox.height / 2),
+    );
+  }, { timeout: 2_000 }).toBeLessThan(1);
+  await page.waitForTimeout(120);
+  const initialWaveRadius = await page.getByTestId('home-wave').evaluate(element =>
+    Number(getComputedStyle(element).clipPath.match(/^circle\(([\d.]+)px/)?.[1] ?? 0)
+  );
+  expect(initialWaveRadius).toBeGreaterThan((await pointCell.boundingBox())!.width * 4);
+  await expect(overlay).toBeVisible();
+  await expect(overlay).toHaveCSS('opacity', '1');
+  await expect(overlay).toHaveCSS('background-color', 'rgb(20, 22, 26)');
+
+  await expect(overlay).toHaveCount(0, { timeout: 5_000 });
+  expect(await page.evaluate(() => performance.now())).toBeLessThan(3_800);
+
+  const waveCoversPage = () => page.getByTestId('home-wave').evaluate(element => {
+    const match = getComputedStyle(element).clipPath.match(/^circle\(([\d.]+)px at ([\d.-]+)px ([\d.-]+)px\)$/);
     if (!match) return false;
 
     const [, radius, centerX, centerY] = match.map(Number);
-    const root = document.documentElement;
+    const rect = element.getBoundingClientRect();
     const requiredRadius = Math.hypot(
-      Math.max(centerX, root.scrollWidth - centerX),
-      Math.max(centerY, root.scrollHeight - centerY),
+      Math.max(Math.abs(centerX), Math.abs(rect.width - centerX)),
+      Math.max(Math.abs(centerY), Math.abs(rect.height - centerY)),
     );
     return radius >= requiredRadius - 1;
   });
   await expect.poll(waveCoversPage, { timeout: 6_000 }).toBe(true);
+  await expect(page.locator('[data-home-wave-group]')).toHaveCount(0);
 });
 
 test('home keeps one point cell inside the TaskFlow wordmark', async ({ page }) => {
@@ -68,6 +116,15 @@ test('home keeps one point cell inside the TaskFlow wordmark', async ({ page }) 
   await expect(page.getByRole('img', { name: 'TaskFlow' })).toBeVisible();
   await expect(page.getByTestId('home-wordmark-slot')).toHaveCount(1);
   await expect(page.getByTestId('home-slogan')).toHaveText(/맞춰진다\.\s*쓰는 대로\./);
+  await expect(page.getByTestId('home-slogan')).toHaveCSS('text-align', 'left');
+  const [wordmarkBox, sloganBox, pointBox] = await Promise.all([
+    page.getByRole('heading', { level: 1 }).boundingBox(),
+    page.getByTestId('home-slogan').boundingBox(),
+    page.getByTestId('home-wordmark-slot').boundingBox(),
+  ]);
+  expect(wordmarkBox!.x).toBeCloseTo(sloganBox!.x, 1);
+  expect(pointBox!.x - wordmarkBox!.x).toBeCloseTo(wordmarkBox!.width / 720, 1);
+  expect(pointBox!.y - wordmarkBox!.y).toBeCloseTo(wordmarkBox!.height * 14 / 112, 1);
 });
 
 test('browser project creation forwards the CSRF token', async ({ page }) => {
