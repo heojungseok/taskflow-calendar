@@ -10,7 +10,7 @@ import com.taskflow.config.GeminiRecommendationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import io.micrometer.core.annotation.Timed;
+import com.taskflow.observability.TaskFlowMetrics;
 
 import java.io.IOException;
 import java.net.URI;
@@ -35,16 +35,24 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
 
     private final GeminiRecommendationProperties properties;
     private final ObjectMapper objectMapper;
+    private final TaskFlowMetrics metrics;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final RecommendationPromptTaskSupport promptTaskSupport = new RecommendationPromptTaskSupport();
 
     @Override
-    @Timed(value = "gemini_calls", extraTags = {"feature", "recommendation"})
     public TaskRecommendationGenerationResult generate(Project project,
                                                        List<SummaryTaskSnapshot> candidates,
                                                        int recommendationCount,
                                                        LocalDate today) {
+        return metrics.observeGeminiCall("recommendation",
+                () -> generateUnobserved(project, candidates, recommendationCount, today));
+    }
+
+    private TaskRecommendationGenerationResult generateUnobserved(Project project,
+                                                                   List<SummaryTaskSnapshot> candidates,
+                                                                   int recommendationCount,
+                                                                   LocalDate today) {
         validateConfiguration();
         PreparedRequest preparedRequest = prepareRequest(project, candidates, recommendationCount, today);
         String endpoint = properties.getBaseUrl().replaceAll("/$", "")

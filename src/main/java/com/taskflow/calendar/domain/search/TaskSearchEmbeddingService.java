@@ -6,7 +6,10 @@ import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.calendar.domain.search.exception.TaskSearchGenerationException;
+import com.taskflow.common.ErrorCode;
 import com.taskflow.config.GeminiSearchProperties;
+import com.taskflow.observability.TaskFlowMetrics;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +39,7 @@ public class TaskSearchEmbeddingService {
     private final TaskSearchEmbeddingStore embeddingStore;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final TaskFlowMetrics metrics;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -151,6 +155,16 @@ public class TaskSearchEmbeddingService {
             return List.of();
         }
 
+        try {
+            return metrics.observeGeminiCall("embedding", () -> requestEmbeddings(documents));
+        } catch (TaskSearchGenerationException e) {
+            log.warn("Task search embedding request failed. errorCode={}", e.getErrorCode().getCode());
+            return List.of();
+        }
+    }
+
+    private List<List<Double>> requestEmbeddings(List<String> documents) {
+
         String endpoint = properties.getBaseUrl().replaceAll("/$", "")
                 + "/models/" + properties.getEmbeddingModel() + ":batchEmbedContents";
 
@@ -176,33 +190,67 @@ public class TaskSearchEmbeddingService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() >= 400) {
-                log.warn("Task search embedding request failed. statusCode={}", response.statusCode());
-                return List.of();
+                throw embeddingFailure(response.statusCode(), response.body());
             }
 
             JsonNode root = objectMapper.readTree(response.body());
-            JsonNode embeddings = root.path("embeddings");
-            if (!embeddings.isArray()) {
-                return List.of();
-            }
-
-            List<List<Double>> vectors = new ArrayList<>();
-            for (JsonNode embeddingNode : embeddings) {
-                JsonNode valuesNode = embeddingNode.path("values");
-                List<Double> vector = new ArrayList<>();
-                for (JsonNode valueNode : valuesNode) {
-                    vector.add(valueNode.asDouble());
-                }
-                vectors.add(vector);
-            }
-            return vectors;
+            return parseEmbeddings(root, documents.size());
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            log.warn("Task search embedding request failed. message={}", e.getMessage());
-            return List.of();
+            throw new TaskSearchGenerationException(
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
+                    "Gemini embedding request failed"
+            );
         }
+    }
+
+    List<List<Double>> parseEmbeddings(JsonNode root, int expectedCount) {
+        JsonNode embeddings = root.path("embeddings");
+        if (!embeddings.isArray() || embeddings.size() != expectedCount) {
+            throw invalidEmbeddingResponse();
+        }
+
+        List<List<Double>> vectors = new ArrayList<>();
+        for (JsonNode embeddingNode : embeddings) {
+            JsonNode values = embeddingNode.path("values");
+            if (!values.isArray() || values.size() != properties.getEmbeddingDimensions()) {
+                throw invalidEmbeddingResponse();
+            }
+            List<Double> vector = new ArrayList<>(values.size());
+            for (JsonNode value : values) {
+                if (!value.isNumber()) {
+                    throw invalidEmbeddingResponse();
+                }
+                vector.add(value.asDouble());
+            }
+            vectors.add(vector);
+        }
+        return vectors;
+    }
+
+    private TaskSearchGenerationException invalidEmbeddingResponse() {
+        return new TaskSearchGenerationException(
+                ErrorCode.LLM_INVALID_RESPONSE,
+                "Gemini embedding response was incomplete"
+        );
+    }
+
+    private TaskSearchGenerationException embeddingFailure(int statusCode, String responseBody) {
+        if (statusCode == 429) {
+            String normalized = responseBody == null ? "" : responseBody.toLowerCase(Locale.ROOT);
+            ErrorCode code = normalized.contains("quota")
+                    ? ErrorCode.LLM_QUOTA_EXHAUSTED
+                    : normalized.contains("rate")
+                    ? ErrorCode.LLM_RATE_LIMITED_TEMPORARY
+                    : ErrorCode.LLM_429_UNKNOWN;
+            return new TaskSearchGenerationException(code, "Gemini embedding request was rate limited");
+        }
+        ErrorCode code = statusCode == 400 || statusCode == 404
+                ? ErrorCode.LLM_CONFIG_INVALID
+                : ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
+        return new TaskSearchGenerationException(code, "Gemini embedding request failed");
     }
 
     private TaskDocument toDocument(Task task) {

@@ -7,6 +7,7 @@ import com.taskflow.calendar.domain.search.exception.TaskSearchGenerationExcepti
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.config.GeminiSearchProperties;
+import com.taskflow.observability.TaskFlowMetrics;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +51,16 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
 
     private final GeminiSearchProperties properties;
     private final ObjectMapper objectMapper;
+    private final TaskFlowMetrics metrics;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Override
     public SearchIntent parse(String query) {
+        return metrics.observeGeminiCall("search_intent", () -> parseUnobserved(query));
+    }
+
+    private SearchIntent parseUnobserved(String query) {
         validateConfiguration();
 
         String endpoint = properties.getBaseUrl().replaceAll("/$", "")

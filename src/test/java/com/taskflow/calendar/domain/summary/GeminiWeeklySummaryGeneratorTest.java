@@ -10,6 +10,8 @@ import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.config.GeminiSummaryProperties;
+import com.taskflow.observability.TaskFlowMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,7 +47,8 @@ class GeminiWeeklySummaryGeneratorTest {
         properties.setTemperature(0.2);
 
         objectMapper = new ObjectMapper().findAndRegisterModules();
-        generator = new GeminiWeeklySummaryGenerator(properties, objectMapper);
+        generator = new GeminiWeeklySummaryGenerator(
+                properties, objectMapper, new TaskFlowMetrics(new SimpleMeterRegistry()));
         project = Project.of("TaskFlow", 1L);
     }
 
