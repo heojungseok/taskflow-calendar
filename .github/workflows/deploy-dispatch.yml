@@ -10,18 +10,28 @@ permissions:
   pull-requests: read
 
 jobs:
-  dispatch:
+  verify:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Verify merged pull request SHA
         env:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: sh deploy/verify-merged-main-sha.sh "$GITHUB_REPOSITORY" "$TARGET_SHA"
+        run: |
+          case "$TARGET_SHA" in
+            ????????????????????????????????????????) ;;
+            *) echo "Target SHA must contain 40 characters" >&2; exit 1 ;;
+          esac
+          case "$TARGET_SHA" in *[!0-9a-f]*) echo "Target SHA must be lowercase hexadecimal" >&2; exit 1 ;; esac
+          pulls=$(gh api -X GET "repos/$GITHUB_REPOSITORY/commits/$TARGET_SHA/pulls")
+          printf '%s' "$pulls" | jq -e --arg sha "$TARGET_SHA" \
+            'any(.[]; .merged_at != null and .base.ref == "main" and .merge_commit_sha == $sha)' >/dev/null
+
+  dispatch:
+    needs: verify
+    runs-on: ubuntu-24.04
+    steps:
       - name: Dispatch private deployment workflow
         env:
           GH_TOKEN: ${{ secrets.TASKFLOW_DEPLOY_DISPATCH_TOKEN }}

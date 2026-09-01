@@ -86,3 +86,10 @@ jobs:
       - run: sh deploy/resolve-deployment-scope-test.sh
       - run: sh deploy/verify-merged-main-sha-test.sh
       - run: sh deploy/verify-public-boundary-test.sh
+      - name: Verify dispatcher trust boundary
+        run: |
+          if grep -F 'actions/checkout' .github/workflows/deploy-dispatch.yml; then
+            echo 'Deploy dispatcher must not checkout target code' >&2
+            exit 1
+          fi
+          grep -F 'needs: verify' .github/workflows/deploy-dispatch.yml >/dev/null
