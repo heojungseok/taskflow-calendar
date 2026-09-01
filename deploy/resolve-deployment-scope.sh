@@ -61,11 +61,16 @@ git -C "$project_root" merge-base --is-ancestor "$frontend_sha" "$target_sha" ||
 backend_changed=false
 frontend_changed=false
 full_changed=false
+migration_changed=false
 
 if has_changes "$backend_sha" \
     Dockerfile .dockerignore build.gradle settings.gradle gradle gradle.lockfile gradlew gradlew.bat \
     src/main deploy/db/migration; then
   backend_changed=true
+fi
+
+if has_changes "$backend_sha" deploy/db/migration; then
+  migration_changed=true
 fi
 
 if has_changes "$frontend_sha" \
@@ -89,6 +94,7 @@ fi
 scope=none
 next_backend_sha=$backend_sha
 next_frontend_sha=$frontend_sha
+requires_approval=false
 
 if [ "$full_changed" = true ] || { [ "$backend_changed" = true ] && [ "$frontend_changed" = true ]; }; then
   scope=full
@@ -102,6 +108,12 @@ elif [ "$frontend_changed" = true ]; then
   next_frontend_sha=$target_sha
 fi
 
+if [ "$scope" = full ] || [ "$migration_changed" = true ]; then
+  requires_approval=true
+fi
+
 printf 'DEPLOY_SCOPE=%s\n' "$scope"
 printf 'NEXT_BACKEND_GIT_SHA=%s\n' "$next_backend_sha"
 printf 'NEXT_FRONTEND_GIT_SHA=%s\n' "$next_frontend_sha"
+printf 'MIGRATION_CHANGED=%s\n' "$migration_changed"
+printf 'REQUIRES_APPROVAL=%s\n' "$requires_approval"

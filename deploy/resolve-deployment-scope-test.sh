@@ -45,25 +45,29 @@ assert_plan() {
   expected_scope=$1
   expected_backend=$2
   expected_frontend=$3
-  target=$4
+  expected_migration=$4
+  expected_approval=$5
+  target=$6
 
   output=$(sh "$repo/deploy/resolve-deployment-scope.sh" "$repo/production.env" "$target")
   printf '%s\n' "$output" | grep -Fx "DEPLOY_SCOPE=$expected_scope" >/dev/null
   printf '%s\n' "$output" | grep -Fx "NEXT_BACKEND_GIT_SHA=$expected_backend" >/dev/null
   printf '%s\n' "$output" | grep -Fx "NEXT_FRONTEND_GIT_SHA=$expected_frontend" >/dev/null
+  printf '%s\n' "$output" | grep -Fx "MIGRATION_CHANGED=$expected_migration" >/dev/null
+  printf '%s\n' "$output" | grep -Fx "REQUIRES_APPROVAL=$expected_approval" >/dev/null
 }
 
 write_env "$base_sha" "$base_sha"
-assert_plan backend "$backend_sha" "$base_sha" "$backend_sha"
+assert_plan backend "$backend_sha" "$base_sha" false false "$backend_sha"
 
 write_env "$backend_sha" "$base_sha"
-assert_plan frontend "$backend_sha" "$frontend_sha" "$frontend_sha"
+assert_plan frontend "$backend_sha" "$frontend_sha" false false "$frontend_sha"
 
 write_env "$frontend_sha" "$frontend_sha"
-assert_plan full "$full_sha" "$full_sha" "$full_sha"
+assert_plan full "$full_sha" "$full_sha" false true "$full_sha"
 
 write_env "$full_sha" "$full_sha"
-assert_plan none "$full_sha" "$full_sha" "$docs_sha"
+assert_plan none "$full_sha" "$full_sha" false false "$docs_sha"
 
 printf '%s\n' 'export default {}' >"$repo/frontend/tailwind.config.js"
 git -C "$repo" add frontend/tailwind.config.js
@@ -71,7 +75,7 @@ git -C "$repo" commit -qm 'frontend build config'
 frontend_config_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$docs_sha" "$docs_sha"
-assert_plan frontend "$docs_sha" "$frontend_config_sha" "$frontend_config_sha"
+assert_plan frontend "$docs_sha" "$frontend_config_sha" false false "$frontend_config_sha"
 
 printf '%s\n' 'select 1;' >"$repo/deploy/db/migration/V2__change.sql"
 git -C "$repo" add deploy/db/migration/V2__change.sql
@@ -79,7 +83,7 @@ git -C "$repo" commit -qm 'migration'
 migration_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$docs_sha" "$frontend_config_sha"
-assert_plan backend "$migration_sha" "$frontend_config_sha" "$migration_sha"
+assert_plan backend "$migration_sha" "$frontend_config_sha" true true "$migration_sha"
 
 printf '%s\n' 'lockfileVersion=1' >"$repo/gradle.lockfile"
 git -C "$repo" add gradle.lockfile
@@ -87,7 +91,7 @@ git -C "$repo" commit -qm 'backend lockfile'
 lockfile_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$migration_sha" "$frontend_config_sha"
-assert_plan backend "$lockfile_sha" "$frontend_config_sha" "$lockfile_sha"
+assert_plan backend "$lockfile_sha" "$frontend_config_sha" false false "$lockfile_sha"
 
 mkdir -p "$repo/deploy/prometheus"
 printf '%s\n' 'global: {}' >"$repo/deploy/prometheus/prometheus.yml"
@@ -96,7 +100,7 @@ git -C "$repo" commit -qm 'monitoring config'
 monitoring_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$lockfile_sha" "$frontend_config_sha"
-assert_plan full "$monitoring_sha" "$monitoring_sha" "$monitoring_sha"
+assert_plan full "$monitoring_sha" "$monitoring_sha" false true "$monitoring_sha"
 
 mkdir -p "$repo/deploy/grafana/dashboards"
 printf '%s\n' '{}' >"$repo/deploy/grafana/dashboards/taskflow.json"
@@ -105,7 +109,7 @@ git -C "$repo" commit -qm 'grafana config'
 grafana_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$monitoring_sha" "$monitoring_sha"
-assert_plan full "$grafana_sha" "$grafana_sha" "$grafana_sha"
+assert_plan full "$grafana_sha" "$grafana_sha" false true "$grafana_sha"
 
 mkdir -p "$repo/deploy/postgres"
 printf '%s\n' '#!/bin/sh' >"$repo/deploy/postgres/init-roles.sh"
@@ -114,7 +118,7 @@ git -C "$repo" commit -qm 'postgres init contract'
 postgres_init_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$grafana_sha" "$grafana_sha"
-assert_plan full "$postgres_init_sha" "$postgres_init_sha" "$postgres_init_sha"
+assert_plan full "$postgres_init_sha" "$postgres_init_sha" false true "$postgres_init_sha"
 
 printf '%s\n' 'backend-v3' >"$repo/src/main/java/App.java"
 printf '%s\n' 'frontend-v3' >"$repo/frontend/src/App.tsx"
@@ -122,10 +126,10 @@ git -C "$repo" commit -qam 'backend and frontend'
 both_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$postgres_init_sha" "$postgres_init_sha"
-assert_plan full "$both_sha" "$both_sha" "$both_sha"
+assert_plan full "$both_sha" "$both_sha" false true "$both_sha"
 
 write_env "$base_sha" "$frontend_sha"
-assert_plan backend "$frontend_sha" "$frontend_sha" "$frontend_sha"
+assert_plan backend "$frontend_sha" "$frontend_sha" false false "$frontend_sha"
 
 sentinel="$tmp_dir/sourced-secret"
 printf 'UNRELATED_SECRET=$(touch %s)\n' "$sentinel" >>"$repo/production.env"

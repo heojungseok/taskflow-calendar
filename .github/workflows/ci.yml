@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -80,6 +82,31 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - run: docker compose -p taskflow-public --env-file .env.production.example -f compose.production.yml config --quiet
       - run: docker compose -p taskflow-public --env-file .env.production.example -f compose.production.yml --profile verify config --format json | sh deploy/verify-compose-boundary.sh
-      - run: sh -n deploy/postgres/init-roles.sh deploy/resolve-deployment-scope.sh deploy/resolve-deployment-scope-test.sh deploy/verify-compose-boundary.sh deploy/verify-runtime-privileges.sh deploy/verify-redis-resilience.sh deploy/verify-public-boundary.sh deploy/verify-public-boundary-test.sh
+      - run: sh -n deploy/postgres/init-roles.sh deploy/resolve-deployment-scope.sh deploy/resolve-deployment-scope-test.sh deploy/verify-compose-boundary.sh deploy/verify-merged-main-sha.sh deploy/verify-merged-main-sha-test.sh deploy/verify-runtime-privileges.sh deploy/verify-redis-resilience.sh deploy/verify-public-boundary.sh deploy/verify-public-boundary-test.sh
       - run: sh deploy/resolve-deployment-scope-test.sh
+      - run: sh deploy/verify-merged-main-sha-test.sh
       - run: sh deploy/verify-public-boundary-test.sh
+
+  dispatch-deployment:
+    if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [backend, migration, frontend, deployment-config]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Verify merged pull request SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: sh deploy/verify-merged-main-sha.sh "$GITHUB_REPOSITORY" "$GITHUB_SHA"
+      - name: Dispatch private deployment workflow
+        env:
+          GH_TOKEN: ${{ secrets.TASKFLOW_DEPLOY_DISPATCH_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN"
+          gh workflow run deploy.yml \
+            --repo heojungseok/taskflow-deployment \
+            --ref main \
+            -f target_sha="$GITHUB_SHA" \
+            -f approve_risky=false
