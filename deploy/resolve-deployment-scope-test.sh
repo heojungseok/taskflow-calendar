@@ -66,8 +66,40 @@ assert_plan frontend "$backend_sha" "$frontend_sha" false false "$frontend_sha"
 write_env "$frontend_sha" "$frontend_sha"
 assert_plan full "$full_sha" "$full_sha" false true "$full_sha"
 
+printf '%s\n' 'NEW_REQUIRED_KEY=replace-me' >"$repo/.env.production.example"
+git -C "$repo" add .env.production.example
+git -C "$repo" commit -qm 'environment contract'
+env_contract_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$full_sha" "$full_sha"
+assert_plan full "$env_contract_sha" "$env_contract_sha" false true "$env_contract_sha"
+full_sha=$env_contract_sha
+
+printf '%s\n' 'docs after environment contract' >>"$repo/README.md"
+git -C "$repo" commit -qam 'docs after environment contract'
+docs_sha=$(git -C "$repo" rev-parse HEAD)
+
 write_env "$full_sha" "$full_sha"
 assert_plan none "$full_sha" "$full_sha" false false "$docs_sha"
+
+printf '%s\n' 'unknown production contract' >"$repo/deploy/new-production-contract.yml"
+git -C "$repo" add deploy/new-production-contract.yml
+git -C "$repo" commit -qm 'unknown path'
+unknown_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$docs_sha" "$docs_sha"
+assert_plan full "$unknown_sha" "$unknown_sha" false true "$unknown_sha"
+git -C "$repo" reset -q --hard "$docs_sha"
+
+mkdir -p "$repo/.github/workflows"
+printf '%s\n' 'name: changed CI' >"$repo/.github/workflows/ci.yml"
+git -C "$repo" add .github/workflows/ci.yml
+git -C "$repo" commit -qm 'CI trust policy'
+ci_policy_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$docs_sha" "$docs_sha"
+assert_plan full "$ci_policy_sha" "$ci_policy_sha" false true "$ci_policy_sha"
+git -C "$repo" reset -q --hard "$docs_sha"
 
 printf '%s\n' 'export default {}' >"$repo/frontend/tailwind.config.js"
 git -C "$repo" add frontend/tailwind.config.js

@@ -44,6 +44,29 @@ has_changes() {
   return 0
 }
 
+has_unknown_changes() {
+  from_sha=$1
+  has_changes "$from_sha" . \
+    ':(exclude).gitignore' ':(exclude)README.md' ':(exclude)LICENSE*' \
+    ':(exclude)Dockerfile' ':(exclude).dockerignore' ':(exclude)build.gradle' \
+    ':(exclude)settings.gradle' ':(exclude)gradle/**' ':(exclude)gradle.lockfile' \
+    ':(exclude)gradlew' ':(exclude)gradlew.bat' ':(exclude)src/main/**' ':(exclude)src/test/**' \
+    ':(exclude)frontend/Dockerfile' ':(exclude)frontend/.dockerignore' \
+    ':(exclude)frontend/nginx.conf' ':(exclude)frontend/index.html' \
+    ':(exclude)frontend/package.json' ':(exclude)frontend/package-lock.json' \
+    ':(exclude)frontend/public/**' ':(exclude)frontend/src/**' ':(exclude)frontend/e2e/**' \
+    ':(exclude)frontend/postcss.config.js' ':(exclude)frontend/tailwind.config.js' \
+    ':(exclude)frontend/vite.config.js' ':(exclude)frontend/vite.config.ts' \
+    ':(exclude)frontend/tsconfig.json' ':(exclude)frontend/tsconfig.*.json' \
+    ':(exclude)compose.production.yml' ':(exclude).env.production.example' \
+    ':(exclude)deploy/db/migration/**' ':(exclude)deploy/grafana/**' \
+    ':(exclude)deploy/postgres/init-roles.sh' ':(exclude)deploy/prometheus/prometheus.yml' \
+    ':(exclude)deploy/resolve-deployment-scope.sh' ':(exclude)deploy/resolve-deployment-scope-test.sh' \
+    ':(exclude)deploy/verify-compose-boundary.sh' ':(exclude)deploy/verify-public-boundary.sh' \
+    ':(exclude)deploy/verify-public-boundary-test.sh' ':(exclude)deploy/verify-redis-resilience.sh' \
+    ':(exclude)deploy/verify-runtime-privileges.sh' ':(exclude)deploy/verify-session-version-migration.sh'
+}
+
 [ -f "$env_file" ] || fail "Production env not found: $env_file"
 
 backend_sha=$(read_sha BACKEND_GIT_SHA)
@@ -62,6 +85,7 @@ backend_changed=false
 frontend_changed=false
 full_changed=false
 migration_changed=false
+unknown_changed=false
 
 if has_changes "$backend_sha" \
     Dockerfile .dockerignore build.gradle settings.gradle gradle gradle.lockfile gradlew gradlew.bat \
@@ -83,12 +107,16 @@ if has_changes "$frontend_sha" \
 fi
 
 if has_changes "$backend_sha" \
-      compose.production.yml deploy/grafana deploy/postgres/init-roles.sh \
+      compose.production.yml .env.production.example deploy/grafana deploy/postgres/init-roles.sh \
       deploy/prometheus/prometheus.yml || \
     has_changes "$frontend_sha" \
-      compose.production.yml deploy/grafana deploy/postgres/init-roles.sh \
+      compose.production.yml .env.production.example deploy/grafana deploy/postgres/init-roles.sh \
       deploy/prometheus/prometheus.yml; then
   full_changed=true
+fi
+
+if has_unknown_changes "$backend_sha" || has_unknown_changes "$frontend_sha"; then
+  unknown_changed=true
 fi
 
 scope=none
@@ -96,7 +124,8 @@ next_backend_sha=$backend_sha
 next_frontend_sha=$frontend_sha
 requires_approval=false
 
-if [ "$full_changed" = true ] || { [ "$backend_changed" = true ] && [ "$frontend_changed" = true ]; }; then
+if [ "$full_changed" = true ] || [ "$unknown_changed" = true ] || \
+   { [ "$backend_changed" = true ] && [ "$frontend_changed" = true ]; }; then
   scope=full
   next_backend_sha=$target_sha
   next_frontend_sha=$target_sha
