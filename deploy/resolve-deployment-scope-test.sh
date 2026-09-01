@@ -88,7 +88,54 @@ git -C "$repo" commit -qm 'unknown path'
 unknown_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$docs_sha" "$docs_sha"
-assert_plan full "$unknown_sha" "$unknown_sha" false true "$unknown_sha"
+assert_plan unknown "$docs_sha" "$docs_sha" false false "$unknown_sha"
+
+git -C "$repo" mv deploy/new-production-contract.yml deploy/renamed-production-contract.yml
+git -C "$repo" commit -qm 'rename unknown path'
+unknown_rename_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$unknown_sha" "$unknown_sha"
+assert_plan unknown "$unknown_sha" "$unknown_sha" false false "$unknown_rename_sha"
+
+git -C "$repo" reset -q --hard "$unknown_sha"
+printf '%s\n' 'backend-unknown' >"$repo/src/main/java/App.java"
+git -C "$repo" commit -qam 'unknown and backend'
+unknown_backend_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$docs_sha" "$docs_sha"
+assert_plan unknown "$docs_sha" "$docs_sha" false false "$unknown_backend_sha"
+
+git -C "$repo" reset -q --hard "$unknown_sha"
+printf '%s\n' 'frontend-unknown' >"$repo/frontend/src/App.tsx"
+git -C "$repo" commit -qam 'unknown and frontend'
+unknown_frontend_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$docs_sha" "$docs_sha"
+assert_plan unknown "$docs_sha" "$docs_sha" false false "$unknown_frontend_sha"
+
+printf '%s\n' 'backend-and-frontend-unknown' >"$repo/src/main/java/App.java"
+git -C "$repo" commit -qam 'unknown backend and frontend'
+unknown_both_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$docs_sha" "$docs_sha"
+assert_plan unknown "$docs_sha" "$docs_sha" false false "$unknown_both_sha"
+
+git -C "$repo" reset -q --hard "$unknown_sha"
+printf '%s\n' 'services: { unknown: {} }' >"$repo/compose.production.yml"
+git -C "$repo" commit -qam 'unknown and full'
+unknown_full_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$docs_sha" "$docs_sha"
+assert_plan unknown "$docs_sha" "$docs_sha" false false "$unknown_full_sha"
+
+git -C "$repo" reset -q --hard "$unknown_sha"
+printf '%s\n' 'select 2;' >"$repo/deploy/db/migration/V2__unknown.sql"
+git -C "$repo" add deploy/db/migration/V2__unknown.sql
+git -C "$repo" commit -qm 'unknown and migration'
+unknown_migration_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$docs_sha" "$docs_sha"
+assert_plan unknown "$docs_sha" "$docs_sha" true false "$unknown_migration_sha"
 git -C "$repo" reset -q --hard "$docs_sha"
 
 mkdir -p "$repo/.github/workflows"
@@ -98,7 +145,34 @@ git -C "$repo" commit -qm 'CI trust policy'
 ci_policy_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env "$docs_sha" "$docs_sha"
-assert_plan full "$ci_policy_sha" "$ci_policy_sha" false true "$ci_policy_sha"
+assert_plan none "$docs_sha" "$docs_sha" false false "$ci_policy_sha"
+
+printf '%s\n' 'name: sibling workflow' >"$repo/.github/workflows/other.yml"
+git -C "$repo" add .github/workflows/other.yml
+git -C "$repo" commit -qm 'unknown sibling workflow'
+sibling_workflow_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$ci_policy_sha" "$ci_policy_sha"
+assert_plan unknown "$ci_policy_sha" "$ci_policy_sha" false false "$sibling_workflow_sha"
+git -C "$repo" reset -q --hard "$docs_sha"
+
+mkdir -p "$repo/docs"
+printf '%s\n' 'local defaults' >"$repo/.env.example"
+printf '%s\n' 'operations' >"$repo/docs/operations.md"
+printf '%s\n' 'license' >"$repo/LICENSE.txt"
+git -C "$repo" add .env.example docs/operations.md LICENSE.txt
+git -C "$repo" commit -qm 'none allowlist'
+none_allowlist_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$docs_sha" "$docs_sha"
+assert_plan none "$docs_sha" "$docs_sha" false false "$none_allowlist_sha"
+
+git -C "$repo" rm -q LICENSE.txt
+git -C "$repo" commit -qm 'delete known none path'
+none_delete_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$none_allowlist_sha" "$none_allowlist_sha"
+assert_plan none "$none_allowlist_sha" "$none_allowlist_sha" false false "$none_delete_sha"
 git -C "$repo" reset -q --hard "$docs_sha"
 
 printf '%s\n' 'export default {}' >"$repo/frontend/tailwind.config.js"
@@ -109,6 +183,7 @@ frontend_config_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$docs_sha" "$docs_sha"
 assert_plan frontend "$docs_sha" "$frontend_config_sha" false false "$frontend_config_sha"
 
+mkdir -p "$repo/deploy/db/migration"
 printf '%s\n' 'select 1;' >"$repo/deploy/db/migration/V2__change.sql"
 git -C "$repo" add deploy/db/migration/V2__change.sql
 git -C "$repo" commit -qm 'migration'

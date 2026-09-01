@@ -47,7 +47,8 @@ has_changes() {
 has_unknown_changes() {
   from_sha=$1
   has_changes "$from_sha" . \
-    ':(exclude).gitignore' ':(exclude)README.md' ':(exclude)LICENSE*' \
+    ':(exclude).gitignore' ':(exclude).env.example' ':(exclude)README.md' ':(exclude)LICENSE*' \
+    ':(exclude)docs/**' ':(exclude).github/workflows/ci.yml' \
     ':(exclude)Dockerfile' ':(exclude).dockerignore' ':(exclude)build.gradle' \
     ':(exclude)settings.gradle' ':(exclude)gradle/**' ':(exclude)gradle.lockfile' \
     ':(exclude)gradlew' ':(exclude)gradlew.bat' ':(exclude)src/main/**' ':(exclude)src/test/**' \
@@ -124,8 +125,10 @@ next_backend_sha=$backend_sha
 next_frontend_sha=$frontend_sha
 requires_approval=false
 
-if [ "$full_changed" = true ] || [ "$unknown_changed" = true ] || \
-   { [ "$backend_changed" = true ] && [ "$frontend_changed" = true ]; }; then
+if [ "$unknown_changed" = true ]; then
+  scope=unknown
+elif [ "$full_changed" = true ] || \
+     { [ "$backend_changed" = true ] && [ "$frontend_changed" = true ]; }; then
   scope=full
   next_backend_sha=$target_sha
   next_frontend_sha=$target_sha
@@ -137,7 +140,8 @@ elif [ "$frontend_changed" = true ]; then
   next_frontend_sha=$target_sha
 fi
 
-if [ "$scope" = full ] || [ "$migration_changed" = true ]; then
+if [ "$scope" = full ] || \
+   { [ "$scope" != unknown ] && [ "$migration_changed" = true ]; }; then
   requires_approval=true
 fi
 
