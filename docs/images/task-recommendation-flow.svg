@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1010" viewBox="0 0 1000 1010" role="img" aria-labelledby="recommendation-title recommendation-desc" font-family="system-ui, -apple-system, sans-serif">
+<title id="recommendation-title">TaskFlow 우선순위 추천 흐름</title>
+<desc id="recommendation-desc">사용자가 추천 생성을 누르면 서버가 미완료 Task를 정렬해 후보를 압축한다. 데모 사용자는 외부 호출 없이 로컬 추천을 반환한다. 일반 사용자는 활성화된 캐시에 결과가 있으면 재사용하고, 그 외에는 LLM을 호출한다. 캐시가 켜져 있을 때만 결과를 저장한다.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#526173"/></marker></defs>
+<rect width="1000" height="1010" rx="18" fill="#f3f6f9"/>
+
+<text x="500" y="40" text-anchor="middle" font-size="25" font-weight="700" fill="#344256">TaskFlow — 우선순위 추천 흐름</text>
+<text x="500" y="66" text-anchor="middle" font-size="14" font-weight="400" fill="#344256">사용자 요청 → 서버 후보 압축 → 데모 / 캐시 / LLM 분기</text>
+<rect x="300" y="95" width="400" height="65" rx="12" fill="#eef0fc" stroke="#c3cedb" stroke-width="1.5"/>
+<text x="500.0" y="122" text-anchor="middle" font-size="17" font-weight="650" fill="#344256">사용자가 추천 생성 / 새로고침 클릭</text>
+<text x="500.0" y="144" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">초기 진입에서는 자동 생성하지 않음</text>
+<path d="M500 160V190" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="300" y="190" width="400" height="65" rx="12" fill="#ffffff" stroke="#c3cedb" stroke-width="1.5"/>
+<text x="500.0" y="217" text-anchor="middle" font-size="17" font-weight="650" fill="#344256">GET task-recommendations</text>
+<text x="500.0" y="239" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">로그인 사용자와 프로젝트 소유권 확인</text>
+<path d="M500 255V285" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="265" y="285" width="470" height="72" rx="12" fill="#ffffff" stroke="#c3cedb" stroke-width="1.5"/>
+<text x="500.0" y="312" text-anchor="middle" font-size="17" font-weight="650" fill="#344256">미완료 Task 수집 · syncState 해석 · 점수 정렬</text>
+<text x="500.0" y="334" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">DONE 제외 · 후보 최대 8개 · 추천 ceil(미완료 수 × 0.3), 최대 5개</text>
+<path d="M500 357V380" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M395 425L500 380L605 425L500 470Z" fill="#fff5e9" stroke="#c18543" stroke-width="1.5"/>
+<text x="500" y="423" text-anchor="middle" font-size="16" font-weight="650" fill="#344256">데모 사용자?</text>
+<path d="M395 425H180V510" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="285" y="411" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">예</text>
+<rect x="60" y="510" width="240" height="72" rx="12" fill="#edf5ee" stroke="#90b39b" stroke-width="1.5"/>
+<text x="180.0" y="537" text-anchor="middle" font-size="17" font-weight="650" fill="#344256">로컬 추천 반환</text>
+<text x="180.0" y="559" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">외부 LLM · Redis 호출 없음</text>
+<path d="M500 470H650V495" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="563" y="458" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">아니오</text>
+<path d="M515 545L650 495L785 545L650 595Z" fill="#fff5e9" stroke="#c18543" stroke-width="1.5"/>
+<text x="650" y="543" text-anchor="middle" font-size="16" font-weight="650" fill="#344256">캐시 활성화 + HIT?</text>
+<text x="650" y="565" text-anchor="middle" font-size="12" font-weight="400" fill="#344256">둘 다 만족할 때만 캐시 사용</text>
+<path d="M515 545H420V635" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="454" y="532" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">예</text>
+<rect x="310" y="635" width="220" height="65" rx="12" fill="#edf5ee" stroke="#90b39b" stroke-width="1.5"/>
+<text x="420.0" y="662" text-anchor="middle" font-size="17" font-weight="650" fill="#344256">캐시 결과 반환</text>
+<text x="420.0" y="684" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">동일 후보·모델의 저장된 결과</text>
+<path d="M785 545H835V635" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="828" y="532" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">아니오</text>
+<rect x="725" y="635" width="220" height="65" rx="12" fill="#fff3e8" stroke="#cdab87" stroke-width="1.5"/>
+<text x="835.0" y="662" text-anchor="middle" font-size="17" font-weight="650" fill="#344256">LLM 호출</text>
+<text x="835.0" y="684" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">순위 · 태그 · 이유 생성</text>
+<path d="M835 700V735" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="725" y="735" width="220" height="65" rx="12" fill="#ffffff" stroke="#c3cedb" stroke-width="1.5"/>
+<text x="835.0" y="762" text-anchor="middle" font-size="17" font-weight="650" fill="#344256">캐시 활성화 시 저장</text>
+<text x="835.0" y="784" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">Redis TTL 90초 · 기본 비활성</text>
+<path d="M180 582V850H500V880" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M420 700V825H500V850" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M835 800V850H500" fill="none" stroke="#526173" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="300" y="880" width="400" height="65" rx="12" fill="#eef0fc" stroke="#c3cedb" stroke-width="1.5"/>
+<text x="500.0" y="907" text-anchor="middle" font-size="17" font-weight="650" fill="#344256">추천 카드 표시</text>
+<text x="500.0" y="929" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">Task 변경 시 outdated 안내 · 수동 새로고침</text>
+<text x="500" y="972" text-anchor="middle" font-size="13" font-weight="400" fill="#344256">미완료 Task가 없으면 빈 결과 반환 · 요청 실패 시 이전 추천을 숨기고 오류 표시</text>
+<text x="500" y="994" text-anchor="middle" font-size="12" font-weight="400" fill="#63748a">캐시 설정: summary.cache.enabled · 데모 응답: DEMO_LOCAL</text>
+</svg>
