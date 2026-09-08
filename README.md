@@ -119,6 +119,20 @@ Outbox 레코드는 5가지 상태(`OutboxStatus`)를 가집니다.
 
 적재 시점에는 `PENDING` 중간 변경을 합치고, 실제 UPSERT 처리 시점에는 Task의 최신 상태를 다시 읽습니다. 외부 호출 횟수는 Worker 실행 시점과 재시도 여부에 따라 달라집니다. [실제 Calendar 처리](src/main/java/com/taskflow/calendar/integration/googlecalendar/GoogleCalendarServiceImpl.java)
 
+### 우선순위 추천 흐름
+
+사용자가 요청하면 서버가 미완료 Task를 정렬해 후보를 최대 8개로 압축합니다. 일반 사용자는 캐시가 활성화되어 있고 결과가 있으면 재사용하며 그 외에는 LLM을 호출합니다. 데모 사용자는 외부 LLM 없이 로컬 추천을 반환합니다.
+
+<details>
+<summary>추천 생성·데모·캐시 분기 다이어그램</summary>
+
+<img src="docs/images/task-recommendation-flow.svg" width="900"
+alt="TaskFlow 우선순위 추천 — 수동 생성, 데모 로컬 추천, 선택적 캐시와 LLM 호출"/>
+
+추천 개수는 미완료 Task 수의 30%를 올림한 값이며 최대 5개입니다. Redis 캐시는 `summary.cache.enabled=true`일 때만 사용하고 추천 결과의 TTL은 90초입니다. 기본값은 비활성화입니다. [추천 서비스](src/main/java/com/taskflow/calendar/domain/recommendation/ProjectTaskRecommendationService.java)
+
+</details>
+
 ### 도메인 상태와 생성 규칙
 
 - **Rich Domain Model** — `outbox.markAsSuccess()`처럼 Entity에 명령하면 내부 상태 정리는 Entity가 처리합니다 (Tell, Don't Ask).

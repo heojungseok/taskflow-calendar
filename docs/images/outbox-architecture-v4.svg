@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 660" width="1040" height="660"
-     font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+     font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-labelledby="outbox-title outbox-desc">
+  <title id="outbox-title">TaskFlow: Task 저장과 Google Calendar 동기화 분리</title>
+  <desc id="outbox-desc">Task와 Outbox를 같은 트랜잭션에 저장한다. Worker는 기본 60초 간격으로 처리 후보를 조회하고 미연동 사용자는 SKIPPED로 종료한다. UPSERT는 Task 최신 상태를 다시 읽는다. 재처리는 시각과 실패 횟수 조건을 만족해야 한다.</desc>
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%"   stop-color="#f5f7f9"/>
@@ -152,7 +154,7 @@
   <rect x="38"  y="154" width="120" height="2" rx="1" fill="url(#sheen)"/>
   <text x="98"  y="182" text-anchor="middle" font-size="12"  font-weight="700" fill="#16202e">React App</text>
   <text x="98"  y="199" text-anchor="middle" font-size="9.5" fill="#6b7c8d">TypeScript</text>
-  <text x="98"  y="214" text-anchor="middle" font-size="9.5" fill="#6b7c8d">Zustand · JWT</text>
+  <text x="98"  y="214" text-anchor="middle" font-size="9.5" fill="#6b7c8d">HttpOnly 쿠키 · JWT</text>
 
   <rect x="200" y="154" width="160" height="80" rx="14"
         fill="url(#glass-accent)" stroke="#d9560c" stroke-width="1.7" filter="url(#shadow-accent)"/>
@@ -210,11 +212,11 @@
   <rect x="200" y="326" width="160" height="2"  rx="1" fill="url(#sheen)" opacity="0.8"/>
   <rect x="200" y="338" width="4"   height="84" rx="2" fill="#8a93cc" opacity="0.65"/>
   <text x="280" y="348" text-anchor="middle" font-size="12"  font-weight="700" fill="#16202e">OutboxWorker</text>
-  <text x="280" y="364" text-anchor="middle" font-size="9.5" fill="#6b7c8d">@Scheduled(60s)</text>
-  <text x="280" y="380" text-anchor="middle" font-size="9"   fill="#5b6c7d">① Poll PENDING / FAILED</text>
+  <text x="280" y="364" text-anchor="middle" font-size="9.5" fill="#6b7c8d">fixedDelay 기본 60s</text>
+  <text x="280" y="380" text-anchor="middle" font-size="9"   fill="#5b6c7d">① PENDING / 재처리 후보 조회</text>
   <text x="280" y="394" text-anchor="middle" font-size="9"   fill="#5b6c7d">② claimForProcessing</text>
   <text x="280" y="407" text-anchor="middle" font-size="9"   fill="#8b9bad">(원자적 UPDATE 선점)</text>
-  <text x="280" y="421" text-anchor="middle" font-size="9"   fill="#5b6c7d">③ handle → 성공 / 재시도</text>
+  <text x="280" y="421" text-anchor="middle" font-size="9"   fill="#5b6c7d">③ 연동 확인 → 처리 / SKIPPED</text>
 
   <rect x="374" y="326" width="166" height="108" rx="14"
         fill="url(#glass-worker)" stroke="#8a93cc" stroke-width="1.4" filter="url(#shadow-card)"/>
@@ -226,7 +228,7 @@
   <line x1="384" y1="385" x2="530" y2="385" stroke="#d5dcee" stroke-width="1"/>
   <text x="457" y="399" text-anchor="middle" font-size="9"   fill="#5b6c7d">UPSERT → create / update</text>
   <text x="457" y="413" text-anchor="middle" font-size="9"   fill="#5b6c7d">DELETE → delete</text>
-  <text x="457" y="427" text-anchor="middle" font-size="8.5" fill="#8b9bad">eventId=null → no-op</text>
+  <text x="457" y="427" text-anchor="middle" font-size="8.5" fill="#8b9bad">DELETE: eventId=null → no-op</text>
 
   <rect x="852" y="326" width="154" height="108" rx="14"
         fill="url(#glass-card)" stroke="#c2ccd8" stroke-width="1.4" filter="url(#shadow-card)"/>
@@ -252,7 +254,7 @@
   <line x1="866" y1="212" x2="892" y2="212" stroke="#d9560c" stroke-width="1.9" marker-end="url(#arr-orange)"/>
   <text x="900" y="216" font-size="8.8" fill="#6b7c8d">Outbox 경로</text>
   <line x1="866" y1="230" x2="892" y2="230" stroke="#a8873f" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-gold)"/>
-  <text x="900" y="234" font-size="8.8" fill="#6b7c8d">DB 쓰기</text>
+  <text x="900" y="234" font-size="8.8" fill="#6b7c8d">DB 읽기 / 쓰기</text>
   <line x1="866" y1="248" x2="892" y2="248" stroke="#8595a8" stroke-width="1.6" stroke-dasharray="6,3" marker-end="url(#arr-muted)"/>
   <text x="900" y="252" font-size="8.8" fill="#6b7c8d">비동기 poll</text>
   <line x1="866" y1="266" x2="892" y2="266" stroke="#bc3b2e" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#arr-red)" opacity="0.78"/>
@@ -262,8 +264,17 @@
   <text x="929" y="293" text-anchor="middle" font-size="7.8" fill="#9aabb8">PROCESSING — Coalescing 삭제 제외</text>
   <text x="929" y="305" text-anchor="middle" font-size="7.8" fill="#9aabb8">SKIPPED — Google 미연동 사용자 종결</text>
 
+  <!-- Task 최신 상태 읽기: 교차점은 흰색 테두리로 다른 경로와 구분 -->
+  <path d="M457 326 L457 270 L560 270 L560 244 L748 244 L748 234"
+        fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M457 326 L457 270 L560 270 L560 244 L748 244 L748 234"
+        fill="none" stroke="#a8873f" stroke-width="1.5" stroke-dasharray="4,3"
+        stroke-linejoin="round" marker-end="url(#arr-gold)"/>
+  <rect x="468" y="255" width="83" height="15" rx="6" fill="#eff2f6"/>
+  <text x="509" y="266" text-anchor="middle" font-size="8.5" fill="#8a6c25">Task 최신 상태 읽기</text>
+
   <!-- ═══════════ ARROWS ═══════════ -->
-  <!-- 배선 원칙: 카드 영역을 통과하지 않는다. 교차 0.
+  <!-- 배선 원칙: 카드 영역을 통과하지 않는다.
        상단 회랑 y=128 (Task 저장) · 중단 회랑 y=312 (poll)
        하단 회랑 y=462 (API 호출) · 최하단 회랑 y=486 (재시도) -->
   <g fill="none" stroke-linejoin="round" stroke-linecap="round">
@@ -331,7 +342,7 @@
   <text x="46"  y="566" font-size="9.5" fill="#16202e"><tspan font-weight="700">A-1</tspan>  UPSERT 적재 시 →  PENDING DELETE 제거</text>
   <text x="370" y="566" font-size="9.5" fill="#6b7c8d">충돌 방지 (DELETE 먼저 실행되면 이벤트가 사라짐)</text>
   <text x="46"  y="582" font-size="9.5" fill="#16202e"><tspan font-weight="700">A-2</tspan>  UPSERT 적재 시 →  PENDING UPSERT 제거</text>
-  <text x="370" y="582" font-size="9.5" fill="#6b7c8d">최신 1개만 유지 · DB 공간 절약</text>
+  <text x="370" y="582" font-size="9.5" fill="#6b7c8d">순차 적재 시 최신 PENDING 유지</text>
   <text x="46"  y="598" font-size="9.5" fill="#16202e"><tspan font-weight="700">B-1</tspan>  DELETE 적재 시  →  PENDING UPSERT 전체 제거</text>
   <text x="370" y="598" font-size="9.5" fill="#6b7c8d">충돌 방지 + 불필요한 API 호출 제거</text>
   <text x="46"  y="614" font-size="9.5" fill="#16202e"><tspan font-weight="700">B-2</tspan>  DELETE 적재 시  →  PENDING DELETE 중복 방지</text>
@@ -342,15 +353,15 @@
   <rect x="668" y="524" width="348" height="2"  rx="1" fill="url(#sheen)"/>
   <rect x="668" y="536" width="5"   height="72" rx="2.5" fill="#8a93cc" opacity="0.78"/>
   <text x="690" y="543" font-size="10" font-weight="700" fill="#3d4874" letter-spacing="0.2">
-    Backoff 재시도 정책 (max 6회)
+    실패 처리 · 자동 재처리 조건
   </text>
   <line x1="678" y1="550" x2="1006" y2="550" stroke="#d5dce6" stroke-width="1"/>
-  <text x="690" y="566" font-size="9.5" fill="#16202e">retry 0 → +1min    ·    retry 1 → +5min    ·    retry 2 → +15min</text>
-  <text x="690" y="582" font-size="9.5" fill="#16202e">retry 3 → +1hr     ·    retry 4 → +6hr     ·    retry 5 → +24hr</text>
-  <text x="690" y="598" font-size="9"   fill="#6b7c8d">Lease timeout 5min — PROCESSING 고착 방지 (Worker 재기동 시 자동 복구)</text>
-  <text x="690" y="614" font-size="9"   fill="#6b7c8d">401 발생 시 → refresh_token으로 access_token 자동 갱신 후 재시도</text>
+  <text x="690" y="566" font-size="9.5" fill="#16202e">실패 후 대기: 1분 → 5분 → 15분 → 1시간 → 6시간</text>
+  <text x="690" y="582" font-size="9.5" fill="#16202e">retryCount &lt; 6만 처리 · 6 도달 시 자동 처리 제외</text>
+  <text x="690" y="598" font-size="9"   fill="#6b7c8d">FAILED: 재시도 시각 도달 / PROCESSING: 5분 초과</text>
+  <text x="690" y="614" font-size="9"   fill="#6b7c8d">위 조건 + 횟수 한도 충족 → 다음 폴링에서 재처리 시도</text>
 
   <text x="520" y="644" text-anchor="middle" font-size="9" fill="#8b9bad">
-    Write Path (동기 · 같은 트랜잭션)  ·  Worker Path (비동기 · @Scheduled)  ·  정적 + 동적 Coalescing으로 Task 연속 수정 시 Outbox 1건으로 수렴
+    검증 범위: Worker 중지 · Task 순차 수정 10회 → PENDING UPSERT 1건 / 최종 payload 일치 (2026-08-26, 격리 PostgreSQL)
   </text>
 </svg>
