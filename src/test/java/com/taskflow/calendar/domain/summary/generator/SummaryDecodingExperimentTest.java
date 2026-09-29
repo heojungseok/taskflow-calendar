@@ -1,5 +1,9 @@
 package com.taskflow.calendar.domain.summary.generator;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
@@ -10,10 +14,6 @@ import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.observability.TaskFlowMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,22 +23,17 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 @EnabledIfEnvironmentVariable(named = "SUMMARY_DECODE_EXPERIMENT_ENABLED", matches = "(?i)true")
 class SummaryDecodingExperimentTest {
 
     private static final LocalDate WEEK_START = LocalDate.of(2026, 3, 23);
     private static final LocalDate WEEK_END = LocalDate.of(2026, 3, 29);
-    private static final List<String> OVERCLAIM_PHRASES = List.of(
-            "완료", "성공적", "순조", "문제없", "안정적", "잘 진행", "원활", "마무리"
-    );
-    private static final List<String> COVERAGE_GUARD_PHRASES = List.of(
-            "우선순위 대표 업무 기준", "제공된 업무 기준", "포함된 업무 기준"
-    );
+    private static final List<String> OVERCLAIM_PHRASES = List.of("완료", "성공적", "순조", "문제없", "안정적", "잘 진행", "원활", "마무리");
+    private static final List<String> COVERAGE_GUARD_PHRASES = List.of("우선순위 대표 업무 기준", "제공된 업무 기준", "포함된 업무 기준");
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
@@ -48,10 +43,7 @@ class SummaryDecodingExperimentTest {
         GeminiSummaryProperties properties = createProperties();
         GeminiWeeklySummaryGenerator generator = new GeminiWeeklySummaryGenerator(
                 properties, objectMapper, new TaskFlowMetrics(new SimpleMeterRegistry()));
-        List<ExperimentScenario> scenarios = List.of(
-                releaseScenario(),
-                onboardingScenario()
-        );
+        List<ExperimentScenario> scenarios = List.of(releaseScenario(), onboardingScenario());
         List<Map<String, Object>> scenarioReports = new ArrayList<>();
 
         for (ExperimentScenario scenario : scenarios) {
@@ -69,8 +61,7 @@ class SummaryDecodingExperimentTest {
                         scenario.unsyncedTasks(),
                         scenario.unsyncedTotalTaskCount(),
                         WEEK_START,
-                        WEEK_END
-                );
+                        WEEK_END);
                 results.add(ExperimentResult.from(config, telemetry));
             }
 
@@ -79,10 +70,7 @@ class SummaryDecodingExperimentTest {
             for (ExperimentResult result : results) {
                 reportRows.add(result.toReportRow(baseline));
             }
-            scenarioReports.add(Map.of(
-                    "scenario", scenario.name(),
-                    "results", reportRows
-            ));
+            scenarioReports.add(Map.of("scenario", scenario.name(), "results", reportRows));
 
             assertFalse(results.get(0).syncedSummary().isBlank());
             assertFalse(results.get(0).unsyncedSummary().isBlank());
@@ -90,13 +78,15 @@ class SummaryDecodingExperimentTest {
 
         Path reportPath = Path.of("build", "reports", "summary-decoding", "experiment-report.json");
         Files.createDirectories(reportPath.getParent());
-        objectMapper.writerWithDefaultPrettyPrinter()
-                .writeValue(reportPath.toFile(), Map.of(
-                        "model", properties.getModel(),
-                        "weekStart", WEEK_START,
-                        "weekEnd", WEEK_END,
-                        "scenarios", scenarioReports
-                ));
+        objectMapper
+                .writerWithDefaultPrettyPrinter()
+                .writeValue(
+                        reportPath.toFile(),
+                        Map.of(
+                                "model", properties.getModel(),
+                                "weekStart", WEEK_START,
+                                "weekEnd", WEEK_END,
+                                "scenarios", scenarioReports));
 
         assertEquals(2, scenarioReports.size());
         assertTrue(Files.exists(reportPath));
@@ -106,18 +96,20 @@ class SummaryDecodingExperimentTest {
         GeminiSummaryProperties properties = new GeminiSummaryProperties();
         properties.setApiKey(requiredEnv("GEMINI_SUMMARY_API_KEY"));
         properties.setModel(envOrDefault("GEMINI_SUMMARY_MODEL", "gemini-3.1-flash-lite-preview"));
-        properties.setBaseUrl(envOrDefault("GEMINI_SUMMARY_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"));
+        properties.setBaseUrl(
+                envOrDefault("GEMINI_SUMMARY_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"));
         properties.setTimeoutSeconds(Integer.parseInt(envOrDefault("GEMINI_SUMMARY_TIMEOUT_SECONDS", "20")));
         properties.setTemperature(0.2d);
         return properties;
     }
 
-    private SummaryTaskSnapshot snapshot(Project project,
-                                         String title,
-                                         String description,
-                                         TaskStatus status,
-                                         TaskSyncState syncState,
-                                         int dueDays) {
+    private SummaryTaskSnapshot snapshot(
+            Project project,
+            String title,
+            String description,
+            TaskStatus status,
+            TaskSyncState syncState,
+            int dueDays) {
         Task task = Task.createTask(
                 project,
                 title,
@@ -125,8 +117,7 @@ class SummaryDecodingExperimentTest {
                 null,
                 null,
                 LocalDateTime.of(2026, 3, 28, 10, 0).plusDays(dueDays),
-                false
-        );
+                false);
         if (status != TaskStatus.REQUESTED) {
             task.changeStatus(status);
         }
@@ -139,23 +130,49 @@ class SummaryDecodingExperimentTest {
                 "release-and-sync-risk",
                 project,
                 List.of(
-                        snapshot(project, "배포 체크리스트 정리", "이번 주 배포 전 Google OAuth redirect URI와 Gemini 키 설정, 운영 점검 항목을 재확인한다. 누락 시 배포가 지연될 수 있다.", TaskStatus.IN_PROGRESS, TaskSyncState.SYNCED, 1),
-                        snapshot(project, "로그인 오류 재현 정리", "사용자 로그인 오류 재현 절차와 확인 로그를 정리해야 한다. 장애 대응 흐름 문서화가 필요한 상태다.", TaskStatus.BLOCKED, TaskSyncState.SYNCED, 2),
-                        snapshot(project, "릴리즈 노트 초안", "이번 주 변경사항을 모아 릴리즈 노트 초안을 정리하고, 배포 범위를 팀과 맞춘다.", TaskStatus.REQUESTED, TaskSyncState.SYNCED, 4)
-                ),
+                        snapshot(
+                                project,
+                                "배포 체크리스트 정리",
+                                "이번 주 배포 전 Google OAuth redirect URI와 Gemini 키 설정, 운영 점검 항목을 재확인한다. 누락 시 배포가 지연될 수 있다.",
+                                TaskStatus.IN_PROGRESS,
+                                TaskSyncState.SYNCED,
+                                1),
+                        snapshot(
+                                project,
+                                "로그인 오류 재현 정리",
+                                "사용자 로그인 오류 재현 절차와 확인 로그를 정리해야 한다. 장애 대응 흐름 문서화가 필요한 상태다.",
+                                TaskStatus.BLOCKED,
+                                TaskSyncState.SYNCED,
+                                2),
+                        snapshot(
+                                project,
+                                "릴리즈 노트 초안",
+                                "이번 주 변경사항을 모아 릴리즈 노트 초안을 정리하고, 배포 범위를 팀과 맞춘다.",
+                                TaskStatus.REQUESTED,
+                                TaskSyncState.SYNCED,
+                                4)),
                 5,
                 List.of(
-                        snapshot(project, "미동기 QA 일정 정리", "이번 주 QA 체크와 확인 항목이 캘린더에 반영되지 않았다. 누락 위험이 있어 정리가 필요하다.", TaskStatus.IN_PROGRESS, TaskSyncState.SYNC_DISABLED, 1),
-                        snapshot(project, "권한 수정 요청 반영", "운영 계정 권한 수정 요청이 남아 있고, 담당자와 확인이 필요하다.", TaskStatus.REQUESTED, TaskSyncState.SYNC_DISABLED, 3)
-                ),
+                        snapshot(
+                                project,
+                                "미동기 QA 일정 정리",
+                                "이번 주 QA 체크와 확인 항목이 캘린더에 반영되지 않았다. 누락 위험이 있어 정리가 필요하다.",
+                                TaskStatus.IN_PROGRESS,
+                                TaskSyncState.SYNC_DISABLED,
+                                1),
+                        snapshot(
+                                project,
+                                "권한 수정 요청 반영",
+                                "운영 계정 권한 수정 요청이 남아 있고, 담당자와 확인이 필요하다.",
+                                TaskStatus.REQUESTED,
+                                TaskSyncState.SYNC_DISABLED,
+                                3)),
                 4,
                 List.of(
                         new ExperimentConfig("A", 0.2d, null, null),
                         new ExperimentConfig("B", 0.2d, 20, 0.8d),
                         new ExperimentConfig("C", 1.0d, 20, 0.8d),
-                        new ExperimentConfig("D", 1.0d, 40, 0.95d)
-                )
-        );
+                        new ExperimentConfig("D", 1.0d, 40, 0.95d)));
     }
 
     private ExperimentScenario onboardingScenario() {
@@ -164,26 +181,51 @@ class SummaryDecodingExperimentTest {
                 "onboarding-and-ops-followup",
                 project,
                 List.of(
-                        snapshot(project, "회원가입 퍼널 이탈 분석", "신규 회원가입 퍼널에서 이탈 지점을 분석하고, 재현 경로와 이벤트 누락 여부를 함께 확인해야 한다.", TaskStatus.IN_PROGRESS, TaskSyncState.SYNCED, 1),
-                        snapshot(project, "온보딩 메일 템플릿 수정", "가입 직후 메일 문구 수정 요청이 들어와 템플릿과 링크 동작을 다시 검토해야 한다.", TaskStatus.REQUESTED, TaskSyncState.SYNCED, 3),
-                        snapshot(project, "CS 문의 답변 기준 정리", "로그인/인증 관련 반복 문의에 대한 답변 기준안을 정리해야 한다.", TaskStatus.BLOCKED, TaskSyncState.SYNCED, 5)
-                ),
+                        snapshot(
+                                project,
+                                "회원가입 퍼널 이탈 분석",
+                                "신규 회원가입 퍼널에서 이탈 지점을 분석하고, 재현 경로와 이벤트 누락 여부를 함께 확인해야 한다.",
+                                TaskStatus.IN_PROGRESS,
+                                TaskSyncState.SYNCED,
+                                1),
+                        snapshot(
+                                project,
+                                "온보딩 메일 템플릿 수정",
+                                "가입 직후 메일 문구 수정 요청이 들어와 템플릿과 링크 동작을 다시 검토해야 한다.",
+                                TaskStatus.REQUESTED,
+                                TaskSyncState.SYNCED,
+                                3),
+                        snapshot(
+                                project,
+                                "CS 문의 답변 기준 정리",
+                                "로그인/인증 관련 반복 문의에 대한 답변 기준안을 정리해야 한다.",
+                                TaskStatus.BLOCKED,
+                                TaskSyncState.SYNCED,
+                                5)),
                 6,
                 List.of(
-                        snapshot(project, "운영 점검 회의 일정 반영", "운영 점검 회의 일정이 아직 캘린더에 반영되지 않아 참석자 누락 가능성이 있다.", TaskStatus.REQUESTED, TaskSyncState.SYNC_DISABLED, 1),
-                        snapshot(project, "권한 검토 후속 작업", "내부 운영 계정 권한 검토 후속 작업이 남아 있고 담당자 확인이 필요하다.", TaskStatus.IN_PROGRESS, TaskSyncState.SYNC_DISABLED, 2)
-                ),
+                        snapshot(
+                                project,
+                                "운영 점검 회의 일정 반영",
+                                "운영 점검 회의 일정이 아직 캘린더에 반영되지 않아 참석자 누락 가능성이 있다.",
+                                TaskStatus.REQUESTED,
+                                TaskSyncState.SYNC_DISABLED,
+                                1),
+                        snapshot(
+                                project,
+                                "권한 검토 후속 작업",
+                                "내부 운영 계정 권한 검토 후속 작업이 남아 있고 담당자 확인이 필요하다.",
+                                TaskStatus.IN_PROGRESS,
+                                TaskSyncState.SYNC_DISABLED,
+                                2)),
                 4,
-                List.of(
-                        new ExperimentConfig("A", 0.2d, null, null),
-                        new ExperimentConfig("C", 1.0d, 20, 0.8d)
-                )
-        );
+                List.of(new ExperimentConfig("A", 0.2d, null, null), new ExperimentConfig("C", 1.0d, 20, 0.8d)));
     }
 
     private String requiredEnv(String key) {
         String value = System.getenv(key);
-        assertTrue(value != null && !value.isBlank(), key + " must be configured for live summary decoding experiments");
+        assertTrue(
+                value != null && !value.isBlank(), key + " must be configured for live summary decoding experiments");
         return value;
     }
 
@@ -231,13 +273,14 @@ class SummaryDecodingExperimentTest {
         private final int unsyncedTotalTaskCount;
         private final List<ExperimentConfig> configs;
 
-        private ExperimentScenario(String name,
-                                   Project project,
-                                   List<SummaryTaskSnapshot> syncedTasks,
-                                   int syncedTotalTaskCount,
-                                   List<SummaryTaskSnapshot> unsyncedTasks,
-                                   int unsyncedTotalTaskCount,
-                                   List<ExperimentConfig> configs) {
+        private ExperimentScenario(
+                String name,
+                Project project,
+                List<SummaryTaskSnapshot> syncedTasks,
+                int syncedTotalTaskCount,
+                List<SummaryTaskSnapshot> unsyncedTasks,
+                int unsyncedTotalTaskCount,
+                List<ExperimentConfig> configs) {
             this.name = name;
             this.project = project;
             this.syncedTasks = syncedTasks;
@@ -292,20 +335,21 @@ class SummaryDecodingExperimentTest {
         private final String syncedSummary;
         private final String unsyncedSummary;
 
-        private ExperimentResult(String label,
-                                 double temperature,
-                                 Integer topK,
-                                 Double topP,
-                                 int requestBodyLength,
-                                 int promptTokens,
-                                 int candidateTokens,
-                                 int totalTokens,
-                                 int summaryTextLength,
-                                 int hallucinationRiskScore,
-                                 int coverageGuardScore,
-                                 int structureComplianceScore,
-                                 String syncedSummary,
-                                 String unsyncedSummary) {
+        private ExperimentResult(
+                String label,
+                double temperature,
+                Integer topK,
+                Double topP,
+                int requestBodyLength,
+                int promptTokens,
+                int candidateTokens,
+                int totalTokens,
+                int summaryTextLength,
+                int hallucinationRiskScore,
+                int coverageGuardScore,
+                int structureComplianceScore,
+                String syncedSummary,
+                String unsyncedSummary) {
             this.label = label;
             this.temperature = temperature;
             this.topK = topK;
@@ -343,8 +387,7 @@ class SummaryDecodingExperimentTest {
                     scoreCoverageGuard(combined),
                     scoreStructureCompliance(telemetry),
                     syncedSummary,
-                    unsyncedSummary
-            );
+                    unsyncedSummary);
         }
 
         private Map<String, Object> toReportRow(ExperimentResult baseline) {
@@ -422,9 +465,7 @@ class SummaryDecodingExperimentTest {
             if (summary == null || summary.isBlank()) {
                 return 0;
             }
-            String normalized = summary.replace("?", ".")
-                    .replace("!", ".")
-                    .replace("다.", "다|");
+            String normalized = summary.replace("?", ".").replace("!", ".").replace("다.", "다|");
             int count = 0;
             for (String sentence : normalized.split("[.|]")) {
                 if (!sentence.isBlank()) {

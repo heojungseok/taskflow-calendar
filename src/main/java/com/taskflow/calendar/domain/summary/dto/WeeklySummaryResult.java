@@ -11,11 +11,8 @@ public class WeeklySummaryResult {
     private final List<String> nextActions;
     private final String model;
 
-    private WeeklySummaryResult(String summary,
-                                List<String> highlights,
-                                List<String> risks,
-                                List<String> nextActions,
-                                String model) {
+    private WeeklySummaryResult(
+            String summary, List<String> highlights, List<String> risks, List<String> nextActions, String model) {
         this.summary = summary;
         this.highlights = highlights != null ? List.copyOf(highlights) : Collections.emptyList();
         this.risks = risks != null ? List.copyOf(risks) : Collections.emptyList();
@@ -23,29 +20,18 @@ public class WeeklySummaryResult {
         this.model = model;
     }
 
-    public static WeeklySummaryResult of(String summary,
-                                         List<String> highlights,
-                                         List<String> risks,
-                                         List<String> nextActions,
-                                         String model) {
+    public static WeeklySummaryResult of(
+            String summary, List<String> highlights, List<String> risks, List<String> nextActions, String model) {
         return new WeeklySummaryResult(summary, highlights, risks, nextActions, model);
     }
 
     public static WeeklySummaryResult empty() {
-        return empty(
-                "이번 주에 요약할 Task가 없습니다.",
-                List.of("새 Task를 추가하거나 마감일을 설정해보세요.")
-        );
+        return empty("이번 주에 요약할 Task가 없습니다.", List.of("새 Task를 추가하거나 마감일을 설정해보세요."));
     }
 
     public static WeeklySummaryResult empty(String summary, List<String> nextActions) {
         return new WeeklySummaryResult(
-                summary,
-                Collections.emptyList(),
-                Collections.emptyList(),
-                nextActions,
-                "local-empty-state"
-        );
+                summary, Collections.emptyList(), Collections.emptyList(), nextActions, "local-empty-state");
     }
 
     public String getSummary() {

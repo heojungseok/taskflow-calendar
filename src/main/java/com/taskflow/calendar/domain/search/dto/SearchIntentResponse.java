@@ -2,11 +2,10 @@ package com.taskflow.calendar.domain.search.dto;
 
 import com.taskflow.calendar.domain.search.SearchIntent;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import lombok.Getter;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.Getter;
 
 @Getter
 public class SearchIntentResponse {
@@ -28,22 +27,23 @@ public class SearchIntentResponse {
     private final double overallConfidence;
     private final Map<String, Double> fieldConfidence;
 
-    private SearchIntentResponse(String rawQuery,
-                                 String queryType,
-                                 String targetType,
-                                 String domainType,
-                                 String mainAction,
-                                 List<String> secondaryActions,
-                                 List<String> topicTerms,
-                                 List<String> participantTerms,
-                                 List<String> locationTerms,
-                                 String timeIntent,
-                                 String priorityIntent,
-                                 List<TaskStatus> statusIntents,
-                                 String syncIntent,
-                                 String relationPolicy,
-                                 double overallConfidence,
-                                 Map<String, Double> fieldConfidence) {
+    private SearchIntentResponse(
+            String rawQuery,
+            String queryType,
+            String targetType,
+            String domainType,
+            String mainAction,
+            List<String> secondaryActions,
+            List<String> topicTerms,
+            List<String> participantTerms,
+            List<String> locationTerms,
+            String timeIntent,
+            String priorityIntent,
+            List<TaskStatus> statusIntents,
+            String syncIntent,
+            String relationPolicy,
+            double overallConfidence,
+            Map<String, Double> fieldConfidence) {
         this.rawQuery = rawQuery;
         this.queryType = queryType;
         this.targetType = targetType;
@@ -79,7 +79,6 @@ public class SearchIntentResponse {
                 intent.getSyncIntent().name(),
                 intent.getRelationPolicy().name(),
                 intent.getOverallConfidence(),
-                intent.getFieldConfidence()
-        );
+                intent.getFieldConfidence());
     }
 }

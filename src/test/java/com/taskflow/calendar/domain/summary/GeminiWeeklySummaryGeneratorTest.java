@@ -1,5 +1,10 @@
 package com.taskflow.calendar.domain.summary;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.project.Project;
@@ -12,23 +17,17 @@ import com.taskflow.common.ErrorCode;
 import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.observability.TaskFlowMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-
-import java.lang.reflect.Method;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(OutputCaptureExtension.class)
 class GeminiWeeklySummaryGeneratorTest {
@@ -64,15 +63,9 @@ class GeminiWeeklySummaryGeneratorTest {
                 null,
                 null,
                 LocalDateTime.now().plusDays(1),
-                false
-        );
+                false);
 
-        String compressed = (String) invokePrivate(
-                generator,
-                "compressDescription",
-                new Class[]{Task.class},
-                task
-        );
+        String compressed = (String) invokePrivate(generator, "compressDescription", new Class[] {Task.class}, task);
 
         assertTrue(compressed.length() <= 120);
         assertTrue(compressed.contains("Google OAuth") || compressed.contains("Gemini API key"));
@@ -90,13 +83,7 @@ class GeminiWeeklySummaryGeneratorTest {
                 + "}]}}]}");
 
         WeeklySummarySectionsResult result = (WeeklySummarySectionsResult) invokePrivate(
-                generator,
-                "parseResponse",
-                new Class[]{JsonNode.class, int.class, int.class},
-                root,
-                1,
-                1
-        );
+                generator, "parseResponse", new Class[] {JsonNode.class, int.class, int.class}, root, 1, 1);
 
         assertEquals("동기화 요약", result.getSynced().getSummary());
         assertEquals("미동기화 요약", result.getUnsynced().getSummary());
@@ -108,71 +95,79 @@ class GeminiWeeklySummaryGeneratorTest {
     void prepareRequest_generatesStableMetricsAndGrowsWithInput() throws Exception {
         LocalDate weekStart = LocalDate.of(2026, 3, 23);
         LocalDate weekEnd = LocalDate.of(2026, 3, 29);
-        List<SummaryTaskSnapshot> smallSynced = List.of(snapshot(task(
-                "주말 장보기 일정",
-                "토요일 오전에 장을 봐야 한다. 우유와 달걀, 채소를 사야 한다.",
-                TaskStatus.IN_PROGRESS
-        ), TaskSyncState.SYNCED));
-        List<SummaryTaskSnapshot> smallUnsynced = List.of(snapshot(task(
-                "봄 옷장 정리",
-                "외투를 정리하고 겨울 옷은 압축팩에 넣는다.",
-                TaskStatus.REQUESTED
-        ), TaskSyncState.SYNC_DISABLED));
+        List<SummaryTaskSnapshot> smallSynced = List.of(snapshot(
+                task("주말 장보기 일정", "토요일 오전에 장을 봐야 한다. 우유와 달걀, 채소를 사야 한다.", TaskStatus.IN_PROGRESS),
+                TaskSyncState.SYNCED));
+        List<SummaryTaskSnapshot> smallUnsynced = List.of(snapshot(
+                task("봄 옷장 정리", "외투를 정리하고 겨울 옷은 압축팩에 넣는다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED));
 
         Object firstPrepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
                 smallSynced,
                 1,
                 smallUnsynced,
                 1,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
         Object secondPrepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
                 smallSynced,
                 1,
                 smallUnsynced,
                 1,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
 
         Object firstMetrics = invokeGetter(firstPrepared, "getMetrics");
         Object secondMetrics = invokeGetter(secondPrepared, "getMetrics");
 
-        assertEquals(invokeGetter(firstMetrics, "getRequestBodyLength"), invokeGetter(secondMetrics, "getRequestBodyLength"));
-        assertEquals(invokeGetter(firstMetrics, "getPromptInputFingerprint"), invokeGetter(secondMetrics, "getPromptInputFingerprint"));
+        assertEquals(
+                invokeGetter(firstMetrics, "getRequestBodyLength"),
+                invokeGetter(secondMetrics, "getRequestBodyLength"));
+        assertEquals(
+                invokeGetter(firstMetrics, "getPromptInputFingerprint"),
+                invokeGetter(secondMetrics, "getPromptInputFingerprint"));
         assertEquals(1, invokeGetter(firstMetrics, "getSyncedIncludedTaskCount"));
         assertEquals(1, invokeGetter(firstMetrics, "getUnsyncedIncludedTaskCount"));
 
         List<SummaryTaskSnapshot> largeSynced = List.of(
-                snapshot(task("주말 장보기 일정", "토요일 오전에 장을 봐야 한다. 우유와 달걀, 채소를 사야 한다. 예산도 점검한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED),
-                snapshot(task("가족 식사 예약", "저녁 식사 예약을 잡고 메뉴 후보를 정한다. 부모님과 시간도 다시 확인한다.", TaskStatus.REQUESTED), TaskSyncState.SYNCED)
-        );
+                snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 봐야 한다. 우유와 달걀, 채소를 사야 한다. 예산도 점검한다.", TaskStatus.IN_PROGRESS),
+                        TaskSyncState.SYNCED),
+                snapshot(
+                        task("가족 식사 예약", "저녁 식사 예약을 잡고 메뉴 후보를 정한다. 부모님과 시간도 다시 확인한다.", TaskStatus.REQUESTED),
+                        TaskSyncState.SYNCED));
         List<SummaryTaskSnapshot> largeUnsynced = List.of(
-                snapshot(task("봄 옷장 정리", "외투를 정리하고 겨울 옷은 압축팩에 넣는다. 세탁이 필요한 옷도 분리한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED),
-                snapshot(task("자전거 점검", "브레이크와 타이어를 점검해야 한다. 문제가 있으면 수리점에 맡겨야 한다.", TaskStatus.BLOCKED), TaskSyncState.SYNC_DISABLED)
-        );
+                snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 겨울 옷은 압축팩에 넣는다. 세탁이 필요한 옷도 분리한다.", TaskStatus.REQUESTED),
+                        TaskSyncState.SYNC_DISABLED),
+                snapshot(
+                        task("자전거 점검", "브레이크와 타이어를 점검해야 한다. 문제가 있으면 수리점에 맡겨야 한다.", TaskStatus.BLOCKED),
+                        TaskSyncState.SYNC_DISABLED));
 
         Object largerPrepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
                 largeSynced,
                 2,
                 largeUnsynced,
                 2,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
         Object largerMetrics = invokeGetter(largerPrepared, "getMetrics");
 
         assertTrue((Integer) invokeGetter(largerMetrics, "getRequestBodyLength")
@@ -192,15 +187,18 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
                 1,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 1,
                 LocalDate.of(2026, 3, 23),
-                LocalDate.of(2026, 3, 29)
-        );
+                LocalDate.of(2026, 3, 29));
 
         JsonNode generationConfig = preparedRequestBody(prepared).path("generationConfig");
         assertEquals(20, generationConfig.path("topK").asInt());
@@ -216,15 +214,18 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
                 1,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 1,
                 LocalDate.of(2026, 3, 23),
-                LocalDate.of(2026, 3, 29)
-        );
+                LocalDate.of(2026, 3, 29));
 
         JsonNode generationConfig = preparedRequestBody(prepared).path("generationConfig");
         assertTrue(generationConfig.path("topK").isMissingNode());
@@ -240,20 +241,26 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
                 3,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 1,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
 
         JsonNode request = preparedRequestBody(prepared);
-        JsonNode instructions = request.path("contents").get(0).path("parts").get(0).path("text");
+        JsonNode instructions =
+                request.path("contents").get(0).path("parts").get(0).path("text");
 
-        assertTrue(instructions.asText().contains("summary는 status·syncState·outbox 결과만 사실로 사용하고, 완료·성공적·순조·문제없음·위험없음 같은 표현은 근거 없으면 쓰지 마라."));
+        assertTrue(instructions
+                .asText()
+                .contains("summary는 status·syncState·outbox 결과만 사실로 사용하고, 완료·성공적·순조·문제없음·위험없음 같은 표현은 근거 없으면 쓰지 마라."));
         assertTrue(instructions.asText().contains("summary와 목록 문장은 모두 한국어 존댓말로 작성하라."));
         assertTrue(instructions.asText().contains("제공된 tasks만 우선순위 대표 업무로 보고"));
         assertTrue(instructions.asText().contains("우선순위 대표 업무 기준"));
@@ -262,13 +269,16 @@ class GeminiWeeklySummaryGeneratorTest {
         JsonNode syncedSection = userPromptPayload(request).path("synced");
         assertEquals(3, syncedSection.path("totalTaskCount").asInt());
         assertEquals(1, syncedSection.path("includedTaskCount").asInt());
-        assertEquals("첫 문장부터 우선순위 대표 업무 기준으로 핵심 일정과 리스크를 요약하고, 이후 문장에서 대표 task를 연결한다.",
+        assertEquals(
+                "첫 문장부터 우선순위 대표 업무 기준으로 핵심 일정과 리스크를 요약하고, 이후 문장에서 대표 task를 연결한다.",
                 syncedSection.path("summaryLeadHint").asText());
-        assertEquals("세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.",
+        assertEquals(
+                "세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.",
                 syncedSection.path("coverageHint").asText());
 
         JsonNode unsyncedSection = userPromptPayload(request).path("unsynced");
-        assertEquals("첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.",
+        assertEquals(
+                "첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.",
                 unsyncedSection.path("summaryLeadHint").asText());
         assertTrue(unsyncedSection.path("coverageHint").isMissingNode());
     }
@@ -282,19 +292,28 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
                 1,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 1,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
 
         JsonNode request = preparedRequestBody(prepared);
-        String instructions = request.path("contents").get(0).path("parts").get(0).path("text").asText();
-        assertTrue(instructions.contains("summary는 status·syncState·outbox 결과만 사실로 사용하고, 완료·성공적·순조·문제없음·위험없음 같은 표현은 근거 없으면 쓰지 마라."));
+        String instructions = request.path("contents")
+                .get(0)
+                .path("parts")
+                .get(0)
+                .path("text")
+                .asText();
+        assertTrue(instructions.contains(
+                "summary는 status·syncState·outbox 결과만 사실로 사용하고, 완료·성공적·순조·문제없음·위험없음 같은 표현은 근거 없으면 쓰지 마라."));
         assertTrue(instructions.contains("summary와 목록 문장은 모두 한국어 존댓말로 작성하라."));
         assertFalse(instructions.contains("우선순위 대표 업무"));
         assertTrue(instructions.contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
@@ -302,9 +321,11 @@ class GeminiWeeklySummaryGeneratorTest {
         JsonNode payload = userPromptPayload(request);
         assertTrue(payload.path("synced").path("coverageHint").isMissingNode());
         assertTrue(payload.path("unsynced").path("coverageHint").isMissingNode());
-        assertEquals("첫 문장은 이번 주 일정 전반을 요약하고, 이후 문장에서 주요 일정과 리스크를 연결한다.",
+        assertEquals(
+                "첫 문장은 이번 주 일정 전반을 요약하고, 이후 문장에서 주요 일정과 리스크를 연결한다.",
                 payload.path("synced").path("summaryLeadHint").asText());
-        assertEquals("첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.",
+        assertEquals(
+                "첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.",
                 payload.path("unsynced").path("summaryLeadHint").asText());
     }
 
@@ -317,22 +338,27 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
                 1,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 4,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
 
         JsonNode payload = userPromptPayload(preparedRequestBody(prepared));
         JsonNode unsyncedSection = payload.path("unsynced");
 
-        assertEquals("첫 문장부터 우선순위 대표 업무 기준으로 누락 위험과 반영 필요 사항을 요약하고, 이후 문장에서 대표 task를 연결한다.",
+        assertEquals(
+                "첫 문장부터 우선순위 대표 업무 기준으로 누락 위험과 반영 필요 사항을 요약하고, 이후 문장에서 대표 task를 연결한다.",
                 unsyncedSection.path("summaryLeadHint").asText());
-        assertEquals("세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.",
+        assertEquals(
+                "세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.",
                 unsyncedSection.path("coverageHint").asText());
     }
 
@@ -344,21 +370,34 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS),
+                        TaskSyncState.SYNCED)),
                 1,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 1,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
         Object metrics = invokeGetter(prepared, "getMetrics");
 
         Object exception = invokePrivate(
                 generator,
                 "classifyUpstreamFailure",
-                new Class[]{Project.class, LocalDate.class, LocalDate.class, int.class, Map.class, String.class, long.class, metrics.getClass()},
+                new Class[] {
+                    Project.class,
+                    LocalDate.class,
+                    LocalDate.class,
+                    int.class,
+                    Map.class,
+                    String.class,
+                    long.class,
+                    metrics.getClass()
+                },
                 project,
                 weekStart,
                 weekEnd,
@@ -366,10 +405,10 @@ class GeminiWeeklySummaryGeneratorTest {
                 Map.of("Retry-After", List.of("120")),
                 "{\"error\":{\"message\":\"Too many requests\"}}",
                 700L,
-                metrics
-        );
+                metrics);
 
-        WeeklySummaryGenerationException generationException = assertInstanceOf(WeeklySummaryGenerationException.class, exception);
+        WeeklySummaryGenerationException generationException =
+                assertInstanceOf(WeeklySummaryGenerationException.class, exception);
         assertEquals(ErrorCode.LLM_RATE_LIMITED_TEMPORARY, generationException.getErrorCode());
         assertEquals("HEADER", generationException.getClassificationSource());
         assertEquals("120", generationException.getRetryAfter());
@@ -384,21 +423,34 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS),
+                        TaskSyncState.SYNCED)),
                 1,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 1,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
         Object metrics = invokeGetter(prepared, "getMetrics");
 
         Object exception = invokePrivate(
                 generator,
                 "classifyUpstreamFailure",
-                new Class[]{Project.class, LocalDate.class, LocalDate.class, int.class, Map.class, String.class, long.class, metrics.getClass()},
+                new Class[] {
+                    Project.class,
+                    LocalDate.class,
+                    LocalDate.class,
+                    int.class,
+                    Map.class,
+                    String.class,
+                    long.class,
+                    metrics.getClass()
+                },
                 project,
                 weekStart,
                 weekEnd,
@@ -406,10 +458,10 @@ class GeminiWeeklySummaryGeneratorTest {
                 Map.of(),
                 "{\"error\":{\"status\":\"RESOURCE_EXHAUSTED\",\"message\":\"Daily limit reached\",\"details\":[{\"reason\":\"dailyLimitExceeded\"}]}}",
                 700L,
-                metrics
-        );
+                metrics);
 
-        WeeklySummaryGenerationException generationException = assertInstanceOf(WeeklySummaryGenerationException.class, exception);
+        WeeklySummaryGenerationException generationException =
+                assertInstanceOf(WeeklySummaryGenerationException.class, exception);
         assertEquals(ErrorCode.LLM_QUOTA_EXHAUSTED, generationException.getErrorCode());
         assertEquals("BODY", generationException.getClassificationSource());
         assertEquals("RESOURCE_EXHAUSTED", generationException.getUpstreamStatus());
@@ -424,21 +476,34 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS),
+                        TaskSyncState.SYNCED)),
                 1,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 1,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
         Object metrics = invokeGetter(prepared, "getMetrics");
 
         Object exception = invokePrivate(
                 generator,
                 "classifyUpstreamFailure",
-                new Class[]{Project.class, LocalDate.class, LocalDate.class, int.class, Map.class, String.class, long.class, metrics.getClass()},
+                new Class[] {
+                    Project.class,
+                    LocalDate.class,
+                    LocalDate.class,
+                    int.class,
+                    Map.class,
+                    String.class,
+                    long.class,
+                    metrics.getClass()
+                },
                 project,
                 weekStart,
                 weekEnd,
@@ -446,10 +511,10 @@ class GeminiWeeklySummaryGeneratorTest {
                 Map.of(),
                 "{\"error\":{\"message\":\"request rejected\"}}",
                 700L,
-                metrics
-        );
+                metrics);
 
-        WeeklySummaryGenerationException generationException = assertInstanceOf(WeeklySummaryGenerationException.class, exception);
+        WeeklySummaryGenerationException generationException =
+                assertInstanceOf(WeeklySummaryGenerationException.class, exception);
         assertEquals(ErrorCode.LLM_429_UNKNOWN, generationException.getErrorCode());
         assertEquals("UNKNOWN", generationException.getClassificationSource());
         assertTrue(output.getOut().contains("Gemini summary request failed."));
@@ -469,35 +534,40 @@ class GeminiWeeklySummaryGeneratorTest {
         Object prepared = invokePrivate(
                 generator,
                 "prepareRequest",
-                new Class[]{Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class},
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
                 project,
-                List.of(snapshot(task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
                 1,
-                List.of(snapshot(task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
+                List.of(snapshot(
+                        task("봄 옷장 정리", "외투를 정리하고 수납 상자를 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
                 1,
                 weekStart,
-                weekEnd
-        );
+                weekEnd);
         Object metrics = invokeGetter(prepared, "getMetrics");
-        JsonNode root = objectMapper.readTree("{\"usageMetadata\":{\"promptTokenCount\":768,\"candidatesTokenCount\":320,\"totalTokenCount\":1088}}");
-        Object usageMetrics = invokePrivate(
-                generator,
-                "usageMetrics",
-                new Class[]{JsonNode.class},
-                root
-        );
+        JsonNode root = objectMapper.readTree(
+                "{\"usageMetadata\":{\"promptTokenCount\":768,\"candidatesTokenCount\":320,\"totalTokenCount\":1088}}");
+        Object usageMetrics = invokePrivate(generator, "usageMetrics", new Class[] {JsonNode.class}, root);
 
         invokePrivate(
                 generator,
                 "logUsage",
-                new Class[]{Project.class, LocalDate.class, LocalDate.class, long.class, metrics.getClass(), usageMetrics.getClass()},
+                new Class[] {
+                    Project.class,
+                    LocalDate.class,
+                    LocalDate.class,
+                    long.class,
+                    metrics.getClass(),
+                    usageMetrics.getClass()
+                },
                 project,
                 weekStart,
                 weekEnd,
                 2864L,
                 metrics,
-                usageMetrics
-        );
+                usageMetrics);
 
         assertTrue(output.getOut().contains("Gemini summary request succeeded."));
         assertTrue(output.getOut().contains("requestBodyLength="));
@@ -513,7 +583,8 @@ class GeminiWeeklySummaryGeneratorTest {
     }
 
     private Task task(String title, String description, TaskStatus status) {
-        Task task = Task.createTask(project, title, description, null, null, LocalDateTime.now().plusDays(1), false);
+        Task task = Task.createTask(
+                project, title, description, null, null, LocalDateTime.now().plusDays(1), false);
         if (status != TaskStatus.REQUESTED) {
             task.changeStatus(status);
         }
@@ -530,7 +601,13 @@ class GeminiWeeklySummaryGeneratorTest {
     }
 
     private JsonNode userPromptPayload(JsonNode preparedRequestBody) throws Exception {
-        String promptText = preparedRequestBody.path("contents").get(0).path("parts").get(0).path("text").asText();
+        String promptText = preparedRequestBody
+                .path("contents")
+                .get(0)
+                .path("parts")
+                .get(0)
+                .path("text")
+                .asText();
         String jsonPayload = promptText.substring(promptText.indexOf('\n') + 1);
         return objectMapper.readTree(jsonPayload);
     }
@@ -541,7 +618,8 @@ class GeminiWeeklySummaryGeneratorTest {
         return method.invoke(target);
     }
 
-    private Object invokePrivate(Object target, String methodName, Class<?>[] parameterTypes, Object... args) throws Exception {
+    private Object invokePrivate(Object target, String methodName, Class<?>[] parameterTypes, Object... args)
+            throws Exception {
         Method method = target.getClass().getDeclaredMethod(methodName, parameterTypes);
         method.setAccessible(true);
         return method.invoke(target, args);

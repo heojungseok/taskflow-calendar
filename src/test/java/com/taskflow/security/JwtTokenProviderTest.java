@@ -1,13 +1,11 @@
 package com.taskflow.security;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
@@ -15,9 +13,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * JWT는 로그인의 유일한 근거인데 이 클래스를 검증하는 테스트가 없었다.
@@ -30,6 +29,7 @@ class JwtTokenProviderTest {
 
     /** HS256은 키가 256비트 이상이어야 한다. 32자 = 256비트. */
     private static final String SECRET = "test-secret-key-for-jwt-provider-0123456789";
+
     private static final String OTHER_SECRET = "another-secret-key-entirely-9876543210-abc";
     private static final long ONE_DAY_MS = 86_400_000L;
     private static final Long USER_ID = 7L;
@@ -80,7 +80,8 @@ class JwtTokenProviderTest {
         assertThat(provider.validateToken(signedToken(Map.of("sv", 1.0)))).isFalse();
         assertThat(provider.validateToken(signedToken(Map.of("sv", 1.5)))).isFalse();
         assertThat(provider.validateToken(signedToken(Map.of("sv", -1)))).isFalse();
-        assertThat(provider.validateToken(signedToken(Map.of("sv", 2_147_483_648L)))).isFalse();
+        assertThat(provider.validateToken(signedToken(Map.of("sv", 2_147_483_648L))))
+                .isFalse();
     }
 
     @Test
@@ -141,8 +142,7 @@ class JwtTokenProviderTest {
         JwtTokenProvider provider = provider(SECRET, ONE_DAY_MS);
         String foreignToken = provider(OTHER_SECRET, ONE_DAY_MS).generateToken(USER_ID, 0);
 
-        assertThatThrownBy(() -> provider.getUserIdFromToken(foreignToken))
-                .isInstanceOf(JwtException.class);
+        assertThatThrownBy(() -> provider.getUserIdFromToken(foreignToken)).isInstanceOf(JwtException.class);
     }
 
     @Test

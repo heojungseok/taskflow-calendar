@@ -5,13 +5,12 @@ import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.security.SecurityContextHelper;
+import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,8 +27,7 @@ public class TaskController {
      */
     @PostMapping("/projects/{projectId}/tasks")
     public ApiResponse<TaskResponse> createTask(
-            @PathVariable Long projectId,
-            @Valid @RequestBody CreateTaskRequest request) {
+            @PathVariable Long projectId, @Valid @RequestBody CreateTaskRequest request) {
 
         Long requestedByUserId = SecurityContextHelper.getCurrentUserId();
         log.info("Creating task. userId={}, projectId={}", requestedByUserId, projectId);
@@ -68,8 +66,7 @@ public class TaskController {
      */
     @PatchMapping("/tasks/{taskId}")
     public ApiResponse<TaskResponse> updateTask(
-            @PathVariable Long taskId,
-            @Valid @RequestBody UpdateTaskRequest request) {
+            @PathVariable Long taskId, @Valid @RequestBody UpdateTaskRequest request) {
 
         TaskResponse response = taskService.updateTask(taskId, request);
         return ApiResponse.success(response);
@@ -81,8 +78,7 @@ public class TaskController {
      */
     @PostMapping("/tasks/{taskId}/status")
     public ApiResponse<TaskResponse> changeTaskStatus(
-            @PathVariable Long taskId,
-            @Valid @RequestBody ChangeTaskStatusRequest request) {
+            @PathVariable Long taskId, @Valid @RequestBody ChangeTaskStatusRequest request) {
 
         TaskResponse response = taskService.changeTaskStatus(taskId, request);
         return ApiResponse.success(response);

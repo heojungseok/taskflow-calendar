@@ -1,35 +1,34 @@
 package com.taskflow.web;
 
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.CONSENT_RETRY;
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.NORMAL;
+
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.oauth.OAuthStateStore;
 import com.taskflow.calendar.domain.oauth.dto.AuthorizeUrlResponse;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
-import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
+import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.web.dto.auth.AuthSession;
 import jakarta.servlet.http.HttpServletResponse;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-
-import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.CONSENT_RETRY;
-import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.NORMAL;
 
 /**
  * Google OAuth 2.0 인증 Controller
@@ -63,9 +62,7 @@ public class GoogleOAuthController {
     }
 
     private ApiResponse<AuthorizeUrlResponse> createAuthorizeResponse(
-            HttpServletResponse response,
-            OAuthStateStore.OAuthAttempt attempt
-    ) {
+            HttpServletResponse response, OAuthStateStore.OAuthAttempt attempt) {
         String state;
         try {
             state = stateStore.generateState(attempt);
@@ -79,8 +76,7 @@ public class GoogleOAuthController {
     }
 
     private String buildAuthorizeUrl(String state, OAuthStateStore.OAuthAttempt attempt) {
-        UriComponentsBuilder builder = UriComponentsBuilder
-                .fromHttpUrl(properties.getAuthorizationUri())
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(properties.getAuthorizationUri())
                 .queryParam("client_id", properties.getClientId())
                 .queryParam("redirect_uri", properties.getRedirectUri())
                 .queryParam("response_type", "code")
@@ -105,14 +101,14 @@ public class GoogleOAuthController {
             @RequestParam(value = "code", required = false) String code,
             @RequestParam(value = "error", required = false) String oauthError,
             @CookieValue(name = SessionCookieService.OAUTH_STATE_COOKIE, required = false) String cookieState,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
         OAuthStateStore.OAuthAttempt attempt;
         try {
             if (!sameState(state, cookieState)) {
                 throw new IllegalArgumentException("Invalid or expired OAuth state");
             }
-            attempt = stateStore.consumeState(state)
+            attempt = stateStore
+                    .consumeState(state)
                     .orElseThrow(() -> new IllegalArgumentException("Invalid or expired OAuth state"));
         } catch (Exception e) {
             cookieService.clearOAuthState(response);
@@ -122,8 +118,7 @@ public class GoogleOAuthController {
         cookieService.clearOAuthState(response);
 
         if (oauthError != null) {
-            return redirectToFrontendError(
-                    "access_denied".equals(oauthError) ? "consent_cancelled" : "oauth_failed");
+            return redirectToFrontendError("access_denied".equals(oauthError) ? "consent_cancelled" : "oauth_failed");
         }
         if (code == null || code.isBlank()) {
             return redirectToFrontendError("oauth_failed");
@@ -171,16 +166,16 @@ public class GoogleOAuthController {
     }
 
     private boolean sameState(String queryState, String cookieState) {
-        return queryState != null && cookieState != null && MessageDigest.isEqual(
-                queryState.getBytes(StandardCharsets.UTF_8),
-                cookieState.getBytes(StandardCharsets.UTF_8));
+        return queryState != null
+                && cookieState != null
+                && MessageDigest.isEqual(
+                        queryState.getBytes(StandardCharsets.UTF_8), cookieState.getBytes(StandardCharsets.UTF_8));
     }
 
     @PostMapping("/disconnect")
     public ApiResponse<Boolean> disconnect(Authentication authentication, HttpServletResponse response) {
         try {
-            return ApiResponse.success(
-                    googleOAuthService.disconnect((Long) authentication.getPrincipal()));
+            return ApiResponse.success(googleOAuthService.disconnect((Long) authentication.getPrincipal()));
         } finally {
             cookieService.clearSession(response);
         }

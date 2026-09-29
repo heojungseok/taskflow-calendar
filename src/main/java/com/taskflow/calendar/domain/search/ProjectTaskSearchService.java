@@ -10,16 +10,10 @@ import com.taskflow.calendar.domain.summary.TaskSyncState;
 import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
-import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.calendar.domain.task.TaskStatus;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.taskflow.security.SecurityContextHelper;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +21,11 @@ import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -51,75 +50,35 @@ public class ProjectTaskSearchService {
     private static final int SYNC_MISMATCH_PENALTY = -6;
     private static final int PRIORITY_MATCH_BOOST = 8;
 
-    private static final Set<String> GENERIC_TERMS = Set.of(
-            "일정",
-            "작업",
-            "업무",
-            "할일",
-            "할 일",
-            "것"
-    );
+    private static final Set<String> GENERIC_TERMS = Set.of("일정", "작업", "업무", "할일", "할 일", "것");
 
-    private static final Set<String> LEISURE_TOPIC_TERMS = Set.of(
-            "놀기",
-            "놀이",
-            "놀",
-            "나들이",
-            "여가",
-            "데이트"
-    );
+    private static final Set<String> LEISURE_TOPIC_TERMS = Set.of("놀기", "놀이", "놀", "나들이", "여가", "데이트");
 
-    private static final List<String> LEISURE_TOPIC_EXPANSIONS = List.of(
-            "놀기",
-            "놀이",
-            "놀",
-            "나들이",
-            "여가",
-            "데이트",
-            "만남",
-            "약속",
-            "외출",
-            "놀러",
-            "소풍",
-            "피크닉"
-    );
+    private static final List<String> LEISURE_TOPIC_EXPANSIONS =
+            List.of("놀기", "놀이", "놀", "나들이", "여가", "데이트", "만남", "약속", "외출", "놀러", "소풍", "피크닉");
 
-    private static final Map<String, List<String>> TOPIC_PHRASE_EXPANSIONS = Map.of(
-            "화상 회의", List.of("화상 회의", "온라인 회의", "줌 회의", "줌 미팅", "구글 밋", "구글밋", "google meet", "zoom meeting")
-    );
+    private static final Map<String, List<String>> TOPIC_PHRASE_EXPANSIONS =
+            Map.of("화상 회의", List.of("화상 회의", "온라인 회의", "줌 회의", "줌 미팅", "구글 밋", "구글밋", "google meet", "zoom meeting"));
 
     private static final List<String> PARTICIPANT_HINT_TERMS = List.of(
-            "친구", "가족", "엄마", "아빠", "부모", "부모님", "형", "누나", "언니", "오빠", "동생",
-            "팀원", "동료", "고객", "선생님", "배우자", "남편", "아내", "아이", "애인"
-    );
+            "친구", "가족", "엄마", "아빠", "부모", "부모님", "형", "누나", "언니", "오빠", "동생", "팀원", "동료", "고객", "선생님", "배우자", "남편",
+            "아내", "아이", "애인");
 
-    private static final List<String> GENERIC_COMPANION_TERMS = List.of(
-            "누군가", "누구", "아무개", "상대", "사람"
-    );
+    private static final List<String> GENERIC_COMPANION_TERMS = List.of("누군가", "누구", "아무개", "상대", "사람");
 
-    private static final List<String> GENERIC_COMPANION_QUERY_CUES = List.of(
-            "누군가와", "누군가랑", "누구와", "누구랑", "아무개와", "아무개랑", "같이", "함께", "동행", "데리고", "모시고"
-    );
+    private static final List<String> GENERIC_COMPANION_QUERY_CUES =
+            List.of("누군가와", "누군가랑", "누구와", "누구랑", "아무개와", "아무개랑", "같이", "함께", "동행", "데리고", "모시고");
 
-    private static final List<String> TASK_COMPANION_CUES = List.of(
-            "같이", "함께", "동행", "데리고", "모시고"
-    );
+    private static final List<String> TASK_COMPANION_CUES = List.of("같이", "함께", "동행", "데리고", "모시고");
 
-    private static final List<String> LOCATION_HINT_TERMS = List.of(
-            "병원", "치과", "약국", "은행", "마트", "주민센터", "관공서", "미용실", "공항", "학교", "회사"
-    );
+    private static final List<String> LOCATION_HINT_TERMS =
+            List.of("병원", "치과", "약국", "은행", "마트", "주민센터", "관공서", "미용실", "공항", "학교", "회사");
 
-    private static final List<String> LIFE_LOCATION_TERMS = List.of(
-            "병원", "치과", "약국", "은행", "마트", "주민센터", "관공서", "미용실"
-    );
+    private static final List<String> LIFE_LOCATION_TERMS = List.of("병원", "치과", "약국", "은행", "마트", "주민센터", "관공서", "미용실");
 
-    private static final List<String> VISIT_QUERY_HINTS = List.of(
-            "가는", "가기", "가야", "방문", "들르", "내원", "진료", "검사", "예약"
-    );
+    private static final List<String> VISIT_QUERY_HINTS = List.of("가는", "가기", "가야", "방문", "들르", "내원", "진료", "검사", "예약");
 
-    private static final List<String> MEET_QUERY_HINTS = List.of(
-            "만나", "약속", "같이", "함께", "동행", "놀", "나들이", "데이트"
-    );
+    private static final List<String> MEET_QUERY_HINTS = List.of("만나", "약속", "같이", "함께", "동행", "놀", "나들이", "데이트");
 
     private static final Map<SearchActionIntent, List<String>> ACTION_KEYWORDS = Map.of(
             SearchActionIntent.PREPARE, List.of("준비", "체크리스트", "초안", "자료", "발표", "세팅", "작성"),
@@ -129,14 +88,12 @@ public class ProjectTaskSearchService {
             SearchActionIntent.MEET, List.of("만나", "약속", "동행", "놀", "놀이", "나들이", "여가", "데이트"),
             SearchActionIntent.ORGANIZE, List.of("정리", "정돈", "분류", "정리하기"),
             SearchActionIntent.FIX, List.of("수정", "해결", "복구", "버그", "장애", "패치", "고치"),
-            SearchActionIntent.CHECK, List.of("확인", "검토", "점검", "리뷰", "체크", "팔로업", "follow up")
-    );
+            SearchActionIntent.CHECK, List.of("확인", "검토", "점검", "리뷰", "체크", "팔로업", "follow up"));
 
     private static final Map<SearchDomainType, List<String>> DOMAIN_KEYWORDS = Map.of(
             SearchDomainType.WORK, List.of("배포", "릴리즈", "스프린트", "운영", "개발", "qa", "리뷰", "프로젝트", "업무"),
             SearchDomainType.PERSONAL, List.of("개인", "가족", "친구", "약속", "취미", "개인 일정"),
-            SearchDomainType.LIFE, List.of("병원", "진료", "검사", "약", "장보기", "마트", "서류", "청소", "집안", "은행", "예약", "보험")
-    );
+            SearchDomainType.LIFE, List.of("병원", "진료", "검사", "약", "장보기", "마트", "서류", "청소", "집안", "은행", "예약", "보험"));
 
     private final TaskRepository taskRepository;
     private final TaskSyncStateResolver taskSyncStateResolver;
@@ -147,11 +104,13 @@ public class ProjectTaskSearchService {
     @Transactional
     public ProjectTaskSearchResponse search(String query) {
         Long userId = SecurityContextHelper.getCurrentUserId();
-        boolean demo = userRepository.findById(userId)
+        boolean demo = userRepository
+                .findById(userId)
                 .map(user -> user.getProvider() == Provider.DEMO)
                 .orElse(false);
         SearchIntent intent = normalizeIntent(demo ? localIntent(query) : taskSearchIntentParser.parse(query));
-        log.info("Task search parsed intent. queryType={}, targetType={}, domainType={}, mainAction={}, genericCompanionRequired={}, relationPolicy={}, timeIntent={}, priorityIntent={}, syncIntent={}, overallConfidence={}",
+        log.info(
+                "Task search parsed intent. queryType={}, targetType={}, domainType={}, mainAction={}, genericCompanionRequired={}, relationPolicy={}, timeIntent={}, priorityIntent={}, syncIntent={}, overallConfidence={}",
                 intent.getQueryType(),
                 intent.getTargetType(),
                 intent.getDomainType(),
@@ -164,7 +123,8 @@ public class ProjectTaskSearchService {
                 intent.getOverallConfidence());
 
         if (shouldFallback(intent)) {
-            log.info("Task search fallback. topicWeak={}, mainActionWeak={}, genericCompanionRequired={}, relationPolicy={}",
+            log.info(
+                    "Task search fallback. topicWeak={}, mainActionWeak={}, genericCompanionRequired={}, relationPolicy={}",
                     !intent.hasUsefulTopicTerms(),
                     !intent.hasUsefulMainAction(),
                     intent.isGenericCompanionRequired(),
@@ -176,8 +136,7 @@ public class ProjectTaskSearchService {
                     SearchIntentResponse.from(intent),
                     List.of(),
                     List.of(),
-                    truncateSuggestions(intent.getSuggestedQueries())
-            );
+                    truncateSuggestions(intent.getSuggestedQueries()));
         }
 
         List<Task> tasks = taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(userId);
@@ -190,13 +149,22 @@ public class ProjectTaskSearchService {
         Map<Long, Double> semanticSimilarities = semanticResult.similarities();
 
         List<ScoredTask> rankedTasks = taskSyncStateResolver.resolveAll(tasks).stream()
-                .map(snapshot -> scoreTask(snapshot, intent, semanticSimilarities.getOrDefault(snapshot.getTask().getId(), 0.0d)))
+                .map(snapshot -> scoreTask(
+                        snapshot,
+                        intent,
+                        semanticSimilarities.getOrDefault(snapshot.getTask().getId(), 0.0d)))
                 .filter(Objects::nonNull)
-                .sorted(Comparator
-                        .comparingInt(ScoredTask::totalScore).reversed()
-                        .thenComparing(scored -> scored.snapshot().getTask().getDueAt(), Comparator.nullsLast(Comparator.naturalOrder()))
-                        .thenComparing(scored -> scored.snapshot().getTask().getUpdatedAt(), Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(scored -> scored.snapshot().getTask().getId(), Comparator.nullsLast(Comparator.naturalOrder())))
+                .sorted(Comparator.comparingInt(ScoredTask::totalScore)
+                        .reversed()
+                        .thenComparing(
+                                scored -> scored.snapshot().getTask().getDueAt(),
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(
+                                scored -> scored.snapshot().getTask().getUpdatedAt(),
+                                Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(
+                                scored -> scored.snapshot().getTask().getId(),
+                                Comparator.nullsLast(Comparator.naturalOrder())))
                 .limit(TASK_RESULT_LIMIT)
                 .collect(Collectors.toList());
 
@@ -215,8 +183,7 @@ public class ProjectTaskSearchService {
                             task.getCalendarSyncEnabled(),
                             task.getCalendarEventId(),
                             scored.snapshot().getSyncState(),
-                            scored.totalScore()
-                    );
+                            scored.totalScore());
                 })
                 .collect(Collectors.toList());
 
@@ -231,8 +198,7 @@ public class ProjectTaskSearchService {
                 SearchIntentResponse.from(intent),
                 taskResults,
                 relatedProjects,
-                List.of()
-        );
+                List.of());
     }
 
     private SearchIntent localIntent(String query) {
@@ -296,14 +262,14 @@ public class ProjectTaskSearchService {
                 relationPolicy,
                 enrichedIntent.getOverallConfidence(),
                 enrichedIntent.getFieldConfidence(),
-                enrichedIntent.getSuggestedQueries()
-        );
+                enrichedIntent.getSuggestedQueries());
     }
 
     private SearchIntent enrichIntentFromRawQuery(SearchIntent parsedIntent) {
         String normalizedQuery = normalizeSingle(parsedIntent.getRawQuery());
 
-        LinkedHashSet<String> participantTerms = new LinkedHashSet<>(sanitizeParticipantTerms(parsedIntent.getParticipantTerms()));
+        LinkedHashSet<String> participantTerms =
+                new LinkedHashSet<>(sanitizeParticipantTerms(parsedIntent.getParticipantTerms()));
         participantTerms.addAll(extractParticipantHints(normalizedQuery));
 
         LinkedHashSet<String> locationTerms = new LinkedHashSet<>(parsedIntent.getLocationTerms());
@@ -316,7 +282,8 @@ public class ProjectTaskSearchService {
         LinkedHashSet<SearchActionIntent> secondaryActions = new LinkedHashSet<>(parsedIntent.getSecondaryActions());
 
         boolean visitPattern = !locationTerms.isEmpty() && containsAny(normalizedQuery, VISIT_QUERY_HINTS);
-        boolean meetPattern = (!participantTerms.isEmpty() || genericCompanionRequired) && containsAny(normalizedQuery, MEET_QUERY_HINTS);
+        boolean meetPattern = (!participantTerms.isEmpty() || genericCompanionRequired)
+                && containsAny(normalizedQuery, MEET_QUERY_HINTS);
 
         if (visitPattern) {
             if (mainAction != SearchActionIntent.VISIT && mainAction != SearchActionIntent.UNKNOWN) {
@@ -357,8 +324,7 @@ public class ProjectTaskSearchService {
                 parsedIntent.getRelationPolicy(),
                 parsedIntent.getOverallConfidence(),
                 parsedIntent.getFieldConfidence(),
-                parsedIntent.getSuggestedQueries()
-        );
+                parsedIntent.getSuggestedQueries());
     }
 
     private SearchQueryType deriveQueryType(SearchIntent intent) {
@@ -459,19 +425,18 @@ public class ProjectTaskSearchService {
                 .collect(Collectors.toList());
     }
 
-    private boolean detectGenericCompanionRequired(String normalizedQuery,
-                                                   Set<String> participantTerms,
-                                                   Set<String> locationTerms,
-                                                   SearchIntent parsedIntent) {
+    private boolean detectGenericCompanionRequired(
+            String normalizedQuery,
+            Set<String> participantTerms,
+            Set<String> locationTerms,
+            SearchIntent parsedIntent) {
         if (!participantTerms.isEmpty()) {
             return false;
         }
         if (!containsAny(normalizedQuery, GENERIC_COMPANION_QUERY_CUES)) {
             return false;
         }
-        return !locationTerms.isEmpty()
-                || parsedIntent.hasUsefulMainAction()
-                || parsedIntent.hasUsefulTopicTerms();
+        return !locationTerms.isEmpty() || parsedIntent.hasUsefulMainAction() || parsedIntent.hasUsefulTopicTerms();
     }
 
     private List<String> extractLocationHints(String normalizedQuery) {
@@ -510,11 +475,7 @@ public class ProjectTaskSearchService {
 
     private List<String> truncateSuggestions(List<String> suggestedQueries) {
         if (suggestedQueries.isEmpty()) {
-            return List.of(
-                    "이번 주 마감 일정",
-                    "캘린더 반영 안 된 일정",
-                    "차단된 작업"
-            );
+            return List.of("이번 주 마감 일정", "캘린더 반영 안 된 일정", "차단된 작업");
         }
         return suggestedQueries.stream().limit(3).collect(Collectors.toList());
     }
@@ -539,9 +500,11 @@ public class ProjectTaskSearchService {
             return null;
         }
 
-        int relationScore = relationScore(intent, topicScore, participantScore, locationScore, companionScore, mainActionScore);
+        int relationScore =
+                relationScore(intent, topicScore, participantScore, locationScore, companionScore, mainActionScore);
         int domainScore = domainScore(intent.getDomainType(), text);
-        int semanticScore = semanticBoost(intent, topicScore, participantScore, locationScore, mainActionScore, semanticSimilarity);
+        int semanticScore =
+                semanticBoost(intent, topicScore, participantScore, locationScore, mainActionScore, semanticSimilarity);
         int statusScore = statusScore(intent.getStatusIntents(), task.getStatus());
         int syncScore = syncScore(intent.getSyncIntent(), snapshot.getSyncState());
         int priorityScore = priorityScore(intent.getPriorityIntent(), task);
@@ -585,22 +548,23 @@ public class ProjectTaskSearchService {
                 statusScore,
                 syncScore,
                 priorityScore,
-                semanticSimilarity
-        );
+                semanticSimilarity);
     }
 
-    private boolean passesMustMatch(SearchIntent intent,
-                                    MatchScore topicScore,
-                                    MatchScore participantScore,
-                                    MatchScore locationScore,
-                                    MatchScore companionScore,
-                                    MatchScore mainActionScore) {
+    private boolean passesMustMatch(
+            SearchIntent intent,
+            MatchScore topicScore,
+            MatchScore participantScore,
+            MatchScore locationScore,
+            MatchScore companionScore,
+            MatchScore mainActionScore) {
         if (intent.getQueryType() == SearchQueryType.TOPIC_SEARCH) {
             return passesTopicMust(intent, topicScore);
         }
 
         if (intent.getQueryType() == SearchQueryType.RELATIONAL_SEARCH) {
-            return passesRelationalMust(intent, topicScore, participantScore, locationScore, companionScore, mainActionScore);
+            return passesRelationalMust(
+                    intent, topicScore, participantScore, locationScore, companionScore, mainActionScore);
         }
 
         return passesBroadMust(intent, topicScore, participantScore, locationScore, companionScore, mainActionScore);
@@ -613,12 +577,13 @@ public class ProjectTaskSearchService {
         return topicScore.score() > 0;
     }
 
-    private boolean passesRelationalMust(SearchIntent intent,
-                                         MatchScore topicScore,
-                                         MatchScore participantScore,
-                                         MatchScore locationScore,
-                                         MatchScore companionScore,
-                                         MatchScore mainActionScore) {
+    private boolean passesRelationalMust(
+            SearchIntent intent,
+            MatchScore topicScore,
+            MatchScore participantScore,
+            MatchScore locationScore,
+            MatchScore companionScore,
+            MatchScore mainActionScore) {
         if (intent.hasUsefulTopicTerms() && topicScore.score() == 0) {
             return false;
         }
@@ -634,12 +599,13 @@ public class ProjectTaskSearchService {
         return !intent.hasUsefulMainAction() || mainActionScore.score() > 0;
     }
 
-    private boolean passesBroadMust(SearchIntent intent,
-                                    MatchScore topicScore,
-                                    MatchScore participantScore,
-                                    MatchScore locationScore,
-                                    MatchScore companionScore,
-                                    MatchScore mainActionScore) {
+    private boolean passesBroadMust(
+            SearchIntent intent,
+            MatchScore topicScore,
+            MatchScore participantScore,
+            MatchScore locationScore,
+            MatchScore companionScore,
+            MatchScore mainActionScore) {
         if (intent.hasUsefulTopicTerms() && topicScore.score() > 0) {
             return true;
         }
@@ -655,10 +621,8 @@ public class ProjectTaskSearchService {
         return intent.hasUsefulMainAction() && mainActionScore.score() > 0;
     }
 
-    private MatchScore roleEntityScore(MatchScore topicScore,
-                                       MatchScore participantScore,
-                                       MatchScore locationScore,
-                                       MatchScore companionScore) {
+    private MatchScore roleEntityScore(
+            MatchScore topicScore, MatchScore participantScore, MatchScore locationScore, MatchScore companionScore) {
         int activeGroups = 0;
         int matchedGroups = 0;
         int semanticGroups = 0;
@@ -709,12 +673,13 @@ public class ProjectTaskSearchService {
         return new MatchScore(Math.max(score, perGroup), false, semanticGroups > 0, true);
     }
 
-    private int relationScore(SearchIntent intent,
-                              MatchScore topicScore,
-                              MatchScore participantScore,
-                              MatchScore locationScore,
-                              MatchScore companionScore,
-                              MatchScore mainActionScore) {
+    private int relationScore(
+            SearchIntent intent,
+            MatchScore topicScore,
+            MatchScore participantScore,
+            MatchScore locationScore,
+            MatchScore companionScore,
+            MatchScore mainActionScore) {
         if (intent.getRelationPolicy() != SearchRelationPolicy.PREFER_ALL) {
             return 0;
         }
@@ -765,12 +730,13 @@ public class ProjectTaskSearchService {
         return -10;
     }
 
-    private int semanticBoost(SearchIntent intent,
-                              MatchScore topicScore,
-                              MatchScore participantScore,
-                              MatchScore locationScore,
-                              MatchScore mainActionScore,
-                              double semanticSimilarity) {
+    private int semanticBoost(
+            SearchIntent intent,
+            MatchScore topicScore,
+            MatchScore participantScore,
+            MatchScore locationScore,
+            MatchScore mainActionScore,
+            double semanticSimilarity) {
         int baseScore = semanticScore(semanticSimilarity);
         if (baseScore == 0) {
             return 0;
@@ -825,9 +791,7 @@ public class ProjectTaskSearchService {
                 continue;
             }
 
-            long matchedTokens = tokens.stream()
-                    .filter(text::contains)
-                    .count();
+            long matchedTokens = tokens.stream().filter(text::contains).count();
             if (matchedTokens == tokens.size()) {
                 semantic = true;
             }
@@ -954,7 +918,9 @@ public class ProjectTaskSearchService {
                 exact = true;
                 continue;
             }
-            String root = normalizedKeyword.length() > 2 ? normalizedKeyword.substring(0, normalizedKeyword.length() - 1) : normalizedKeyword;
+            String root = normalizedKeyword.length() > 2
+                    ? normalizedKeyword.substring(0, normalizedKeyword.length() - 1)
+                    : normalizedKeyword;
             if (root.length() >= 2 && text.contains(root)) {
                 semantic = true;
             }
@@ -1068,10 +1034,12 @@ public class ProjectTaskSearchService {
                 return DOMAIN_WEIGHT;
             }
         }
-        if (domainType == SearchDomainType.WORK && matchesAnyDomain(SearchDomainType.PERSONAL, text, SearchDomainType.LIFE)) {
+        if (domainType == SearchDomainType.WORK
+                && matchesAnyDomain(SearchDomainType.PERSONAL, text, SearchDomainType.LIFE)) {
             return -DOMAIN_WEIGHT;
         }
-        if ((domainType == SearchDomainType.PERSONAL || domainType == SearchDomainType.LIFE) && matchesAnyDomain(SearchDomainType.WORK, text)) {
+        if ((domainType == SearchDomainType.PERSONAL || domainType == SearchDomainType.LIFE)
+                && matchesAnyDomain(SearchDomainType.WORK, text)) {
             return -DOMAIN_WEIGHT;
         }
         return 0;
@@ -1134,8 +1102,7 @@ public class ProjectTaskSearchService {
                         || syncState == TaskSyncState.DELETE_PENDING;
                 break;
             case FAILED:
-                matches = syncState == TaskSyncState.FAILED_SYNC
-                        || syncState == TaskSyncState.DELETE_FAILED;
+                matches = syncState == TaskSyncState.FAILED_SYNC || syncState == TaskSyncState.DELETE_FAILED;
                 break;
             case ANY:
             default:
@@ -1154,7 +1121,9 @@ public class ProjectTaskSearchService {
             case URGENT:
                 return dueAt != null && dueAt.isBefore(LocalDateTime.now().plusDays(2)) ? PRIORITY_MATCH_BOOST : 0;
             case IMPORTANT:
-                return task.getStatus() == TaskStatus.BLOCKED || task.getStatus() == TaskStatus.IN_PROGRESS ? PRIORITY_MATCH_BOOST : 0;
+                return task.getStatus() == TaskStatus.BLOCKED || task.getStatus() == TaskStatus.IN_PROGRESS
+                        ? PRIORITY_MATCH_BOOST
+                        : 0;
             case MUST_DO:
                 return task.getStatus() != TaskStatus.DONE ? PRIORITY_MATCH_BOOST : 0;
             case DEFERRED:
@@ -1167,7 +1136,8 @@ public class ProjectTaskSearchService {
 
     private List<RelatedProjectSearchResultResponse> buildRelatedProjects(List<ScoredTask> rankedTasks) {
         Map<Long, List<ScoredTask>> grouped = rankedTasks.stream()
-                .collect(Collectors.groupingBy(scored -> scored.snapshot().getTask().getProject().getId()));
+                .collect(Collectors.groupingBy(
+                        scored -> scored.snapshot().getTask().getProject().getId()));
 
         if (grouped.size() <= 1) {
             return List.of();
@@ -1184,10 +1154,10 @@ public class ProjectTaskSearchService {
                             representative.getProject().getId(),
                             representative.getProject().getName(),
                             scores.size(),
-                            score
-                    );
+                            score);
                 })
-                .sorted(Comparator.comparingInt(RelatedProjectSearchResultResponse::getScore).reversed())
+                .sorted(Comparator.comparingInt(RelatedProjectSearchResultResponse::getScore)
+                        .reversed())
                 .limit(PROJECT_RESULT_LIMIT)
                 .collect(Collectors.toList());
     }
@@ -1297,19 +1267,20 @@ public class ProjectTaskSearchService {
         private final int priorityScore;
         private final double semanticSimilarity;
 
-        private ScoredTask(SummaryTaskSnapshot snapshot,
-                           int totalScore,
-                           int roleEntityScore,
-                           int mainActionScore,
-                           int secondaryActionScore,
-                           int relationScore,
-                           int timeScore,
-                           int domainScore,
-                           int semanticScore,
-                           int statusScore,
-                           int syncScore,
-                           int priorityScore,
-                           double semanticSimilarity) {
+        private ScoredTask(
+                SummaryTaskSnapshot snapshot,
+                int totalScore,
+                int roleEntityScore,
+                int mainActionScore,
+                int secondaryActionScore,
+                int relationScore,
+                int timeScore,
+                int domainScore,
+                int semanticScore,
+                int statusScore,
+                int syncScore,
+                int priorityScore,
+                double semanticSimilarity) {
             this.snapshot = snapshot;
             this.totalScore = totalScore;
             this.roleEntityScore = roleEntityScore;

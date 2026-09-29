@@ -25,8 +25,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
     private final TextEncryptor encryptor;
 
     public EncryptedStringConverter(
-            @Value("${token.encryption.password}") String password,
-            @Value("${token.encryption.salt}") String salt) {
+            @Value("${token.encryption.password}") String password, @Value("${token.encryption.salt}") String salt) {
         // delux = AES-256-GCM. salt는 hex 문자열이어야 한다.
         this.encryptor = Encryptors.delux(password, salt);
     }

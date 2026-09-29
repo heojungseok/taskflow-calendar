@@ -1,9 +1,8 @@
 package com.taskflow.calendar.domain.project.dto;
 
 import com.taskflow.calendar.domain.project.Project;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
+import lombok.Getter;
 
 @Getter
 public class ProjectResponse {

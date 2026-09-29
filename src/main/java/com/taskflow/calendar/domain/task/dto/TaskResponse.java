@@ -1,13 +1,12 @@
 package com.taskflow.calendar.domain.task.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.summary.TaskSyncState;
+import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
 import java.util.Objects;
+import lombok.Getter;
 
 /**
  * Task 조회 응답 DTO
@@ -46,12 +45,21 @@ public class TaskResponse {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private final LocalDateTime updatedAt;
 
-    private TaskResponse(Long id, Long projectId, String title, String description,
-                         TaskStatus status, Long assigneeUserId, String assigneeName,
-                         LocalDateTime startAt, LocalDateTime dueAt,
-                         Boolean calendarSyncEnabled, String calendarEventId,
-                         TaskSyncState syncState,
-                         LocalDateTime createdAt, LocalDateTime updatedAt) {
+    private TaskResponse(
+            Long id,
+            Long projectId,
+            String title,
+            String description,
+            TaskStatus status,
+            Long assigneeUserId,
+            String assigneeName,
+            LocalDateTime startAt,
+            LocalDateTime dueAt,
+            Boolean calendarSyncEnabled,
+            String calendarEventId,
+            TaskSyncState syncState,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt) {
         this.id = id;
         this.projectId = projectId;
         this.title = title;
@@ -93,7 +101,6 @@ public class TaskResponse {
                 task.getCalendarEventId(),
                 syncState,
                 task.getCreatedAt(),
-                task.getUpdatedAt()
-        );
+                task.getUpdatedAt());
     }
 }

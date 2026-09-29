@@ -16,15 +16,10 @@ import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import com.taskflow.config.GeminiRecommendationProperties;
-import com.taskflow.security.SecurityContextHelper;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.taskflow.config.GeminiRecommendationProperties;
+import com.taskflow.security.SecurityContextHelper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -37,6 +32,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -60,9 +59,11 @@ public class ProjectTaskRecommendationService {
 
     public ProjectTaskRecommendationResponse getRecommendations(Long projectId) {
         Long userId = SecurityContextHelper.getCurrentUserId();
-        Project project = projectRepository.findByIdAndOwnerUserId(projectId, userId)
+        Project project = projectRepository
+                .findByIdAndOwnerUserId(projectId, userId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
-        boolean demo = userRepository.findById(userId)
+        boolean demo = userRepository
+                .findById(userId)
                 .map(user -> user.getProvider() == Provider.DEMO)
                 .orElse(false);
 
@@ -79,21 +80,17 @@ public class ProjectTaskRecommendationService {
                     demo ? TaskRecommendationCacheStatus.DEMO_LOCAL : TaskRecommendationCacheStatus.LIVE,
                     0,
                     0,
-                    List.of()
-            );
+                    List.of());
         }
 
         List<SummaryTaskSnapshot> prioritizedSnapshots = taskSyncStateResolver.resolveAll(eligibleTasks).stream()
                 .sorted(candidateComparator(today))
                 .collect(Collectors.toList());
 
-        int recommendationCount = Math.min(
-                MAX_RECOMMENDATION_COUNT,
-                Math.max(1, (int) Math.ceil(prioritizedSnapshots.size() * 0.3d))
-        );
-        List<SummaryTaskSnapshot> candidates = prioritizedSnapshots.stream()
-                .limit(MAX_CANDIDATE_COUNT)
-                .collect(Collectors.toList());
+        int recommendationCount =
+                Math.min(MAX_RECOMMENDATION_COUNT, Math.max(1, (int) Math.ceil(prioritizedSnapshots.size() * 0.3d)));
+        List<SummaryTaskSnapshot> candidates =
+                prioritizedSnapshots.stream().limit(MAX_CANDIDATE_COUNT).collect(Collectors.toList());
 
         if (demo) {
             List<TaskRecommendationItemResult> localItems = candidates.stream()
@@ -110,7 +107,8 @@ public class ProjectTaskRecommendationService {
 
         String cacheKey = cacheKey(project, candidates, recommendationCount, geminiProperties.getModel());
         if (taskRecommendationCacheService.isEnabled()) {
-            ProjectTaskRecommendationResponse cached = taskRecommendationCacheService.find(cacheKey)
+            ProjectTaskRecommendationResponse cached = taskRecommendationCacheService
+                    .find(cacheKey)
                     .map(response -> response.withCacheStatus(TaskRecommendationCacheStatus.CACHE_HIT))
                     .orElse(null);
             if (cached != null) {
@@ -118,19 +116,10 @@ public class ProjectTaskRecommendationService {
             }
         }
 
-        TaskRecommendationGenerationResult generated = taskRecommendationGenerator.generate(
-                project,
-                candidates,
-                recommendationCount,
-                today
-        );
-        ProjectTaskRecommendationResponse response = buildResponse(
-                project,
-                generatedAt,
-                prioritizedSnapshots.size(),
-                candidates,
-                generated.getItems()
-        );
+        TaskRecommendationGenerationResult generated =
+                taskRecommendationGenerator.generate(project, candidates, recommendationCount, today);
+        ProjectTaskRecommendationResponse response =
+                buildResponse(project, generatedAt, prioritizedSnapshots.size(), candidates, generated.getItems());
 
         if (taskRecommendationCacheService.isEnabled()) {
             taskRecommendationCacheService.save(cacheKey, response);
@@ -139,11 +128,12 @@ public class ProjectTaskRecommendationService {
         return response;
     }
 
-    private ProjectTaskRecommendationResponse buildResponse(Project project,
-                                                            LocalDateTime generatedAt,
-                                                            int totalEligibleTaskCount,
-                                                            List<SummaryTaskSnapshot> candidates,
-                                                            List<TaskRecommendationItemResult> generatedItems) {
+    private ProjectTaskRecommendationResponse buildResponse(
+            Project project,
+            LocalDateTime generatedAt,
+            int totalEligibleTaskCount,
+            List<SummaryTaskSnapshot> candidates,
+            List<TaskRecommendationItemResult> generatedItems) {
         Map<Long, SummaryTaskSnapshot> candidateMap = new LinkedHashMap<>();
         Map<Long, Integer> candidateScoreMap = new LinkedHashMap<>();
         LocalDate today = LocalDate.now();
@@ -174,8 +164,7 @@ public class ProjectTaskRecommendationService {
                     snapshot.getSyncState(),
                     generatedItem.getPrimaryTag(),
                     generatedItem.getSecondaryTag(),
-                    generatedItem.getReason()
-            ));
+                    generatedItem.getReason()));
         }
 
         return ProjectTaskRecommendationResponse.of(
@@ -184,16 +173,16 @@ public class ProjectTaskRecommendationService {
                 TaskRecommendationCacheStatus.LIVE,
                 totalEligibleTaskCount,
                 candidates.size(),
-                items
-        );
+                items);
     }
 
     private Comparator<SummaryTaskSnapshot> candidateComparator(LocalDate today) {
-        return Comparator
-                .comparingInt((SummaryTaskSnapshot snapshot) -> candidateScore(snapshot, today))
+        return Comparator.comparingInt((SummaryTaskSnapshot snapshot) -> candidateScore(snapshot, today))
                 .reversed()
-                .thenComparing(snapshot -> snapshot.getTask().getDueAt(), Comparator.nullsLast(Comparator.naturalOrder()))
-                .thenComparing(snapshot -> snapshot.getTask().getUpdatedAt(), Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(
+                        snapshot -> snapshot.getTask().getDueAt(), Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(
+                        snapshot -> snapshot.getTask().getUpdatedAt(), Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(snapshot -> snapshot.getTask().getId(), Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
@@ -294,10 +283,8 @@ public class ProjectTaskRecommendationService {
         return score;
     }
 
-    private String cacheKey(Project project,
-                            List<SummaryTaskSnapshot> candidates,
-                            int recommendationCount,
-                            String modelName) {
+    private String cacheKey(
+            Project project, List<SummaryTaskSnapshot> candidates, int recommendationCount, String modelName) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             updateDigest(digest, project.getId());

@@ -1,31 +1,36 @@
 package com.taskflow.calendar.domain.user;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.BusinessException;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
 @ExtendWith(MockitoExtension.class)
 class DemoUsageServiceTest {
 
-    @Mock UserRepository userRepository;
-    @Mock ProjectRepository projectRepository;
-    @Mock TaskRepository taskRepository;
+    @Mock
+    UserRepository userRepository;
+
+    @Mock
+    ProjectRepository projectRepository;
+
+    @Mock
+    TaskRepository taskRepository;
+
     DemoUsageService service;
 
     @BeforeEach
@@ -49,8 +54,7 @@ class DemoUsageServiceTest {
         User user = demoUser(10);
         given(taskRepository.countByProject_OwnerUserId(1L)).willReturn(100L);
 
-        BusinessException error = assertThrows(BusinessException.class,
-                () -> service.beforeTaskCreate(1L));
+        BusinessException error = assertThrows(BusinessException.class, () -> service.beforeTaskCreate(1L));
 
         assertEquals(ErrorCode.DEMO_RESOURCE_LIMIT, error.getErrorCode());
         verify(user, never()).incrementDemoMutationCount();
@@ -60,8 +64,7 @@ class DemoUsageServiceTest {
     void mutationLimitIsCheckedWhileUserRowIsLocked() {
         User user = demoUser(500);
 
-        BusinessException error = assertThrows(BusinessException.class,
-                () -> service.beforeMutation(1L));
+        BusinessException error = assertThrows(BusinessException.class, () -> service.beforeMutation(1L));
 
         assertEquals(ErrorCode.DEMO_MUTATION_LIMIT, error.getErrorCode());
         verify(user, never()).incrementDemoMutationCount();

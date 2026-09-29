@@ -2,7 +2,6 @@ package com.taskflow.calendar.domain.summary.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 public class WeeklySummarySectionResponse {
@@ -16,13 +15,14 @@ public class WeeklySummarySectionResponse {
     private final String model;
 
     @JsonCreator
-    private WeeklySummarySectionResponse(@JsonProperty("totalTaskCount") int totalTaskCount,
-                                         @JsonProperty("includedTaskCount") int includedTaskCount,
-                                         @JsonProperty("summary") String summary,
-                                         @JsonProperty("highlights") List<String> highlights,
-                                         @JsonProperty("risks") List<String> risks,
-                                         @JsonProperty("nextActions") List<String> nextActions,
-                                         @JsonProperty("model") String model) {
+    private WeeklySummarySectionResponse(
+            @JsonProperty("totalTaskCount") int totalTaskCount,
+            @JsonProperty("includedTaskCount") int includedTaskCount,
+            @JsonProperty("summary") String summary,
+            @JsonProperty("highlights") List<String> highlights,
+            @JsonProperty("risks") List<String> risks,
+            @JsonProperty("nextActions") List<String> nextActions,
+            @JsonProperty("model") String model) {
         this.totalTaskCount = totalTaskCount;
         this.includedTaskCount = includedTaskCount;
         this.summary = summary;
@@ -32,9 +32,8 @@ public class WeeklySummarySectionResponse {
         this.model = model;
     }
 
-    public static WeeklySummarySectionResponse of(int totalTaskCount,
-                                                  int includedTaskCount,
-                                                  WeeklySummaryResult result) {
+    public static WeeklySummarySectionResponse of(
+            int totalTaskCount, int includedTaskCount, WeeklySummaryResult result) {
         return new WeeklySummarySectionResponse(
                 totalTaskCount,
                 includedTaskCount,
@@ -42,8 +41,7 @@ public class WeeklySummarySectionResponse {
                 result.getHighlights(),
                 result.getRisks(),
                 result.getNextActions(),
-                result.getModel()
-        );
+                result.getModel());
     }
 
     public int getTotalTaskCount() {

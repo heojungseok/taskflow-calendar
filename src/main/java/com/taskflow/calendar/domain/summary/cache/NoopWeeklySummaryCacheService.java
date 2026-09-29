@@ -1,8 +1,7 @@
 package com.taskflow.calendar.domain.summary.cache;
 
-import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheHealthResponse;
-
+import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import java.util.Optional;
 
 public class NoopWeeklySummaryCacheService implements WeeklySummaryCacheService {

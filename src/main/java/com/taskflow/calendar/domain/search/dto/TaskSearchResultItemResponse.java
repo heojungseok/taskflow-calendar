@@ -3,9 +3,8 @@ package com.taskflow.calendar.domain.search.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.taskflow.calendar.domain.summary.TaskSyncState;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
+import lombok.Getter;
 
 @Getter
 public class TaskSearchResultItemResponse {
@@ -24,16 +23,17 @@ public class TaskSearchResultItemResponse {
     private final TaskSyncState syncState;
     private final int score;
 
-    private TaskSearchResultItemResponse(Long taskId,
-                                         Long projectId,
-                                         String projectName,
-                                         String title,
-                                         TaskStatus status,
-                                         LocalDateTime dueAt,
-                                         Boolean calendarSyncEnabled,
-                                         String calendarEventId,
-                                         TaskSyncState syncState,
-                                         int score) {
+    private TaskSearchResultItemResponse(
+            Long taskId,
+            Long projectId,
+            String projectName,
+            String title,
+            TaskStatus status,
+            LocalDateTime dueAt,
+            Boolean calendarSyncEnabled,
+            String calendarEventId,
+            TaskSyncState syncState,
+            int score) {
         this.taskId = taskId;
         this.projectId = projectId;
         this.projectName = projectName;
@@ -46,16 +46,17 @@ public class TaskSearchResultItemResponse {
         this.score = score;
     }
 
-    public static TaskSearchResultItemResponse of(Long taskId,
-                                                  Long projectId,
-                                                  String projectName,
-                                                  String title,
-                                                  TaskStatus status,
-                                                  LocalDateTime dueAt,
-                                                  Boolean calendarSyncEnabled,
-                                                  String calendarEventId,
-                                                  TaskSyncState syncState,
-                                                  int score) {
+    public static TaskSearchResultItemResponse of(
+            Long taskId,
+            Long projectId,
+            String projectName,
+            String title,
+            TaskStatus status,
+            LocalDateTime dueAt,
+            Boolean calendarSyncEnabled,
+            String calendarEventId,
+            TaskSyncState syncState,
+            int score) {
         return new TaskSearchResultItemResponse(
                 taskId,
                 projectId,
@@ -66,7 +67,6 @@ public class TaskSearchResultItemResponse {
                 calendarSyncEnabled,
                 calendarEventId,
                 syncState,
-                score
-        );
+                score);
     }
 }

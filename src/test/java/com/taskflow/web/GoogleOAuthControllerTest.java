@@ -1,29 +1,8 @@
 package com.taskflow.web;
 
-import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
-import com.taskflow.calendar.domain.oauth.OAuthStateStore;
-import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
-import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
-import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
-import com.taskflow.calendar.domain.user.Provider;
-import com.taskflow.calendar.domain.user.User;
-import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.config.GoogleOAuthProperties;
-import com.taskflow.config.SecurityConfig;
-import com.taskflow.security.JwtTokenProvider;
-import com.taskflow.web.dto.auth.AuthSession;
-import jakarta.servlet.http.Cookie;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.Instant;
-import java.util.Optional;
-
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.CONSENT_RETRY;
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.NORMAL;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -31,9 +10,6 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.assertj.core.api.Assertions.assertThat;
-import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.CONSENT_RETRY;
-import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.NORMAL;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -42,6 +18,29 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
+import com.taskflow.calendar.domain.oauth.OAuthStateStore;
+import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
+import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
+import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.User;
+import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.config.GoogleOAuthProperties;
+import com.taskflow.config.SecurityConfig;
+import com.taskflow.security.JwtTokenProvider;
+import com.taskflow.web.dto.auth.AuthSession;
+import jakarta.servlet.http.Cookie;
+import java.time.Instant;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
 @WebMvcTest(GoogleOAuthController.class)
 @Import({SecurityConfig.class, SessionCookieService.class})
 @TestPropertySource(properties = "app.frontend.base-url=http://frontend.test")
@@ -49,12 +48,23 @@ class GoogleOAuthControllerTest {
 
     private static final String TOKEN = "session-token";
 
-    @Autowired MockMvc mvc;
-    @MockitoBean GoogleOAuthProperties properties;
-    @MockitoBean GoogleOAuthService googleOAuthService;
-    @MockitoBean OAuthStateStore stateStore;
-    @MockitoBean JwtTokenProvider jwtTokenProvider;
-    @MockitoBean UserRepository userRepository;
+    @Autowired
+    MockMvc mvc;
+
+    @MockitoBean
+    GoogleOAuthProperties properties;
+
+    @MockitoBean
+    GoogleOAuthService googleOAuthService;
+
+    @MockitoBean
+    OAuthStateStore stateStore;
+
+    @MockitoBean
+    JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    UserRepository userRepository;
 
     @Test
     void authorizeBindsStateToHttpOnlyCallbackCookie() throws Exception {
@@ -71,8 +81,7 @@ class GoogleOAuthControllerTest {
                                 org.hamcrest.Matchers.containsString("calendar.events.owned"),
                                 org.hamcrest.Matchers.containsString("access_type=offline"),
                                 org.hamcrest.Matchers.containsString("include_granted_scopes=true"),
-                                org.hamcrest.Matchers.not(
-                                        org.hamcrest.Matchers.containsString("prompt=consent")))));
+                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("prompt=consent")))));
     }
 
     @Test
@@ -83,27 +92,26 @@ class GoogleOAuthControllerTest {
         mvc.perform(get("/api/oauth/google/reconsent"))
                 .andExpect(status().isOk())
                 .andExpect(cookie().value("OAUTH_STATE", "retry-state"))
-                .andExpect(jsonPath("$.data.authorizeUrl")
-                        .value(org.hamcrest.Matchers.containsString("prompt=consent")));
+                .andExpect(
+                        jsonPath("$.data.authorizeUrl").value(org.hamcrest.Matchers.containsString("prompt=consent")));
     }
 
     @Test
     void authorizeRejectsWhenStateStoreIsFull() throws Exception {
         given(stateStore.generateState(NORMAL)).willThrow(new IllegalStateException("full"));
 
-        mvc.perform(get("/api/oauth/google/authorize"))
-                .andExpect(status().isServiceUnavailable());
+        mvc.perform(get("/api/oauth/google/authorize")).andExpect(status().isServiceUnavailable());
     }
 
     @Test
     void callbackRequiresMatchingCookieAndNeverRedirectsWithToken() throws Exception {
-        GoogleOAuthResult result = new GoogleOAuthResult(
-                "user@example.test", "User", "access", "refresh", 3600L, "scope");
+        GoogleOAuthResult result =
+                new GoogleOAuthResult("user@example.test", "User", "access", "refresh", 3600L, "scope");
         Instant expiresAt = Instant.now().plusSeconds(3600);
         given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
         given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
-        given(googleOAuthService.loginOrRegister(result)).willReturn(
-                new AuthSession("secret-jwt", 1L, Provider.GOOGLE, expiresAt));
+        given(googleOAuthService.loginOrRegister(result))
+                .willReturn(new AuthSession("secret-jwt", 1L, Provider.GOOGLE, expiresAt));
 
         mvc.perform(get("/api/oauth/google/callback")
                         .param("state", "same")
@@ -148,8 +156,8 @@ class GoogleOAuthControllerTest {
 
     @Test
     void missingCalendarPermissionUsesSpecificError() throws Exception {
-        GoogleOAuthResult result = new GoogleOAuthResult(
-                "user@example.test", "User", "access", "refresh", 3600L, "openid");
+        GoogleOAuthResult result =
+                new GoogleOAuthResult("user@example.test", "User", "access", "refresh", 3600L, "openid");
         given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
         given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
         given(googleOAuthService.loginOrRegister(result))
@@ -160,8 +168,8 @@ class GoogleOAuthControllerTest {
                         .param("code", "code")
                         .cookie(new Cookie("OAUTH_STATE", "same")))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location",
-                        "http://frontend.test/oauth/callback?error=calendar_permission_required"))
+                .andExpect(header().string(
+                                "Location", "http://frontend.test/oauth/callback?error=calendar_permission_required"))
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
     }
 
@@ -179,8 +187,7 @@ class GoogleOAuthControllerTest {
                         .param("code", "code")
                         .cookie(new Cookie("OAUTH_STATE", "same")))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location",
-                        org.hamcrest.Matchers.containsString("prompt=consent")))
+                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("prompt=consent")))
                 .andExpect(resultMatcher -> {
                     var cookies = resultMatcher.getResponse().getHeaders("Set-Cookie");
                     assertThat(cookies.get(cookies.size() - 1))
@@ -201,8 +208,8 @@ class GoogleOAuthControllerTest {
                         .param("code", "code")
                         .cookie(new Cookie("OAUTH_STATE", "same")))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location",
-                        "http://frontend.test/oauth/callback?error=refresh_token_unavailable"))
+                .andExpect(header().string(
+                                "Location", "http://frontend.test/oauth/callback?error=refresh_token_unavailable"))
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
 
         verify(stateStore, never()).generateState(any());
@@ -212,7 +219,8 @@ class GoogleOAuthControllerTest {
     void disconnectFailureStillClearsSessionCookie() throws Exception {
         stubAuthenticatedUser();
         willThrow(new IllegalStateException("disconnect failed"))
-                .given(googleOAuthService).disconnect(7L);
+                .given(googleOAuthService)
+                .disconnect(7L);
 
         mvc.perform(post("/api/oauth/google/disconnect")
                         .with(csrf())
@@ -258,7 +266,11 @@ class GoogleOAuthControllerTest {
 
     private GoogleOAuthResult oauthResult() {
         return new GoogleOAuthResult(
-                "user@example.test", "User", "access", null, 3600L,
+                "user@example.test",
+                "User",
+                "access",
+                null,
+                3600L,
                 "openid https://www.googleapis.com/auth/calendar.events.owned");
     }
 
@@ -266,7 +278,6 @@ class GoogleOAuthControllerTest {
         given(properties.getAuthorizationUri()).willReturn("https://accounts.google.test/o/oauth2/auth");
         given(properties.getClientId()).willReturn("client-id");
         given(properties.getRedirectUri()).willReturn("http://backend.test/api/oauth/google/callback");
-        given(properties.getScope()).willReturn(
-                "openid https://www.googleapis.com/auth/calendar.events.owned");
+        given(properties.getScope()).willReturn("openid https://www.googleapis.com/auth/calendar.events.owned");
     }
 }

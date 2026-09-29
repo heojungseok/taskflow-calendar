@@ -3,7 +3,6 @@ package com.taskflow.calendar.domain.recommendation.generator;
 import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
 import com.taskflow.calendar.domain.summary.generator.SummaryPromptTaskSupport;
 import com.taskflow.calendar.domain.task.Task;
-
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,7 +31,12 @@ public final class RecommendationPromptTaskSupport {
         if (snapshot.getSyncState() != null) {
             payload.put("sync", snapshot.getSyncState().name());
         }
-        putIfPresent(payload, "outbox", snapshot.getLatestOutboxStatus() != null ? snapshot.getLatestOutboxStatus().name() : null);
+        putIfPresent(
+                payload,
+                "outbox",
+                snapshot.getLatestOutboxStatus() != null
+                        ? snapshot.getLatestOutboxStatus().name()
+                        : null);
         putIfPresent(payload, "desc", summarySupport.compressDescription(task));
 
         List<String> descSignals = summarySupport.descriptionSignals(task.getDescription());

@@ -1,14 +1,13 @@
 package com.taskflow.calendar.integration.googlecalendar;
 
-import com.google.api.client.util.DateTime;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.api.client.util.DateTime;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.TimeZone;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class GoogleCalendarClientImplTest {
 
@@ -19,8 +18,8 @@ class GoogleCalendarClientImplTest {
         try {
             GoogleCalendarClientImpl client = new GoogleCalendarClientImpl(null, null);
 
-            DateTime converted = ReflectionTestUtils.invokeMethod(
-                    client, "toDateTime", LocalDateTime.of(2026, 8, 20, 19, 5));
+            DateTime converted =
+                    ReflectionTestUtils.invokeMethod(client, "toDateTime", LocalDateTime.of(2026, 8, 20, 19, 5));
 
             assertThat(converted).isNotNull();
             assertThat(converted.getValue())

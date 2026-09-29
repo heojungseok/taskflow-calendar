@@ -9,5 +9,4 @@ import java.util.Map;
  * 임베딩 API가 429를 뱉는 경로는 벡터 스토어를 건드리지 않으므로,
  * 스토어에 물으면 "정상"이라고 답한다.
  */
-public record SemanticSearchResult(Map<Long, Double> similarities, SemanticSearchStatus status) {
-}
+public record SemanticSearchResult(Map<Long, Double> similarities, SemanticSearchStatus status) {}

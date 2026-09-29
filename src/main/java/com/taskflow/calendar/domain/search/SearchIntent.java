@@ -1,7 +1,6 @@
 package com.taskflow.calendar.domain.search;
 
 import com.taskflow.calendar.domain.task.TaskStatus;
-
 import java.util.List;
 import java.util.Map;
 
@@ -26,24 +25,25 @@ public class SearchIntent {
     private final Map<String, Double> fieldConfidence;
     private final List<String> suggestedQueries;
 
-    private SearchIntent(String rawQuery,
-                         SearchQueryType queryType,
-                         SearchTargetType targetType,
-                         SearchDomainType domainType,
-                         SearchActionIntent mainAction,
-                         List<SearchActionIntent> secondaryActions,
-                         List<String> topicTerms,
-                         List<String> participantTerms,
-                         List<String> locationTerms,
-                         boolean genericCompanionRequired,
-                         SearchTimeIntent timeIntent,
-                         SearchPriorityIntent priorityIntent,
-                         List<TaskStatus> statusIntents,
-                         SearchSyncIntent syncIntent,
-                         SearchRelationPolicy relationPolicy,
-                         double overallConfidence,
-                         Map<String, Double> fieldConfidence,
-                         List<String> suggestedQueries) {
+    private SearchIntent(
+            String rawQuery,
+            SearchQueryType queryType,
+            SearchTargetType targetType,
+            SearchDomainType domainType,
+            SearchActionIntent mainAction,
+            List<SearchActionIntent> secondaryActions,
+            List<String> topicTerms,
+            List<String> participantTerms,
+            List<String> locationTerms,
+            boolean genericCompanionRequired,
+            SearchTimeIntent timeIntent,
+            SearchPriorityIntent priorityIntent,
+            List<TaskStatus> statusIntents,
+            SearchSyncIntent syncIntent,
+            SearchRelationPolicy relationPolicy,
+            double overallConfidence,
+            Map<String, Double> fieldConfidence,
+            List<String> suggestedQueries) {
         this.rawQuery = rawQuery;
         this.queryType = queryType;
         this.targetType = targetType;
@@ -64,24 +64,25 @@ public class SearchIntent {
         this.suggestedQueries = List.copyOf(suggestedQueries);
     }
 
-    public static SearchIntent of(String rawQuery,
-                                  SearchQueryType queryType,
-                                  SearchTargetType targetType,
-                                  SearchDomainType domainType,
-                                  SearchActionIntent mainAction,
-                                  List<SearchActionIntent> secondaryActions,
-                                  List<String> topicTerms,
-                                  List<String> participantTerms,
-                                  List<String> locationTerms,
-                                  boolean genericCompanionRequired,
-                                  SearchTimeIntent timeIntent,
-                                  SearchPriorityIntent priorityIntent,
-                                  List<TaskStatus> statusIntents,
-                                  SearchSyncIntent syncIntent,
-                                  SearchRelationPolicy relationPolicy,
-                                  double overallConfidence,
-                                  Map<String, Double> fieldConfidence,
-                                  List<String> suggestedQueries) {
+    public static SearchIntent of(
+            String rawQuery,
+            SearchQueryType queryType,
+            SearchTargetType targetType,
+            SearchDomainType domainType,
+            SearchActionIntent mainAction,
+            List<SearchActionIntent> secondaryActions,
+            List<String> topicTerms,
+            List<String> participantTerms,
+            List<String> locationTerms,
+            boolean genericCompanionRequired,
+            SearchTimeIntent timeIntent,
+            SearchPriorityIntent priorityIntent,
+            List<TaskStatus> statusIntents,
+            SearchSyncIntent syncIntent,
+            SearchRelationPolicy relationPolicy,
+            double overallConfidence,
+            Map<String, Double> fieldConfidence,
+            List<String> suggestedQueries) {
         return new SearchIntent(
                 rawQuery,
                 queryType,
@@ -100,27 +101,27 @@ public class SearchIntent {
                 relationPolicy,
                 overallConfidence,
                 fieldConfidence,
-                suggestedQueries
-        );
+                suggestedQueries);
     }
 
-    public static SearchIntent of(String rawQuery,
-                                  SearchQueryType queryType,
-                                  SearchTargetType targetType,
-                                  SearchDomainType domainType,
-                                  SearchActionIntent mainAction,
-                                  List<SearchActionIntent> secondaryActions,
-                                  List<String> topicTerms,
-                                  List<String> participantTerms,
-                                  List<String> locationTerms,
-                                  SearchTimeIntent timeIntent,
-                                  SearchPriorityIntent priorityIntent,
-                                  List<TaskStatus> statusIntents,
-                                  SearchSyncIntent syncIntent,
-                                  SearchRelationPolicy relationPolicy,
-                                  double overallConfidence,
-                                  Map<String, Double> fieldConfidence,
-                                  List<String> suggestedQueries) {
+    public static SearchIntent of(
+            String rawQuery,
+            SearchQueryType queryType,
+            SearchTargetType targetType,
+            SearchDomainType domainType,
+            SearchActionIntent mainAction,
+            List<SearchActionIntent> secondaryActions,
+            List<String> topicTerms,
+            List<String> participantTerms,
+            List<String> locationTerms,
+            SearchTimeIntent timeIntent,
+            SearchPriorityIntent priorityIntent,
+            List<TaskStatus> statusIntents,
+            SearchSyncIntent syncIntent,
+            SearchRelationPolicy relationPolicy,
+            double overallConfidence,
+            Map<String, Double> fieldConfidence,
+            List<String> suggestedQueries) {
         return of(
                 rawQuery,
                 queryType,
@@ -139,8 +140,7 @@ public class SearchIntent {
                 relationPolicy,
                 overallConfidence,
                 fieldConfidence,
-                suggestedQueries
-        );
+                suggestedQueries);
     }
 
     public String getRawQuery() {

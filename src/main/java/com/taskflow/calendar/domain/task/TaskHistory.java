@@ -1,15 +1,14 @@
 package com.taskflow.calendar.domain.task;
 
 import com.taskflow.calendar.domain.user.User;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "task_history")
@@ -46,12 +45,7 @@ public class TaskHistory {
 
     @Builder
     private TaskHistory(
-            Task task,
-            User changedByUser,
-            TaskChangeType changeType,
-            String beforeValue,
-            String afterValue
-    ) {
+            Task task, User changedByUser, TaskChangeType changeType, String beforeValue, String afterValue) {
         this.task = task;
         this.changedByUser = changedByUser;
         this.changeType = changeType;
@@ -61,12 +55,7 @@ public class TaskHistory {
 
     // Static factory method (Builder 대신 사용 가능)
     public static TaskHistory of(
-            Task task,
-            User changedByUser,
-            TaskChangeType changeType,
-            String beforeValue,
-            String afterValue
-    ) {
+            Task task, User changedByUser, TaskChangeType changeType, String beforeValue, String afterValue) {
         return TaskHistory.builder()
                 .task(task)
                 .changedByUser(changedByUser)

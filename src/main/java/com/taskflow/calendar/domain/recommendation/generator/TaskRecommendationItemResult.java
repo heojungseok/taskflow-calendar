@@ -7,20 +7,14 @@ public class TaskRecommendationItemResult {
     private final String secondaryTag;
     private final String reason;
 
-    private TaskRecommendationItemResult(Long taskId,
-                                         String primaryTag,
-                                         String secondaryTag,
-                                         String reason) {
+    private TaskRecommendationItemResult(Long taskId, String primaryTag, String secondaryTag, String reason) {
         this.taskId = taskId;
         this.primaryTag = primaryTag;
         this.secondaryTag = secondaryTag;
         this.reason = reason;
     }
 
-    public static TaskRecommendationItemResult of(Long taskId,
-                                                  String primaryTag,
-                                                  String secondaryTag,
-                                                  String reason) {
+    public static TaskRecommendationItemResult of(Long taskId, String primaryTag, String secondaryTag, String reason) {
         return new TaskRecommendationItemResult(taskId, primaryTag, secondaryTag, reason);
     }
 

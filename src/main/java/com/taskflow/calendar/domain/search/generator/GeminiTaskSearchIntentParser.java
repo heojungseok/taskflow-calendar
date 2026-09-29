@@ -8,11 +8,6 @@ import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.config.GeminiSearchProperties;
 import com.taskflow.observability.TaskFlowMetrics;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,6 +16,10 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -32,22 +31,8 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
     private static final int MAX_PARTICIPANT_TERMS = 4;
     private static final int MAX_LOCATION_TERMS = 4;
     private static final int MAX_SUGGESTED_QUERIES = 3;
-    private static final Set<String> TOPIC_STOPWORDS = Set.of(
-            "일정",
-            "작업",
-            "업무",
-            "할일",
-            "할 일",
-            "것"
-    );
-    private static final Set<String> LEISURE_TERMS = Set.of(
-            "놀기",
-            "놀이",
-            "놀",
-            "나들이",
-            "여가",
-            "데이트"
-    );
+    private static final Set<String> TOPIC_STOPWORDS = Set.of("일정", "작업", "업무", "할일", "할 일", "것");
+    private static final Set<String> LEISURE_TERMS = Set.of("놀기", "놀이", "놀", "나들이", "여가", "데이트");
 
     private final GeminiSearchProperties properties;
     private final ObjectMapper objectMapper;
@@ -63,8 +48,8 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
     private SearchIntent parseUnobserved(String query) {
         validateConfiguration();
 
-        String endpoint = properties.getBaseUrl().replaceAll("/$", "")
-                + "/models/" + properties.getModel() + ":generateContent";
+        String endpoint =
+                properties.getBaseUrl().replaceAll("/$", "") + "/models/" + properties.getModel() + ":generateContent";
         String requestBody = buildRequestBody(query);
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint))
@@ -76,7 +61,8 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
 
         long startedAt = System.currentTimeMillis();
         try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response =
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             long latencyMs = System.currentTimeMillis() - startedAt;
             if (response.statusCode() >= 400) {
                 throw classifyUpstreamFailure(response.statusCode(), response.body(), latencyMs);
@@ -86,9 +72,7 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
             JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
             if (textNode.isMissingNode() || textNode.asText().isBlank()) {
                 throw new TaskSearchGenerationException(
-                        ErrorCode.LLM_INVALID_RESPONSE,
-                        "Gemini search intent response did not contain text"
-                );
+                        ErrorCode.LLM_INVALID_RESPONSE, "Gemini search intent response did not contain text");
             }
 
             JsonNode payload;
@@ -96,12 +80,11 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
                 payload = objectMapper.readTree(textNode.asText());
             } catch (IOException e) {
                 throw new TaskSearchGenerationException(
-                        ErrorCode.LLM_INVALID_RESPONSE,
-                        "Gemini search intent payload was not valid JSON"
-                );
+                        ErrorCode.LLM_INVALID_RESPONSE, "Gemini search intent payload was not valid JSON");
             }
 
-            log.info("Gemini search intent parsed. model={}, latencyMs={}, requestBodyLength={}",
+            log.info(
+                    "Gemini search intent parsed. model={}, latencyMs={}, requestBodyLength={}",
                     properties.getModel(),
                     latencyMs,
                     requestBody.length());
@@ -110,23 +93,17 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TaskSearchGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Gemini search intent request was interrupted"
-            );
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini search intent request was interrupted");
         } catch (IOException e) {
             throw new TaskSearchGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Gemini search intent request failed: " + e.getMessage()
-            );
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini search intent request failed: " + e.getMessage());
         }
     }
 
     private void validateConfiguration() {
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
             throw new TaskSearchGenerationException(
-                    ErrorCode.LLM_API_KEY_MISSING,
-                    "GEMINI_SEARCH_API_KEY is not configured"
-            );
+                    ErrorCode.LLM_API_KEY_MISSING, "GEMINI_SEARCH_API_KEY is not configured");
         }
     }
 
@@ -209,10 +186,21 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
         domainTypeField.put("enum", List.of("work", "personal", "life", "mixed", "unknown"));
 
         Map<String, Object> actionItemField = new LinkedHashMap<>(enumField);
-        actionItemField.put("enum", List.of("prepare", "submit", "buy", "visit", "meet", "organize", "fix", "check", "unknown"));
+        actionItemField.put(
+                "enum", List.of("prepare", "submit", "buy", "visit", "meet", "organize", "fix", "check", "unknown"));
 
         Map<String, Object> timeIntentField = new LinkedHashMap<>(enumField);
-        timeIntentField.put("enum", List.of("today", "this_week", "this_month", "upcoming", "recent", "overdue", "deferred", "unspecified"));
+        timeIntentField.put(
+                "enum",
+                List.of(
+                        "today",
+                        "this_week",
+                        "this_month",
+                        "upcoming",
+                        "recent",
+                        "overdue",
+                        "deferred",
+                        "unspecified"));
 
         Map<String, Object> priorityIntentField = new LinkedHashMap<>(enumField);
         priorityIntentField.put("enum", List.of("urgent", "important", "must_do", "deferred", "none"));
@@ -277,45 +265,56 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
         schema.put("properties", properties);
-        schema.put("required", List.of(
-                "targetType",
-                "queryType",
-                "domainType",
-                "mainAction",
-                "secondaryActions",
-                "topicTerms",
-                "participantTerms",
-                "locationTerms",
-                "genericCompanionRequired",
-                "timeIntent",
-                "priorityIntent",
-                "statusIntents",
-                "syncIntent",
-                "relationPolicy",
-                "overallConfidence",
-                "fieldConfidence",
-                "suggestedQueries"
-        ));
+        schema.put(
+                "required",
+                List.of(
+                        "targetType",
+                        "queryType",
+                        "domainType",
+                        "mainAction",
+                        "secondaryActions",
+                        "topicTerms",
+                        "participantTerms",
+                        "locationTerms",
+                        "genericCompanionRequired",
+                        "timeIntent",
+                        "priorityIntent",
+                        "statusIntents",
+                        "syncIntent",
+                        "relationPolicy",
+                        "overallConfidence",
+                        "fieldConfidence",
+                        "suggestedQueries"));
         schema.put("additionalProperties", false);
         return schema;
     }
 
     private SearchIntent normalize(String rawQuery, JsonNode payload) {
-        SearchQueryType queryType = SearchQueryType.fromValue(payload.path("queryType").asText("TOPIC_SEARCH"));
-        SearchTargetType targetType = SearchTargetType.fromValue(payload.path("targetType").asText());
-        SearchDomainType domainType = SearchDomainType.fromValue(payload.path("domainType").asText());
-        SearchActionIntent mainAction = SearchActionIntent.fromValue(payload.path("mainAction").asText());
+        SearchQueryType queryType =
+                SearchQueryType.fromValue(payload.path("queryType").asText("TOPIC_SEARCH"));
+        SearchTargetType targetType =
+                SearchTargetType.fromValue(payload.path("targetType").asText());
+        SearchDomainType domainType =
+                SearchDomainType.fromValue(payload.path("domainType").asText());
+        SearchActionIntent mainAction =
+                SearchActionIntent.fromValue(payload.path("mainAction").asText());
         List<SearchActionIntent> secondaryActions = normalizeActionIntents(payload.path("secondaryActions"));
         List<String> topicTerms = normalizeTopicTerms(payload.path("topicTerms"));
         List<String> participantTerms = normalizeTerms(payload.path("participantTerms"), MAX_PARTICIPANT_TERMS);
         List<String> locationTerms = normalizeTerms(payload.path("locationTerms"), MAX_LOCATION_TERMS);
-        boolean genericCompanionRequired = payload.path("genericCompanionRequired").asBoolean(false);
-        SearchTimeIntent timeIntent = SearchTimeIntent.fromValue(payload.path("timeIntent").asText());
-        SearchPriorityIntent priorityIntent = SearchPriorityIntent.fromValue(payload.path("priorityIntent").asText());
+        boolean genericCompanionRequired =
+                payload.path("genericCompanionRequired").asBoolean(false);
+        SearchTimeIntent timeIntent =
+                SearchTimeIntent.fromValue(payload.path("timeIntent").asText());
+        SearchPriorityIntent priorityIntent =
+                SearchPriorityIntent.fromValue(payload.path("priorityIntent").asText());
         List<TaskStatus> statusIntents = normalizeStatusIntents(payload.path("statusIntents"));
-        SearchSyncIntent syncIntent = SearchSyncIntent.fromValue(payload.path("syncIntent").asText());
-        SearchRelationPolicy relationPolicy = SearchRelationPolicy.fromValue(payload.path("relationPolicy").asText("ALLOW_PARTIAL"));
-        double overallConfidence = clampConfidence(payload.path("overallConfidence").asDouble(0.0d));
+        SearchSyncIntent syncIntent =
+                SearchSyncIntent.fromValue(payload.path("syncIntent").asText());
+        SearchRelationPolicy relationPolicy =
+                SearchRelationPolicy.fromValue(payload.path("relationPolicy").asText("ALLOW_PARTIAL"));
+        double overallConfidence =
+                clampConfidence(payload.path("overallConfidence").asDouble(0.0d));
         Map<String, Double> fieldConfidence = normalizeFieldConfidence(payload.path("fieldConfidence"));
         List<String> suggestedQueries = normalizeSuggestedQueries(payload.path("suggestedQueries"));
 
@@ -346,8 +345,7 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
                 relationPolicy,
                 overallConfidence,
                 fieldConfidence,
-                suggestedQueries
-        );
+                suggestedQueries);
     }
 
     private List<SearchActionIntent> normalizeActionIntents(JsonNode node) {
@@ -420,9 +418,9 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
         if (!node.isObject()) {
             return confidence;
         }
-        node.fieldNames().forEachRemaining(field ->
-                confidence.put(field, clampConfidence(node.path(field).asDouble(0.0d)))
-        );
+        node.fieldNames()
+                .forEachRemaining(field ->
+                        confidence.put(field, clampConfidence(node.path(field).asDouble(0.0d))));
         return confidence;
     }
 
@@ -449,9 +447,7 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
         return Math.max(0.0d, Math.min(1.0d, value));
     }
 
-    private TaskSearchGenerationException classifyUpstreamFailure(int statusCode,
-                                                                 String responseBody,
-                                                                 long latencyMs) {
+    private TaskSearchGenerationException classifyUpstreamFailure(int statusCode, String responseBody, long latencyMs) {
         ErrorCode errorCode;
         if (statusCode == 429) {
             String normalized = responseBody == null ? "" : responseBody.toLowerCase(Locale.ROOT);
@@ -468,15 +464,12 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
             errorCode = ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
         }
 
-        log.warn("Gemini search intent request failed. statusCode={}, errorCode={}, latencyMs={}",
+        log.warn(
+                "Gemini search intent request failed. statusCode={}, errorCode={}, latencyMs={}",
                 statusCode,
                 errorCode.getCode(),
                 latencyMs);
 
-        return new TaskSearchGenerationException(
-                errorCode,
-                "Gemini search intent request failed"
-        );
+        return new TaskSearchGenerationException(errorCode, "Gemini search intent request failed");
     }
-
 }

@@ -1,7 +1,6 @@
 package com.taskflow.calendar.domain.recommendation.cache;
 
 import com.taskflow.calendar.domain.recommendation.dto.ProjectTaskRecommendationResponse;
-
 import java.util.Optional;
 
 public interface TaskRecommendationCacheService {

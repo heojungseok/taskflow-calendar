@@ -1,10 +1,16 @@
 package com.taskflow.calendar.worker;
 
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.domain.outbox.*;
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarService;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
+import com.taskflow.observability.TaskFlowMetrics;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,13 +20,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import com.taskflow.observability.TaskFlowMetrics;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CalendarOutboxWorkerTest {
@@ -106,13 +105,12 @@ class CalendarOutboxWorkerTest {
         @DisplayName("토큰 갱신 성공 시 markForRetry 호출됨")
         void 토큰갱신_성공_markForRetry호출() {
             // given
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of(outbox));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(outbox));
             when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
             doThrow(new NonRetryableIntegrationException("Unauthorized", 401))
-                    .when(googleCalendarService).handle(outbox);
-            when(outboxService.extractUserIdFromPayload(outbox))
-                    .thenReturn(USER_ID);
+                    .when(googleCalendarService)
+                    .handle(outbox);
+            when(outboxService.extractUserIdFromPayload(outbox)).thenReturn(USER_ID);
 
             // when
             worker.pollAndProcess();
@@ -127,23 +125,22 @@ class CalendarOutboxWorkerTest {
         @DisplayName("토큰 갱신 실패 시 markFailed 호출됨")
         void 토큰갱신_실패_markFailed호출() {
             // given
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of(outbox));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(outbox));
             when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
             doThrow(new NonRetryableIntegrationException("Unauthorized", 401))
-                    .when(googleCalendarService).handle(outbox);
-            when(outboxService.extractUserIdFromPayload(outbox))
-                    .thenReturn(USER_ID);
+                    .when(googleCalendarService)
+                    .handle(outbox);
+            when(outboxService.extractUserIdFromPayload(outbox)).thenReturn(USER_ID);
             doThrow(new NonRetryableIntegrationException("Refresh token 만료", 400))
-                    .when(googleOAuthService).refreshAccessToken(USER_ID);
+                    .when(googleOAuthService)
+                    .refreshAccessToken(USER_ID);
 
             // when
             worker.pollAndProcess();
 
             // then
             verify(googleOAuthService).refreshAccessToken(USER_ID);
-            verify(outboxService).markFailed(eq(OUTBOX_ID),
-                    argThat(msg -> msg.contains("Token refresh failed")));
+            verify(outboxService).markFailed(eq(OUTBOX_ID), argThat(msg -> msg.contains("Token refresh failed")));
             verify(outboxService, never()).markForRetry(anyLong(), anyString());
         }
 
@@ -151,21 +148,21 @@ class CalendarOutboxWorkerTest {
         @DisplayName("payload 파싱 실패 시 markFailed 호출됨")
         void payload파싱_실패_markFailed호출() {
             // given
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of(outbox));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(outbox));
             when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
             doThrow(new NonRetryableIntegrationException("Unauthorized", 401))
-                    .when(googleCalendarService).handle(outbox);
+                    .when(googleCalendarService)
+                    .handle(outbox);
             doThrow(new IllegalStateException("userId 추출 실패"))
-                    .when(outboxService).extractUserIdFromPayload(outbox);
+                    .when(outboxService)
+                    .extractUserIdFromPayload(outbox);
 
             // when
             worker.pollAndProcess();
 
             // then
             verify(googleOAuthService, never()).refreshAccessToken(anyLong());
-            verify(outboxService).markFailed(eq(OUTBOX_ID),
-                    argThat(msg -> msg.contains("Token refresh failed")));
+            verify(outboxService).markFailed(eq(OUTBOX_ID), argThat(msg -> msg.contains("Token refresh failed")));
             verify(outboxService, never()).markForRetry(anyLong(), anyString());
         }
     }
@@ -181,11 +178,11 @@ class CalendarOutboxWorkerTest {
         @DisplayName("400 발생 시 토큰 갱신 없이 markFailed 호출됨")
         void statusCode400_갱신없이_markFailed호출() {
             // given
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of(outbox));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(outbox));
             when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
             doThrow(new NonRetryableIntegrationException("Bad Request", 400))
-                    .when(googleCalendarService).handle(outbox);
+                    .when(googleCalendarService)
+                    .handle(outbox);
 
             // when
             worker.pollAndProcess();
@@ -207,8 +204,7 @@ class CalendarOutboxWorkerTest {
     class WhenGoogleNotLinked {
 
         private void givenClaimedOutbox() {
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of(outbox));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(outbox));
             when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
         }
 
@@ -254,8 +250,7 @@ class CalendarOutboxWorkerTest {
         @DisplayName("payload에서 userId를 못 읽으면 건너뛰지 않고 기존 경로로 보낸다")
         void payload_파싱실패시_기존경로() {
             givenClaimedOutbox();
-            when(outboxService.extractUserIdFromPayload(any()))
-                    .thenThrow(new IllegalStateException("payload 손상"));
+            when(outboxService.extractUserIdFromPayload(any())).thenThrow(new IllegalStateException("payload 손상"));
 
             worker.pollAndProcess();
 
@@ -297,8 +292,7 @@ class CalendarOutboxWorkerTest {
             }
 
             // findProcessable이 stale outbox 반환
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of(staleOutbox));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(staleOutbox));
 
             // claimProcessing 성공 (lease timeout 체크 통과)
             when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
@@ -316,8 +310,7 @@ class CalendarOutboxWorkerTest {
         @DisplayName("claimProcessing 실패 시 처리 skip")
         void claimProcessing_실패_skip() {
             // given: 다른 Worker가 이미 선점
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of(outbox));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(outbox));
             when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(false);
 
             // when
@@ -356,8 +349,7 @@ class CalendarOutboxWorkerTest {
             }
 
             // findProcessable이 비어있음 (lease timeout 미초과로 필터링됨)
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of()); // 빈 리스트
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of()); // 빈 리스트
 
             // when
             worker.pollAndProcess();
@@ -377,8 +369,7 @@ class CalendarOutboxWorkerTest {
         void scheduledPoll_enabled_수행() {
             // given
             ReflectionTestUtils.setField(worker, "schedulingEnabled", true);
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of());
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of());
 
             // when
             worker.scheduledPoll();
@@ -405,8 +396,7 @@ class CalendarOutboxWorkerTest {
         void 수동트리거는_스위치와_무관() {
             // given
             ReflectionTestUtils.setField(worker, "schedulingEnabled", false);
-            when(outboxRepository.findProcessable(any(), any(), anyInt()))
-                    .thenReturn(List.of());
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of());
 
             // when: OutboxController가 호출하는 경로
             worker.pollAndProcess();

@@ -1,6 +1,8 @@
 package com.taskflow.calendar.domain.outbox;
 
 import com.taskflow.calendar.domain.outbox.exception.InvalidOutboxStateTransitionException;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,18 +11,14 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
-
 @Entity
 @Table(
         name = "calendar_outbox",
         indexes = {
-                @Index(name = "idx_outbox_status_next_retry", columnList = "status, next_retry_at"),
-                @Index(name = "idx_outbox_task_created", columnList = "task_id, created_at"),
-                @Index(name = "idx_outbox_task_status_optype", columnList = "task_id, status, op_type")
-        }
-)
+            @Index(name = "idx_outbox_status_next_retry", columnList = "status, next_retry_at"),
+            @Index(name = "idx_outbox_task_created", columnList = "task_id, created_at"),
+            @Index(name = "idx_outbox_task_status_optype", columnList = "task_id, status, op_type")
+        })
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -58,13 +56,18 @@ public class CalendarOutbox {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at",nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @Builder
-    private CalendarOutbox(Long taskId, OutboxOpType opType, String payload,
-                           OutboxStatus status, int retryCount,
-                           LocalDateTime nextRetryAt, String lastError) {
+    private CalendarOutbox(
+            Long taskId,
+            OutboxOpType opType,
+            String payload,
+            OutboxStatus status,
+            int retryCount,
+            LocalDateTime nextRetryAt,
+            String lastError) {
         this.taskId = taskId;
         this.opType = opType;
         this.payload = payload;
@@ -149,9 +152,7 @@ public class CalendarOutbox {
     private void validateCurrentlyProcessing() {
         if (this.status != OutboxStatus.PROCESSING) {
             throw new InvalidOutboxStateTransitionException(
-                    String.format("Cannot transition from %s (expected: PROCESSING)", this.status)
-            );
+                    String.format("Cannot transition from %s (expected: PROCESSING)", this.status));
         }
     }
 }
-

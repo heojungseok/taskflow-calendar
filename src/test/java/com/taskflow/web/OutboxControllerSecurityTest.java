@@ -1,11 +1,24 @@
 package com.taskflow.web;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.SecurityConfig;
 import com.taskflow.security.JwtTokenProvider;
+import jakarta.servlet.http.Cookie;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,21 +28,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import jakarta.servlet.http.Cookie;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * 공개 동기화 조회는 현재 사용자의 Outbox만 반환한다.
@@ -85,8 +83,7 @@ class OutboxControllerSecurityTest {
         void listWithToken() throws Exception {
             given(outboxService.listOutboxes(any(), any(), any())).willReturn(List.of());
 
-            mvc.perform(get(BASE).cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
-                    .andExpect(status().isOk());
+            mvc.perform(get(BASE).cookie(new Cookie("TASKFLOW_SESSION", TOKEN))).andExpect(status().isOk());
         }
 
         @Test
@@ -94,8 +91,7 @@ class OutboxControllerSecurityTest {
         void inactiveDomainSessionIsUnauthorized() throws Exception {
             given(user.isSessionActive(eq(TOKEN_VERSION), any(Instant.class))).willReturn(false);
 
-            mvc.perform(get(BASE).cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
-                    .andExpect(status().isUnauthorized());
+            mvc.perform(get(BASE).cookie(new Cookie("TASKFLOW_SESSION", TOKEN))).andExpect(status().isUnauthorized());
             verify(outboxService, never()).listOutboxes(any(), any(), any());
         }
     }
@@ -109,9 +105,7 @@ class OutboxControllerSecurityTest {
         void listIsScopedToTokenUser() throws Exception {
             given(outboxService.listOutboxes(any(), any(), any())).willReturn(List.of());
 
-            mvc.perform(get(BASE)
-                            .param("status", "PENDING")
-                            .cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
+            mvc.perform(get(BASE).param("status", "PENDING").cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                     .andExpect(status().isOk());
 
             verify(outboxService).listOutboxes(eq(USER_ID), eq(OutboxStatus.PENDING), eq(null));
@@ -140,8 +134,7 @@ class OutboxControllerSecurityTest {
         @Test
         @DisplayName("잘못된 status 값은 500이 아니라 400 - 캐치올이 MVC 예외를 삼키지 않는다")
         void badEnumIsBadRequest() throws Exception {
-            mvc.perform(get(BASE).param("status", "NOPE")
-                            .cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
+            mvc.perform(get(BASE).param("status", "NOPE").cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                     .andExpect(status().isBadRequest());
         }
     }

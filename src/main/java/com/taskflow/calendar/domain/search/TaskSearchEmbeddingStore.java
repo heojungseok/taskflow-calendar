@@ -1,19 +1,18 @@
 package com.taskflow.calendar.domain.search;
 
 import com.taskflow.config.GeminiSearchProperties;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
-
 import jakarta.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -47,22 +46,27 @@ public class TaskSearchEmbeddingStore {
                 // 매 기동마다 임베딩이 통째로 지워졌다. 읽기 실수가 데이터 소실이 되면 안 된다.
                 // 기존 테이블은 그대로 두고 비활성으로 떨어뜨린다. 이전은 사람이 판단한다.
                 available.set(false);
-                log.error("Task search embedding dimension mismatch. Semantic search unavailable. "
+                log.error(
+                        "Task search embedding dimension mismatch. Semantic search unavailable. "
                                 + "Existing table task_search_embeddings kept — migrate manually "
                                 + "(dump, recreate with the new dimension, re-embed). "
                                 + "currentDimensions={}, targetDimensions={}",
-                        currentDimensions, targetDimensions);
+                        currentDimensions,
+                        targetDimensions);
                 return;
             }
 
             if (properties.isSchemaManagementEnabled()) {
                 createEmbeddingTable();
-                jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_task_search_embeddings_updated_at ON task_search_embeddings(updated_at)");
+                jdbcTemplate.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_task_search_embeddings_updated_at ON task_search_embeddings(updated_at)");
             }
             available.set(true);
         } catch (DataAccessException e) {
             available.set(false);
-            log.warn("Task search vector store initialization failed. Semantic search disabled. message={}", e.getMessage());
+            log.warn(
+                    "Task search vector store initialization failed. Semantic search disabled. message={}",
+                    e.getMessage());
         }
     }
 
@@ -87,8 +91,7 @@ public class TaskSearchEmbeddingStore {
                             hashes.put(rs.getLong("task_id"), rs.getString("text_hash"));
                         }
                         return hashes;
-                    }
-            );
+                    });
         } catch (DataAccessException e) {
             available.set(false);
             log.warn("Task search vector hash lookup failed. Semantic search disabled. message={}", e.getMessage());
@@ -101,29 +104,34 @@ public class TaskSearchEmbeddingStore {
             return;
         }
         if (embedding.size() != properties.getEmbeddingDimensions()) {
-            log.warn("Task search vector upsert skipped due to dimension mismatch. taskId={}, expectedDimensions={}, actualDimensions={}",
-                    taskId, properties.getEmbeddingDimensions(), embedding.size());
+            log.warn(
+                    "Task search vector upsert skipped due to dimension mismatch. taskId={}, expectedDimensions={}, actualDimensions={}",
+                    taskId,
+                    properties.getEmbeddingDimensions(),
+                    embedding.size());
             return;
         }
 
         try {
             jdbcTemplate.update(
-                    "INSERT INTO task_search_embeddings(task_id, source_text, text_hash, embedding, updated_at) " +
-                            "VALUES (?, ?, ?, CAST(? AS vector), ?) " +
-                            "ON CONFLICT (task_id) DO UPDATE SET " +
-                            "source_text = EXCLUDED.source_text, " +
-                            "text_hash = EXCLUDED.text_hash, " +
-                            "embedding = EXCLUDED.embedding, " +
-                            "updated_at = EXCLUDED.updated_at",
+                    "INSERT INTO task_search_embeddings(task_id, source_text, text_hash, embedding, updated_at) "
+                            + "VALUES (?, ?, ?, CAST(? AS vector), ?) "
+                            + "ON CONFLICT (task_id) DO UPDATE SET "
+                            + "source_text = EXCLUDED.source_text, "
+                            + "text_hash = EXCLUDED.text_hash, "
+                            + "embedding = EXCLUDED.embedding, "
+                            + "updated_at = EXCLUDED.updated_at",
                     taskId,
                     sourceText,
                     textHash,
                     toVectorLiteral(embedding),
-                    Timestamp.valueOf(LocalDateTime.now())
-            );
+                    Timestamp.valueOf(LocalDateTime.now()));
         } catch (DataAccessException e) {
             available.set(false);
-            log.warn("Task search vector upsert failed. Semantic search disabled. taskId={}, message={}", taskId, e.getMessage());
+            log.warn(
+                    "Task search vector upsert failed. Semantic search disabled. taskId={}, message={}",
+                    taskId,
+                    e.getMessage());
         }
     }
 
@@ -136,7 +144,10 @@ public class TaskSearchEmbeddingStore {
             jdbcTemplate.update("DELETE FROM task_search_embeddings WHERE task_id = ?", taskId);
         } catch (DataAccessException e) {
             available.set(false);
-            log.warn("Task search vector delete failed. Semantic search disabled. taskId={}, message={}", taskId, e.getMessage());
+            log.warn(
+                    "Task search vector delete failed. Semantic search disabled. taskId={}, message={}",
+                    taskId,
+                    e.getMessage());
         }
     }
 
@@ -145,20 +156,21 @@ public class TaskSearchEmbeddingStore {
             return Map.of();
         }
         if (queryEmbedding.size() != properties.getEmbeddingDimensions()) {
-            log.warn("Task search vector query skipped due to dimension mismatch. expectedDimensions={}, actualDimensions={}",
-                    properties.getEmbeddingDimensions(), queryEmbedding.size());
+            log.warn(
+                    "Task search vector query skipped due to dimension mismatch. expectedDimensions={}, actualDimensions={}",
+                    properties.getEmbeddingDimensions(),
+                    queryEmbedding.size());
             return Map.of();
         }
 
         try {
             List<SemanticMatch> matches = jdbcTemplate.query(
-                    "SELECT task_id, GREATEST(0, 1 - (embedding <=> CAST(? AS vector))) AS similarity " +
-                            "FROM task_search_embeddings " +
-                            "ORDER BY embedding <=> CAST(? AS vector) " +
-                            "LIMIT ?",
-                    new Object[]{toVectorLiteral(queryEmbedding), toVectorLiteral(queryEmbedding), limit},
-                    (rs, rowNum) -> new SemanticMatch(rs.getLong("task_id"), rs.getDouble("similarity"))
-            );
+                    "SELECT task_id, GREATEST(0, 1 - (embedding <=> CAST(? AS vector))) AS similarity "
+                            + "FROM task_search_embeddings "
+                            + "ORDER BY embedding <=> CAST(? AS vector) "
+                            + "LIMIT ?",
+                    new Object[] {toVectorLiteral(queryEmbedding), toVectorLiteral(queryEmbedding), limit},
+                    (rs, rowNum) -> new SemanticMatch(rs.getLong("task_id"), rs.getDouble("similarity")));
             Map<Long, Double> result = new HashMap<>();
             for (SemanticMatch match : matches) {
                 result.put(match.taskId, match.similarity);
@@ -172,21 +184,22 @@ public class TaskSearchEmbeddingStore {
     }
 
     private String toVectorLiteral(List<Double> embedding) {
-        return "[" + embedding.stream()
-                .map(value -> String.format(Locale.US, "%.8f", value))
-                .collect(Collectors.joining(",")) + "]";
+        return "["
+                + embedding.stream()
+                        .map(value -> String.format(Locale.US, "%.8f", value))
+                        .collect(Collectors.joining(","))
+                + "]";
     }
 
     private void createEmbeddingTable() {
-        jdbcTemplate.execute(
-                "CREATE TABLE IF NOT EXISTS task_search_embeddings (" +
-                        "task_id BIGINT PRIMARY KEY REFERENCES tasks(id) ON DELETE CASCADE," +
-                        "source_text TEXT NOT NULL," +
-                        "text_hash VARCHAR(64) NOT NULL," +
-                        "embedding vector(" + properties.getEmbeddingDimensions() + ") NOT NULL," +
-                        "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" +
-                        ")"
-        );
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS task_search_embeddings ("
+                + "task_id BIGINT PRIMARY KEY REFERENCES tasks(id) ON DELETE CASCADE,"
+                + "source_text TEXT NOT NULL,"
+                + "text_hash VARCHAR(64) NOT NULL,"
+                + "embedding vector("
+                + properties.getEmbeddingDimensions() + ") NOT NULL,"
+                + "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"
+                + ")");
     }
 
     /**
@@ -196,17 +209,15 @@ public class TaskSearchEmbeddingStore {
     Integer currentEmbeddingDimensions() {
         try {
             return jdbcTemplate.query(
-                    "SELECT a.atttypmod AS dimensions " +
-                            "FROM pg_attribute a " +
-                            "JOIN pg_class c ON a.attrelid = c.oid " +
-                            "JOIN pg_namespace n ON c.relnamespace = n.oid " +
-                            "WHERE c.relname = 'task_search_embeddings' " +
-                            "AND a.attname = 'embedding' " +
-                            "AND a.attnum > 0 " +
-                            "AND NOT a.attisdropped " +
-                            "LIMIT 1",
-                    rs -> rs.next() ? rs.getInt("dimensions") : null
-            );
+                    "SELECT a.atttypmod AS dimensions " + "FROM pg_attribute a "
+                            + "JOIN pg_class c ON a.attrelid = c.oid "
+                            + "JOIN pg_namespace n ON c.relnamespace = n.oid "
+                            + "WHERE c.relname = 'task_search_embeddings' "
+                            + "AND a.attname = 'embedding' "
+                            + "AND a.attnum > 0 "
+                            + "AND NOT a.attisdropped "
+                            + "LIMIT 1",
+                    rs -> rs.next() ? rs.getInt("dimensions") : null);
         } catch (DataAccessException e) {
             log.warn("Task search embedding dimension lookup failed. message={}", e.getMessage());
             return null;

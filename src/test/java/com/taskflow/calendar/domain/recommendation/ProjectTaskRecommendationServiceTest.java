@@ -1,8 +1,14 @@
 package com.taskflow.calendar.domain.recommendation;
 
-import org.junit.jupiter.api.AfterEach;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
@@ -17,32 +23,24 @@ import com.taskflow.calendar.domain.summary.TaskSyncState;
 import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
-import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.GeminiRecommendationProperties;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectTaskRecommendationServiceTest {
@@ -53,8 +51,7 @@ class ProjectTaskRecommendationServiceTest {
      */
     @org.junit.jupiter.api.BeforeEach
     void setUpSecurityContext() {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(1L, null, null));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(1L, null, null));
     }
 
     @AfterEach
@@ -95,8 +92,7 @@ class ProjectTaskRecommendationServiceTest {
                 taskRecommendationGenerator,
                 taskRecommendationCacheService,
                 geminiProperties,
-                userRepository
-        );
+                userRepository);
         project = Project.of("TaskFlow", 1L);
         stubResolveAllViaResolve();
     }
@@ -106,7 +102,8 @@ class ProjectTaskRecommendationServiceTest {
      * 이 테스트가 보는 것은 후보 선정·정렬이므로 기존 Task별 resolve 스텁을 그대로 쓴다.
      */
     private void stubResolveAllViaResolve() {
-        Mockito.lenient().when(taskSyncStateResolver.resolveAll(ArgumentMatchers.anyList()))
+        Mockito.lenient()
+                .when(taskSyncStateResolver.resolveAll(ArgumentMatchers.anyList()))
                 .thenAnswer(invocation -> {
                     List<Task> tasks = invocation.getArgument(0);
                     return tasks.stream().map(taskSyncStateResolver::resolve).toList();
@@ -157,8 +154,7 @@ class ProjectTaskRecommendationServiceTest {
                 task("14", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(14)),
                 task("15", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(15)),
                 task("16", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(16)),
-                task("17", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(17))
-        );
+                task("17", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(17)));
 
         when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(tasks);
@@ -172,8 +168,7 @@ class ProjectTaskRecommendationServiceTest {
                         TaskRecommendationItemResult.of(tasks.get(1).getId(), "태그2", "보조2", "이유2"),
                         TaskRecommendationItemResult.of(tasks.get(2).getId(), "태그3", null, "이유3"),
                         TaskRecommendationItemResult.of(tasks.get(3).getId(), "태그4", null, "이유4"),
-                        TaskRecommendationItemResult.of(tasks.get(4).getId(), "태그5", null, "이유5")
-                )));
+                        TaskRecommendationItemResult.of(tasks.get(4).getId(), "태그5", null, "이유5"))));
 
         ProjectTaskRecommendationResponse response = service.getRecommendations(1L);
 
@@ -192,16 +187,9 @@ class ProjectTaskRecommendationServiceTest {
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNCED));
         when(taskRecommendationCacheService.isEnabled()).thenReturn(true);
-        when(taskRecommendationCacheService.find(any())).thenReturn(Optional.of(
-                ProjectTaskRecommendationResponse.of(
-                        project,
-                        LocalDateTime.now(),
-                        TaskRecommendationCacheStatus.LIVE,
-                        1,
-                        1,
-                        List.of()
-                )
-        ));
+        when(taskRecommendationCacheService.find(any()))
+                .thenReturn(Optional.of(ProjectTaskRecommendationResponse.of(
+                        project, LocalDateTime.now(), TaskRecommendationCacheStatus.LIVE, 1, 1, List.of())));
 
         ProjectTaskRecommendationResponse response = service.getRecommendations(1L);
 

@@ -9,8 +9,8 @@ import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
-import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
+import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
@@ -18,13 +18,6 @@ import com.taskflow.calendar.integration.googlecalendar.exception.RetryableInteg
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.web.dto.auth.AuthSession;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -33,10 +26,16 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -44,8 +43,7 @@ import java.util.Optional;
 @Transactional
 public class GoogleOAuthService {
 
-    private static final String CALENDAR_EVENTS_SCOPE =
-            "https://www.googleapis.com/auth/calendar.events.owned";
+    private static final String CALENDAR_EVENTS_SCOPE = "https://www.googleapis.com/auth/calendar.events.owned";
     private static final Duration REVOKE_TIMEOUT = Duration.ofSeconds(5);
 
     private final GoogleOAuthProperties properties;
@@ -66,16 +64,21 @@ public class GoogleOAuthService {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 revocationConfirmed = false;
-                log.warn("Google token revoke failed. userId={}, errorType={}",
-                        userId, e.getClass().getSimpleName());
+                log.warn(
+                        "Google token revoke failed. userId={}, errorType={}",
+                        userId,
+                        e.getClass().getSimpleName());
             } catch (Exception e) {
                 revocationConfirmed = false;
-                log.warn("Google token revoke failed. userId={}, errorType={}",
-                        userId, e.getClass().getSimpleName());
+                log.warn(
+                        "Google token revoke failed. userId={}, errorType={}",
+                        userId,
+                        e.getClass().getSimpleName());
             }
         }
 
-        User user = userRepository.findByIdForUpdate(userId)
+        User user = userRepository
+                .findByIdForUpdate(userId)
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
         user.invalidateSessions();
         tokenRepository.deleteByUserId(userId);
@@ -86,8 +89,7 @@ public class GoogleOAuthService {
         HttpRequest request = HttpRequest.newBuilder(URI.create("https://oauth2.googleapis.com/revoke"))
                 .timeout(REVOKE_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(
-                        "token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
+                .POST(HttpRequest.BodyPublishers.ofString("token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
                 .build();
         return HttpClient.newBuilder()
                 .connectTimeout(REVOKE_TIMEOUT)
@@ -109,14 +111,14 @@ public class GoogleOAuthService {
                     properties.getClientSecret(), // App Secret
                     code, // Google에서 온 code
                     properties.getRedirectUri() // callback URL
-            );
+                    );
             // API 호출
             GoogleTokenResponse response = request.execute();
 
-            log.info("Token received. accessToken exists={}, refreshToken exists={}",
+            log.info(
+                    "Token received. accessToken exists={}, refreshToken exists={}",
                     response.getAccessToken() != null,
-                    response.getRefreshToken() != null
-            );
+                    response.getRefreshToken() != null);
 
             String accessToken = response.getAccessToken();
             String refreshToken = response.getRefreshToken(); // null 가능
@@ -155,7 +157,6 @@ public class GoogleOAuthService {
             log.error("Token exchange failed. userId={}", userId, e);
             throw new RuntimeException("Failed to exchange code for token", e);
         }
-
     }
     /**
      * Refresh token을 사용해서 새 access token 발급
@@ -164,23 +165,23 @@ public class GoogleOAuthService {
      * @throws NonRetryableIntegrationException refresh token 만료/폐기 시
      * @throws RetryableIntegrationException 일시적 네트워크 오류 시
      */
-    @Transactional(
-            propagation = Propagation.REQUIRES_NEW,
-            noRollbackFor = NonRetryableIntegrationException.class)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = NonRetryableIntegrationException.class)
     public void refreshAccessToken(Long userId) {
         log.info("Refreshing access token. userId={}", userId);
 
         // 토큰 조회
-        OAuthGoogleToken token = tokenRepository.findByUserId(userId)
-                .orElseThrow(() -> new NonRetryableIntegrationException("No access token found for userId: " + userId, 0));
+        OAuthGoogleToken token = tokenRepository
+                .findByUserId(userId)
+                .orElseThrow(
+                        () -> new NonRetryableIntegrationException("No access token found for userId: " + userId, 0));
 
         try {
             // Google API로 갱신 요청
             GoogleTokenResponse response = requestTokenRefresh(token);
 
             // 새 토큰으로 업데이트 (낙관적 락 활용)
-            token.updateAccessToken(response.getAccessToken(),
-                    LocalDateTime.now().plusSeconds(response.getExpiresInSeconds()));
+            token.updateAccessToken(
+                    response.getAccessToken(), LocalDateTime.now().plusSeconds(response.getExpiresInSeconds()));
 
             tokenRepository.save(token);
         } catch (OptimisticLockingFailureException e) {
@@ -196,7 +197,6 @@ public class GoogleOAuthService {
         } catch (IOException e) {
             throw new RetryableIntegrationException("Token refresh 실패", e);
         }
-
     }
 
     private boolean isInvalidGrant(HttpResponseException exception) {
@@ -204,8 +204,8 @@ public class GoogleOAuthService {
             return false;
         }
         try {
-            TokenErrorResponse error = JacksonFactory.getDefaultInstance()
-                    .fromString(exception.getContent(), TokenErrorResponse.class);
+            TokenErrorResponse error =
+                    JacksonFactory.getDefaultInstance().fromString(exception.getContent(), TokenErrorResponse.class);
             return "invalid_grant".equals(error.getError());
         } catch (IOException ignored) {
             return false;
@@ -218,12 +218,12 @@ public class GoogleOAuthService {
      */
     protected GoogleTokenResponse requestTokenRefresh(OAuthGoogleToken token) throws IOException {
         return new GoogleRefreshTokenRequest(
-                new NetHttpTransport(),
-                JacksonFactory.getDefaultInstance(),
-                token.getRefreshToken(),
-                properties.getClientId(),
-                properties.getClientSecret()
-        ).execute();
+                        new NetHttpTransport(),
+                        JacksonFactory.getDefaultInstance(),
+                        token.getRefreshToken(),
+                        properties.getClientId(),
+                        properties.getClientSecret())
+                .execute();
     }
 
     /**
@@ -240,8 +240,7 @@ public class GoogleOAuthService {
                     properties.getClientId(),
                     properties.getClientSecret(),
                     code,
-                    properties.getRedirectUri()
-            );
+                    properties.getRedirectUri());
 
             GoogleTokenResponse response = request.execute();
 
@@ -265,8 +264,7 @@ public class GoogleOAuthService {
                     response.getAccessToken(),
                     response.getRefreshToken(),
                     response.getExpiresInSeconds(),
-                    response.getScope()
-            );
+                    response.getScope());
 
         } catch (IOException e) {
             log.error("Google token exchange failed. errorType={}", e.getClass().getSimpleName());
@@ -308,8 +306,8 @@ public class GoogleOAuthService {
     }
 
     private void requireCalendarEventsScope(String grantedScopes) {
-        boolean granted = grantedScopes != null && Arrays.stream(grantedScopes.trim().split("\\s+"))
-                .anyMatch(CALENDAR_EVENTS_SCOPE::equals);
+        boolean granted = grantedScopes != null
+                && Arrays.stream(grantedScopes.trim().split("\\s+")).anyMatch(CALENDAR_EVENTS_SCOPE::equals);
         if (!granted) {
             throw new MissingRequiredGoogleScopeException(CALENDAR_EVENTS_SCOPE);
         }
@@ -324,24 +322,14 @@ public class GoogleOAuthService {
 
         if (existingToken.isPresent()) {
             OAuthGoogleToken token = existingToken.get();
-            token.updateTokens(
-                    result.getAccessToken(),
-                    result.getRefreshToken(),
-                    expiryAt,
-                    result.getScope()
-            );
+            token.updateTokens(result.getAccessToken(), result.getRefreshToken(), expiryAt, result.getScope());
             log.info("Updated existing OAuth token. userId={}", userId);
         } else {
             if (result.getRefreshToken() == null || result.getRefreshToken().isBlank()) {
                 throw new MissingRefreshTokenException();
             }
             OAuthGoogleToken token = OAuthGoogleToken.create(
-                    userId,
-                    result.getAccessToken(),
-                    result.getRefreshToken(),
-                    expiryAt,
-                    result.getScope()
-            );
+                    userId, result.getAccessToken(), result.getRefreshToken(), expiryAt, result.getScope());
             tokenRepository.save(token);
             log.info("Created new OAuth token. userId={}", userId);
         }

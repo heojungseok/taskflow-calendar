@@ -1,9 +1,8 @@
 package com.taskflow.calendar.domain.task.dto;
 
 import com.taskflow.calendar.domain.task.TaskStatus;
-import lombok.Getter;
-
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
 
 /**
  * Task 상태 변경 요청 DTO
@@ -15,8 +14,8 @@ public class ChangeTaskStatusRequest {
     private TaskStatus toStatus;
 
     // JWT 적용 전 임시
-//    @NotNull(message = "요청자 ID는 필수입니다")
-//    private Long requestedByUserId;
+    //    @NotNull(message = "요청자 ID는 필수입니다")
+    //    private Long requestedByUserId;
 
     // 기본 생성자
     protected ChangeTaskStatusRequest() {}
@@ -24,6 +23,6 @@ public class ChangeTaskStatusRequest {
     // 테스트용 생성자
     public ChangeTaskStatusRequest(TaskStatus toStatus) {
         this.toStatus = toStatus;
-//        this.requestedByUserId = requestedByUserId;
+        //        this.requestedByUserId = requestedByUserId;
     }
 }

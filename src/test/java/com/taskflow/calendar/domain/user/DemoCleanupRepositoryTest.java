@@ -1,5 +1,7 @@
 package com.taskflow.calendar.domain.user;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
@@ -11,37 +13,46 @@ import com.taskflow.calendar.domain.task.TaskHistory;
 import com.taskflow.calendar.domain.task.TaskHistoryRepository;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.config.JpaAuditingConfig;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-
-import java.time.Instant;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.context.annotation.Import;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)
 class DemoCleanupRepositoryTest {
 
-    @Autowired UserRepository users;
-    @Autowired ProjectRepository projects;
-    @Autowired TaskRepository tasks;
-    @Autowired TaskHistoryRepository histories;
-    @Autowired CalendarOutboxRepository outboxes;
-    @Autowired OAuthGoogleTokenRepository tokens;
-    @Autowired TestEntityManager em;
+    @Autowired
+    UserRepository users;
+
+    @Autowired
+    ProjectRepository projects;
+
+    @Autowired
+    TaskRepository tasks;
+
+    @Autowired
+    TaskHistoryRepository histories;
+
+    @Autowired
+    CalendarOutboxRepository outboxes;
+
+    @Autowired
+    OAuthGoogleTokenRepository tokens;
+
+    @Autowired
+    TestEntityManager em;
 
     @Test
     void cleanupQueriesRemoveOwnedGraphInOneTransaction() {
         Instant threshold = Instant.now();
         User user = users.save(User.createDemoUser("cleanup-repository", threshold.minusSeconds(60)));
         Project project = projects.save(Project.of("cleanup", user.getId()));
-        Task task = tasks.save(Task.createTask(project, "cleanup", null, user,
-                null, null, false));
+        Task task = tasks.save(Task.createTask(project, "cleanup", null, user, null, null, false));
         histories.save(TaskHistory.builder()
                 .task(task)
                 .changedByUser(user)
@@ -52,8 +63,7 @@ class DemoCleanupRepositoryTest {
         em.flush();
         em.clear();
 
-        DemoCleanupService service = new DemoCleanupService(
-                users, outboxes, histories, tasks, projects, tokens);
+        DemoCleanupService service = new DemoCleanupService(users, outboxes, histories, tasks, projects, tokens);
         assertThat(service.cleanup(user.getId(), threshold)).isTrue();
         users.flush();
         em.clear();

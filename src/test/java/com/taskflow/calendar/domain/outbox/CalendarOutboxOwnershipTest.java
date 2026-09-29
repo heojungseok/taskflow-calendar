@@ -1,6 +1,10 @@
 package com.taskflow.calendar.domain.outbox;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.taskflow.config.JpaAuditingConfig;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +13,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * 소유권 필터는 payload의 meta.requestedByUserId를 jsonb로 읽는 네이티브 쿼리다.
  * H2로는 검증되지 않으므로 실제 Postgres(docker: taskflow-postgres)에 붙는다.
@@ -21,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(JpaAuditingConfig.class)  // createdAt/updatedAt 감사가 켜져야 insert가 통과한다
+@Import(JpaAuditingConfig.class) // createdAt/updatedAt 감사가 켜져야 insert가 통과한다
 class CalendarOutboxOwnershipTest {
 
     private static final long OWNER = 90001L;
@@ -61,8 +60,7 @@ class CalendarOutboxOwnershipTest {
         List<CalendarOutbox> mine = repository.findOwnedBy(OWNER, null, null, 100);
 
         assertThat(mine).isNotEmpty();
-        assertThat(mine).allSatisfy(o ->
-                assertThat(o.getPayload()).contains("\"requestedByUserId\":" + OWNER));
+        assertThat(mine).allSatisfy(o -> assertThat(o.getPayload()).contains("\"requestedByUserId\":" + OWNER));
     }
 
     @Test

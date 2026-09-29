@@ -13,14 +13,13 @@ import com.taskflow.calendar.domain.oauth.OAuthGoogleToken;
 import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
@@ -55,9 +54,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
                 // Caledar Service 생성
                 Calendar service = getCalendarService(userId);
                 // API 호출
-                Event created = service.events()
-                        .insert("primary", event)
-                        .execute();
+                Event created = service.events().insert("primary", event).execute();
 
                 // Event ID 반환
                 return created.getId();
@@ -66,12 +63,10 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
         } catch (GoogleJsonResponseException e) {
             handleGoogleApiException(e, "createEvent", userId, false);
             return null;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RetryableIntegrationException("Network error during createEvent");
         }
     }
-
 
     @Override
     public void updateEvent(Long userId, String eventId, CalendarEventDto eventDto) {
@@ -114,29 +109,24 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
         } catch (IOException e) {
             throw new RetryableIntegrationException("Network error", e);
         }
-
     }
 
     private Calendar getCalendarService(Long userId) throws IOException {
 
         // Token 조회
-        OAuthGoogleToken token = repository.findByUserId(userId)
+        OAuthGoogleToken token = repository
+                .findByUserId(userId)
                 .orElseThrow(() -> new NonRetryableIntegrationException("Token not found. userId=" + userId, 0));
         // Token 만료 확인
         if (token.isExpiringSoon(5)) {
-            log.info("Access token expiring soon. Refreshing. userId={}, expiryAt={}",
-                    userId, token.getExpiryAt());
+            log.info("Access token expiring soon. Refreshing. userId={}, expiryAt={}", userId, token.getExpiryAt());
             googleOAuthService.refreshAccessToken(userId);
             token = repository.findById(userId).orElseThrow();
         }
         // Credntial 생성
         GoogleCredential credential = new GoogleCredential().setAccessToken(token.getAccessToken());
         // Calendar Service 생성
-        Calendar service = new Calendar.Builder(
-                new NetHttpTransport(),
-                JacksonFactory.getDefaultInstance(),
-                credential
-        )
+        Calendar service = new Calendar.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance(), credential)
                 .setApplicationName("TaskFlow Caledar")
                 .build();
 
@@ -165,13 +155,17 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
     /**
      * Google API 예외 분류
      */
-    private void handleGoogleApiException(GoogleJsonResponseException e, String operation, Long userId,
-                                          boolean missingIsSuccess) {
+    private void handleGoogleApiException(
+            GoogleJsonResponseException e, String operation, Long userId, boolean missingIsSuccess) {
         int statusCode = e.getStatusCode();
         String reason = e.getDetails() != null ? e.getDetails().getMessage() : "Unknown";
 
-        log.error("Google API error. operation={}, userId={}, status={}, reason={}",
-                operation, userId, statusCode, reason);
+        log.error(
+                "Google API error. operation={}, userId={}, status={}, reason={}",
+                operation,
+                userId,
+                statusCode,
+                reason);
 
         if (statusCode == 401 || statusCode == 403) {
             throw new NonRetryableIntegrationException(
@@ -193,12 +187,10 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
                 log.info("Google Calendar resource already deleted (status={}), treat as success", statusCode);
                 return;
             }
-            throw new NonRetryableIntegrationException(
-                    "Calendar event not found: " + reason, statusCode, e);
+            throw new NonRetryableIntegrationException("Calendar event not found: " + reason, statusCode, e);
         }
 
-        throw new NonRetryableIntegrationException(
-                "Bad request: " + statusCode + " - " + reason, 0);
+        throw new NonRetryableIntegrationException("Bad request: " + statusCode + " - " + reason, 0);
     }
 
     /**
@@ -216,7 +208,7 @@ public class GoogleCalendarClientImpl implements GoogleCalendarClient {
             if (e.getStatusCode() == 401) {
                 log.info("401 Unauthorized. Refreshing token and retrying. userId={}", userId);
                 googleOAuthService.refreshAccessToken(userId);
-                return call.execute();  // 재시도 1회, 이때 getCalendarService()가 다시 실행됨
+                return call.execute(); // 재시도 1회, 이때 getCalendarService()가 다시 실행됨
             }
             throw e;
         }

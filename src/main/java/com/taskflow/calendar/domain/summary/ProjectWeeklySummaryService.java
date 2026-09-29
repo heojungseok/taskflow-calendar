@@ -6,8 +6,8 @@ import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
 import com.taskflow.calendar.domain.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
-import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
+import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.calendar.domain.summary.generator.SummaryPromptTaskSupport;
@@ -15,15 +15,10 @@ import com.taskflow.calendar.domain.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import com.taskflow.config.GeminiSummaryProperties;
-import com.taskflow.security.SecurityContextHelper;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.taskflow.config.GeminiSummaryProperties;
+import com.taskflow.security.SecurityContextHelper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -35,6 +30,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -49,12 +48,10 @@ public class ProjectWeeklySummaryService {
     private static final int MAX_SYNCED_DESC_BRIEF_CHARS = 280;
     private static final int MAX_UNSYNCED_DESC_BRIEF_CHARS = 160;
     private static final int MAX_DONE_TASKS_PER_SECTION = 1;
-    private static final List<String> HIGH_PRIORITY_DESCRIPTION_KEYWORDS = List.of(
-            "긴급", "urgent", "asap", "즉시", "오늘", "차단", "blocked", "장애", "incident", "배포", "release"
-    );
-    private static final List<String> RISK_DESCRIPTION_KEYWORDS = List.of(
-            "리스크", "risk", "실패", "failure", "누락", "지연", "retry", "의존", "dependency"
-    );
+    private static final List<String> HIGH_PRIORITY_DESCRIPTION_KEYWORDS =
+            List.of("긴급", "urgent", "asap", "즉시", "오늘", "차단", "blocked", "장애", "incident", "배포", "release");
+    private static final List<String> RISK_DESCRIPTION_KEYWORDS =
+            List.of("리스크", "risk", "실패", "failure", "누락", "지연", "retry", "의존", "dependency");
 
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
@@ -71,7 +68,8 @@ public class ProjectWeeklySummaryService {
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId, boolean forceLive) {
         Long userId = SecurityContextHelper.getCurrentUserId();
-        Project project = projectRepository.findByIdAndOwnerUserId(projectId, userId)
+        Project project = projectRepository
+                .findByIdAndOwnerUserId(projectId, userId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         List<Task> allTasks = taskRepository.findAllByProjectIdAndDeletedFalse(projectId);
@@ -89,7 +87,10 @@ public class ProjectWeeklySummaryService {
                 .filter(snapshot -> !snapshot.getSyncState().isSynced())
                 .collect(Collectors.toList());
 
-        if (userRepository.findById(userId).map(user -> user.getProvider() == Provider.DEMO).orElse(false)) {
+        if (userRepository
+                .findById(userId)
+                .map(user -> user.getProvider() == Provider.DEMO)
+                .orElse(false)) {
             return buildDemoResponse(project, weekStart, weekEnd, generatedAt, syncedTasks, unsyncedTasks);
         }
 
@@ -99,12 +100,16 @@ public class ProjectWeeklySummaryService {
         String latestCacheKey = latestCacheKey(projectId, weekStart, weekEnd, modelName);
 
         if (!forceLive && weeklySummaryCacheService.isEnabled()) {
-            WeeklySummaryResponse cached = weeklySummaryCacheService.find(exactCacheKey)
+            WeeklySummaryResponse cached = weeklySummaryCacheService
+                    .find(exactCacheKey)
                     .map(response -> response.withCacheStatus(WeeklySummaryCacheStatus.CACHE_HIT))
                     .orElse(null);
             if (cached != null) {
-                log.info("Weekly summary cache hit. projectId={}, weekStart={}, cacheKey={}",
-                        projectId, weekStart, exactCacheKey);
+                log.info(
+                        "Weekly summary cache hit. projectId={}, weekStart={}, cacheKey={}",
+                        projectId,
+                        weekStart,
+                        exactCacheKey);
                 return cached;
             }
         }
@@ -117,13 +122,15 @@ public class ProjectWeeklySummaryService {
                     generatedAt,
                     syncedTasks,
                     unsyncedTasks,
-                    WeeklySummaryCacheStatus.LIVE
-            );
+                    WeeklySummaryCacheStatus.LIVE);
 
             if (weeklySummaryCacheService.isEnabled()) {
                 weeklySummaryCacheService.save(exactCacheKey, latestCacheKey, liveResponse);
-                log.info("Weekly summary cache stored. projectId={}, weekStart={}, cacheKey={}",
-                        projectId, weekStart, exactCacheKey);
+                log.info(
+                        "Weekly summary cache stored. projectId={}, weekStart={}, cacheKey={}",
+                        projectId,
+                        weekStart,
+                        exactCacheKey);
             }
 
             return liveResponse;
@@ -131,8 +138,11 @@ public class ProjectWeeklySummaryService {
             if (!forceLive && weeklySummaryCacheService.isEnabled() && e.isFallbackEligible()) {
                 WeeklySummaryResponse fallback = readLatestCachedResponse(latestCacheKey);
                 if (fallback != null) {
-                    log.warn("Weekly summary stale fallback served. projectId={}, errorCode={}, latestCacheKey={}",
-                            projectId, e.getErrorCode().getCode(), latestCacheKey);
+                    log.warn(
+                            "Weekly summary stale fallback served. projectId={}, errorCode={}, latestCacheKey={}",
+                            projectId,
+                            e.getErrorCode().getCode(),
+                            latestCacheKey);
                     return fallback.withCacheStatus(WeeklySummaryCacheStatus.STALE_FALLBACK);
                 }
             }
@@ -140,12 +150,13 @@ public class ProjectWeeklySummaryService {
         }
     }
 
-    private WeeklySummaryResponse buildDemoResponse(Project project,
-                                                     LocalDate weekStart,
-                                                     LocalDate weekEnd,
-                                                     LocalDateTime generatedAt,
-                                                     List<SummaryTaskSnapshot> syncedTasks,
-                                                     List<SummaryTaskSnapshot> unsyncedTasks) {
+    private WeeklySummaryResponse buildDemoResponse(
+            Project project,
+            LocalDate weekStart,
+            LocalDate weekEnd,
+            LocalDateTime generatedAt,
+            List<SummaryTaskSnapshot> syncedTasks,
+            List<SummaryTaskSnapshot> unsyncedTasks) {
         return WeeklySummaryResponse.of(
                 project,
                 weekStart,
@@ -159,8 +170,7 @@ public class ProjectWeeklySummaryService {
                 demoSection(unsyncedTasks, SummaryBucket.UNSYNCED));
     }
 
-    private WeeklySummarySectionResponse demoSection(
-            List<SummaryTaskSnapshot> tasks, SummaryBucket bucket) {
+    private WeeklySummarySectionResponse demoSection(List<SummaryTaskSnapshot> tasks, SummaryBucket bucket) {
         if (tasks.isEmpty()) {
             return WeeklySummarySectionResponse.of(
                     0, 0, WeeklySummaryResult.empty(bucket.getEmptySummary(), bucket.getEmptyNextActions()));
@@ -177,40 +187,32 @@ public class ProjectWeeklySummaryService {
                         "demo-local"));
     }
 
-    private WeeklySummaryResponse buildResponse(Project project,
-                                                LocalDate weekStart,
-                                                LocalDate weekEnd,
-                                                LocalDateTime generatedAt,
-                                                List<SummaryTaskSnapshot> syncedTasks,
-                                                List<SummaryTaskSnapshot> unsyncedTasks,
-                                                WeeklySummaryCacheStatus cacheStatus) {
+    private WeeklySummaryResponse buildResponse(
+            Project project,
+            LocalDate weekStart,
+            LocalDate weekEnd,
+            LocalDateTime generatedAt,
+            List<SummaryTaskSnapshot> syncedTasks,
+            List<SummaryTaskSnapshot> unsyncedTasks,
+            WeeklySummaryCacheStatus cacheStatus) {
         List<SummaryTaskSnapshot> syncedIncludedTasks = selectIncludedTasks(syncedTasks, SummaryBucket.SYNCED);
         List<SummaryTaskSnapshot> unsyncedIncludedTasks = selectIncludedTasks(unsyncedTasks, SummaryBucket.UNSYNCED);
 
         WeeklySummarySectionsResult generatedSections = shouldCallGenerator(syncedTasks, unsyncedTasks)
                 ? weeklySummaryGenerator.generate(
-                project,
-                syncedIncludedTasks,
-                syncedTasks.size(),
-                unsyncedIncludedTasks,
-                unsyncedTasks.size(),
-                weekStart,
-                weekEnd
-        )
+                        project,
+                        syncedIncludedTasks,
+                        syncedTasks.size(),
+                        unsyncedIncludedTasks,
+                        unsyncedTasks.size(),
+                        weekStart,
+                        weekEnd)
                 : WeeklySummarySectionsResult.of(null, null);
 
-        WeeklySummarySectionResponse synced = buildSection(
-                syncedTasks,
-                syncedIncludedTasks,
-                SummaryBucket.SYNCED,
-                generatedSections.getSynced()
-        );
+        WeeklySummarySectionResponse synced =
+                buildSection(syncedTasks, syncedIncludedTasks, SummaryBucket.SYNCED, generatedSections.getSynced());
         WeeklySummarySectionResponse unsynced = buildSection(
-                unsyncedTasks,
-                unsyncedIncludedTasks,
-                SummaryBucket.UNSYNCED,
-                generatedSections.getUnsynced()
-        );
+                unsyncedTasks, unsyncedIncludedTasks, SummaryBucket.UNSYNCED, generatedSections.getUnsynced());
 
         return WeeklySummaryResponse.of(
                 project,
@@ -222,11 +224,11 @@ public class ProjectWeeklySummaryService {
                 syncedTasks.size(),
                 unsyncedTasks.size(),
                 synced,
-                unsynced
-        );
+                unsynced);
     }
 
-    private boolean shouldCallGenerator(List<SummaryTaskSnapshot> syncedTasks, List<SummaryTaskSnapshot> unsyncedTasks) {
+    private boolean shouldCallGenerator(
+            List<SummaryTaskSnapshot> syncedTasks, List<SummaryTaskSnapshot> unsyncedTasks) {
         return !syncedTasks.isEmpty() || !unsyncedTasks.isEmpty();
     }
 
@@ -235,12 +237,9 @@ public class ProjectWeeklySummaryService {
             return List.of();
         }
 
-        int maxTasks = bucket == SummaryBucket.SYNCED
-                ? MAX_SYNCED_TASKS_PER_SECTION
-                : MAX_UNSYNCED_TASKS_PER_SECTION;
-        int maxDescBriefChars = bucket == SummaryBucket.SYNCED
-                ? MAX_SYNCED_DESC_BRIEF_CHARS
-                : MAX_UNSYNCED_DESC_BRIEF_CHARS;
+        int maxTasks = bucket == SummaryBucket.SYNCED ? MAX_SYNCED_TASKS_PER_SECTION : MAX_UNSYNCED_TASKS_PER_SECTION;
+        int maxDescBriefChars =
+                bucket == SummaryBucket.SYNCED ? MAX_SYNCED_DESC_BRIEF_CHARS : MAX_UNSYNCED_DESC_BRIEF_CHARS;
 
         List<SummaryTaskSnapshot> selected = new java.util.ArrayList<>();
         int selectedDescBriefChars = 0;
@@ -281,31 +280,30 @@ public class ProjectWeeklySummaryService {
         return weeklySummaryCacheService.find(latestCacheKey).orElse(null);
     }
 
-    private WeeklySummarySectionResponse buildSection(List<SummaryTaskSnapshot> allTasks,
-                                                      List<SummaryTaskSnapshot> includedTasks,
-                                                      SummaryBucket bucket,
-                                                      WeeklySummaryResult result) {
+    private WeeklySummarySectionResponse buildSection(
+            List<SummaryTaskSnapshot> allTasks,
+            List<SummaryTaskSnapshot> includedTasks,
+            SummaryBucket bucket,
+            WeeklySummaryResult result) {
         if (allTasks.isEmpty()) {
             return WeeklySummarySectionResponse.of(
-                    0,
-                    0,
-                    WeeklySummaryResult.empty(bucket.getEmptySummary(), bucket.getEmptyNextActions())
-            );
+                    0, 0, WeeklySummaryResult.empty(bucket.getEmptySummary(), bucket.getEmptyNextActions()));
         }
 
         return WeeklySummarySectionResponse.of(
                 allTasks.size(),
                 includedTasks.size(),
-                Objects.requireNonNull(result, "Weekly summary result must not be null for non-empty section")
-        );
+                Objects.requireNonNull(result, "Weekly summary result must not be null for non-empty section"));
     }
 
     private Comparator<SummaryTaskSnapshot> taskPriorityComparator(LocalDate today) {
-        return Comparator
-                .comparingInt((SummaryTaskSnapshot snapshot) -> taskPriority(snapshot.getTask(), today))
+        return Comparator.comparingInt((SummaryTaskSnapshot snapshot) -> taskPriority(snapshot.getTask(), today))
                 .reversed()
-                .thenComparing(snapshot -> effectiveEventEndAt(snapshot.getTask()), Comparator.nullsLast(Comparator.naturalOrder()))
-                .thenComparing(snapshot -> snapshot.getTask().getCreatedAt(), Comparator.nullsLast(Comparator.naturalOrder()));
+                .thenComparing(
+                        snapshot -> effectiveEventEndAt(snapshot.getTask()),
+                        Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(
+                        snapshot -> snapshot.getTask().getCreatedAt(), Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     private int taskPriority(Task task, LocalDate today) {
@@ -383,10 +381,8 @@ public class ProjectWeeklySummaryService {
         return task.getDueAt();
     }
 
-    private boolean overlaps(LocalDateTime startAt,
-                             LocalDateTime endAt,
-                             LocalDateTime windowStart,
-                             LocalDateTime windowEndExclusive) {
+    private boolean overlaps(
+            LocalDateTime startAt, LocalDateTime endAt, LocalDateTime windowStart, LocalDateTime windowEndExclusive) {
         return startAt.isBefore(windowEndExclusive) && endAt.isAfter(windowStart);
     }
 
@@ -428,11 +424,12 @@ public class ProjectWeeklySummaryService {
         return 0;
     }
 
-    private String summaryFingerprint(Project project,
-                                      LocalDate weekStart,
-                                      LocalDate weekEnd,
-                                      List<SummaryTaskSnapshot> prioritizedTasks,
-                                      String modelName) {
+    private String summaryFingerprint(
+            Project project,
+            LocalDate weekStart,
+            LocalDate weekEnd,
+            List<SummaryTaskSnapshot> prioritizedTasks,
+            String modelName) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             updateDigest(digest, project.getId());
@@ -474,19 +471,13 @@ public class ProjectWeeklySummaryService {
         digest.update((byte) 0);
     }
 
-    private String exactCacheKey(Long projectId,
-                                 LocalDate weekStart,
-                                 LocalDate weekEnd,
-                                 String modelName,
-                                 String fingerprint) {
-        return "weekly-summary:v1:exact:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName + ":" + fingerprint;
+    private String exactCacheKey(
+            Long projectId, LocalDate weekStart, LocalDate weekEnd, String modelName, String fingerprint) {
+        return "weekly-summary:v1:exact:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName + ":"
+                + fingerprint;
     }
 
-    private String latestCacheKey(Long projectId,
-                                  LocalDate weekStart,
-                                  LocalDate weekEnd,
-                                  String modelName) {
+    private String latestCacheKey(Long projectId, LocalDate weekStart, LocalDate weekEnd, String modelName) {
         return "weekly-summary:v1:latest:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName;
     }
-
 }

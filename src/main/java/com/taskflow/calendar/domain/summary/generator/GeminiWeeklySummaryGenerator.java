@@ -5,17 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.summary.SummaryBucket;
 import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
-import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
+import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.calendar.domain.task.Task;
-import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.common.ErrorCode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.observability.TaskFlowMetrics;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -34,6 +30,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
@@ -48,56 +47,59 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     @Override
-    public WeeklySummarySectionsResult generate(Project project,
-                                                List<SummaryTaskSnapshot> syncedTasks,
-                                                int syncedTotalTaskCount,
-                                                List<SummaryTaskSnapshot> unsyncedTasks,
-                                                int unsyncedTotalTaskCount,
-                                                LocalDate weekStart,
-                                                LocalDate weekEnd) {
+    public WeeklySummarySectionsResult generate(
+            Project project,
+            List<SummaryTaskSnapshot> syncedTasks,
+            int syncedTotalTaskCount,
+            List<SummaryTaskSnapshot> unsyncedTasks,
+            int unsyncedTotalTaskCount,
+            LocalDate weekStart,
+            LocalDate weekEnd) {
         return generateWithTelemetry(
-                project,
-                syncedTasks,
-                syncedTotalTaskCount,
-                unsyncedTasks,
-                unsyncedTotalTaskCount,
-                weekStart,
-                weekEnd
-        ).getSections();
+                        project,
+                        syncedTasks,
+                        syncedTotalTaskCount,
+                        unsyncedTasks,
+                        unsyncedTotalTaskCount,
+                        weekStart,
+                        weekEnd)
+                .getSections();
     }
 
-    SummaryGenerationTelemetry generateWithTelemetry(Project project,
-                                                     List<SummaryTaskSnapshot> syncedTasks,
-                                                     int syncedTotalTaskCount,
-                                                     List<SummaryTaskSnapshot> unsyncedTasks,
-                                                     int unsyncedTotalTaskCount,
-                                                     LocalDate weekStart,
-                                                     LocalDate weekEnd) {
-        return metrics.observeGeminiCall("weekly_summary", () -> generateUnobserved(
-                project, syncedTasks, syncedTotalTaskCount, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd
-        ));
+    SummaryGenerationTelemetry generateWithTelemetry(
+            Project project,
+            List<SummaryTaskSnapshot> syncedTasks,
+            int syncedTotalTaskCount,
+            List<SummaryTaskSnapshot> unsyncedTasks,
+            int unsyncedTotalTaskCount,
+            LocalDate weekStart,
+            LocalDate weekEnd) {
+        return metrics.observeGeminiCall(
+                "weekly_summary",
+                () -> generateUnobserved(
+                        project,
+                        syncedTasks,
+                        syncedTotalTaskCount,
+                        unsyncedTasks,
+                        unsyncedTotalTaskCount,
+                        weekStart,
+                        weekEnd));
     }
 
-    private SummaryGenerationTelemetry generateUnobserved(Project project,
-                                                           List<SummaryTaskSnapshot> syncedTasks,
-                                                           int syncedTotalTaskCount,
-                                                           List<SummaryTaskSnapshot> unsyncedTasks,
-                                                           int unsyncedTotalTaskCount,
-                                                           LocalDate weekStart,
-                                                           LocalDate weekEnd) {
+    private SummaryGenerationTelemetry generateUnobserved(
+            Project project,
+            List<SummaryTaskSnapshot> syncedTasks,
+            int syncedTotalTaskCount,
+            List<SummaryTaskSnapshot> unsyncedTasks,
+            int unsyncedTotalTaskCount,
+            LocalDate weekStart,
+            LocalDate weekEnd) {
         validateConfiguration();
 
         PreparedRequest preparedRequest = prepareRequest(
-                project,
-                syncedTasks,
-                syncedTotalTaskCount,
-                unsyncedTasks,
-                unsyncedTotalTaskCount,
-                weekStart,
-                weekEnd
-        );
-        String endpoint = properties.getBaseUrl().replaceAll("/$", "")
-                + "/models/" + properties.getModel() + ":generateContent";
+                project, syncedTasks, syncedTotalTaskCount, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd);
+        String endpoint =
+                properties.getBaseUrl().replaceAll("/$", "") + "/models/" + properties.getModel() + ":generateContent";
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint))
                 .header("x-goog-api-key", properties.getApiKey())
@@ -108,10 +110,8 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
         long startedAt = System.currentTimeMillis();
         try {
-            HttpResponse<String> response = httpClient.send(
-                    request,
-                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
-            );
+            HttpResponse<String> response =
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             long latencyMs = System.currentTimeMillis() - startedAt;
 
             if (response.statusCode() >= 400) {
@@ -123,8 +123,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                         response.headers().map(),
                         response.body(),
                         latencyMs,
-                        preparedRequest.getMetrics()
-                );
+                        preparedRequest.getMetrics());
             }
 
             JsonNode root = objectMapper.readTree(response.body());
@@ -135,11 +134,11 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     preparedRequest.getMetrics().getRequestBodyLength(),
                     usageMetrics.promptTokens,
                     usageMetrics.candidateTokens,
-                    usageMetrics.totalTokens
-            );
+                    usageMetrics.totalTokens);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("Gemini summary request interrupted. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, message={}",
+            log.warn(
+                    "Gemini summary request interrupted. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, message={}",
                     project.getId(),
                     properties.getModel(),
                     weekStart,
@@ -157,12 +156,10 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     preparedRequest.getMetrics().getUnsyncedDescBriefChars(),
                     abbreviate(e.getMessage()));
             throw new WeeklySummaryGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Gemini API request was interrupted",
-                    true
-            );
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini API request was interrupted", true);
         } catch (IOException e) {
-            log.warn("Gemini summary request failed before response. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, message={}",
+            log.warn(
+                    "Gemini summary request failed before response. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, message={}",
                     project.getId(),
                     properties.getModel(),
                     weekStart,
@@ -180,42 +177,38 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     preparedRequest.getMetrics().getUnsyncedDescBriefChars(),
                     abbreviate(e.getMessage()));
             throw new WeeklySummaryGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Gemini API request failed: " + e.getMessage(),
-                    true
-            );
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini API request failed: " + e.getMessage(), true);
         }
     }
 
     private void validateConfiguration() {
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
             throw new WeeklySummaryGenerationException(
-                    ErrorCode.LLM_API_KEY_MISSING,
-                    "GEMINI_SUMMARY_API_KEY is not configured",
-                    false
-            );
+                    ErrorCode.LLM_API_KEY_MISSING, "GEMINI_SUMMARY_API_KEY is not configured", false);
         }
     }
 
-    private PreparedRequest prepareRequest(Project project,
-                                           List<SummaryTaskSnapshot> syncedTasks,
-                                           int syncedTotalTaskCount,
-                                           List<SummaryTaskSnapshot> unsyncedTasks,
-                                           int unsyncedTotalTaskCount,
-                                           LocalDate weekStart,
-                                           LocalDate weekEnd) {
+    private PreparedRequest prepareRequest(
+            Project project,
+            List<SummaryTaskSnapshot> syncedTasks,
+            int syncedTotalTaskCount,
+            List<SummaryTaskSnapshot> unsyncedTasks,
+            int unsyncedTotalTaskCount,
+            LocalDate weekStart,
+            LocalDate weekEnd) {
         try {
             Map<String, Object> requestBody = new LinkedHashMap<>();
             requestBody.put("system_instruction", createContent(systemInstruction()));
-            requestBody.put("contents", List.of(createContent(userPrompt(
-                    project,
-                    syncedTasks,
-                    syncedTotalTaskCount,
-                    unsyncedTasks,
-                    unsyncedTotalTaskCount,
-                    weekStart,
-                    weekEnd
-            ))));
+            requestBody.put(
+                    "contents",
+                    List.of(createContent(userPrompt(
+                            project,
+                            syncedTasks,
+                            syncedTotalTaskCount,
+                            unsyncedTasks,
+                            unsyncedTotalTaskCount,
+                            weekStart,
+                            weekEnd))));
 
             Map<String, Object> generationConfig = new LinkedHashMap<>();
             generationConfig.put("temperature", properties.getTemperature());
@@ -232,9 +225,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
             String serializedRequestBody = objectMapper.writeValueAsString(requestBody);
             return new PreparedRequest(
-                    serializedRequestBody,
-                    buildPromptMetrics(serializedRequestBody, syncedTasks, unsyncedTasks)
-            );
+                    serializedRequestBody, buildPromptMetrics(serializedRequestBody, syncedTasks, unsyncedTasks));
         } catch (IOException e) {
             throw new IllegalStateException("Failed to build Gemini request body", e);
         }
@@ -252,35 +243,37 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 + "synced와 unsynced는 각자 제공된 데이터만 기준으로 작성하라.";
     }
 
-    private String userPrompt(Project project,
-                              List<SummaryTaskSnapshot> syncedTasks,
-                              int syncedTotalTaskCount,
-                              List<SummaryTaskSnapshot> unsyncedTasks,
-                              int unsyncedTotalTaskCount,
-                              LocalDate weekStart,
-                              LocalDate weekEnd) throws IOException {
+    private String userPrompt(
+            Project project,
+            List<SummaryTaskSnapshot> syncedTasks,
+            int syncedTotalTaskCount,
+            List<SummaryTaskSnapshot> unsyncedTasks,
+            int unsyncedTotalTaskCount,
+            LocalDate weekStart,
+            LocalDate weekEnd)
+            throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("projectName", project.getName());
         payload.put("today", LocalDate.now());
         payload.put("weekStart", weekStart);
         payload.put("weekEnd", weekEnd);
-        payload.put("instructions", promptInstructions(
-                syncedTasks,
-                syncedTotalTaskCount,
-                unsyncedTasks,
-                unsyncedTotalTaskCount
-        ));
-        payload.put("synced", sectionPayload(SummaryBucket.SYNCED, syncedTasks, syncedTotalTaskCount, weekStart, weekEnd));
-        payload.put("unsynced", sectionPayload(SummaryBucket.UNSYNCED, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd));
+        payload.put(
+                "instructions",
+                promptInstructions(syncedTasks, syncedTotalTaskCount, unsyncedTasks, unsyncedTotalTaskCount));
+        payload.put(
+                "synced", sectionPayload(SummaryBucket.SYNCED, syncedTasks, syncedTotalTaskCount, weekStart, weekEnd));
+        payload.put(
+                "unsynced",
+                sectionPayload(SummaryBucket.UNSYNCED, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd));
 
-        return "아래 입력 JSON을 바탕으로 synced와 unsynced 두 섹션만 반환하라.\n"
-                + objectMapper.writeValueAsString(payload);
+        return "아래 입력 JSON을 바탕으로 synced와 unsynced 두 섹션만 반환하라.\n" + objectMapper.writeValueAsString(payload);
     }
 
-    private List<String> promptInstructions(List<SummaryTaskSnapshot> syncedTasks,
-                                            int syncedTotalTaskCount,
-                                            List<SummaryTaskSnapshot> unsyncedTasks,
-                                            int unsyncedTotalTaskCount) {
+    private List<String> promptInstructions(
+            List<SummaryTaskSnapshot> syncedTasks,
+            int syncedTotalTaskCount,
+            List<SummaryTaskSnapshot> unsyncedTasks,
+            int unsyncedTotalTaskCount) {
         List<String> instructions = new ArrayList<>();
         instructions.add("이번 주 기준으로만 요약하라.");
         instructions.add("synced는 일정 흐름과 일정상 리스크 중심으로, unsynced는 누락 위험과 반영 필요성 중심으로 작성하라.");
@@ -300,11 +293,12 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return instructions;
     }
 
-    private Map<String, Object> sectionPayload(SummaryBucket bucket,
-                                               List<SummaryTaskSnapshot> tasks,
-                                               int totalTaskCount,
-                                               LocalDate weekStart,
-                                               LocalDate weekEnd) {
+    private Map<String, Object> sectionPayload(
+            SummaryBucket bucket,
+            List<SummaryTaskSnapshot> tasks,
+            int totalTaskCount,
+            LocalDate weekStart,
+            LocalDate weekEnd) {
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("focus", bucket.getPromptFocus());
         section.put("totalTaskCount", totalTaskCount);
@@ -317,9 +311,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return section;
     }
 
-    private String summaryLeadHint(SummaryBucket bucket,
-                                   List<SummaryTaskSnapshot> tasks,
-                                   int totalTaskCount) {
+    private String summaryLeadHint(SummaryBucket bucket, List<SummaryTaskSnapshot> tasks, int totalTaskCount) {
         boolean partialCoverage = hasPartialCoverage(tasks, totalTaskCount);
         if (bucket == SummaryBucket.UNSYNCED) {
             if (partialCoverage) {
@@ -337,7 +329,8 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return totalTaskCount > 0 && tasks.size() < totalTaskCount;
     }
 
-    private List<Map<String, Object>> taskPayload(List<SummaryTaskSnapshot> tasks, LocalDate weekStart, LocalDate weekEnd) {
+    private List<Map<String, Object>> taskPayload(
+            List<SummaryTaskSnapshot> tasks, LocalDate weekStart, LocalDate weekEnd) {
         List<Map<String, Object>> payload = new ArrayList<>();
 
         for (SummaryTaskSnapshot snapshot : tasks) {
@@ -404,9 +397,8 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return schema;
     }
 
-    private WeeklySummarySectionsResult parseResponse(JsonNode root,
-                                                     int syncedTotalTaskCount,
-                                                     int unsyncedTotalTaskCount) throws IOException {
+    private WeeklySummarySectionsResult parseResponse(
+            JsonNode root, int syncedTotalTaskCount, int unsyncedTotalTaskCount) throws IOException {
         JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
 
         if (textNode.isMissingNode() || textNode.asText().isBlank()) {
@@ -415,8 +407,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE,
                     "Gemini response did not contain summary text. blockReason=" + reason,
-                    false
-            );
+                    false);
         }
 
         JsonNode payload;
@@ -424,21 +415,15 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             payload = objectMapper.readTree(textNode.asText());
         } catch (IOException e) {
             throw new WeeklySummaryGenerationException(
-                    ErrorCode.LLM_INVALID_RESPONSE,
-                    "Gemini response payload was not valid JSON",
-                    false
-            );
+                    ErrorCode.LLM_INVALID_RESPONSE, "Gemini response payload was not valid JSON", false);
         }
 
         return WeeklySummarySectionsResult.of(
                 parseSection(payload.path("synced"), SummaryBucket.SYNCED, syncedTotalTaskCount),
-                parseSection(payload.path("unsynced"), SummaryBucket.UNSYNCED, unsyncedTotalTaskCount)
-        );
+                parseSection(payload.path("unsynced"), SummaryBucket.UNSYNCED, unsyncedTotalTaskCount));
     }
 
-    private WeeklySummaryResult parseSection(JsonNode sectionNode,
-                                             SummaryBucket bucket,
-                                             int totalTaskCount) {
+    private WeeklySummaryResult parseSection(JsonNode sectionNode, SummaryBucket bucket, int totalTaskCount) {
         if (totalTaskCount == 0) {
             return WeeklySummaryResult.empty(bucket.getEmptySummary(), bucket.getEmptyNextActions());
         }
@@ -446,8 +431,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE,
                     "Gemini response did not contain " + bucket.name().toLowerCase(Locale.ROOT) + " section",
-                    false
-            );
+                    false);
         }
 
         String summary = sectionNode.path("summary").asText("").trim();
@@ -455,8 +439,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE,
                     "Gemini " + bucket.name().toLowerCase(Locale.ROOT) + " summary payload was empty",
-                    false
-            );
+                    false);
         }
 
         return WeeklySummaryResult.of(
@@ -464,8 +447,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 toStringList(sectionNode.path("highlights")),
                 toStringList(sectionNode.path("risks")),
                 toStringList(sectionNode.path("nextActions")),
-                properties.getModel()
-        );
+                properties.getModel());
     }
 
     private List<String> toStringList(JsonNode node) {
@@ -485,14 +467,15 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return values;
     }
 
-    private WeeklySummaryGenerationException classifyUpstreamFailure(Project project,
-                                                                    LocalDate weekStart,
-                                                                    LocalDate weekEnd,
-                                                                    int statusCode,
-                                                                    Map<String, List<String>> responseHeaders,
-                                                                    String responseBody,
-                                                                    long latencyMs,
-                                                                    PromptMetrics metrics) {
+    private WeeklySummaryGenerationException classifyUpstreamFailure(
+            Project project,
+            LocalDate weekStart,
+            LocalDate weekEnd,
+            int statusCode,
+            Map<String, List<String>> responseHeaders,
+            String responseBody,
+            long latencyMs,
+            PromptMetrics metrics) {
         ErrorCode errorCode;
         boolean fallbackEligible;
         String message;
@@ -524,7 +507,8 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             message = "Gemini request failed";
         }
 
-        log.warn("Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}",
+        log.warn(
+                "Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}",
                 project.getId(),
                 properties.getModel(),
                 weekStart,
@@ -547,14 +531,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 reasonHints);
 
         return new WeeklySummaryGenerationException(
-                errorCode,
-                message,
-                fallbackEligible,
-                classificationSource,
-                retryAfter,
-                upstreamStatus,
-                reasonHints
-        );
+                errorCode, message, fallbackEligible, classificationSource, retryAfter, upstreamStatus, reasonHints);
     }
 
     private Classified429 classify429(Map<String, List<String>> responseHeaders, String responseBody) {
@@ -566,8 +543,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     "HEADER",
                     retryAfter,
                     null,
-                    List.of("retry-after")
-            );
+                    List.of("retry-after"));
         }
 
         ParsedUpstream429 parsed = parseUpstream429(responseBody);
@@ -578,8 +554,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     "BODY",
                     retryAfter,
                     parsed.upstreamStatus(),
-                    parsed.reasonHints()
-            );
+                    parsed.reasonHints());
         }
         if (containsRateLimitHint(parsed.reasonHints(), parsed.message(), parsed.upstreamStatus())) {
             return new Classified429(
@@ -588,8 +563,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     "BODY",
                     retryAfter,
                     parsed.upstreamStatus(),
-                    parsed.reasonHints()
-            );
+                    parsed.reasonHints());
         }
 
         String normalizedMessage = normalizeHintText(parsed.message().isBlank() ? responseBody : parsed.message());
@@ -600,8 +574,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     "MESSAGE",
                     retryAfter,
                     parsed.upstreamStatus(),
-                    parsed.reasonHints()
-            );
+                    parsed.reasonHints());
         }
         if (containsRateLimitKeyword(normalizedMessage)) {
             return new Classified429(
@@ -610,8 +583,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     "MESSAGE",
                     retryAfter,
                     parsed.upstreamStatus(),
-                    parsed.reasonHints()
-            );
+                    parsed.reasonHints());
         }
 
         return new Classified429(
@@ -620,8 +592,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 "UNKNOWN",
                 retryAfter,
                 parsed.upstreamStatus(),
-                parsed.reasonHints()
-        );
+                parsed.reasonHints());
     }
 
     private ParsedUpstream429 parseUpstream429(String responseBody) {
@@ -633,14 +604,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode errorNode = root.path("error");
             String message = firstNonBlank(
-                    errorNode.path("message").asText(null),
-                    root.path("message").asText(null),
-                    responseBody
-            );
+                    errorNode.path("message").asText(null), root.path("message").asText(null), responseBody);
             String upstreamStatus = firstNonBlank(
-                    errorNode.path("status").asText(null),
-                    root.path("status").asText(null)
-            );
+                    errorNode.path("status").asText(null), root.path("status").asText(null));
             List<String> reasonHints = extractReasonHints(errorNode);
             return new ParsedUpstream429(message == null ? "" : message, upstreamStatus, reasonHints);
         } catch (IOException e) {
@@ -715,7 +681,8 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     }
 
     private boolean containsQuotaKeyword(String normalized) {
-        return containsAnyKeyword(normalized,
+        return containsAnyKeyword(
+                normalized,
                 "quotaexceeded",
                 "dailylimitexceeded",
                 "daily limit",
@@ -729,7 +696,8 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     }
 
     private boolean containsRateLimitKeyword(String normalized) {
-        return containsAnyKeyword(normalized,
+        return containsAnyKeyword(
+                normalized,
                 "ratelimitexceeded",
                 "rate limit",
                 "too many requests",
@@ -799,13 +767,15 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return null;
     }
 
-    private void logUsage(Project project,
-                          LocalDate weekStart,
-                          LocalDate weekEnd,
-                          long latencyMs,
-                          PromptMetrics metrics,
-                          UsageMetrics usageMetrics) {
-        log.info("Gemini summary request succeeded. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, promptTokens={}, candidateTokens={}, totalTokens={}",
+    private void logUsage(
+            Project project,
+            LocalDate weekStart,
+            LocalDate weekEnd,
+            long latencyMs,
+            PromptMetrics metrics,
+            UsageMetrics usageMetrics) {
+        log.info(
+                "Gemini summary request succeeded. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, promptTokens={}, candidateTokens={}, totalTokens={}",
                 project.getId(),
                 properties.getModel(),
                 weekStart,
@@ -830,8 +800,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return new UsageMetrics(
                 usage.path("promptTokenCount").asInt(0),
                 usage.path("candidatesTokenCount").asInt(0),
-                usage.path("totalTokenCount").asInt(0)
-        );
+                usage.path("totalTokenCount").asInt(0));
     }
 
     private Integer effectiveTopK() {
@@ -850,17 +819,15 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return topP;
     }
 
-    private PromptMetrics buildPromptMetrics(String requestBody,
-                                             List<SummaryTaskSnapshot> syncedTasks,
-                                             List<SummaryTaskSnapshot> unsyncedTasks) {
+    private PromptMetrics buildPromptMetrics(
+            String requestBody, List<SummaryTaskSnapshot> syncedTasks, List<SummaryTaskSnapshot> unsyncedTasks) {
         return new PromptMetrics(
                 requestBody.getBytes(StandardCharsets.UTF_8).length,
                 sha256(requestBody),
                 syncedTasks.size(),
                 unsyncedTasks.size(),
                 totalDescBriefChars(syncedTasks),
-                totalDescBriefChars(unsyncedTasks)
-        );
+                totalDescBriefChars(unsyncedTasks));
     }
 
     private int totalDescBriefChars(List<SummaryTaskSnapshot> tasks) {
@@ -903,12 +870,13 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         private final int syncedDescBriefChars;
         private final int unsyncedDescBriefChars;
 
-        private PromptMetrics(int requestBodyLength,
-                              String promptInputFingerprint,
-                              int syncedIncludedTaskCount,
-                              int unsyncedIncludedTaskCount,
-                              int syncedDescBriefChars,
-                              int unsyncedDescBriefChars) {
+        private PromptMetrics(
+                int requestBodyLength,
+                String promptInputFingerprint,
+                int syncedIncludedTaskCount,
+                int unsyncedIncludedTaskCount,
+                int syncedDescBriefChars,
+                int unsyncedDescBriefChars) {
             this.requestBodyLength = requestBodyLength;
             this.promptInputFingerprint = promptInputFingerprint;
             this.syncedIncludedTaskCount = syncedIncludedTaskCount;
@@ -1004,12 +972,13 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         private final String upstreamStatus;
         private final List<String> reasonHints;
 
-        private Classified429(ErrorCode errorCode,
-                              String message,
-                              String classificationSource,
-                              String retryAfter,
-                              String upstreamStatus,
-                              List<String> reasonHints) {
+        private Classified429(
+                ErrorCode errorCode,
+                String message,
+                String classificationSource,
+                String retryAfter,
+                String upstreamStatus,
+                List<String> reasonHints) {
             this.errorCode = errorCode;
             this.message = message;
             this.classificationSource = classificationSource;

@@ -1,13 +1,11 @@
 package com.taskflow.calendar.domain.oauth;
 
+import com.taskflow.security.EncryptedStringConverter;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import com.taskflow.security.EncryptedStringConverter;
-
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "oauth_google_tokens")
@@ -44,7 +42,8 @@ public class OAuthGoogleToken {
     private LocalDateTime updatedAt;
 
     // ✅ 생성 메서드
-    public static OAuthGoogleToken create(Long userId, String accessToken, String refreshToken, LocalDateTime expiryAt, String scope) {
+    public static OAuthGoogleToken create(
+            Long userId, String accessToken, String refreshToken, LocalDateTime expiryAt, String scope) {
         OAuthGoogleToken token = new OAuthGoogleToken();
         token.userId = userId;
         token.accessToken = accessToken;
@@ -64,7 +63,8 @@ public class OAuthGoogleToken {
     }
 
     // ✅ 2. Full 갱신 (refresh_token/scope도 바뀔 수 있음)
-    public void updateTokens(String newAccessToken, String newRefreshToken, LocalDateTime newExpiryAt, String newScope) {
+    public void updateTokens(
+            String newAccessToken, String newRefreshToken, LocalDateTime newExpiryAt, String newScope) {
         this.accessToken = newAccessToken;
         this.expiryAt = newExpiryAt;
 
@@ -85,8 +85,6 @@ public class OAuthGoogleToken {
     }
 
     public boolean isExpiringSoon(int minutesBefore) {
-        return LocalDateTime.now()
-                .plusMinutes(minutesBefore)
-                .isAfter(expiryAt);
+        return LocalDateTime.now().plusMinutes(minutesBefore).isAfter(expiryAt);
     }
 }

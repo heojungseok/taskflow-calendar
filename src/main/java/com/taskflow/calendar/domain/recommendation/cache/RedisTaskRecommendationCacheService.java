@@ -3,13 +3,12 @@ package com.taskflow.calendar.domain.recommendation.cache;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.recommendation.dto.ProjectTaskRecommendationResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.data.redis.core.StringRedisTemplate;
-
 import java.time.Duration;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -29,13 +28,14 @@ public class RedisTaskRecommendationCacheService implements TaskRecommendationCa
                 record("miss");
                 return Optional.empty();
             }
-            ProjectTaskRecommendationResponse response = objectMapper.readValue(
-                    json, ProjectTaskRecommendationResponse.class);
+            ProjectTaskRecommendationResponse response =
+                    objectMapper.readValue(json, ProjectTaskRecommendationResponse.class);
             record("hit");
             return Optional.of(response);
         } catch (RuntimeException | JsonProcessingException e) {
             record("error");
-            log.warn("Recommendation cache read failed; continuing without cache. errorType={}",
+            log.warn(
+                    "Recommendation cache read failed; continuing without cache. errorType={}",
                     e.getClass().getSimpleName());
             return Optional.empty();
         }
@@ -48,7 +48,8 @@ public class RedisTaskRecommendationCacheService implements TaskRecommendationCa
             record("write");
         } catch (RuntimeException | JsonProcessingException e) {
             record("error");
-            log.warn("Recommendation cache write failed; continuing without cache. errorType={}",
+            log.warn(
+                    "Recommendation cache write failed; continuing without cache. errorType={}",
                     e.getClass().getSimpleName());
         }
     }
@@ -59,7 +60,8 @@ public class RedisTaskRecommendationCacheService implements TaskRecommendationCa
     }
 
     private void record(String outcome) {
-        meterRegistry.counter("taskflow_cache_operations_total",
-                "feature", "recommendation", "outcome", outcome).increment();
+        meterRegistry
+                .counter("taskflow_cache_operations_total", "feature", "recommendation", "outcome", outcome)
+                .increment();
     }
 }

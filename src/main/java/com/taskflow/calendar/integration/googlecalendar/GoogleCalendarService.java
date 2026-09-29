@@ -18,6 +18,5 @@ public interface GoogleCalendarService {
      * @throws RetryableIntegrationException 재시도 가능한 예외
      * @throws NonRetryableIntegrationException 재시도 불가능한 예외 (즉시 실패)
      */
-    void handle(CalendarOutbox outbox)
-            throws RetryableIntegrationException, NonRetryableIntegrationException;
+    void handle(CalendarOutbox outbox) throws RetryableIntegrationException, NonRetryableIntegrationException;
 }

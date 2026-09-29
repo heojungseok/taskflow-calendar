@@ -3,10 +3,9 @@ package com.taskflow.calendar.domain.outbox.dto;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.OutboxOpType;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 /**
  * Outbox 조회 응답 DTO
@@ -28,7 +27,7 @@ public class OutboxResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static OutboxResponse from (CalendarOutbox outbox) {
+    public static OutboxResponse from(CalendarOutbox outbox) {
         return OutboxResponse.builder()
                 .id(outbox.getId())
                 .taskId(outbox.getTaskId())

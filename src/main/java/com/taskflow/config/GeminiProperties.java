@@ -2,6 +2,7 @@ package com.taskflow.config;
 
 import lombok.Getter;
 import lombok.Setter;
+
 @Getter
 @Setter
 public class GeminiProperties {

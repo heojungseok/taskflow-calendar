@@ -4,7 +4,6 @@ import com.taskflow.calendar.domain.outbox.OutboxStatus;
 import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,32 +23,22 @@ public final class SummaryPromptTaskSupport {
     private static final int RECENT_UPDATE_HOURS = 24;
     private static final Pattern SENTENCE_SPLIT_PATTERN = Pattern.compile("(?<=[.!?])\\s+|\\n+");
 
-    private static final List<String> URGENCY_KEYWORDS = List.of(
-            "긴급", "urgent", "asap", "즉시", "오늘", "오늘 안", "today", "critical", "반드시"
-    );
-    private static final List<String> RISK_KEYWORDS = List.of(
-            "리스크", "risk", "실패", "failure", "누락", "지연", "문제", "오류", "retry", "차단", "blocked"
-    );
-    private static final List<String> DEPENDENCY_KEYWORDS = List.of(
-            "의존", "dependency", "승인", "검토", "외부", "협업", "대기"
-    );
-    private static final List<String> DELIVERABLE_KEYWORDS = List.of(
-            "발표", "문서", "체크리스트", "보고", "정리", "캡처", "데모", "산출물", "공유"
-    );
-    private static final List<String> CONFIG_KEYWORDS = List.of(
-            "oauth", "redirect uri", "api key", "gemini", "환경 변수", "env", "config", "설정"
-    );
-    private static final List<String> DEMO_KEYWORDS = List.of(
-            "sprint review", "review", "데모", "화면 캡처", "캡처"
-    );
-    private static final List<String> DOC_KEYWORDS = List.of(
-            "문서", "체크리스트", "가이드", "정리", "공유", "보고"
-    );
-    private static final List<String> PRESERVED_KEYWORDS = List.of(
-            "Google OAuth", "Gemini API key", "OAuth", "API key", "배포", "Sprint Review", "체크리스트", "캡처", "데모"
-    );
+    private static final List<String> URGENCY_KEYWORDS =
+            List.of("긴급", "urgent", "asap", "즉시", "오늘", "오늘 안", "today", "critical", "반드시");
+    private static final List<String> RISK_KEYWORDS =
+            List.of("리스크", "risk", "실패", "failure", "누락", "지연", "문제", "오류", "retry", "차단", "blocked");
+    private static final List<String> DEPENDENCY_KEYWORDS = List.of("의존", "dependency", "승인", "검토", "외부", "협업", "대기");
+    private static final List<String> DELIVERABLE_KEYWORDS =
+            List.of("발표", "문서", "체크리스트", "보고", "정리", "캡처", "데모", "산출물", "공유");
+    private static final List<String> CONFIG_KEYWORDS =
+            List.of("oauth", "redirect uri", "api key", "gemini", "환경 변수", "env", "config", "설정");
+    private static final List<String> DEMO_KEYWORDS = List.of("sprint review", "review", "데모", "화면 캡처", "캡처");
+    private static final List<String> DOC_KEYWORDS = List.of("문서", "체크리스트", "가이드", "정리", "공유", "보고");
+    private static final List<String> PRESERVED_KEYWORDS =
+            List.of("Google OAuth", "Gemini API key", "OAuth", "API key", "배포", "Sprint Review", "체크리스트", "캡처", "데모");
 
-    public Map<String, Object> toPromptTaskPayload(SummaryTaskSnapshot snapshot, LocalDate weekStart, LocalDate weekEnd) {
+    public Map<String, Object> toPromptTaskPayload(
+            SummaryTaskSnapshot snapshot, LocalDate weekStart, LocalDate weekEnd) {
         Task task = snapshot.getTask();
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("id", task.getId());
@@ -110,15 +99,14 @@ public final class SummaryPromptTaskSupport {
         }
 
         List<SentenceCandidate> selected = candidates.stream()
-                .sorted(Comparator.comparingInt(SentenceCandidate::getScore).reversed()
+                .sorted(Comparator.comparingInt(SentenceCandidate::getScore)
+                        .reversed()
                         .thenComparingInt(SentenceCandidate::getIndex))
                 .limit(maxSentences)
                 .sorted(Comparator.comparingInt(SentenceCandidate::getIndex))
                 .collect(Collectors.toList());
 
-        String combined = selected.stream()
-                .map(SentenceCandidate::getSentence)
-                .collect(Collectors.joining(" "));
+        String combined = selected.stream().map(SentenceCandidate::getSentence).collect(Collectors.joining(" "));
         String normalized = normalizeWhitespace(combined);
         if (normalized.isBlank()) {
             normalized = normalizeWhitespace(description);
@@ -217,10 +205,17 @@ public final class SummaryPromptTaskSupport {
     }
 
     private boolean containsScheduleSignal(String normalized) {
-        return normalized.contains("월") || normalized.contains("화") || normalized.contains("수")
-                || normalized.contains("목") || normalized.contains("금") || normalized.contains("토")
-                || normalized.contains("일") || normalized.contains("마감") || normalized.contains("오전")
-                || normalized.contains("오후") || normalized.contains("배포");
+        return normalized.contains("월")
+                || normalized.contains("화")
+                || normalized.contains("수")
+                || normalized.contains("목")
+                || normalized.contains("금")
+                || normalized.contains("토")
+                || normalized.contains("일")
+                || normalized.contains("마감")
+                || normalized.contains("오전")
+                || normalized.contains("오후")
+                || normalized.contains("배포");
     }
 
     private boolean containsAny(String normalized, List<String> keywords) {

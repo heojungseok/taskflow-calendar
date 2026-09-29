@@ -1,7 +1,5 @@
 package com.taskflow.calendar.domain.oauth;
 
-import org.springframework.stereotype.Component;
-
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
@@ -10,6 +8,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Component;
 
 /**
  * OAuth State 파라미터 관리
@@ -19,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OAuthStateStore {
 
     private static final int STATE_BYTES = 32;
+
     public enum OAuthAttempt {
         NORMAL,
         CONSENT_RETRY
@@ -47,7 +47,8 @@ public class OAuthStateStore {
      */
     public synchronized String generateState(OAuthAttempt attempt) {
         Instant now = clock.instant();
-        stateMap.entrySet().removeIf(entry -> !entry.getValue().createdAt().plus(ttl).isAfter(now));
+        stateMap.entrySet()
+                .removeIf(entry -> !entry.getValue().createdAt().plus(ttl).isAfter(now));
         if (stateMap.size() >= capacity) {
             throw new IllegalStateException("OAuth state capacity exceeded");
         }
@@ -70,5 +71,4 @@ public class OAuthStateStore {
         }
         return Optional.of(entry.attempt());
     }
-
 }
