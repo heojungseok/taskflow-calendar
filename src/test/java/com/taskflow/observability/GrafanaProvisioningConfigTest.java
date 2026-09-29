@@ -1,22 +1,21 @@
 package com.taskflow.observability;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 class GrafanaProvisioningConfigTest {
 
     @Test
     void dashboardKeepsApprovedOperationalStructure() throws Exception {
-        JsonNode dashboard = new ObjectMapper().readTree(
-                Files.readString(Path.of("deploy/grafana/dashboards/taskflow.json")));
+        JsonNode dashboard =
+                new ObjectMapper().readTree(Files.readString(Path.of("deploy/grafana/dashboards/taskflow.json")));
 
         List<JsonNode> rows = new ArrayList<>();
         dashboard.path("panels").forEach(panel -> {
@@ -25,15 +24,29 @@ class GrafanaProvisioningConfigTest {
             }
         });
 
-        assertThat(rows).extracting(row -> row.path("title").asText())
+        assertThat(rows)
+                .extracting(row -> row.path("title").asText())
                 .containsExactly("운영 요약", "사용자·이용", "Calendar·Outbox", "Gemini·Cache", "Backend runtime");
-        assertThat(rows).extracting(row -> row.path("collapsed").asBoolean())
+        assertThat(rows)
+                .extracting(row -> row.path("collapsed").asBoolean())
                 .containsExactly(false, false, true, true, true);
-        assertThat(panelTitles(dashboard)).contains(
-                "Backend UP", "HTTP p95", "HTTP 5xx", "Google 가입 사용자", "Google 신규 사용자 (24h)",
-                "활성 DEMO 세션", "Gemini 호출", "Gemini p95", "Cache 처리율", "JVM heap", "Hikari pending");
+        assertThat(panelTitles(dashboard))
+                .contains(
+                        "Backend UP",
+                        "HTTP p95",
+                        "HTTP 5xx",
+                        "Google 가입 사용자",
+                        "Google 신규 사용자 (24h)",
+                        "활성 DEMO 세션",
+                        "Gemini 호출",
+                        "Gemini p95",
+                        "Cache 처리율",
+                        "JVM heap",
+                        "Hikari pending");
         assertThat(List.of("HTTP p95", "HTTP 5xx", "Gemini 실패 (10m)"))
-                .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title).path("type").asText())
+                .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title)
+                                .path("type")
+                                .asText())
                         .isEqualTo("timeseries"));
     }
 
@@ -42,10 +55,7 @@ class GrafanaProvisioningConfigTest {
         String application = Files.readString(Path.of("src/main/resources/application.yml"));
         String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
 
-        assertThat(application).contains(
-                "percentiles-histogram:",
-                "http.server.requests: true",
-                "gemini_calls: true");
+        assertThat(application).contains("percentiles-histogram:", "http.server.requests: true", "gemini_calls: true");
         assertThat(alerts)
                 .contains("group_by: [environment]", ".Alerts.Firing", ".Alerts.Resolved")
                 .doesNotContain(".CommonAnnotations")
@@ -58,8 +68,8 @@ class GrafanaProvisioningConfigTest {
                 .doesNotContain("\n        dashboardUid:", "\n        panelId:", "__panelId__: \"13\"")
                 .doesNotContain("정상 상태로 돌아왔습니다", "키·모델을 수정", "/ {{ .Labels.environment }}");
         assertThat(alerts.lines()
-                .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
-                .count())
+                        .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
+                        .count())
                 .isEqualTo(8);
     }
 

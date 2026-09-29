@@ -5,6 +5,12 @@ public enum OutboxPolicy {
     LEASE_TIMEOUT_MINUTES(5);
 
     private final int value;
-    OutboxPolicy(int value) { this.value = value; }
-    public int value() { return value; }
+
+    OutboxPolicy(int value) {
+        this.value = value;
+    }
+
+    public int value() {
+        return value;
+    }
 }

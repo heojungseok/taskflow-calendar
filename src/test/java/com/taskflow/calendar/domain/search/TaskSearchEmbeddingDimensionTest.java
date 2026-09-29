@@ -1,7 +1,8 @@
 package com.taskflow.calendar.domain.search;
 
-import com.taskflow.config.GeminiSearchProperties;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import com.taskflow.config.GeminiSearchProperties;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,8 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * atttypmod에서 4를 빼면(varchar 관례) vector(3072)를 3068로 읽는다.
@@ -96,11 +95,13 @@ class TaskSearchEmbeddingDimensionTest {
         Long taskId = jdbcTemplate.queryForObject(
                 "INSERT INTO tasks(project_id, title, status, deleted, calendar_sync_enabled, created_at, updated_at) "
                         + "VALUES (?, 'dimension probe', 'REQUESTED', false, false, now(), now()) RETURNING id",
-                Long.class, projectId);
+                Long.class,
+                projectId);
         String vector = "[" + String.join(",", Collections.nCopies(dimensions, "0.1")) + "]";
         jdbcTemplate.update(
                 "INSERT INTO task_search_embeddings(task_id, source_text, text_hash, embedding, updated_at) "
                         + "VALUES (?, 'probe', 'probe-hash', CAST(? AS vector), now())",
-                taskId, vector);
+                taskId,
+                vector);
     }
 }

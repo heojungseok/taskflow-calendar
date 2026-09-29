@@ -29,6 +29,7 @@ public class ApiResponse<T> {
     public boolean isSuccess() {
         return success;
     }
+
     public T getData() {
         return data;
     }
@@ -36,7 +37,6 @@ public class ApiResponse<T> {
     public ErrorInfo getError() {
         return error;
     }
-
 
     public static class ErrorInfo {
         private final String code;

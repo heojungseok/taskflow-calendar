@@ -6,6 +6,7 @@ import com.taskflow.common.exception.BusinessException;
 import com.taskflow.common.exception.ResourceNotFoundException;
 import com.taskflow.common.exception.UnauthorizedException;
 import com.taskflow.common.exception.ValidationException;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
@@ -16,8 +17,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.stream.Collectors;
-
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -25,17 +24,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException e) {
         log.warn("Resource not found: {}", e.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(e.getErrorCode(), e.getMessage()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getErrorCode(), e.getMessage()));
     }
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(ValidationException e) {
         log.warn("Validation error: {}", e.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getErrorCode(), e.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getErrorCode(), e.getMessage()));
     }
 
     @ExceptionHandler(BusinessException.class)
@@ -44,9 +39,7 @@ public class GlobalExceptionHandler {
 
         HttpStatus status = determineHttpStatus(e.getErrorCode());
 
-        return ResponseEntity
-                .status(status)
-                .body(ApiResponse.error(e.getErrorCode(), e.getMessage()));
+        return ResponseEntity.status(status).body(ApiResponse.error(e.getErrorCode(), e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -57,8 +50,7 @@ public class GlobalExceptionHandler {
 
         log.warn("Validation failed: {}", message);
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ErrorCode.VALIDATION_ERROR, message));
     }
 
@@ -69,8 +61,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TypeMismatchException.class)
     public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(TypeMismatchException e) {
         log.warn("Type mismatch: {}", e.getMessage());
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ErrorCode.REQUEST_ERROR, e.getMessage()));
     }
 
@@ -80,14 +71,12 @@ public class GlobalExceptionHandler {
         // 각자 올바른 상태 코드를 들고 있다. 여기서 걸러내지 않으면 전부 500으로 나간다.
         if (e instanceof ErrorResponse mvcError) {
             log.warn("Request error {}: {}", mvcError.getStatusCode(), e.getMessage());
-            return ResponseEntity
-                    .status(mvcError.getStatusCode())
+            return ResponseEntity.status(mvcError.getStatusCode())
                     .body(ApiResponse.error(ErrorCode.REQUEST_ERROR, e.getMessage()));
         }
 
         log.error("Unexpected error", e);
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR));
     }
 
@@ -96,8 +85,7 @@ public class GlobalExceptionHandler {
 
         log.warn("{}", e.getMessage());
 
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(ErrorCode.USER_NOT_FOUND, e.getMessage()));
     }
 
@@ -106,15 +94,13 @@ public class GlobalExceptionHandler {
 
         log.warn("{}", e.getMessage());
 
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(ErrorCode.PROJECT_NOT_FOUND, e.getMessage()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiResponse<?>> handleUnauthorized(UnauthorizedException e) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error(ErrorCode.UNAUTHORIZED, e.getMessage()));
     }
 

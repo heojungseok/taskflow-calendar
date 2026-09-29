@@ -2,20 +2,14 @@ package com.taskflow.calendar.domain.search;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.calendar.domain.search.exception.TaskSearchGenerationException;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.calendar.domain.search.exception.TaskSearchGenerationException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.config.GeminiSearchProperties;
 import com.taskflow.observability.TaskFlowMetrics;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -27,6 +21,11 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -56,9 +55,7 @@ public class TaskSearchEmbeddingService {
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
             return SemanticSearchStatus.UNAVAILABLE;
         }
-        return embeddingStore.isAvailable()
-                ? SemanticSearchStatus.READY
-                : SemanticSearchStatus.UNAVAILABLE;
+        return embeddingStore.isAvailable() ? SemanticSearchStatus.READY : SemanticSearchStatus.UNAVAILABLE;
     }
 
     public boolean isSemanticEnabled() {
@@ -71,8 +68,7 @@ public class TaskSearchEmbeddingService {
         }
 
         Map<Long, String> hashes = embeddingStore.findHashesByTaskIds(
-                tasks.stream().map(Task::getId).collect(Collectors.toList())
-        );
+                tasks.stream().map(Task::getId).collect(Collectors.toList()));
 
         List<TaskDocument> staleDocuments = tasks.stream()
                 .map(this::toDocument)
@@ -86,9 +82,8 @@ public class TaskSearchEmbeddingService {
         int batchSize = Math.max(1, properties.getEmbeddingBatchSize());
         for (int i = 0; i < staleDocuments.size(); i += batchSize) {
             List<TaskDocument> batch = staleDocuments.subList(i, Math.min(i + batchSize, staleDocuments.size()));
-            List<List<Double>> vectors = embedDocuments(batch.stream()
-                    .map(document -> document.sourceText)
-                    .collect(Collectors.toList()));
+            List<List<Double>> vectors = embedDocuments(
+                    batch.stream().map(document -> document.sourceText).collect(Collectors.toList()));
             for (int index = 0; index < batch.size() && index < vectors.size(); index++) {
                 TaskDocument document = batch.get(index);
                 embeddingStore.upsert(document.taskId, document.sourceText, document.textHash, vectors.get(index));
@@ -98,7 +93,8 @@ public class TaskSearchEmbeddingService {
     }
 
     private boolean isDemoOwned(Task task) {
-        return userRepository.findById(task.getProject().getOwnerUserId())
+        return userRepository
+                .findById(task.getProject().getOwnerUserId())
                 .map(user -> user.getProvider() == Provider.DEMO)
                 .orElse(false);
     }
@@ -109,11 +105,9 @@ public class TaskSearchEmbeddingService {
             return;
         }
 
-        taskRepository.findByIdAndDeletedFalse(taskId)
-                .ifPresentOrElse(
-                        task -> ensureEmbeddings(List.of(task)),
-                        () -> embeddingStore.delete(taskId)
-                );
+        taskRepository
+                .findByIdAndDeletedFalse(taskId)
+                .ifPresentOrElse(task -> ensureEmbeddings(List.of(task)), () -> embeddingStore.delete(taskId));
     }
 
     public void deleteTask(Long taskId) {
@@ -158,26 +152,30 @@ public class TaskSearchEmbeddingService {
         try {
             return metrics.observeGeminiCall("embedding", () -> requestEmbeddings(documents));
         } catch (TaskSearchGenerationException e) {
-            log.warn("Task search embedding request failed. errorCode={}", e.getErrorCode().getCode());
+            log.warn(
+                    "Task search embedding request failed. errorCode={}",
+                    e.getErrorCode().getCode());
             return List.of();
         }
     }
 
     private List<List<Double>> requestEmbeddings(List<String> documents) {
 
-        String endpoint = properties.getBaseUrl().replaceAll("/$", "")
-                + "/models/" + properties.getEmbeddingModel() + ":batchEmbedContents";
+        String endpoint = properties.getBaseUrl().replaceAll("/$", "") + "/models/" + properties.getEmbeddingModel()
+                + ":batchEmbedContents";
 
         Map<String, Object> requestBody = new LinkedHashMap<>();
-        requestBody.put("requests", documents.stream()
-                .map(document -> {
-                    Map<String, Object> request = new LinkedHashMap<>();
-                    request.put("model", "models/" + properties.getEmbeddingModel());
-                    request.put("taskType", "RETRIEVAL_DOCUMENT");
-                    request.put("content", Map.of("parts", List.of(Map.of("text", document))));
-                    return request;
-                })
-                .collect(Collectors.toList()));
+        requestBody.put(
+                "requests",
+                documents.stream()
+                        .map(document -> {
+                            Map<String, Object> request = new LinkedHashMap<>();
+                            request.put("model", "models/" + properties.getEmbeddingModel());
+                            request.put("taskType", "RETRIEVAL_DOCUMENT");
+                            request.put("content", Map.of("parts", List.of(Map.of("text", document))));
+                            return request;
+                        })
+                        .collect(Collectors.toList()));
 
         try {
             String json = objectMapper.writeValueAsString(requestBody);
@@ -188,7 +186,8 @@ public class TaskSearchEmbeddingService {
                     .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response =
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() >= 400) {
                 throw embeddingFailure(response.statusCode(), response.body());
             }
@@ -200,9 +199,7 @@ public class TaskSearchEmbeddingService {
                 Thread.currentThread().interrupt();
             }
             throw new TaskSearchGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Gemini embedding request failed"
-            );
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini embedding request failed");
         }
     }
 
@@ -232,9 +229,7 @@ public class TaskSearchEmbeddingService {
 
     private TaskSearchGenerationException invalidEmbeddingResponse() {
         return new TaskSearchGenerationException(
-                ErrorCode.LLM_INVALID_RESPONSE,
-                "Gemini embedding response was incomplete"
-        );
+                ErrorCode.LLM_INVALID_RESPONSE, "Gemini embedding response was incomplete");
     }
 
     private TaskSearchGenerationException embeddingFailure(int statusCode, String responseBody) {
@@ -242,9 +237,7 @@ public class TaskSearchEmbeddingService {
             String normalized = responseBody == null ? "" : responseBody.toLowerCase(Locale.ROOT);
             ErrorCode code = normalized.contains("quota")
                     ? ErrorCode.LLM_QUOTA_EXHAUSTED
-                    : normalized.contains("rate")
-                    ? ErrorCode.LLM_RATE_LIMITED_TEMPORARY
-                    : ErrorCode.LLM_429_UNKNOWN;
+                    : normalized.contains("rate") ? ErrorCode.LLM_RATE_LIMITED_TEMPORARY : ErrorCode.LLM_429_UNKNOWN;
             return new TaskSearchGenerationException(code, "Gemini embedding request was rate limited");
         }
         ErrorCode code = statusCode == 400 || statusCode == 404
@@ -272,9 +265,10 @@ public class TaskSearchEmbeddingService {
             parts.add("main_action " + intent.getMainAction().name().toLowerCase(Locale.ROOT));
         }
         if (!intent.getSecondaryActions().isEmpty()) {
-            parts.add("secondary_actions " + intent.getSecondaryActions().stream()
-                    .map(value -> value.name().toLowerCase(Locale.ROOT))
-                    .collect(Collectors.joining(" ")));
+            parts.add("secondary_actions "
+                    + intent.getSecondaryActions().stream()
+                            .map(value -> value.name().toLowerCase(Locale.ROOT))
+                            .collect(Collectors.joining(" ")));
         }
         if (!intent.getParticipantTerms().isEmpty()) {
             parts.add("participants " + String.join(" ", intent.getParticipantTerms()));

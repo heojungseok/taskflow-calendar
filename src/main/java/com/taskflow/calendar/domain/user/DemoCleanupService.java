@@ -5,12 +5,11 @@ import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.task.TaskHistoryRepository;
 import com.taskflow.calendar.domain.task.TaskRepository;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -26,8 +25,10 @@ public class DemoCleanupService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean cleanup(Long userId, Instant expiredBefore) {
         User user = userRepository.findByIdForUpdate(userId).orElse(null);
-        if (user == null || user.getProvider() != Provider.DEMO
-                || user.getExpiresAt() == null || user.getExpiresAt().isAfter(expiredBefore)) {
+        if (user == null
+                || user.getProvider() != Provider.DEMO
+                || user.getExpiresAt() == null
+                || user.getExpiresAt().isAfter(expiredBefore)) {
             return false;
         }
         outboxRepository.lockOwnedBy(userId);

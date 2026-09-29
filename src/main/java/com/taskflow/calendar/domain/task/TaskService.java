@@ -10,23 +10,22 @@ import com.taskflow.calendar.domain.search.TaskSearchDocumentDeletedEvent;
 import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
-import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.DemoUsageService;
+import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.user.exception.UserNotFoundException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.ValidationException;
-import com.taskflow.security.SecurityContextHelper;
 import com.taskflow.observability.TaskFlowMetrics;
+import com.taskflow.security.SecurityContextHelper;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -63,11 +62,8 @@ public class TaskService {
             assignee = findOwnedAssignee(request.getAssigneeUserId(), userId);
         }
 
-        LocalDateTime normalizedStartAt = normalizeSyncStartAt(
-                request.getCalendarSyncEnabled(),
-                request.getStartAt(),
-                request.getDueAt()
-        );
+        LocalDateTime normalizedStartAt =
+                normalizeSyncStartAt(request.getCalendarSyncEnabled(), request.getStartAt(), request.getDueAt());
 
         // 3. 일정 검증
         validateSchedule(normalizedStartAt, request.getDueAt());
@@ -83,8 +79,7 @@ public class TaskService {
                 assignee,
                 normalizedStartAt,
                 request.getDueAt(),
-                request.getCalendarSyncEnabled()
-        );
+                request.getCalendarSyncEnabled());
 
         // 6. 저장
         Task savedTask = taskRepository.save(task);
@@ -96,10 +91,9 @@ public class TaskService {
         recordHistory(
                 savedTask,
                 TaskChangeType.CONTENT,
-                null,  // beforeValue: 생성 시에는 null
-                buildTaskSnapshot(savedTask),  // afterValue: 생성된 Task 정보
-                userId
-        );
+                null, // beforeValue: 생성 시에는 null
+                buildTaskSnapshot(savedTask), // afterValue: 생성된 Task 정보
+                userId);
 
         // Outbox 적재
         if (savedTask.isCalendarSyncActive()) {
@@ -118,7 +112,8 @@ public class TaskService {
         Long userId = SecurityContextHelper.getCurrentUserId();
 
         // 1. Task 조회 (deleted=false)
-        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, userId)
+        Task task = taskRepository
+                .findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, userId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
         demoUsageService.beforeMutation(userId);
 
@@ -152,20 +147,13 @@ public class TaskService {
                 assignee,
                 normalizedStartAt,
                 request.getDueAt(),
-                request.getCalendarSyncEnabled()
-        );
+                request.getCalendarSyncEnabled());
 
         // 변경 후 스냅샷 저장
         String afterSnapshot = buildTaskSnapshot(task);
 
         // 6. 이력 기록 - 수정
-        recordHistory(
-                task,
-                TaskChangeType.CONTENT,
-                beforeSnapshot,
-                afterSnapshot,
-                userId
-        );
+        recordHistory(task, TaskChangeType.CONTENT, beforeSnapshot, afterSnapshot, userId);
 
         // 7. Outbox 적재
         if (task.isCalendarSyncActive()) {
@@ -186,7 +174,8 @@ public class TaskService {
     public TaskResponse changeTaskStatus(Long taskId, ChangeTaskStatusRequest request) {
         Long userId = SecurityContextHelper.getCurrentUserId();
         // 1. Task 조회
-        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, userId)
+        Task task = taskRepository
+                .findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, userId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
         demoUsageService.beforeMutation(userId);
 
@@ -203,12 +192,11 @@ public class TaskService {
                 TaskChangeType.STATUS,
                 oldStatus.name(),
                 request.getToStatus().name(),
-                userId
-        );
+                userId);
 
         // 4. Outbox 적재
         if (task.isCalendarSyncActive()) {
-            calendarOutboxService.enqueueUpsert(task);  // DONE이면 [DONE] prefix 추가
+            calendarOutboxService.enqueueUpsert(task); // DONE이면 [DONE] prefix 추가
         }
         eventPublisher.publishEvent(new TaskSearchDocumentChangedEvent(task.getId()));
 
@@ -219,7 +207,8 @@ public class TaskService {
      * Task 조회 (단건)
      */
     public TaskResponse getTask(Long taskId) {
-        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
+        Task task = taskRepository
+                .findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
         return TaskResponse.from(task);
@@ -247,8 +236,7 @@ public class TaskService {
                     projectId, assigneeUserId, ownerUserId);
         } else {
             // 전체 조회
-            tasks = taskRepository.findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(
-                    projectId, ownerUserId);
+            tasks = taskRepository.findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(projectId, ownerUserId);
         }
 
         // Outbox는 건당이 아니라 한 번에 읽는다. 건당이면 목록 크기만큼 쿼리가 나간다.
@@ -263,7 +251,8 @@ public class TaskService {
     @Transactional
     public DeleteTaskResponse deleteTask(Long taskId, Long requestedByUserId) {
         // 1. Task 조회
-        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
+        Task task = taskRepository
+                .findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
         demoUsageService.beforeMutation(requestedByUserId);
 
@@ -274,13 +263,7 @@ public class TaskService {
         task.markAsDeleted();
 
         // 3. 이력 기록 - 삭제
-        recordHistory(
-                task,
-                TaskChangeType.CONTENT,
-                beforeSnapshot,
-                "deleted=true",
-                requestedByUserId
-        );
+        recordHistory(task, TaskChangeType.CONTENT, beforeSnapshot, "deleted=true", requestedByUserId);
 
         // 3. Outbox 적재
         calendarOutboxService.enqueueDelete(task);
@@ -294,16 +277,17 @@ public class TaskService {
      */
     public List<TaskHistoryResponse> getTaskHistory(Long taskId) {
         // 1. Task 존재 확인 (deleted=false)
-        taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
-                .orElseThrow(() -> new TaskNotFoundException(taskId));
+        if (taskRepository
+                .findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
+                .isEmpty()) {
+            throw new TaskNotFoundException(taskId);
+        }
 
         // 2. 이력 조회
         List<TaskHistory> histories = historyRepository.findByTask_IdOrderByCreatedAtDesc(taskId);
 
         // 3. DTO 변환
-        return histories.stream()
-                .map(TaskHistoryResponse::from)
-                .collect(Collectors.toList());
+        return histories.stream().map(TaskHistoryResponse::from).collect(Collectors.toList());
     }
 
     /**
@@ -311,13 +295,14 @@ public class TaskService {
      * GET /api/tasks/{taskId}/calendar-sync
      */
     public CalendarSyncStatusResponse getCalendarSyncStatus(Long taskId) {
-        Task task = taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
+        Task task = taskRepository
+                .findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
-        CalendarOutbox latestOutbox = calendarOutboxService.findLatestByTaskId(taskId)
-                .orElse(null);
-        CalendarOutbox lastSuccessOutbox = calendarOutboxService.findLastSuccessByTaskId(taskId)
-                .orElse(null);
+        CalendarOutbox latestOutbox =
+                calendarOutboxService.findLatestByTaskId(taskId).orElse(null);
+        CalendarOutbox lastSuccessOutbox =
+                calendarOutboxService.findLastSuccessByTaskId(taskId).orElse(null);
 
         return CalendarSyncStatusResponse.of(task, latestOutbox, lastSuccessOutbox);
     }
@@ -342,7 +327,8 @@ public class TaskService {
         }
     }
 
-    private LocalDateTime normalizeSyncStartAt(Boolean calendarSyncEnabled, LocalDateTime startAt, LocalDateTime dueAt) {
+    private LocalDateTime normalizeSyncStartAt(
+            Boolean calendarSyncEnabled, LocalDateTime startAt, LocalDateTime dueAt) {
         if (!Boolean.TRUE.equals(calendarSyncEnabled)) {
             return startAt;
         }
@@ -355,9 +341,10 @@ public class TaskService {
         return dueAt.minusHours(DEFAULT_SYNC_EVENT_DURATION_HOURS);
     }
 
-    private void recordHistory(Task task, TaskChangeType changeType, String beforeValue, String afterValue, Long changedByUserId) {
-        User user = userRepository.findById(changedByUserId)
-                .orElseThrow(() -> new UserNotFoundException(changedByUserId));
+    private void recordHistory(
+            Task task, TaskChangeType changeType, String beforeValue, String afterValue, Long changedByUserId) {
+        User user =
+                userRepository.findById(changedByUserId).orElseThrow(() -> new UserNotFoundException(changedByUserId));
 
         TaskHistory history = TaskHistory.builder()
                 .task(task)
@@ -374,8 +361,7 @@ public class TaskService {
         if (!ownerUserId.equals(assigneeUserId)) {
             throw new UserNotFoundException(assigneeUserId);
         }
-        return userRepository.findById(assigneeUserId)
-                .orElseThrow(() -> new UserNotFoundException(assigneeUserId));
+        return userRepository.findById(assigneeUserId).orElseThrow(() -> new UserNotFoundException(assigneeUserId));
     }
 
     /**
@@ -390,7 +376,6 @@ public class TaskService {
                 task.getAssignee() != null ? task.getAssignee().getId() : "null",
                 task.getStartAt() != null ? task.getStartAt().toString() : "null",
                 task.getDueAt() != null ? task.getDueAt().toString() : "null",
-                task.getCalendarSyncEnabled()
-        );
+                task.getCalendarSyncEnabled());
     }
 }

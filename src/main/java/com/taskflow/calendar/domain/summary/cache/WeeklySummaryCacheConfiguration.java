@@ -3,6 +3,9 @@ package com.taskflow.calendar.domain.summary.cache;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.SocketOptions;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.net.URI;
+import java.time.Duration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,11 +17,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.util.StringUtils;
-
-import java.net.URI;
-import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties(WeeklySummaryCacheProperties.class)
@@ -72,10 +71,11 @@ public class WeeklySummaryCacheConfiguration {
 
     @Bean
     @ConditionalOnBean(StringRedisTemplate.class)
-    public WeeklySummaryCacheService redisWeeklySummaryCacheService(StringRedisTemplate redisTemplate,
-                                                                    ObjectMapper objectMapper,
-                                                                    WeeklySummaryCacheProperties properties,
-                                                                    MeterRegistry meterRegistry) {
+    public WeeklySummaryCacheService redisWeeklySummaryCacheService(
+            StringRedisTemplate redisTemplate,
+            ObjectMapper objectMapper,
+            WeeklySummaryCacheProperties properties,
+            MeterRegistry meterRegistry) {
         return new RedisWeeklySummaryCacheService(redisTemplate, objectMapper, properties, meterRegistry);
     }
 

@@ -9,12 +9,8 @@ public class WeeklySummaryCacheHealthResponse {
     private final String value;
     private final String error;
 
-    private WeeklySummaryCacheHealthResponse(boolean enabled,
-                                             boolean healthy,
-                                             String status,
-                                             String key,
-                                             String value,
-                                             String error) {
+    private WeeklySummaryCacheHealthResponse(
+            boolean enabled, boolean healthy, String status, String key, String value, String error) {
         this.enabled = enabled;
         this.healthy = healthy;
         this.status = status;

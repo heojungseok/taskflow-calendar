@@ -7,11 +7,7 @@ import com.taskflow.calendar.domain.recommendation.exception.TaskRecommendationG
 import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.config.GeminiRecommendationProperties;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import com.taskflow.observability.TaskFlowMetrics;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -27,6 +23,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
@@ -41,22 +40,18 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     private final RecommendationPromptTaskSupport promptTaskSupport = new RecommendationPromptTaskSupport();
 
     @Override
-    public TaskRecommendationGenerationResult generate(Project project,
-                                                       List<SummaryTaskSnapshot> candidates,
-                                                       int recommendationCount,
-                                                       LocalDate today) {
-        return metrics.observeGeminiCall("recommendation",
-                () -> generateUnobserved(project, candidates, recommendationCount, today));
+    public TaskRecommendationGenerationResult generate(
+            Project project, List<SummaryTaskSnapshot> candidates, int recommendationCount, LocalDate today) {
+        return metrics.observeGeminiCall(
+                "recommendation", () -> generateUnobserved(project, candidates, recommendationCount, today));
     }
 
-    private TaskRecommendationGenerationResult generateUnobserved(Project project,
-                                                                   List<SummaryTaskSnapshot> candidates,
-                                                                   int recommendationCount,
-                                                                   LocalDate today) {
+    private TaskRecommendationGenerationResult generateUnobserved(
+            Project project, List<SummaryTaskSnapshot> candidates, int recommendationCount, LocalDate today) {
         validateConfiguration();
         PreparedRequest preparedRequest = prepareRequest(project, candidates, recommendationCount, today);
-        String endpoint = properties.getBaseUrl().replaceAll("/$", "")
-                + "/models/" + properties.getModel() + ":generateContent";
+        String endpoint =
+                properties.getBaseUrl().replaceAll("/$", "") + "/models/" + properties.getModel() + ":generateContent";
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint))
                 .header("x-goog-api-key", properties.getApiKey())
@@ -67,7 +62,8 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
 
         long startedAt = System.currentTimeMillis();
         try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response =
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             long latencyMs = System.currentTimeMillis() - startedAt;
             if (response.statusCode() >= 400) {
                 throw classifyUpstreamFailure(response.statusCode(), response.body(), latencyMs);
@@ -79,7 +75,8 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
             int totalTokens = usageMetadata.path("totalTokenCount").asInt(-1);
             int candidateTokens = usageMetadata.path("candidatesTokenCount").asInt(-1);
 
-            log.info("Gemini task recommendation request succeeded. projectId={}, model={}, latencyMs={}, requestBodyLength={}, candidateCount={}, recommendationCount={}, promptTokens={}, candidateTokens={}, totalTokens={}",
+            log.info(
+                    "Gemini task recommendation request succeeded. projectId={}, model={}, latencyMs={}, requestBodyLength={}, candidateCount={}, recommendationCount={}, promptTokens={}, candidateTokens={}, totalTokens={}",
                     project.getId(),
                     properties.getModel(),
                     latencyMs,
@@ -93,30 +90,23 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TaskRecommendationGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Gemini recommendation request was interrupted"
-            );
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini recommendation request was interrupted");
         } catch (IOException e) {
             throw new TaskRecommendationGenerationException(
                     ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Gemini recommendation request failed: " + e.getMessage()
-            );
+                    "Gemini recommendation request failed: " + e.getMessage());
         }
     }
 
     private void validateConfiguration() {
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
             throw new TaskRecommendationGenerationException(
-                    ErrorCode.LLM_API_KEY_MISSING,
-                    "GEMINI_RECOMMENDATION_API_KEY is not configured"
-            );
+                    ErrorCode.LLM_API_KEY_MISSING, "GEMINI_RECOMMENDATION_API_KEY is not configured");
         }
     }
 
-    private PreparedRequest prepareRequest(Project project,
-                                           List<SummaryTaskSnapshot> candidates,
-                                           int recommendationCount,
-                                           LocalDate today) {
+    private PreparedRequest prepareRequest(
+            Project project, List<SummaryTaskSnapshot> candidates, int recommendationCount, LocalDate today) {
         try {
             Map<String, Object> requestBody = new LinkedHashMap<>();
             requestBody.put("system_instruction", createContent(systemInstruction()));
@@ -145,9 +135,8 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
                 + "프로젝트 전체 요약은 하지 말고, 제공된 후보와 입력 사실만 사용하라.";
     }
 
-    private String userPrompt(List<SummaryTaskSnapshot> candidates,
-                              int recommendationCount,
-                              LocalDate today) throws IOException {
+    private String userPrompt(List<SummaryTaskSnapshot> candidates, int recommendationCount, LocalDate today)
+            throws IOException {
         List<Map<String, Object>> candidatePayload = new ArrayList<>();
         for (int i = 0; i < candidates.size(); i++) {
             candidatePayload.add(promptTaskSupport.toPromptTaskPayload(candidates.get(i), i + 1));
@@ -201,15 +190,12 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
         return schema;
     }
 
-    private TaskRecommendationGenerationResult parseResponse(JsonNode root,
-                                                            List<SummaryTaskSnapshot> candidates,
-                                                            int recommendationCount) throws IOException {
+    private TaskRecommendationGenerationResult parseResponse(
+            JsonNode root, List<SummaryTaskSnapshot> candidates, int recommendationCount) throws IOException {
         JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
         if (textNode.isMissingNode() || textNode.asText().isBlank()) {
             throw new TaskRecommendationGenerationException(
-                    ErrorCode.LLM_INVALID_RESPONSE,
-                    "Gemini recommendation response did not contain text"
-            );
+                    ErrorCode.LLM_INVALID_RESPONSE, "Gemini recommendation response did not contain text");
         }
 
         JsonNode payload;
@@ -217,17 +203,13 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
             payload = objectMapper.readTree(textNode.asText());
         } catch (IOException e) {
             throw new TaskRecommendationGenerationException(
-                    ErrorCode.LLM_INVALID_RESPONSE,
-                    "Gemini recommendation payload was not valid JSON"
-            );
+                    ErrorCode.LLM_INVALID_RESPONSE, "Gemini recommendation payload was not valid JSON");
         }
 
         JsonNode itemsNode = payload.path("items");
         if (!itemsNode.isArray()) {
             throw new TaskRecommendationGenerationException(
-                    ErrorCode.LLM_INVALID_RESPONSE,
-                    "Gemini recommendation payload did not contain items array"
-            );
+                    ErrorCode.LLM_INVALID_RESPONSE, "Gemini recommendation payload did not contain items array");
         }
 
         Set<Long> allowedTaskIds = new LinkedHashSet<>();
@@ -253,18 +235,13 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
             }
 
             items.add(TaskRecommendationItemResult.of(
-                    taskId,
-                    primaryTag,
-                    secondaryTag == null || secondaryTag.isBlank() ? null : secondaryTag,
-                    reason
-            ));
+                    taskId, primaryTag, secondaryTag == null || secondaryTag.isBlank() ? null : secondaryTag, reason));
         }
 
         if (recommendationCount > 0 && items.isEmpty()) {
             throw new TaskRecommendationGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE,
-                    "Gemini recommendation payload did not contain valid recommendation items"
-            );
+                    "Gemini recommendation payload did not contain valid recommendation items");
         }
 
         if (items.size() > recommendationCount) {
@@ -274,9 +251,8 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
         return TaskRecommendationGenerationResult.of(items);
     }
 
-    private TaskRecommendationGenerationException classifyUpstreamFailure(int statusCode,
-                                                                         String responseBody,
-                                                                         long latencyMs) {
+    private TaskRecommendationGenerationException classifyUpstreamFailure(
+            int statusCode, String responseBody, long latencyMs) {
         ErrorCode errorCode;
         if (statusCode == 429) {
             String normalized = responseBody == null ? "" : responseBody.toLowerCase(Locale.ROOT);
@@ -293,15 +269,13 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
             errorCode = ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
         }
 
-        log.warn("Gemini task recommendation request failed. statusCode={}, errorCode={}, latencyMs={}",
+        log.warn(
+                "Gemini task recommendation request failed. statusCode={}, errorCode={}, latencyMs={}",
                 statusCode,
                 errorCode.getCode(),
                 latencyMs);
 
-        return new TaskRecommendationGenerationException(
-                errorCode,
-                "Gemini recommendation request failed"
-        );
+        return new TaskRecommendationGenerationException(errorCode, "Gemini recommendation request failed");
     }
 
     private static class PreparedRequest {

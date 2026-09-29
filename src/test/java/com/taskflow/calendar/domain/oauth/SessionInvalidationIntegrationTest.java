@@ -1,15 +1,24 @@
 package com.taskflow.calendar.domain.oauth;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.google.api.client.http.HttpResponseException;
-import com.taskflow.calendar.domain.user.User;
-import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
+import com.taskflow.calendar.domain.user.User;
+import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.service.AuthService;
 import com.taskflow.web.SessionCookieService;
 import jakarta.servlet.http.Cookie;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,16 +28,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = "outbox.worker.enabled=false")
 @AutoConfigureMockMvc
@@ -70,13 +69,17 @@ class SessionInvalidationIntegrationTest {
     void invalidGrantDeletesEncryptedLocalTokenDespiteThrownException() throws Exception {
         User user = saveGoogleUser();
         tokenRepository.saveAndFlush(OAuthGoogleToken.create(
-                user.getId(), "access-token", "refresh-token",
-                LocalDateTime.now().plusHours(1), "openid"));
+                user.getId(),
+                "access-token",
+                "refresh-token",
+                LocalDateTime.now().plusHours(1),
+                "openid"));
         doThrow(tokenError(400, "invalid_grant"))
-                .when(googleOAuthService).requestTokenRefresh(any(OAuthGoogleToken.class));
+                .when(googleOAuthService)
+                .requestTokenRefresh(any(OAuthGoogleToken.class));
 
         assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
-                .executeWithoutResult(ignored -> googleOAuthService.refreshAccessToken(user.getId())))
+                        .executeWithoutResult(ignored -> googleOAuthService.refreshAccessToken(user.getId())))
                 .isInstanceOf(NonRetryableIntegrationException.class);
 
         assertThat(tokenRepository.findByUserId(user.getId())).isEmpty();
@@ -94,8 +97,7 @@ class SessionInvalidationIntegrationTest {
         assertOutboxStatus(oldToken, 401);
         User refreshed = userRepository.findById(user.getId()).orElseThrow();
         assertThat(refreshed.getSessionVersion()).isEqualTo(1);
-        String newToken = jwtTokenProvider.generateToken(
-                refreshed.getId(), refreshed.getSessionVersion());
+        String newToken = jwtTokenProvider.generateToken(refreshed.getId(), refreshed.getSessionVersion());
         assertOutboxStatus(newToken, 200);
     }
 
@@ -103,7 +105,11 @@ class SessionInvalidationIntegrationTest {
     void missingRefreshTokenRollsBackNewGoogleUser() {
         String email = "missing-refresh-" + UUID.randomUUID() + "@example.test";
         GoogleOAuthResult result = new GoogleOAuthResult(
-                email, "Missing Refresh", "access-token", " ", 3600L,
+                email,
+                "Missing Refresh",
+                "access-token",
+                " ",
+                3600L,
                 "openid https://www.googleapis.com/auth/calendar.events.owned");
 
         assertThatThrownBy(() -> googleOAuthService.loginOrRegister(result))
@@ -113,21 +119,20 @@ class SessionInvalidationIntegrationTest {
     }
 
     private User saveGoogleUser() {
-        User user = userRepository.saveAndFlush(User.createGoogleUser(
-                "session-invalidation-" + UUID.randomUUID() + "@example.test", "Session Test"));
+        User user = userRepository.saveAndFlush(
+                User.createGoogleUser("session-invalidation-" + UUID.randomUUID() + "@example.test", "Session Test"));
         testUserId = user.getId();
         return user;
     }
 
     private void assertOutboxStatus(String token, int expectedStatus) throws Exception {
-        mvc.perform(get("/api/calendar-outbox")
-                        .cookie(new Cookie(SessionCookieService.SESSION_COOKIE, token)))
+        mvc.perform(get("/api/calendar-outbox").cookie(new Cookie(SessionCookieService.SESSION_COOKIE, token)))
                 .andExpect(status().is(expectedStatus));
     }
 
     private HttpResponseException tokenError(int status, String error) {
         return new HttpResponseException.Builder(
-                status, "Google token error", new com.google.api.client.http.HttpHeaders())
+                        status, "Google token error", new com.google.api.client.http.HttpHeaders())
                 .setContent("{\"error\":\"" + error + "\"}")
                 .build();
     }

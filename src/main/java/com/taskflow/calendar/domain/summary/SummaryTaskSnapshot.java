@@ -12,11 +12,12 @@ public class SummaryTaskSnapshot {
     private final OutboxOpType latestOutboxOpType;
     private final String latestOutboxError;
 
-    private SummaryTaskSnapshot(Task task,
-                                TaskSyncState syncState,
-                                OutboxStatus latestOutboxStatus,
-                                OutboxOpType latestOutboxOpType,
-                                String latestOutboxError) {
+    private SummaryTaskSnapshot(
+            Task task,
+            TaskSyncState syncState,
+            OutboxStatus latestOutboxStatus,
+            OutboxOpType latestOutboxOpType,
+            String latestOutboxError) {
         this.task = task;
         this.syncState = syncState;
         this.latestOutboxStatus = latestOutboxStatus;
@@ -24,11 +25,12 @@ public class SummaryTaskSnapshot {
         this.latestOutboxError = latestOutboxError;
     }
 
-    public static SummaryTaskSnapshot of(Task task,
-                                         TaskSyncState syncState,
-                                         OutboxStatus latestOutboxStatus,
-                                         OutboxOpType latestOutboxOpType,
-                                         String latestOutboxError) {
+    public static SummaryTaskSnapshot of(
+            Task task,
+            TaskSyncState syncState,
+            OutboxStatus latestOutboxStatus,
+            OutboxOpType latestOutboxOpType,
+            String latestOutboxError) {
         return new SummaryTaskSnapshot(task, syncState, latestOutboxStatus, latestOutboxOpType, latestOutboxError);
     }
 

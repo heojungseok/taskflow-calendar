@@ -1,23 +1,5 @@
 package com.taskflow.service;
 
-import com.taskflow.calendar.domain.user.Provider;
-import com.taskflow.calendar.domain.user.User;
-import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.observability.TaskFlowMetrics;
-import com.taskflow.security.JwtTokenProvider;
-import com.taskflow.web.dto.auth.AuthSession;
-import com.taskflow.web.dto.auth.SessionResponse;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +7,23 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.User;
+import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.observability.TaskFlowMetrics;
+import com.taskflow.security.JwtTokenProvider;
+import com.taskflow.web.dto.auth.AuthSession;
+import com.taskflow.web.dto.auth.SessionResponse;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -65,9 +64,7 @@ class AuthServiceTest {
         ArgumentCaptor<Instant> expiresAtCaptor = ArgumentCaptor.forClass(Instant.class);
         verify(jwtTokenProvider).generateToken(eq(USER_ID), eq(SESSION_VERSION), expiresAtCaptor.capture());
         Instant expiresAt = expiresAtCaptor.getValue();
-        assertThat(expiresAt)
-                .isAfterOrEqualTo(before.plusSeconds(86_400))
-                .isBeforeOrEqualTo(after.plusSeconds(86_400));
+        assertThat(expiresAt).isAfterOrEqualTo(before.plusSeconds(86_400)).isBeforeOrEqualTo(after.plusSeconds(86_400));
         assertThat(expiresAt.getNano()).isZero();
         assertThat(session).isEqualTo(new AuthSession("jwt", USER_ID, Provider.DEMO, expiresAt));
 
@@ -93,8 +90,7 @@ class AuthServiceTest {
     void missingUserSessionIsAnonymous() {
         given(userRepository.findById(USER_ID)).willReturn(Optional.empty());
 
-        assertThat(authService.getSession(USER_ID, Instant.now()))
-                .isEqualTo(SessionResponse.anonymous());
+        assertThat(authService.getSession(USER_ID, Instant.now())).isEqualTo(SessionResponse.anonymous());
     }
 
     @Test

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.taskflow.calendar.domain.project.Project;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -30,17 +29,18 @@ public class WeeklySummaryResponse {
     private final WeeklySummarySectionResponse unsynced;
 
     @JsonCreator
-    private WeeklySummaryResponse(@JsonProperty("projectId") Long projectId,
-                                  @JsonProperty("projectName") String projectName,
-                                  @JsonProperty("weekStart") LocalDate weekStart,
-                                  @JsonProperty("weekEnd") LocalDate weekEnd,
-                                  @JsonProperty("generatedAt") LocalDateTime generatedAt,
-                                  @JsonProperty("cacheStatus") WeeklySummaryCacheStatus cacheStatus,
-                                  @JsonProperty("totalTaskCount") int totalTaskCount,
-                                  @JsonProperty("syncedTaskCount") int syncedTaskCount,
-                                  @JsonProperty("unsyncedTaskCount") int unsyncedTaskCount,
-                                  @JsonProperty("synced") WeeklySummarySectionResponse synced,
-                                  @JsonProperty("unsynced") WeeklySummarySectionResponse unsynced) {
+    private WeeklySummaryResponse(
+            @JsonProperty("projectId") Long projectId,
+            @JsonProperty("projectName") String projectName,
+            @JsonProperty("weekStart") LocalDate weekStart,
+            @JsonProperty("weekEnd") LocalDate weekEnd,
+            @JsonProperty("generatedAt") LocalDateTime generatedAt,
+            @JsonProperty("cacheStatus") WeeklySummaryCacheStatus cacheStatus,
+            @JsonProperty("totalTaskCount") int totalTaskCount,
+            @JsonProperty("syncedTaskCount") int syncedTaskCount,
+            @JsonProperty("unsyncedTaskCount") int unsyncedTaskCount,
+            @JsonProperty("synced") WeeklySummarySectionResponse synced,
+            @JsonProperty("unsynced") WeeklySummarySectionResponse unsynced) {
         this.projectId = projectId;
         this.projectName = projectName;
         this.weekStart = weekStart;
@@ -54,16 +54,17 @@ public class WeeklySummaryResponse {
         this.unsynced = unsynced;
     }
 
-    public static WeeklySummaryResponse of(Project project,
-                                           LocalDate weekStart,
-                                           LocalDate weekEnd,
-                                           LocalDateTime generatedAt,
-                                           WeeklySummaryCacheStatus cacheStatus,
-                                           int totalTaskCount,
-                                           int syncedTaskCount,
-                                           int unsyncedTaskCount,
-                                           WeeklySummarySectionResponse synced,
-                                           WeeklySummarySectionResponse unsynced) {
+    public static WeeklySummaryResponse of(
+            Project project,
+            LocalDate weekStart,
+            LocalDate weekEnd,
+            LocalDateTime generatedAt,
+            WeeklySummaryCacheStatus cacheStatus,
+            int totalTaskCount,
+            int syncedTaskCount,
+            int unsyncedTaskCount,
+            WeeklySummarySectionResponse synced,
+            WeeklySummarySectionResponse unsynced) {
         return new WeeklySummaryResponse(
                 project.getId(),
                 project.getName(),
@@ -75,8 +76,7 @@ public class WeeklySummaryResponse {
                 syncedTaskCount,
                 unsyncedTaskCount,
                 synced,
-                unsynced
-        );
+                unsynced);
     }
 
     public WeeklySummaryResponse withCacheStatus(WeeklySummaryCacheStatus cacheStatus) {
@@ -91,8 +91,7 @@ public class WeeklySummaryResponse {
                 syncedTaskCount,
                 unsyncedTaskCount,
                 synced,
-                unsynced
-        );
+                unsynced);
     }
 
     public Long getProjectId() {

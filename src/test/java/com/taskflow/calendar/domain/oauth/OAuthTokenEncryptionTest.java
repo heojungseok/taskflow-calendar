@@ -1,15 +1,14 @@
 package com.taskflow.calendar.domain.oauth;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-
-import java.time.LocalDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Google 토큰이 DB에 평문으로 남지 않는지 확인한다.
@@ -31,8 +30,7 @@ class OAuthTokenEncryptionTest {
 
     private void persistToken() {
         em.persist(OAuthGoogleToken.create(
-                USER_ID, ACCESS_TOKEN, REFRESH_TOKEN,
-                LocalDateTime.now().plusHours(1), "openid email"));
+                USER_ID, ACCESS_TOKEN, REFRESH_TOKEN, LocalDateTime.now().plusHours(1), "openid email"));
         em.flush();
         em.clear();
     }
@@ -49,9 +47,7 @@ class OAuthTokenEncryptionTest {
     void tokensAreNotStoredInPlaintext() {
         persistToken();
 
-        assertThat(rawColumn("access_token"))
-                .isNotEqualTo(ACCESS_TOKEN)
-                .doesNotContain("plaintext-access-token-value");
+        assertThat(rawColumn("access_token")).isNotEqualTo(ACCESS_TOKEN).doesNotContain("plaintext-access-token-value");
         assertThat(rawColumn("refresh_token"))
                 .isNotEqualTo(REFRESH_TOKEN)
                 .doesNotContain("plaintext-refresh-token-value");

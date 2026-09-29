@@ -1,10 +1,14 @@
 package com.taskflow.calendar.domain.oauth;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpResponseException;
 import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
-import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
+import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
@@ -13,6 +17,11 @@ import com.taskflow.calendar.integration.googlecalendar.exception.RetryableInteg
 import com.taskflow.config.GoogleOAuthProperties;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.web.dto.auth.AuthSession;
+import java.io.IOException;
+import java.net.http.HttpTimeoutException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,16 +31,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
-import java.time.LocalDateTime;
-import java.time.Instant;
-import java.io.IOException;
-import java.net.http.HttpTimeoutException;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class GoogleOAuthServiceTest {
 
@@ -39,7 +38,7 @@ class GoogleOAuthServiceTest {
     private OAuthGoogleTokenRepository tokenRepository;
 
     @Mock
-    private GoogleOAuthProperties properties;  // ← 추가
+    private GoogleOAuthProperties properties; // ← 추가
 
     @Mock
     private UserRepository userRepository;
@@ -47,7 +46,7 @@ class GoogleOAuthServiceTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
-    private GoogleOAuthService service;        // ← @Spy 제거
+    private GoogleOAuthService service; // ← @Spy 제거
 
     private static final Long USER_ID = 4L;
     private static final int SESSION_VERSION = 3;
@@ -62,8 +61,7 @@ class GoogleOAuthServiceTest {
                 "old-access-token",
                 "valid-refresh-token",
                 LocalDateTime.now().plusMinutes(10),
-                "https://www.googleapis.com/auth/calendar"
-        );
+                "https://www.googleapis.com/auth/calendar");
     }
 
     // =========================================================
@@ -86,10 +84,9 @@ class GoogleOAuthServiceTest {
         service.refreshAccessToken(USER_ID);
 
         // then
-        verify(tokenRepository).save(argThat(t ->
-                t.getAccessToken().equals("new-access-token")
-                        && t.getExpiryAt().isAfter(LocalDateTime.now())
-        ));
+        verify(tokenRepository)
+                .save(argThat(t -> t.getAccessToken().equals("new-access-token")
+                        && t.getExpiryAt().isAfter(LocalDateTime.now())));
     }
 
     // =========================================================
@@ -99,11 +96,9 @@ class GoogleOAuthServiceTest {
     @DisplayName("invalid_grant면 재시도하지 않고 로컬 토큰을 삭제한다")
     void refreshAccessToken_InvalidGrantDeletesLocalToken() throws Exception {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
-        doThrow(tokenError(400, "invalid_grant"))
-                .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+        doThrow(tokenError(400, "invalid_grant")).when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
 
-        assertThrows(NonRetryableIntegrationException.class,
-                () -> service.refreshAccessToken(USER_ID));
+        assertThrows(NonRetryableIntegrationException.class, () -> service.refreshAccessToken(USER_ID));
         verify(tokenRepository).deleteByUserId(USER_ID);
     }
 
@@ -111,11 +106,9 @@ class GoogleOAuthServiceTest {
     @DisplayName("invalid_client는 재시도하지 않지만 로컬 토큰을 보존한다")
     void refreshAccessToken_InvalidClientKeepsLocalToken() throws Exception {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
-        doThrow(tokenError(400, "invalid_client"))
-                .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+        doThrow(tokenError(400, "invalid_client")).when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
 
-        assertThrows(NonRetryableIntegrationException.class,
-                () -> service.refreshAccessToken(USER_ID));
+        assertThrows(NonRetryableIntegrationException.class, () -> service.refreshAccessToken(USER_ID));
         verify(tokenRepository, never()).deleteByUserId(USER_ID);
     }
 
@@ -124,13 +117,12 @@ class GoogleOAuthServiceTest {
     void refreshAccessToken_MalformedErrorKeepsLocalToken() throws Exception {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
         HttpResponseException malformed = new HttpResponseException.Builder(
-                400, "Google token error", new com.google.api.client.http.HttpHeaders())
+                        400, "Google token error", new com.google.api.client.http.HttpHeaders())
                 .setContent("not-json")
                 .build();
         doThrow(malformed).when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
 
-        assertThrows(NonRetryableIntegrationException.class,
-                () -> service.refreshAccessToken(USER_ID));
+        assertThrows(NonRetryableIntegrationException.class, () -> service.refreshAccessToken(USER_ID));
         verify(tokenRepository, never()).deleteByUserId(USER_ID);
     }
 
@@ -138,11 +130,9 @@ class GoogleOAuthServiceTest {
     @DisplayName("Google 500 응답은 재시도하고 로컬 토큰을 보존한다")
     void refreshAccessToken_ServerErrorKeepsLocalToken() throws Exception {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.of(token));
-        doThrow(tokenError(500, "server_error"))
-                .when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
+        doThrow(tokenError(500, "server_error")).when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
 
-        assertThrows(RetryableIntegrationException.class,
-                () -> service.refreshAccessToken(USER_ID));
+        assertThrows(RetryableIntegrationException.class, () -> service.refreshAccessToken(USER_ID));
         verify(tokenRepository, never()).deleteByUserId(USER_ID);
     }
 
@@ -161,8 +151,8 @@ class GoogleOAuthServiceTest {
         doReturn(mockResponse).when(service).requestTokenRefresh(any(OAuthGoogleToken.class));
 
         // save에서 OptimisticLockingFailure 발생
-        when(tokenRepository.save(any())).thenThrow(
-                new ObjectOptimisticLockingFailureException(OAuthGoogleToken.class, 1L));
+        when(tokenRepository.save(any()))
+                .thenThrow(new ObjectOptimisticLockingFailureException(OAuthGoogleToken.class, 1L));
 
         // when & then: 예외가 밖으로 나오지 않아야 한다
         assertDoesNotThrow(() -> service.refreshAccessToken(USER_ID));
@@ -178,8 +168,7 @@ class GoogleOAuthServiceTest {
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
 
         // when & then
-        assertThrows(NonRetryableIntegrationException.class,
-                () -> service.refreshAccessToken(USER_ID));
+        assertThrows(NonRetryableIntegrationException.class, () -> service.refreshAccessToken(USER_ID));
     }
 
     @Test
@@ -260,11 +249,14 @@ class GoogleOAuthServiceTest {
     @Test
     void loginRejectsBroaderCalendarScopeWhenOwnedScopeIsMissing() {
         GoogleOAuthResult result = new GoogleOAuthResult(
-                "user@example.com", "User", "access", "refresh", 3600L,
+                "user@example.com",
+                "User",
+                "access",
+                "refresh",
+                3600L,
                 "openid https://www.googleapis.com/auth/calendar.events");
 
-        assertThrows(MissingRequiredGoogleScopeException.class,
-                () -> service.loginOrRegister(result));
+        assertThrows(MissingRequiredGoogleScopeException.class, () -> service.loginOrRegister(result));
 
         verifyNoInteractions(userRepository, tokenRepository, jwtTokenProvider);
     }
@@ -272,7 +264,11 @@ class GoogleOAuthServiceTest {
     @Test
     void loginAcceptsOwnedCalendarScope() {
         GoogleOAuthResult result = new GoogleOAuthResult(
-                "user@example.com", "User", "access", "refresh", 3600L,
+                "user@example.com",
+                "User",
+                "access",
+                "refresh",
+                3600L,
                 "openid https://www.googleapis.com/auth/calendar.events.owned");
         User user = mock(User.class);
         Instant expiresAt = Instant.now().plusSeconds(3600);
@@ -295,7 +291,11 @@ class GoogleOAuthServiceTest {
     @Test
     void loginPreservesStoredRefreshTokenWhenGoogleOmitsIt() {
         GoogleOAuthResult result = new GoogleOAuthResult(
-                "user@example.com", "User", "new-access", null, 3600L,
+                "user@example.com",
+                "User",
+                "new-access",
+                null,
+                3600L,
                 "openid https://www.googleapis.com/auth/calendar.events.owned");
         User user = mock(User.class);
 
@@ -321,13 +321,16 @@ class GoogleOAuthServiceTest {
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(tokenRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
 
-        for (String refreshToken : new String[]{null, "", " "}) {
+        for (String refreshToken : new String[] {null, "", " "}) {
             GoogleOAuthResult result = new GoogleOAuthResult(
-                    "user@example.com", "User", "access", refreshToken, 3600L,
+                    "user@example.com",
+                    "User",
+                    "access",
+                    refreshToken,
+                    3600L,
                     "openid https://www.googleapis.com/auth/calendar.events.owned");
 
-            assertThrows(MissingRefreshTokenException.class,
-                    () -> service.loginOrRegister(result));
+            assertThrows(MissingRefreshTokenException.class, () -> service.loginOrRegister(result));
         }
 
         verify(tokenRepository, never()).save(any());
@@ -336,7 +339,7 @@ class GoogleOAuthServiceTest {
 
     private HttpResponseException tokenError(int status, String error) {
         return new HttpResponseException.Builder(
-                status, "Google token error", new com.google.api.client.http.HttpHeaders())
+                        status, "Google token error", new com.google.api.client.http.HttpHeaders())
                 .setContent("{\"error\":\"" + error + "\"}")
                 .build();
     }

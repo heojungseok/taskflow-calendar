@@ -1,11 +1,10 @@
 package com.taskflow.observability;
 
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -26,10 +25,7 @@ public class UserMetricsCollector {
     void refresh() {
         Map<String, Object> counts = jdbcTemplate.queryForMap(USER_COUNTS_SQL);
         metrics.setUserCounts(
-                value(counts, "google_registered"),
-                value(counts, "google_created_24h"),
-                value(counts, "demo_active")
-        );
+                value(counts, "google_registered"), value(counts, "google_created_24h"), value(counts, "demo_active"));
     }
 
     private long value(Map<String, Object> counts, String key) {

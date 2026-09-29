@@ -4,11 +4,10 @@ import com.taskflow.common.exception.BusinessException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.stereotype.Component;
-
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import org.springframework.stereotype.Component;
 
 @Component
 public class TaskFlowMetrics {
@@ -34,24 +33,42 @@ public class TaskFlowMetrics {
                 .register(registry);
         Gauge.builder("outbox_oldest_processable_age_seconds", oldestProcessableAgeSeconds, AtomicLong::get)
                 .register(registry);
-        Gauge.builder("taskflow_google_users_registered", googleUsersRegistered,
+        Gauge.builder(
+                        "taskflow_google_users_registered",
+                        googleUsersRegistered,
                         value -> value.get() < 0 ? Double.NaN : value.get())
                 .register(registry);
-        Gauge.builder("taskflow_google_users_created_24h", googleUsersCreated24h,
+        Gauge.builder(
+                        "taskflow_google_users_created_24h",
+                        googleUsersCreated24h,
                         value -> value.get() < 0 ? Double.NaN : value.get())
                 .register(registry);
-        Gauge.builder("taskflow_demo_sessions_active", demoSessionsActive,
+        Gauge.builder(
+                        "taskflow_demo_sessions_active",
+                        demoSessionsActive,
                         value -> value.get() < 0 ? Double.NaN : value.get())
                 .register(registry);
     }
 
-    public void demoSessionStarted() { demoSessionsStarted.increment(); }
-    public void demoUserExpired() { demoUsersExpired.increment(); }
-    public void demoCleanupFailed() { demoCleanupFailures.increment(); }
-    public void demoTaskCreated() { demoTasksCreated.increment(); }
+    public void demoSessionStarted() {
+        demoSessionsStarted.increment();
+    }
+
+    public void demoUserExpired() {
+        demoUsersExpired.increment();
+    }
+
+    public void demoCleanupFailed() {
+        demoCleanupFailures.increment();
+    }
+
+    public void demoTaskCreated() {
+        demoTasksCreated.increment();
+    }
 
     public void outboxProcessed(String outcome, String reason) {
-        registry.counter("outbox_processed_total", "outcome", outcome, "reason", reason).increment();
+        registry.counter("outbox_processed_total", "outcome", outcome, "reason", reason)
+                .increment();
     }
 
     public <T> T observeGeminiCall(String feature, Supplier<T> call) {
@@ -69,10 +86,8 @@ public class TaskFlowMetrics {
             errorCode = "UNCLASSIFIED";
             throw e;
         } finally {
-            registry.counter("gemini_calls_total",
-                    "feature", feature,
-                    "outcome", outcome,
-                    "error_code", errorCode).increment();
+            registry.counter("gemini_calls_total", "feature", feature, "outcome", outcome, "error_code", errorCode)
+                    .increment();
             registry.timer("gemini_calls", "feature", feature)
                     .record(System.nanoTime() - startedAt, TimeUnit.NANOSECONDS);
         }

@@ -2,7 +2,6 @@ package com.taskflow.calendar.domain.summary.exception;
 
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.BusinessException;
-
 import java.util.List;
 
 public class WeeklySummaryGenerationException extends BusinessException {
@@ -17,13 +16,14 @@ public class WeeklySummaryGenerationException extends BusinessException {
         this(errorCode, message, fallbackEligible, null, null, null, List.of());
     }
 
-    public WeeklySummaryGenerationException(ErrorCode errorCode,
-                                            String message,
-                                            boolean fallbackEligible,
-                                            String classificationSource,
-                                            String retryAfter,
-                                            String upstreamStatus,
-                                            List<String> upstreamReasonHints) {
+    public WeeklySummaryGenerationException(
+            ErrorCode errorCode,
+            String message,
+            boolean fallbackEligible,
+            String classificationSource,
+            String retryAfter,
+            String upstreamStatus,
+            List<String> upstreamReasonHints) {
         super(errorCode, message);
         this.fallbackEligible = fallbackEligible;
         this.classificationSource = classificationSource;

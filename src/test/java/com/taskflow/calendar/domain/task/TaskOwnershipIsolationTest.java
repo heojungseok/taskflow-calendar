@@ -1,21 +1,20 @@
 package com.taskflow.calendar.domain.task;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.config.JpaAuditingConfig;
+import java.time.LocalDateTime;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 소유권 격리는 파생 쿼리의 프로퍼티 경로(Project_OwnerUserId)로 강제된다.
@@ -52,8 +51,13 @@ class TaskOwnershipIsolationTest {
         em.persist(project);
 
         Task task = Task.createTask(
-                project, title, "소유권 격리 검증용 작업이다.",
-                null, null, LocalDateTime.now().plusDays(1), false);
+                project,
+                title,
+                "소유권 격리 검증용 작업이다.",
+                null,
+                null,
+                LocalDateTime.now().plusDays(1),
+                false);
         em.persist(task);
         em.flush();
         return task;
@@ -65,8 +69,8 @@ class TaskOwnershipIsolationTest {
         Task theirs = taskOwnedBy(stranger, "남의 작업");
 
         assertThat(taskRepository.findByIdAndDeletedFalse(theirs.getId())).isPresent();
-        assertThat(taskRepository
-                .findByIdAndDeletedFalseAndProject_OwnerUserId(theirs.getId(), owner)).isEmpty();
+        assertThat(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(theirs.getId(), owner))
+                .isEmpty();
     }
 
     @Test
@@ -74,8 +78,8 @@ class TaskOwnershipIsolationTest {
     void ownLookupSucceeds() {
         Task mine = taskOwnedBy(owner, "내 작업");
 
-        assertThat(taskRepository
-                .findByIdAndDeletedFalseAndProject_OwnerUserId(mine.getId(), owner)).isPresent();
+        assertThat(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(mine.getId(), owner))
+                .isPresent();
     }
 
     @Test
@@ -84,11 +88,9 @@ class TaskOwnershipIsolationTest {
         Task theirs = taskOwnedBy(stranger, "남의 작업");
         Long theirProjectId = theirs.getProject().getId();
 
-        assertThat(taskRepository
-                .findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(theirProjectId, owner))
+        assertThat(taskRepository.findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(theirProjectId, owner))
                 .isEmpty();
-        assertThat(taskRepository
-                .findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(theirProjectId, stranger))
+        assertThat(taskRepository.findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(theirProjectId, stranger))
                 .hasSize(1);
     }
 
@@ -101,7 +103,7 @@ class TaskOwnershipIsolationTest {
         List<Task> mine = taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(owner);
 
         assertThat(mine).isNotEmpty();
-        assertThat(mine).allSatisfy(t ->
-                assertThat(t.getProject().getOwnerUserId()).isEqualTo(owner));
+        assertThat(mine)
+                .allSatisfy(t -> assertThat(t.getProject().getOwnerUserId()).isEqualTo(owner));
     }
 }

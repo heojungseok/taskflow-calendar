@@ -1,5 +1,13 @@
 package com.taskflow.calendar.domain.user;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
@@ -17,30 +25,21 @@ import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.calendar.domain.summary.generator.WeeklySummaryGenerator;
-import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.Task;
+import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.config.GeminiRecommendationProperties;
 import com.taskflow.config.GeminiSearchProperties;
 import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.observability.TaskFlowMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
-import static org.mockito.ArgumentMatchers.anyList;
 
 class DemoAiIsolationTest {
 
@@ -51,8 +50,8 @@ class DemoAiIsolationTest {
 
     @BeforeEach
     void authenticate() {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(userId, null, List.of()));
+        SecurityContextHolder.getContext()
+                .setAuthentication(new UsernamePasswordAuthenticationToken(userId, null, List.of()));
     }
 
     @AfterEach
@@ -76,7 +75,8 @@ class DemoAiIsolationTest {
         ProjectWeeklySummaryService service = new ProjectWeeklySummaryService(
                 projects, tasks, generator, sync, cache, new GeminiSummaryProperties(), users);
 
-        assertEquals(WeeklySummaryCacheStatus.DEMO_LOCAL,
+        assertEquals(
+                WeeklySummaryCacheStatus.DEMO_LOCAL,
                 service.generateWeeklySummary(projectId).getCacheStatus());
         verifyNoInteractions(generator, cache);
     }
@@ -96,7 +96,8 @@ class DemoAiIsolationTest {
         ProjectTaskRecommendationService service = new ProjectTaskRecommendationService(
                 projects, tasks, sync, generator, cache, new GeminiRecommendationProperties(), users);
 
-        assertEquals(TaskRecommendationCacheStatus.DEMO_LOCAL,
+        assertEquals(
+                TaskRecommendationCacheStatus.DEMO_LOCAL,
                 service.getRecommendations(projectId).getCacheStatus());
         verifyNoInteractions(generator, cache);
     }
@@ -112,8 +113,7 @@ class DemoAiIsolationTest {
         given(tasks.findAllByDeletedFalseAndProject_OwnerUserId(userId)).willReturn(List.of());
         given(sync.resolveAll(List.of())).willReturn(List.of());
 
-        ProjectTaskSearchService service = new ProjectTaskSearchService(
-                tasks, sync, parser, embeddings, users);
+        ProjectTaskSearchService service = new ProjectTaskSearchService(tasks, sync, parser, embeddings, users);
 
         assertEquals(SemanticSearchStatus.DISABLED, service.search("데모").getSemanticStatus());
         verifyNoInteractions(parser, embeddings);
@@ -132,7 +132,11 @@ class DemoAiIsolationTest {
         given(users.findById(userId)).willReturn(Optional.of(demo));
 
         TaskSearchEmbeddingService service = new TaskSearchEmbeddingService(
-                properties, mock(ObjectMapper.class), store, tasks, users,
+                properties,
+                mock(ObjectMapper.class),
+                store,
+                tasks,
+                users,
                 new TaskFlowMetrics(new SimpleMeterRegistry()));
 
         service.ensureEmbeddings(List.of(task));

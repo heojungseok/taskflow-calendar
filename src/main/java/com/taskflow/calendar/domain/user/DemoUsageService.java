@@ -46,8 +46,7 @@ public class DemoUsageService {
     }
 
     private User lockDemoUser(Long userId) {
-        User user = userRepository.findByIdForUpdate(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+        User user = userRepository.findByIdForUpdate(userId).orElseThrow(() -> new UserNotFoundException(userId));
         return user.getProvider() == Provider.DEMO ? user : null;
     }
 

@@ -1,5 +1,12 @@
 package com.taskflow.calendar.integration.googlecalendar;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.OutboxOpType;
@@ -9,6 +16,9 @@ import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,17 +26,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GoogleCalendarServiceImplTest {
@@ -54,8 +53,7 @@ class GoogleCalendarServiceImplTest {
         Task task = taskWithSchedule(TASK_ID, startAt, dueAt, null);
         CalendarOutbox outbox = upsertOutbox(TASK_ID);
 
-        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class)))
-                .thenReturn(payloadMap(TASK_ID, USER_ID));
+        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class))).thenReturn(payloadMap(TASK_ID, USER_ID));
         when(taskRepository.findByIdAndDeletedFalse(TASK_ID)).thenReturn(Optional.of(task));
         when(googleCalendarClient.createEvent(eq(USER_ID), org.mockito.ArgumentMatchers.any()))
                 .thenReturn("new-event-id");
@@ -77,8 +75,7 @@ class GoogleCalendarServiceImplTest {
         Task task = taskWithSchedule(TASK_ID, null, dueAt, "event-123");
         CalendarOutbox outbox = upsertOutbox(TASK_ID);
 
-        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class)))
-                .thenReturn(payloadMap(TASK_ID, USER_ID));
+        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class))).thenReturn(payloadMap(TASK_ID, USER_ID));
         when(taskRepository.findByIdAndDeletedFalse(TASK_ID)).thenReturn(Optional.of(task));
 
         googleCalendarService.handle(outbox);
@@ -98,11 +95,11 @@ class GoogleCalendarServiceImplTest {
         Task task = taskWithSchedule(TASK_ID, null, dueAt, "stale-event");
         CalendarOutbox outbox = upsertOutbox(TASK_ID);
 
-        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class)))
-                .thenReturn(payloadMap(TASK_ID, USER_ID));
+        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class))).thenReturn(payloadMap(TASK_ID, USER_ID));
         when(taskRepository.findByIdAndDeletedFalse(TASK_ID)).thenReturn(Optional.of(task));
         org.mockito.Mockito.doThrow(new NonRetryableIntegrationException("Calendar event not found", 404))
-                .when(googleCalendarClient).updateEvent(eq(USER_ID), eq("stale-event"), org.mockito.ArgumentMatchers.any());
+                .when(googleCalendarClient)
+                .updateEvent(eq(USER_ID), eq("stale-event"), org.mockito.ArgumentMatchers.any());
         when(googleCalendarClient.createEvent(eq(USER_ID), org.mockito.ArgumentMatchers.any()))
                 .thenReturn("fresh-event");
 
@@ -120,14 +117,14 @@ class GoogleCalendarServiceImplTest {
         Task task = taskWithSchedule(TASK_ID, null, dueAt, "event-123");
         CalendarOutbox outbox = upsertOutbox(TASK_ID);
 
-        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class)))
-                .thenReturn(payloadMap(TASK_ID, USER_ID));
+        when(objectMapper.readValue(eq(outbox.getPayload()), eq(Map.class))).thenReturn(payloadMap(TASK_ID, USER_ID));
         when(taskRepository.findByIdAndDeletedFalse(TASK_ID)).thenReturn(Optional.of(task));
         org.mockito.Mockito.doThrow(new NonRetryableIntegrationException("Forbidden", 403))
-                .when(googleCalendarClient).updateEvent(eq(USER_ID), eq("event-123"), org.mockito.ArgumentMatchers.any());
+                .when(googleCalendarClient)
+                .updateEvent(eq(USER_ID), eq("event-123"), org.mockito.ArgumentMatchers.any());
 
-        org.junit.jupiter.api.Assertions.assertThrows(NonRetryableIntegrationException.class,
-                () -> googleCalendarService.handle(outbox));
+        org.junit.jupiter.api.Assertions.assertThrows(
+                NonRetryableIntegrationException.class, () -> googleCalendarService.handle(outbox));
 
         verify(googleCalendarClient, never()).createEvent(eq(USER_ID), org.mockito.ArgumentMatchers.any());
     }
@@ -196,7 +193,8 @@ class GoogleCalendarServiceImplTest {
         return payload;
     }
 
-    private Task taskWithSchedule(Long id, LocalDateTime startAt, LocalDateTime dueAt, String eventId) throws Exception {
+    private Task taskWithSchedule(Long id, LocalDateTime startAt, LocalDateTime dueAt, String eventId)
+            throws Exception {
         Project project = Project.of("Google Sync", 1L);
         Task task = Task.createTask(project, "일정 테스트", "설명", null, startAt, dueAt, true);
         setField(task, "id", id);

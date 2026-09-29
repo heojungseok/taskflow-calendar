@@ -1,16 +1,14 @@
 package com.taskflow.calendar.domain.project;
 
 import com.taskflow.calendar.domain.user.User;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "projects")
@@ -34,7 +32,10 @@ public class Project {
     private Long ownerUserId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_user_id", insertable = false, updatable = false,
+    @JoinColumn(
+            name = "owner_user_id",
+            insertable = false,
+            updatable = false,
             foreignKey = @ForeignKey(name = "fk_projects_owner_user"))
     private User owner;
 
@@ -43,7 +44,7 @@ public class Project {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at",nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     private Project(String name, Long ownerUserId) {

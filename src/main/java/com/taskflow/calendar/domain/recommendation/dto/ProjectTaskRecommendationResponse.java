@@ -1,7 +1,6 @@
 package com.taskflow.calendar.domain.recommendation.dto;
 
 import com.taskflow.calendar.domain.project.Project;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,14 +15,15 @@ public class ProjectTaskRecommendationResponse {
     private final int recommendedCount;
     private final List<ProjectTaskRecommendationItemResponse> items;
 
-    private ProjectTaskRecommendationResponse(Long projectId,
-                                              String projectName,
-                                              LocalDateTime generatedAt,
-                                              TaskRecommendationCacheStatus cacheStatus,
-                                              int totalEligibleTaskCount,
-                                              int candidateCount,
-                                              int recommendedCount,
-                                              List<ProjectTaskRecommendationItemResponse> items) {
+    private ProjectTaskRecommendationResponse(
+            Long projectId,
+            String projectName,
+            LocalDateTime generatedAt,
+            TaskRecommendationCacheStatus cacheStatus,
+            int totalEligibleTaskCount,
+            int candidateCount,
+            int recommendedCount,
+            List<ProjectTaskRecommendationItemResponse> items) {
         this.projectId = projectId;
         this.projectName = projectName;
         this.generatedAt = generatedAt;
@@ -34,12 +34,13 @@ public class ProjectTaskRecommendationResponse {
         this.items = List.copyOf(items);
     }
 
-    public static ProjectTaskRecommendationResponse of(Project project,
-                                                       LocalDateTime generatedAt,
-                                                       TaskRecommendationCacheStatus cacheStatus,
-                                                       int totalEligibleTaskCount,
-                                                       int candidateCount,
-                                                       List<ProjectTaskRecommendationItemResponse> items) {
+    public static ProjectTaskRecommendationResponse of(
+            Project project,
+            LocalDateTime generatedAt,
+            TaskRecommendationCacheStatus cacheStatus,
+            int totalEligibleTaskCount,
+            int candidateCount,
+            List<ProjectTaskRecommendationItemResponse> items) {
         return new ProjectTaskRecommendationResponse(
                 project.getId(),
                 project.getName(),
@@ -48,8 +49,7 @@ public class ProjectTaskRecommendationResponse {
                 totalEligibleTaskCount,
                 candidateCount,
                 items.size(),
-                items
-        );
+                items);
     }
 
     public ProjectTaskRecommendationResponse withCacheStatus(TaskRecommendationCacheStatus cacheStatus) {
@@ -61,8 +61,7 @@ public class ProjectTaskRecommendationResponse {
                 totalEligibleTaskCount,
                 candidateCount,
                 recommendedCount,
-                items
-        );
+                items);
     }
 
     public Long getProjectId() {

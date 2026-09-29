@@ -4,11 +4,10 @@ import com.taskflow.calendar.domain.search.ProjectTaskSearchService;
 import com.taskflow.calendar.domain.search.dto.ProjectTaskSearchResponse;
 import com.taskflow.calendar.domain.search.dto.TaskSearchRequest;
 import com.taskflow.common.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,9 +18,9 @@ public class SearchController {
 
     @PostMapping("/tasks")
     public ResponseEntity<ApiResponse<ProjectTaskSearchResponse>> searchTasks(
-            @Valid @RequestBody TaskSearchRequest request
-    ) {
-        ProjectTaskSearchResponse response = projectTaskSearchService.search(request.getQuery().trim());
+            @Valid @RequestBody TaskSearchRequest request) {
+        ProjectTaskSearchResponse response =
+                projectTaskSearchService.search(request.getQuery().trim());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

@@ -1,28 +1,27 @@
 package com.taskflow.web;
 
-import com.taskflow.common.ApiResponse;
-import com.taskflow.common.ErrorCode;
-import com.taskflow.common.exception.BusinessException;
 import com.taskflow.calendar.domain.project.ProjectService;
-import com.taskflow.calendar.domain.recommendation.ProjectTaskRecommendationService;
-import com.taskflow.calendar.domain.recommendation.dto.ProjectTaskRecommendationResponse;
 import com.taskflow.calendar.domain.project.dto.CreateProjectRequest;
 import com.taskflow.calendar.domain.project.dto.ProjectResponse;
+import com.taskflow.calendar.domain.recommendation.ProjectTaskRecommendationService;
+import com.taskflow.calendar.domain.recommendation.dto.ProjectTaskRecommendationResponse;
 import com.taskflow.calendar.domain.summary.ProjectWeeklySummaryService;
 import com.taskflow.calendar.domain.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheHealthResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.common.ApiResponse;
+import com.taskflow.common.ErrorCode;
+import com.taskflow.common.exception.BusinessException;
 import com.taskflow.security.SecurityContextHelper;
+import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -34,17 +33,15 @@ public class ProjectController {
     private final ProjectTaskRecommendationService projectTaskRecommendationService;
     private final WeeklySummaryCacheService weeklySummaryCacheService;
     private final UserRepository userRepository;
+
     @Value("${summary.force-live-enabled:false}")
     private boolean forceLiveEnabled;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(
-            @Valid @RequestBody CreateProjectRequest request
-    ) {
+            @Valid @RequestBody CreateProjectRequest request) {
         ProjectResponse project = projectService.createProject(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(project));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project));
     }
 
     @GetMapping
@@ -54,23 +51,17 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}")
-    public ResponseEntity<ApiResponse<ProjectResponse>> getProjectById(
-            @PathVariable Long projectId
-    ) {
+    public ResponseEntity<ApiResponse<ProjectResponse>> getProjectById(@PathVariable Long projectId) {
         ProjectResponse project = projectService.getProjectById(projectId);
         return ResponseEntity.ok(ApiResponse.success(project));
     }
 
     @PostMapping("/{projectId}/weekly-summary")
     public ResponseEntity<ApiResponse<WeeklySummaryResponse>> generateWeeklySummary(
-            @PathVariable Long projectId,
-            @RequestParam(defaultValue = "false") boolean forceLive
-    ) {
+            @PathVariable Long projectId, @RequestParam(defaultValue = "false") boolean forceLive) {
         if (forceLive && !forceLiveEnabled) {
             throw new BusinessException(
-                    ErrorCode.WEEKLY_SUMMARY_FORCE_LIVE_DISABLED,
-                    "forceLive is disabled for this environment."
-            );
+                    ErrorCode.WEEKLY_SUMMARY_FORCE_LIVE_DISABLED, "forceLive is disabled for this environment.");
         }
         WeeklySummaryResponse summary = projectWeeklySummaryService.generateWeeklySummary(projectId, forceLive);
         return ResponseEntity.ok(ApiResponse.success(summary));
@@ -78,8 +69,7 @@ public class ProjectController {
 
     @GetMapping("/{projectId}/task-recommendations")
     public ResponseEntity<ApiResponse<ProjectTaskRecommendationResponse>> getTaskRecommendations(
-            @PathVariable Long projectId
-    ) {
+            @PathVariable Long projectId) {
         ProjectTaskRecommendationResponse response = projectTaskRecommendationService.getRecommendations(projectId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }

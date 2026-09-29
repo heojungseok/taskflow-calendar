@@ -1,6 +1,13 @@
 package com.taskflow.calendar.domain.outbox;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.taskflow.config.JpaAuditingConfig;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,14 +15,6 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * findLatestByTaskIdIn은 Postgres 전용 DISTINCT ON을 쓰는 네이티브 쿼리다.
@@ -37,8 +36,7 @@ class CalendarOutboxLatestBatchTest {
     TestEntityManager em;
 
     private CalendarOutbox persist(long taskId) {
-        CalendarOutbox outbox = CalendarOutbox.forUpsert(
-                taskId, "{\"version\":1,\"taskId\":" + taskId + "}");
+        CalendarOutbox outbox = CalendarOutbox.forUpsert(taskId, "{\"version\":1,\"taskId\":" + taskId + "}");
         em.persist(outbox);
         em.flush();
         return outbox;
@@ -128,7 +126,8 @@ class CalendarOutboxLatestBatchTest {
         setCreatedAt(latest, LocalDateTime.now().minusMinutes(4));
 
         CalendarOutbox batch = repository.findLatestByTaskIdIn(List.of(taskId)).get(0);
-        CalendarOutbox single = repository.findTopByTaskIdOrderByCreatedAtDesc(taskId).orElseThrow();
+        CalendarOutbox single =
+                repository.findTopByTaskIdOrderByCreatedAtDesc(taskId).orElseThrow();
 
         assertThat(batch.getId()).isEqualTo(single.getId());
     }

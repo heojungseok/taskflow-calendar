@@ -4,15 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
+import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Component
 public class JwtTokenProvider {
@@ -22,9 +21,7 @@ public class JwtTokenProvider {
     private final SecretKey key;
     private final long expirationMs;
 
-    public JwtTokenProvider(
-            @Value("${jwt.secret}") String secretKey,
-            @Value("${jwt.expiration}") long expirationMs) {
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, @Value("${jwt.expiration}") long expirationMs) {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }
@@ -40,7 +37,7 @@ public class JwtTokenProvider {
         Date now = new Date();
 
         return Jwts.builder()
-                .subject(String.valueOf(userId))  // userId를 subject로
+                .subject(String.valueOf(userId)) // userId를 subject로
                 .claim("sv", sessionVersion)
                 .issuedAt(now)
                 .expiration(Date.from(expiresAt))
@@ -66,11 +63,8 @@ public class JwtTokenProvider {
      * 토큰에서 userId 추출
      */
     public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        Claims claims =
+                Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
 
         return Long.parseLong(claims.getSubject());
     }
@@ -94,9 +88,7 @@ public class JwtTokenProvider {
         int sessionVersion;
         if (value instanceof Integer integer) {
             sessionVersion = integer;
-        } else if (value instanceof Long longValue
-                && longValue >= 0
-                && longValue <= Integer.MAX_VALUE) {
+        } else if (value instanceof Long longValue && longValue >= 0 && longValue <= Integer.MAX_VALUE) {
             sessionVersion = longValue.intValue();
         } else {
             throw new MalformedJwtException("Session version must be an integer");
@@ -118,10 +110,6 @@ public class JwtTokenProvider {
     }
 
     private Claims parseClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
     }
 }

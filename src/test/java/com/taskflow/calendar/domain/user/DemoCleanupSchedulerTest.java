@@ -1,17 +1,16 @@
 package com.taskflow.calendar.domain.user;
 
-import com.taskflow.observability.TaskFlowMetrics;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
+import com.taskflow.observability.TaskFlowMetrics;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 class DemoCleanupSchedulerTest {
 
@@ -31,8 +30,8 @@ class DemoCleanupSchedulerTest {
 
     @Test
     void cleanupSchedulerRemainsEnabledByDefault() {
-        contextRunner.run(context -> org.assertj.core.api.Assertions.assertThat(context)
-                .hasSingleBean(DemoCleanupScheduler.class));
+        contextRunner.run(context ->
+                org.assertj.core.api.Assertions.assertThat(context).hasSingleBean(DemoCleanupScheduler.class));
     }
 
     @Test
@@ -44,8 +43,8 @@ class DemoCleanupSchedulerTest {
         User second = mock(User.class);
         given(first.getId()).willReturn(1L);
         given(second.getId()).willReturn(2L);
-        given(users.findTop100ByProviderAndExpiresAtLessThanEqualOrderByExpiresAtAsc(
-                eq(Provider.DEMO), any())).willReturn(List.of(first, second));
+        given(users.findTop100ByProviderAndExpiresAtLessThanEqualOrderByExpiresAtAsc(eq(Provider.DEMO), any()))
+                .willReturn(List.of(first, second));
         doThrow(new IllegalStateException("fk")).when(cleanup).cleanup(eq(1L), any());
 
         new DemoCleanupScheduler(users, cleanup, metrics).cleanupExpiredUsers();

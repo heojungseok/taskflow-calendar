@@ -1,10 +1,16 @@
 package com.taskflow.calendar.domain.outbox;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.user.User;
+import java.time.LocalDateTime;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,13 +21,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CalendarOutboxService 테스트")
@@ -46,12 +45,11 @@ class CalendarOutboxServiceTest {
         field.set(outboxService, objectMapper);
 
         // Task 생성 (Reflection 사용)
-        task = createTask(1L, "Test Task", TaskStatus.REQUESTED,
-                LocalDateTime.now().plusDays(1), true, "event-123");
+        task = createTask(
+                1L, "Test Task", TaskStatus.REQUESTED, LocalDateTime.now().plusDays(1), true, "event-123");
 
         // SecurityContext 설정 (MockedStatic 대신 사용)
-        UsernamePasswordAuthenticationToken auth =
-            new UsernamePasswordAuthenticationToken(USER_ID, null, null);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(USER_ID, null, null);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
@@ -66,48 +64,50 @@ class CalendarOutboxServiceTest {
         @DisplayName("Rule A-1: PENDING DELETE 제거 확인")
         void ruleA1_PENDING_DELETE_제거() {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.save(any())).thenReturn(null);
 
             // when
             outboxService.enqueueUpsert(task);
 
             // then
-            verify(outboxRepository).deleteByTaskIdAndStatusAndOpType(
-                    task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE);
+            verify(outboxRepository)
+                    .deleteByTaskIdAndStatusAndOpType(task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE);
         }
 
         @Test
         @DisplayName("Rule A-2: PENDING UPSERT 제거 확인")
         void ruleA2_PENDING_UPSERT_제거() {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.save(any())).thenReturn(null);
 
             // when
             outboxService.enqueueUpsert(task);
 
             // then
-            verify(outboxRepository).deleteByTaskIdAndStatusAndOpType(
-                    task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
+            verify(outboxRepository)
+                    .deleteByTaskIdAndStatusAndOpType(task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
         }
 
         @Test
         @DisplayName("새 UPSERT Outbox 저장 확인")
         void 새_UPSERT_저장() {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.save(any())).thenReturn(null);
 
             // when
             outboxService.enqueueUpsert(task);
 
             // then
-            verify(outboxRepository).save(argThat(outbox ->
-                    outbox.getTaskId().equals(task.getId()) &&
-                    outbox.getOpType() == OutboxOpType.UPSERT &&
-                    outbox.getStatus() == OutboxStatus.PENDING
-            ));
+            verify(outboxRepository)
+                    .save(argThat(outbox -> outbox.getTaskId().equals(task.getId())
+                            && outbox.getOpType() == OutboxOpType.UPSERT
+                            && outbox.getStatus() == OutboxStatus.PENDING));
         }
     }
 
@@ -122,9 +122,10 @@ class CalendarOutboxServiceTest {
         @DisplayName("Rule B-1: PENDING UPSERT 제거 확인")
         void ruleB1_PENDING_UPSERT_제거() {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.existsByTaskIdAndStatusAndOpType(
-                    task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE))
+                            task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE))
                     .thenReturn(false);
             when(outboxRepository.save(any())).thenReturn(null);
 
@@ -132,17 +133,18 @@ class CalendarOutboxServiceTest {
             outboxService.enqueueDelete(task);
 
             // then
-            verify(outboxRepository).deleteByTaskIdAndStatusAndOpType(
-                    task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
+            verify(outboxRepository)
+                    .deleteByTaskIdAndStatusAndOpType(task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
         }
 
         @Test
         @DisplayName("Rule B-2: PENDING DELETE 중복 시 skip")
         void ruleB2_PENDING_DELETE_중복_skip() {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.existsByTaskIdAndStatusAndOpType(
-                    task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE))
+                            task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE))
                     .thenReturn(true); // 이미 존재
 
             // when
@@ -156,9 +158,10 @@ class CalendarOutboxServiceTest {
         @DisplayName("새 DELETE Outbox 저장 확인")
         void 새_DELETE_저장() {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.existsByTaskIdAndStatusAndOpType(
-                    task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE))
+                            task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE))
                     .thenReturn(false);
             when(outboxRepository.save(any())).thenReturn(null);
 
@@ -166,11 +169,10 @@ class CalendarOutboxServiceTest {
             outboxService.enqueueDelete(task);
 
             // then
-            verify(outboxRepository).save(argThat(outbox ->
-                    outbox.getTaskId().equals(task.getId()) &&
-                    outbox.getOpType() == OutboxOpType.DELETE &&
-                    outbox.getStatus() == OutboxStatus.PENDING
-            ));
+            verify(outboxRepository)
+                    .save(argThat(outbox -> outbox.getTaskId().equals(task.getId())
+                            && outbox.getOpType() == OutboxOpType.DELETE
+                            && outbox.getStatus() == OutboxStatus.PENDING));
         }
     }
 
@@ -185,7 +187,8 @@ class CalendarOutboxServiceTest {
         @DisplayName("buildUpsertPayload: 필수 필드 포함 확인")
         void upsertPayload_필수필드_확인() throws Exception {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.save(any())).thenReturn(null);
 
             // when
@@ -198,12 +201,12 @@ class CalendarOutboxServiceTest {
                     Map<String, Object> event = (Map<String, Object>) payload.get("event");
                     Map<String, Object> meta = (Map<String, Object>) payload.get("meta");
 
-                    return payload.get("opType").equals("UPSERT") &&
-                           event.get("eventId").equals("event-123") &&
-                           event.get("title").equals("Test Task") &&
-                           event.containsKey("startAt") &&
-                           event.containsKey("endAt") &&
-                           meta.get("requestedByUserId").equals(USER_ID.intValue());
+                    return payload.get("opType").equals("UPSERT")
+                            && event.get("eventId").equals("event-123")
+                            && event.get("title").equals("Test Task")
+                            && event.containsKey("startAt")
+                            && event.containsKey("endAt")
+                            && meta.get("requestedByUserId").equals(USER_ID.intValue());
                 } catch (Exception e) {
                     return false;
                 }
@@ -214,9 +217,10 @@ class CalendarOutboxServiceTest {
         @DisplayName("buildDeletePayload: eventId만 포함 확인")
         void deletePayload_eventId만_확인() throws Exception {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.existsByTaskIdAndStatusAndOpType(
-                    task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE))
+                            task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE))
                     .thenReturn(false);
             when(outboxRepository.save(any())).thenReturn(null);
 
@@ -229,9 +233,9 @@ class CalendarOutboxServiceTest {
                     Map<String, Object> payload = objectMapper.readValue(outbox.getPayload(), Map.class);
                     Map<String, Object> event = (Map<String, Object>) payload.get("event");
 
-                    return payload.get("opType").equals("DELETE") &&
-                           event.get("eventId").equals("event-123") &&
-                           event.size() == 1; // eventId만!
+                    return payload.get("opType").equals("DELETE")
+                            && event.get("eventId").equals("event-123")
+                            && event.size() == 1; // eventId만!
                 } catch (Exception e) {
                     return false;
                 }
@@ -242,11 +246,12 @@ class CalendarOutboxServiceTest {
         @DisplayName("TaskStatus.DONE 시 [DONE] prefix 포함")
         void DONE_상태_prefix_확인() throws Exception {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.save(any())).thenReturn(null);
 
-            Task doneTask = createTask(2L, "Completed Task", TaskStatus.DONE,
-                    LocalDateTime.now().plusDays(1), true, "event-456");
+            Task doneTask = createTask(
+                    2L, "Completed Task", TaskStatus.DONE, LocalDateTime.now().plusDays(1), true, "event-456");
 
             // when
             outboxService.enqueueUpsert(doneTask);
@@ -269,10 +274,16 @@ class CalendarOutboxServiceTest {
         @DisplayName("startAt이 있으면 event.startAt에 그대로 반영")
         void startAt_존재시_eventStartAt_우선사용() throws Exception {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.save(any())).thenReturn(null);
 
-            LocalDateTime startAt = LocalDateTime.now().plusDays(3).withHour(9).withMinute(0).withSecond(0).withNano(0);
+            LocalDateTime startAt = LocalDateTime.now()
+                    .plusDays(3)
+                    .withHour(9)
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0);
             LocalDateTime dueAt = startAt.plusHours(2);
             Task rangedTask = createTask(3L, "Ranged Task", TaskStatus.REQUESTED, startAt, dueAt, true, "event-789");
 
@@ -295,10 +306,16 @@ class CalendarOutboxServiceTest {
         @DisplayName("startAt이 없으면 dueAt-1시간을 event.startAt으로 사용")
         void startAt_없으면_dueAt기반_fallback() throws Exception {
             // given
-            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any())).thenReturn(0);
+            when(outboxRepository.deleteByTaskIdAndStatusAndOpType(any(), any(), any()))
+                    .thenReturn(0);
             when(outboxRepository.save(any())).thenReturn(null);
 
-            LocalDateTime dueAt = LocalDateTime.now().plusDays(4).withHour(18).withMinute(0).withSecond(0).withNano(0);
+            LocalDateTime dueAt = LocalDateTime.now()
+                    .plusDays(4)
+                    .withHour(18)
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0);
             Task noStartTask = createTask(4L, "Fallback Task", TaskStatus.REQUESTED, null, dueAt, true, "event-999");
 
             // when
@@ -320,9 +337,7 @@ class CalendarOutboxServiceTest {
         @DisplayName("extractUserIdFromPayload: userId 추출 성공")
         void userId_추출_성공() throws Exception {
             // given
-            String payload = objectMapper.writeValueAsString(Map.of(
-                    "meta", Map.of("requestedByUserId", USER_ID)
-            ));
+            String payload = objectMapper.writeValueAsString(Map.of("meta", Map.of("requestedByUserId", USER_ID)));
             CalendarOutbox outbox = CalendarOutbox.forUpsert(1L, payload);
 
             // when
@@ -348,18 +363,25 @@ class CalendarOutboxServiceTest {
     // =========================================================
     // Helper Methods
     // =========================================================
-    private Task createTask(Long id, String title, TaskStatus status,
-                           LocalDateTime dueAt, Boolean syncEnabled, String eventId) throws Exception {
+    private Task createTask(
+            Long id, String title, TaskStatus status, LocalDateTime dueAt, Boolean syncEnabled, String eventId)
+            throws Exception {
         return createTask(id, title, status, dueAt.minusHours(1), dueAt, syncEnabled, eventId);
     }
 
-    private Task createTask(Long id, String title, TaskStatus status,
-                           LocalDateTime startAt, LocalDateTime dueAt, Boolean syncEnabled, String eventId) throws Exception {
+    private Task createTask(
+            Long id,
+            String title,
+            TaskStatus status,
+            LocalDateTime startAt,
+            LocalDateTime dueAt,
+            Boolean syncEnabled,
+            String eventId)
+            throws Exception {
         Project project = mock(Project.class);
         User user = mock(User.class);
 
-        Task task = Task.createTask(project, title, "Description",
-                user, startAt, dueAt, syncEnabled);
+        Task task = Task.createTask(project, title, "Description", user, startAt, dueAt, syncEnabled);
 
         // Reflection으로 private 필드 설정
         setField(task, "id", id);

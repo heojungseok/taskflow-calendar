@@ -5,11 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.security.SecurityContextHelper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
@@ -17,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,16 +35,14 @@ public class CalendarOutboxService {
         int deletedDeletes = outboxRepository.deleteByTaskIdAndStatusAndOpType(
                 task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE);
         if (deletedDeletes > 0) {
-            log.debug("Task {} - UPSERT 적재 시 {}개 PENDING DELETE 제거 (충돌 해소)",
-                    task.getId(), deletedDeletes);
+            log.debug("Task {} - UPSERT 적재 시 {}개 PENDING DELETE 제거 (충돌 해소)", task.getId(), deletedDeletes);
         }
 
         // ✅ Rule A-2: PENDING UPSERT 제거 (최신 1개만 유지)
         int deletedUpserts = outboxRepository.deleteByTaskIdAndStatusAndOpType(
                 task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
         if (deletedUpserts > 0) {
-            log.debug("Task {} - Coalescing: {}개 PENDING UPSERT 제거",
-                    task.getId(), deletedUpserts);
+            log.debug("Task {} - Coalescing: {}개 PENDING UPSERT 제거", task.getId(), deletedUpserts);
         }
 
         // 새 UPSERT 적재
@@ -58,12 +55,14 @@ public class CalendarOutboxService {
     @Transactional
     public void enqueueDelete(Task task) {
         // 1.PENDING UPSERT 전체 삭제
-        int deletedUpserts = outboxRepository.deleteByTaskIdAndStatusAndOpType(task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
+        int deletedUpserts = outboxRepository.deleteByTaskIdAndStatusAndOpType(
+                task.getId(), OutboxStatus.PENDING, OutboxOpType.UPSERT);
         if (deletedUpserts > 0) {
             log.debug("Task {} - DELETE 적재 시 {}개 PENDING UPSERT 제거", task.getId(), deletedUpserts);
         }
         // 2. PENDING DELETE 확인
-        boolean exists = outboxRepository.existsByTaskIdAndStatusAndOpType(task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE);
+        boolean exists = outboxRepository.existsByTaskIdAndStatusAndOpType(
+                task.getId(), OutboxStatus.PENDING, OutboxOpType.DELETE);
 
         if (exists) {
             return; // 있다면 skip
@@ -76,22 +75,23 @@ public class CalendarOutboxService {
         CalendarOutbox outbox = CalendarOutbox.forDelete(task.getId(), payload);
 
         outboxRepository.save(outbox);
-
     }
 
     // 3. 상태 변경
     @Transactional
     public void markSuccess(Long outboxId) {
-        CalendarOutbox outbox = outboxRepository.findById(outboxId)
-                .orElseThrow(()-> new IllegalArgumentException("Outbox not found: " + outboxId));
+        CalendarOutbox outbox = outboxRepository
+                .findById(outboxId)
+                .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
 
         outbox.markAsSuccess();
     }
 
     @Transactional
     public void markForRetry(Long outboxId, String errorMessage) {
-        CalendarOutbox outbox = outboxRepository.findById(outboxId)
-                .orElseThrow(()-> new IllegalArgumentException("Outbox not found: " + outboxId));
+        CalendarOutbox outbox = outboxRepository
+                .findById(outboxId)
+                .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
 
         // Backoff 계산
         LocalDateTime nextRetry = calculateNextRetry(outbox.getRetryCount());
@@ -101,15 +101,17 @@ public class CalendarOutboxService {
 
     @Transactional
     public void markFailed(Long outboxId, String errorMessage) {
-        CalendarOutbox outbox = outboxRepository.findById(outboxId)
-                .orElseThrow(()-> new IllegalArgumentException("Outbox not found: " + outboxId));
+        CalendarOutbox outbox = outboxRepository
+                .findById(outboxId)
+                .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
 
         outbox.markAsFailed(errorMessage);
     }
 
     @Transactional
     public void markSkipped(Long outboxId, String reason) {
-        CalendarOutbox outbox = outboxRepository.findById(outboxId)
+        CalendarOutbox outbox = outboxRepository
+                .findById(outboxId)
                 .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
 
         outbox.markAsSkipped(reason);
@@ -118,15 +120,14 @@ public class CalendarOutboxService {
     @Transactional
     public boolean claimProcessing(Long outboxId, LocalDateTime leaseTimeout) {
         int updated = outboxRepository.claimForProcessing(outboxId, LocalDateTime.now(), leaseTimeout);
-        return updated == 1;  // ✅ 선점 성공 여부 명확!
+        return updated == 1; // ✅ 선점 성공 여부 명확!
     }
 
     /**
      * Outbox 목록 조회 (필터링)
      */
     public List<CalendarOutbox> listOutboxes(Long userId, OutboxStatus status, Long taskId) {
-        return outboxRepository.findOwnedBy(
-                userId, status == null ? null : status.name(), taskId, MAX_LIST_SIZE);
+        return outboxRepository.findOwnedBy(userId, status == null ? null : status.name(), taskId, MAX_LIST_SIZE);
     }
 
     /**
@@ -160,7 +161,8 @@ public class CalendarOutboxService {
      * Outbox 단건 조회
      */
     public CalendarOutbox getOutbox(Long outboxId, Long userId) {
-        return outboxRepository.findOwnedById(outboxId, userId)
+        return outboxRepository
+                .findOwnedById(outboxId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Outbox not found: " + outboxId));
     }
 
@@ -212,7 +214,7 @@ public class CalendarOutboxService {
         payload.put("opType", "DELETE");
 
         Map<String, Object> event = new HashMap<>();
-        event.put("eventId", task.getCalendarEventId());  // eventId만!
+        event.put("eventId", task.getCalendarEventId()); // eventId만!
         payload.put("event", event);
 
         // meta는 UPSERT와 동일
@@ -247,12 +249,18 @@ public class CalendarOutboxService {
         LocalDateTime now = LocalDateTime.now();
 
         switch (retryCount) {
-            case 0: return now.plusMinutes(1);
-            case 1: return now.plusMinutes(5);
-            case 2: return now.plusMinutes(15);
-            case 3: return now.plusHours(1);
-            case 4: return now.plusHours(6);
-            case 5: return now.plusHours(24);
+            case 0:
+                return now.plusMinutes(1);
+            case 1:
+                return now.plusMinutes(5);
+            case 2:
+                return now.plusMinutes(15);
+            case 3:
+                return now.plusHours(1);
+            case 4:
+                return now.plusHours(6);
+            case 5:
+                return now.plusHours(24);
             default: // maxRetry 초과
                 return null;
         }

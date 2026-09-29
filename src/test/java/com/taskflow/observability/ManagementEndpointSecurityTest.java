@@ -1,19 +1,18 @@
 package com.taskflow.observability;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.boot.test.web.server.LocalManagementPort;
-import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalManagementPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -51,16 +50,20 @@ class ManagementEndpointSecurityTest {
     }
 
     private int get(int port, String path) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(
-                URI.create("http://127.0.0.1:" + port + path)).GET().build();
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
+                .GET()
+                .build();
         return HttpClient.newHttpClient()
-                .send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+                .send(request, HttpResponse.BodyHandlers.discarding())
+                .statusCode();
     }
 
     private String getBody(String path) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(
-                URI.create("http://127.0.0.1:" + managementPort + path)).GET().build();
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + managementPort + path))
+                .GET()
+                .build();
         return HttpClient.newHttpClient()
-                .send(request, HttpResponse.BodyHandlers.ofString()).body();
+                .send(request, HttpResponse.BodyHandlers.ofString())
+                .body();
     }
 }

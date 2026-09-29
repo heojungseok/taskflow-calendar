@@ -10,11 +10,12 @@ public class SummaryGenerationTelemetry {
     private final int candidateTokens;
     private final int totalTokens;
 
-    private SummaryGenerationTelemetry(WeeklySummarySectionsResult sections,
-                                       int requestBodyLength,
-                                       int promptTokens,
-                                       int candidateTokens,
-                                       int totalTokens) {
+    private SummaryGenerationTelemetry(
+            WeeklySummarySectionsResult sections,
+            int requestBodyLength,
+            int promptTokens,
+            int candidateTokens,
+            int totalTokens) {
         this.sections = sections;
         this.requestBodyLength = requestBodyLength;
         this.promptTokens = promptTokens;
@@ -22,11 +23,12 @@ public class SummaryGenerationTelemetry {
         this.totalTokens = totalTokens;
     }
 
-    public static SummaryGenerationTelemetry of(WeeklySummarySectionsResult sections,
-                                                int requestBodyLength,
-                                                int promptTokens,
-                                                int candidateTokens,
-                                                int totalTokens) {
+    public static SummaryGenerationTelemetry of(
+            WeeklySummarySectionsResult sections,
+            int requestBodyLength,
+            int promptTokens,
+            int candidateTokens,
+            int totalTokens) {
         return new SummaryGenerationTelemetry(sections, requestBodyLength, promptTokens, candidateTokens, totalTokens);
     }
 

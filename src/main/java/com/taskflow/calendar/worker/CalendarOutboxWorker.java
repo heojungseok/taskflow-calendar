@@ -1,24 +1,23 @@
 package com.taskflow.calendar.worker;
 
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
+import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
-import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.outbox.OutboxPolicy;
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarService;
 import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
 import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
+import com.taskflow.observability.TaskFlowMetrics;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
-import java.time.Duration;
-import java.util.List;
-import com.taskflow.observability.TaskFlowMetrics;
 
 /**
  * Calendar Outbox Worker
@@ -62,11 +61,8 @@ public class CalendarOutboxWorker {
             log.debug("[Worker] Polling at {}, leaseTimeout={}", now, leaseTimeout);
 
             // 1. 처리 가능한 Outbox 조회
-            List<CalendarOutbox> processableOutboxes = outboxRepository.findProcessable(
-                    now,
-                    leaseTimeout,
-                    OutboxPolicy.MAX_RETRY.value()
-            );
+            List<CalendarOutbox> processableOutboxes =
+                    outboxRepository.findProcessable(now, leaseTimeout, OutboxPolicy.MAX_RETRY.value());
 
             if (processableOutboxes.isEmpty()) {
                 metrics.setOldestProcessableAgeSeconds(0);
@@ -90,8 +86,12 @@ public class CalendarOutboxWorker {
                         continue;
                     }
 
-                    log.info("[Worker] Processing Outbox {} - OpType: {}, TaskId: {}, RetryCount: {}",
-                            outbox.getId(), outbox.getOpType(), outbox.getTaskId(), outbox.getRetryCount());
+                    log.info(
+                            "[Worker] Processing Outbox {} - OpType: {}, TaskId: {}, RetryCount: {}",
+                            outbox.getId(),
+                            outbox.getOpType(),
+                            outbox.getTaskId(),
+                            outbox.getRetryCount());
 
                     processOne(outbox);
 
@@ -122,8 +122,7 @@ public class CalendarOutboxWorker {
 
         } catch (RetryableIntegrationException e) {
             // 재시도 가능한 예외 (네트워크, 5xx 등)
-            log.warn("[Worker] Retryable error on Outbox {}: {}",
-                    outbox.getId(), e.getMessage());
+            log.warn("[Worker] Retryable error on Outbox {}: {}", outbox.getId(), e.getMessage());
             outboxService.markForRetry(outbox.getId(), e.getMessage());
             metrics.outboxProcessed("failed", "none");
 
@@ -131,17 +130,14 @@ public class CalendarOutboxWorker {
             if (e.getStatusCode() == 401) {
                 handleTokenRefreshAndRetry(outbox, e);
             } else {
-                log.error("[Worker] NonRetryable error on Outbox {}: {}",
-                        outbox.getId(), e.getMessage());
+                log.error("[Worker] NonRetryable error on Outbox {}: {}", outbox.getId(), e.getMessage());
                 outboxService.markFailed(outbox.getId(), e.getMessage());
                 metrics.outboxProcessed("failed", "none");
             }
         } catch (Exception e) {
             // 예상치 못한 예외 → Retryable로 처리
-            log.error("[Worker] Unexpected error on Outbox {}: {}",
-                    outbox.getId(), e.getMessage(), e);
-            outboxService.markForRetry(outbox.getId(),
-                    "Unexpected error: " + e.getMessage());
+            log.error("[Worker] Unexpected error on Outbox {}: {}", outbox.getId(), e.getMessage(), e);
+            outboxService.markForRetry(outbox.getId(), "Unexpected error: " + e.getMessage());
             metrics.outboxProcessed("failed", "none");
         }
     }
@@ -164,8 +160,7 @@ public class CalendarOutboxWorker {
             userId = outboxService.extractUserIdFromPayload(outbox);
         } catch (RuntimeException e) {
             // payload에서 userId를 못 읽으면 연동 여부를 판단할 수 없다. 기존 경로로 보낸다.
-            log.warn("[Worker] outbox_skip_check_failed outboxId={} reason={}",
-                    outbox.getId(), e.getMessage());
+            log.warn("[Worker] outbox_skip_check_failed outboxId={} reason={}", outbox.getId(), e.getMessage());
             return false;
         }
 
@@ -173,8 +168,12 @@ public class CalendarOutboxWorker {
             return false;
         }
 
-        log.info("[Worker] outbox_skipped outboxId={} taskId={} userId={} opType={} reason=no_google_link",
-                outbox.getId(), outbox.getTaskId(), userId, outbox.getOpType());
+        log.info(
+                "[Worker] outbox_skipped outboxId={} taskId={} userId={} opType={} reason=no_google_link",
+                outbox.getId(),
+                outbox.getTaskId(),
+                userId,
+                outbox.getOpType());
         outboxService.markSkipped(outbox.getId(), "no_google_link");
         metrics.outboxProcessed("skipped", "no_google_link");
         return true;
@@ -183,8 +182,10 @@ public class CalendarOutboxWorker {
     private void handleTokenRefreshAndRetry(CalendarOutbox outbox, NonRetryableIntegrationException e) {
         try {
             Long userId = outboxService.extractUserIdFromPayload(outbox);
-            log.warn("[Worker] 401 detected on Outbox {}. Attempting token refresh for userId={}",
-                    outbox.getId(), userId);
+            log.warn(
+                    "[Worker] 401 detected on Outbox {}. Attempting token refresh for userId={}",
+                    outbox.getId(),
+                    userId);
 
             googleOAuthService.refreshAccessToken(userId);
 
@@ -195,10 +196,8 @@ public class CalendarOutboxWorker {
 
         } catch (Exception refreshException) {
             // 갱신 실패 → FAILED
-            log.error("[Worker] Token refresh failed for Outbox {}: {}",
-                    outbox.getId(), refreshException.getMessage());
-            outboxService.markFailed(outbox.getId(),
-                    "Token refresh failed: " + refreshException.getMessage());
+            log.error("[Worker] Token refresh failed for Outbox {}: {}", outbox.getId(), refreshException.getMessage());
+            outboxService.markFailed(outbox.getId(), "Token refresh failed: " + refreshException.getMessage());
             metrics.outboxProcessed("failed", "none");
         }
     }

@@ -17,7 +17,8 @@ public class RelatedProjectSearchResultResponse {
         this.score = score;
     }
 
-    public static RelatedProjectSearchResultResponse of(Long projectId, String projectName, int matchedTaskCount, int score) {
+    public static RelatedProjectSearchResultResponse of(
+            Long projectId, String projectName, int matchedTaskCount, int score) {
         return new RelatedProjectSearchResultResponse(projectId, projectName, matchedTaskCount, score);
     }
 }

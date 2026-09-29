@@ -1,7 +1,6 @@
 package com.taskflow.calendar.domain.task;
 
 import com.taskflow.calendar.domain.task.exception.TaskStatusTransitionNotAllowedException;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -26,20 +25,16 @@ public final class TaskStatusPolicy { // final 상속 방지
         ALLOWED_TRANSITIONS = new HashMap<>();
 
         // REQUESTED -> IN_PROGRESS, BLOCKED
-        ALLOWED_TRANSITIONS.put(TaskStatus.REQUESTED,
-                Set.of(TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED));
+        ALLOWED_TRANSITIONS.put(TaskStatus.REQUESTED, Set.of(TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED));
 
         // IN_PROGRESS -> DONE, BLOCKED
-        ALLOWED_TRANSITIONS.put(TaskStatus.IN_PROGRESS,
-                Set.of(TaskStatus.DONE, TaskStatus.BLOCKED));
+        ALLOWED_TRANSITIONS.put(TaskStatus.IN_PROGRESS, Set.of(TaskStatus.DONE, TaskStatus.BLOCKED));
 
         // BLOCKED -> IN_PROGRESS
-        ALLOWED_TRANSITIONS.put(TaskStatus.BLOCKED,
-                Set.of(TaskStatus.IN_PROGRESS));
+        ALLOWED_TRANSITIONS.put(TaskStatus.BLOCKED, Set.of(TaskStatus.IN_PROGRESS));
 
         // DONE -> (없음)
-        ALLOWED_TRANSITIONS.put(TaskStatus.DONE,
-                Set.of());
+        ALLOWED_TRANSITIONS.put(TaskStatus.DONE, Set.of());
     }
 
     /**

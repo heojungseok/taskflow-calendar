@@ -1,11 +1,11 @@
 package com.taskflow.web;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 
 class ProfileBoundaryTest {
 

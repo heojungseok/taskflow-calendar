@@ -1,14 +1,13 @@
 package com.taskflow.calendar.domain.outbox;
 
+import static org.assertj.core.api.Assertions.*;
+
 import com.taskflow.calendar.domain.outbox.exception.InvalidOutboxStateTransitionException;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.time.LocalDateTime;
-
-import static org.assertj.core.api.Assertions.*;
 
 @DisplayName("CalendarOutbox Entity 테스트")
 class CalendarOutboxTest {

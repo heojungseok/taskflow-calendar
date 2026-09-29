@@ -5,11 +5,10 @@ import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.outbox.OutboxOpType;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
 import com.taskflow.calendar.domain.task.Task;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -18,8 +17,8 @@ public class TaskSyncStateResolver {
     private final CalendarOutboxService calendarOutboxService;
 
     public SummaryTaskSnapshot resolve(Task task) {
-        CalendarOutbox latestOutbox = calendarOutboxService.findLatestByTaskId(task.getId())
-                .orElse(null);
+        CalendarOutbox latestOutbox =
+                calendarOutboxService.findLatestByTaskId(task.getId()).orElse(null);
 
         return toSnapshot(task, latestOutbox);
     }
@@ -43,13 +42,13 @@ public class TaskSyncStateResolver {
                 classify(task, latestOutbox),
                 latestOutbox != null ? latestOutbox.getStatus() : null,
                 latestOutbox != null ? latestOutbox.getOpType() : null,
-                latestOutbox != null ? latestOutbox.getLastError() : null
-        );
+                latestOutbox != null ? latestOutbox.getLastError() : null);
     }
 
     private TaskSyncState classify(Task task, CalendarOutbox latestOutbox) {
         boolean syncEnabled = Boolean.TRUE.equals(task.getCalendarSyncEnabled());
-        boolean hasEventId = task.getCalendarEventId() != null && !task.getCalendarEventId().isBlank();
+        boolean hasEventId =
+                task.getCalendarEventId() != null && !task.getCalendarEventId().isBlank();
 
         if (latestOutbox != null) {
             // 구글 연동이 없어 워커가 건너뛴 건이다. 처리 대기가 아니라 종결이므로

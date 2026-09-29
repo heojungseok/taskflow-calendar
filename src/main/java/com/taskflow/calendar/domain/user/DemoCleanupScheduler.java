@@ -1,15 +1,14 @@
 package com.taskflow.calendar.domain.user;
 
+import com.taskflow.observability.TaskFlowMetrics;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import com.taskflow.observability.TaskFlowMetrics;
 
 @Slf4j
 @Component
@@ -25,11 +24,11 @@ public class DemoCleanupScheduler {
     public void cleanupExpiredUsers() {
         Instant now = Instant.now();
         Instant expiredBefore = now.minusSeconds(60);
-        List<User> expired = userRepository
-                .findTop100ByProviderAndExpiresAtLessThanEqualOrderByExpiresAtAsc(
-                        Provider.DEMO, expiredBefore);
+        List<User> expired = userRepository.findTop100ByProviderAndExpiresAtLessThanEqualOrderByExpiresAtAsc(
+                Provider.DEMO, expiredBefore);
         Instant oldest = expired.isEmpty() ? null : expired.get(0).getExpiresAt();
-        metrics.setOldestExpiredAgeSeconds(oldest == null ? 0 : Duration.between(oldest, now).getSeconds());
+        metrics.setOldestExpiredAgeSeconds(
+                oldest == null ? 0 : Duration.between(oldest, now).getSeconds());
         for (User user : expired) {
             try {
                 if (cleanupService.cleanup(user.getId(), expiredBefore)) {

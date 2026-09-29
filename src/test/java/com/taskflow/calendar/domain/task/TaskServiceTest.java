@@ -1,18 +1,28 @@
 package com.taskflow.calendar.domain.task;
 
-import org.junit.jupiter.api.AfterEach;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
-import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
-import com.taskflow.calendar.domain.task.dto.DeleteTaskResponse;
+import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.dto.CreateTaskRequest;
+import com.taskflow.calendar.domain.task.dto.DeleteTaskResponse;
+import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
+import com.taskflow.calendar.domain.user.DemoUsageService;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.calendar.domain.user.DemoUsageService;
-import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
+import com.taskflow.observability.TaskFlowMetrics;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,19 +32,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import com.taskflow.observability.TaskFlowMetrics;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.when;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
@@ -45,8 +44,7 @@ class TaskServiceTest {
      */
     @org.junit.jupiter.api.BeforeEach
     void setUpSecurityContext() {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(1L, null, null));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(1L, null, null));
     }
 
     @AfterEach
@@ -104,8 +102,7 @@ class TaskServiceTest {
                 null,
                 LocalDateTime.of(2026, 3, 27, 9, 0),
                 LocalDateTime.of(2026, 3, 27, 10, 0),
-                true
-        );
+                true);
         setField(task, "id", TASK_ID);
         task.setCalendarEventId("event-123");
     }
@@ -113,7 +110,8 @@ class TaskServiceTest {
     @Test
     @DisplayName("deleteTask는 soft delete 후 DELETE outbox를 적재한다")
     void deleteTask_softDeletesAndEnqueuesDelete() {
-        when(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(TASK_ID, 1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(TASK_ID, 1L))
+                .thenReturn(Optional.of(task));
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
         DeleteTaskResponse response = taskService.deleteTask(TASK_ID, USER_ID);
@@ -134,7 +132,8 @@ class TaskServiceTest {
     @Test
     @DisplayName("deleteTask는 이미 삭제된 task를 다시 조회하지 못하면 예외를 던진다")
     void deleteTask_throwsWhenTaskMissing() {
-        when(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(TASK_ID, 1L)).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(TASK_ID, 1L))
+                .thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> taskService.deleteTask(TASK_ID, USER_ID));
     }
@@ -143,26 +142,29 @@ class TaskServiceTest {
     @DisplayName("담당자 필터는 프로젝트 안에서만 적용된다 — 다른 프로젝트 Task가 섞이면 안 된다")
     void listTasks_assigneeFilterStaysWithinProject() {
         when(taskRepository.findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
-                PROJECT_ID, USER_ID, 1L)).thenReturn(List.of());
+                        PROJECT_ID, USER_ID, 1L))
+                .thenReturn(List.of());
         when(taskSyncStateResolver.resolveAll(List.of())).thenReturn(List.of());
 
         taskService.listTasks(PROJECT_ID, null, USER_ID);
 
-        verify(taskRepository).findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
-                PROJECT_ID, USER_ID, 1L);
+        verify(taskRepository)
+                .findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(PROJECT_ID, USER_ID, 1L);
     }
 
     @Test
     @DisplayName("상태와 담당자를 함께 주면 둘 다 적용된다 — 담당자가 조용히 무시되지 않는다")
     void listTasks_appliesBothFilters() {
         when(taskRepository.findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
-                PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID, 1L)).thenReturn(List.of());
+                        PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID, 1L))
+                .thenReturn(List.of());
         when(taskSyncStateResolver.resolveAll(List.of())).thenReturn(List.of());
 
         taskService.listTasks(PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID);
 
-        verify(taskRepository).findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
-                PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID, 1L);
+        verify(taskRepository)
+                .findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+                        PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID, 1L);
     }
 
     @Test
@@ -170,10 +172,10 @@ class TaskServiceTest {
     void createTask_rejectsForeignAssigneeWithoutLookup() {
         when(projectRepository.findByIdAndOwnerUserId(PROJECT_ID, 1L))
                 .thenReturn(Optional.of(Project.of("TaskFlow", 1L)));
-        CreateTaskRequest request = new CreateTaskRequest(
-                "격리", null, 99L, null, null, false);
+        CreateTaskRequest request = new CreateTaskRequest("격리", null, 99L, null, null, false);
 
-        assertThrows(com.taskflow.calendar.domain.user.exception.UserNotFoundException.class,
+        assertThrows(
+                com.taskflow.calendar.domain.user.exception.UserNotFoundException.class,
                 () -> taskService.createTask(PROJECT_ID, request));
 
         verify(userRepository, never()).findById(99L);

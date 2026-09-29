@@ -2,13 +2,12 @@ package com.taskflow.calendar.domain.task;
 
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.user.User;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tasks")
@@ -58,14 +57,19 @@ public class Task {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at",nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     protected Task() {}
 
-    private Task(Project project, String title, String description,
-                 User assignee, LocalDateTime startAt, LocalDateTime dueAt,
-                 Boolean calendarSyncEnabled) {
+    private Task(
+            Project project,
+            String title,
+            String description,
+            User assignee,
+            LocalDateTime startAt,
+            LocalDateTime dueAt,
+            Boolean calendarSyncEnabled) {
         this.project = project;
         this.title = title;
         this.description = description;
@@ -76,19 +80,27 @@ public class Task {
         this.calendarSyncEnabled = calendarSyncEnabled != null ? calendarSyncEnabled : false;
     }
 
-    public static Task createTask(Project project, String title, String description,
-                                  User assignee, LocalDateTime startAt, LocalDateTime dueAt,
-                                  Boolean calendarSyncEnabled) {
-        return new Task(project, title, description, assignee,
-                startAt, dueAt, calendarSyncEnabled);
+    public static Task createTask(
+            Project project,
+            String title,
+            String description,
+            User assignee,
+            LocalDateTime startAt,
+            LocalDateTime dueAt,
+            Boolean calendarSyncEnabled) {
+        return new Task(project, title, description, assignee, startAt, dueAt, calendarSyncEnabled);
     }
 
     /**
      * Task 정보 수정
      */
-    public void update(String title, String description, User assignee,
-                       LocalDateTime startAt, LocalDateTime dueAt,
-                       Boolean calendarSyncEnabled) {
+    public void update(
+            String title,
+            String description,
+            User assignee,
+            LocalDateTime startAt,
+            LocalDateTime dueAt,
+            Boolean calendarSyncEnabled) {
         if (title != null) {
             this.title = title;
         }
@@ -137,5 +149,4 @@ public class Task {
     public boolean isCalendarSyncActive() {
         return Boolean.TRUE.equals(this.calendarSyncEnabled) && this.dueAt != null;
     }
-
 }

@@ -12,5 +12,7 @@ public class RetryableIntegrationException extends RuntimeException {
         super(message);
     }
 
-    public RetryableIntegrationException(String message, Throwable cause) {super(message, cause);}
+    public RetryableIntegrationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

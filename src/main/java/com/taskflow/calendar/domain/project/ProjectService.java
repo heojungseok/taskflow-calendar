@@ -3,14 +3,13 @@ package com.taskflow.calendar.domain.project;
 import com.taskflow.calendar.domain.project.dto.CreateProjectRequest;
 import com.taskflow.calendar.domain.project.dto.ProjectResponse;
 import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
-import com.taskflow.security.SecurityContextHelper;
 import com.taskflow.calendar.domain.user.DemoUsageService;
+import com.taskflow.security.SecurityContextHelper;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -31,8 +30,7 @@ public class ProjectService {
     }
 
     public List<ProjectResponse> getAllProjects() {
-        return projectRepository.findAllByOwnerUserId(SecurityContextHelper.getCurrentUserId())
-                .stream()
+        return projectRepository.findAllByOwnerUserId(SecurityContextHelper.getCurrentUserId()).stream()
                 .map(ProjectResponse::from)
                 .collect(Collectors.toList());
     }

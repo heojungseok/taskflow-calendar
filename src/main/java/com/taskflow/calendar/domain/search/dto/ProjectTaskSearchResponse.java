@@ -1,9 +1,8 @@
 package com.taskflow.calendar.domain.search.dto;
 
 import com.taskflow.calendar.domain.search.SemanticSearchStatus;
-import lombok.Getter;
-
 import java.util.List;
+import lombok.Getter;
 
 @Getter
 public class ProjectTaskSearchResponse {
@@ -17,18 +16,20 @@ public class ProjectTaskSearchResponse {
      * intentFallback=true인 응답에서는 검색을 아예 돌리지 않았으므로 현재 상태값일 뿐이다.
      */
     private final SemanticSearchStatus semanticStatus;
+
     private final SearchIntentResponse intent;
     private final List<TaskSearchResultItemResponse> taskResults;
     private final List<RelatedProjectSearchResultResponse> relatedProjects;
     private final List<String> suggestedQueries;
 
-    private ProjectTaskSearchResponse(String query,
-                                      boolean intentFallback,
-                                      SemanticSearchStatus semanticStatus,
-                                      SearchIntentResponse intent,
-                                      List<TaskSearchResultItemResponse> taskResults,
-                                      List<RelatedProjectSearchResultResponse> relatedProjects,
-                                      List<String> suggestedQueries) {
+    private ProjectTaskSearchResponse(
+            String query,
+            boolean intentFallback,
+            SemanticSearchStatus semanticStatus,
+            SearchIntentResponse intent,
+            List<TaskSearchResultItemResponse> taskResults,
+            List<RelatedProjectSearchResultResponse> relatedProjects,
+            List<String> suggestedQueries) {
         this.query = query;
         this.intentFallback = intentFallback;
         this.semanticStatus = semanticStatus;
@@ -38,13 +39,14 @@ public class ProjectTaskSearchResponse {
         this.suggestedQueries = suggestedQueries;
     }
 
-    public static ProjectTaskSearchResponse of(String query,
-                                               boolean intentFallback,
-                                               SemanticSearchStatus semanticStatus,
-                                               SearchIntentResponse intent,
-                                               List<TaskSearchResultItemResponse> taskResults,
-                                               List<RelatedProjectSearchResultResponse> relatedProjects,
-                                               List<String> suggestedQueries) {
+    public static ProjectTaskSearchResponse of(
+            String query,
+            boolean intentFallback,
+            SemanticSearchStatus semanticStatus,
+            SearchIntentResponse intent,
+            List<TaskSearchResultItemResponse> taskResults,
+            List<RelatedProjectSearchResultResponse> relatedProjects,
+            List<String> suggestedQueries) {
         return new ProjectTaskSearchResponse(
                 query,
                 intentFallback,
@@ -52,7 +54,6 @@ public class ProjectTaskSearchResponse {
                 intent,
                 List.copyOf(taskResults),
                 List.copyOf(relatedProjects),
-                List.copyOf(suggestedQueries)
-        );
+                List.copyOf(suggestedQueries));
     }
 }

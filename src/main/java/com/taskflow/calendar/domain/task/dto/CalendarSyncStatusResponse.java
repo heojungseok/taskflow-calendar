@@ -5,9 +5,8 @@ import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.OutboxOpType;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
 import com.taskflow.calendar.domain.task.Task;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
+import lombok.Getter;
 
 /**
  * Task 캘린더 동기화 상태 응답 DTO
@@ -29,10 +28,15 @@ public class CalendarSyncStatusResponse {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private final LocalDateTime lastOutboxCreatedAt;
 
-    private CalendarSyncStatusResponse(Long taskId, Boolean calendarSyncEnabled,
-                                       String calendarEventId, OutboxStatus lastOutboxStatus,
-                                       OutboxOpType lastOutboxOpType, String lastOutboxError,
-                                       LocalDateTime lastSyncedAt, LocalDateTime lastOutboxCreatedAt) {
+    private CalendarSyncStatusResponse(
+            Long taskId,
+            Boolean calendarSyncEnabled,
+            String calendarEventId,
+            OutboxStatus lastOutboxStatus,
+            OutboxOpType lastOutboxOpType,
+            String lastOutboxError,
+            LocalDateTime lastSyncedAt,
+            LocalDateTime lastOutboxCreatedAt) {
         this.taskId = taskId;
         this.calendarSyncEnabled = calendarSyncEnabled;
         this.calendarEventId = calendarEventId;
@@ -49,8 +53,8 @@ public class CalendarSyncStatusResponse {
      * @param latestOutbox 최신 Outbox (nullable)
      * @param lastSuccessOutbox 마지막 성공 Outbox (nullable)
      */
-    public static CalendarSyncStatusResponse of(Task task, CalendarOutbox latestOutbox,
-                                                CalendarOutbox lastSuccessOutbox) {
+    public static CalendarSyncStatusResponse of(
+            Task task, CalendarOutbox latestOutbox, CalendarOutbox lastSuccessOutbox) {
         return new CalendarSyncStatusResponse(
                 task.getId(),
                 task.getCalendarSyncEnabled(),
@@ -59,7 +63,6 @@ public class CalendarSyncStatusResponse {
                 latestOutbox != null ? latestOutbox.getOpType() : null,
                 latestOutbox != null ? latestOutbox.getLastError() : null,
                 lastSuccessOutbox != null ? lastSuccessOutbox.getUpdatedAt() : null,
-                latestOutbox != null ? latestOutbox.getCreatedAt() : null
-        );
+                latestOutbox != null ? latestOutbox.getCreatedAt() : null);
     }
 }

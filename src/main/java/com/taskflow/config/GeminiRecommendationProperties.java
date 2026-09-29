@@ -5,5 +5,4 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties(prefix = "gemini.recommendation")
-public class GeminiRecommendationProperties extends GeminiProperties {
-}
+public class GeminiRecommendationProperties extends GeminiProperties {}

@@ -1,17 +1,16 @@
 package com.taskflow.calendar.domain.oauth;
 
-import org.junit.jupiter.api.Test;
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.CONSENT_RETRY;
+import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.NORMAL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZoneId;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.CONSENT_RETRY;
-import static com.taskflow.calendar.domain.oauth.OAuthStateStore.OAuthAttempt.NORMAL;
+import java.time.ZoneOffset;
+import org.junit.jupiter.api.Test;
 
 class OAuthStateStoreTest {
 
@@ -19,8 +18,7 @@ class OAuthStateStoreTest {
 
     @Test
     void stateIsOneTimeAndExpiresAfterTenMinutes() {
-        OAuthStateStore store = new OAuthStateStore(
-                Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(10), 1_000);
+        OAuthStateStore store = new OAuthStateStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(10), 1_000);
         String state = store.generateState(NORMAL);
 
         assertThat(state).hasSizeGreaterThanOrEqualTo(43);
@@ -37,8 +35,7 @@ class OAuthStateStoreTest {
 
     @Test
     void stateCarriesTheServerAuthorizedOAuthAttempt() {
-        OAuthStateStore store = new OAuthStateStore(
-                Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(10), 1_000);
+        OAuthStateStore store = new OAuthStateStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(10), 1_000);
 
         String normal = store.generateState(NORMAL);
         String retry = store.generateState(CONSENT_RETRY);
@@ -49,8 +46,7 @@ class OAuthStateStoreTest {
 
     @Test
     void fullStoreRejectsNewStateWithoutEvictingValidState() {
-        OAuthStateStore store = new OAuthStateStore(
-                Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(10), 1);
+        OAuthStateStore store = new OAuthStateStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(10), 1);
         String existing = store.generateState(NORMAL);
 
         assertThatThrownBy(() -> store.generateState(CONSENT_RETRY))

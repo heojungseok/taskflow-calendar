@@ -3,7 +3,6 @@ package com.taskflow.calendar.domain.recommendation.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.taskflow.calendar.domain.summary.TaskSyncState;
 import com.taskflow.calendar.domain.task.TaskStatus;
-
 import java.time.LocalDateTime;
 
 public class ProjectTaskRecommendationItemResponse {
@@ -24,18 +23,19 @@ public class ProjectTaskRecommendationItemResponse {
     private final String secondaryTag;
     private final String reason;
 
-    private ProjectTaskRecommendationItemResponse(Long taskId,
-                                                  int rank,
-                                                  int score,
-                                                  String title,
-                                                  TaskStatus status,
-                                                  LocalDateTime dueAt,
-                                                  Boolean calendarSyncEnabled,
-                                                  String calendarEventId,
-                                                  TaskSyncState syncState,
-                                                  String primaryTag,
-                                                  String secondaryTag,
-                                                  String reason) {
+    private ProjectTaskRecommendationItemResponse(
+            Long taskId,
+            int rank,
+            int score,
+            String title,
+            TaskStatus status,
+            LocalDateTime dueAt,
+            Boolean calendarSyncEnabled,
+            String calendarEventId,
+            TaskSyncState syncState,
+            String primaryTag,
+            String secondaryTag,
+            String reason) {
         this.taskId = taskId;
         this.rank = rank;
         this.score = score;
@@ -50,18 +50,19 @@ public class ProjectTaskRecommendationItemResponse {
         this.reason = reason;
     }
 
-    public static ProjectTaskRecommendationItemResponse of(Long taskId,
-                                                           int rank,
-                                                           int score,
-                                                           String title,
-                                                           TaskStatus status,
-                                                           LocalDateTime dueAt,
-                                                           Boolean calendarSyncEnabled,
-                                                           String calendarEventId,
-                                                           TaskSyncState syncState,
-                                                           String primaryTag,
-                                                           String secondaryTag,
-                                                           String reason) {
+    public static ProjectTaskRecommendationItemResponse of(
+            Long taskId,
+            int rank,
+            int score,
+            String title,
+            TaskStatus status,
+            LocalDateTime dueAt,
+            Boolean calendarSyncEnabled,
+            String calendarEventId,
+            TaskSyncState syncState,
+            String primaryTag,
+            String secondaryTag,
+            String reason) {
         return new ProjectTaskRecommendationItemResponse(
                 taskId,
                 rank,
@@ -74,8 +75,7 @@ public class ProjectTaskRecommendationItemResponse {
                 syncState,
                 primaryTag,
                 secondaryTag,
-                reason
-        );
+                reason);
     }
 
     public Long getTaskId() {

@@ -4,14 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryCacheHealthResponse;
 import com.taskflow.calendar.domain.summary.dto.WeeklySummaryResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.data.redis.core.StringRedisTemplate;
-
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -35,7 +34,8 @@ public class RedisWeeklySummaryCacheService implements WeeklySummaryCacheService
             return Optional.of(response);
         } catch (RuntimeException | JsonProcessingException e) {
             record("error");
-            log.warn("Weekly summary cache read failed; continuing without cache. errorType={}",
+            log.warn(
+                    "Weekly summary cache read failed; continuing without cache. errorType={}",
                     e.getClass().getSimpleName());
             return Optional.empty();
         }
@@ -51,7 +51,8 @@ public class RedisWeeklySummaryCacheService implements WeeklySummaryCacheService
             record("write");
         } catch (RuntimeException | JsonProcessingException e) {
             record("error");
-            log.warn("Weekly summary cache write failed; continuing without cache. errorType={}",
+            log.warn(
+                    "Weekly summary cache write failed; continuing without cache. errorType={}",
                     e.getClass().getSimpleName());
         }
     }
@@ -82,7 +83,8 @@ public class RedisWeeklySummaryCacheService implements WeeklySummaryCacheService
     }
 
     private void record(String outcome) {
-        meterRegistry.counter("taskflow_cache_operations_total",
-                "feature", "weekly_summary", "outcome", outcome).increment();
+        meterRegistry
+                .counter("taskflow_cache_operations_total", "feature", "weekly_summary", "outcome", outcome)
+                .increment();
     }
 }

@@ -1,31 +1,5 @@
 package com.taskflow.web;
 
-import com.taskflow.calendar.domain.user.Provider;
-import com.taskflow.calendar.domain.user.User;
-import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.config.SecurityConfig;
-import com.taskflow.security.JwtAuthenticationFilter;
-import com.taskflow.security.JwtTokenProvider;
-import com.taskflow.service.AuthService;
-import com.taskflow.web.dto.auth.AuthSession;
-import com.taskflow.web.dto.auth.SessionResponse;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.intercept.AuthorizationFilter;
-import org.springframework.security.web.session.SessionManagementFilter;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-
-import jakarta.servlet.http.Cookie;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,6 +13,31 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.taskflow.calendar.domain.user.Provider;
+import com.taskflow.calendar.domain.user.User;
+import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.config.SecurityConfig;
+import com.taskflow.security.JwtAuthenticationFilter;
+import com.taskflow.security.JwtTokenProvider;
+import com.taskflow.service.AuthService;
+import com.taskflow.web.dto.auth.AuthSession;
+import com.taskflow.web.dto.auth.SessionResponse;
+import jakarta.servlet.http.Cookie;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.session.SessionManagementFilter;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 @WebMvcTest(AuthController.class)
 @Import({SecurityConfig.class, SessionCookieService.class})
@@ -76,8 +75,7 @@ class AuthControllerSecurityTest {
         Instant expiresAt = Instant.parse("2026-08-25T03:00:00Z");
         stubAuthenticatedUser();
         given(jwtTokenProvider.getExpiration(TOKEN)).willReturn(expiresAt);
-        given(authService.getSession(7L, expiresAt))
-                .willReturn(new SessionResponse(true, "GOOGLE", expiresAt));
+        given(authService.getSession(7L, expiresAt)).willReturn(new SessionResponse(true, "GOOGLE", expiresAt));
 
         mvc.perform(get("/api/auth/session").cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                 .andExpect(status().isOk())
@@ -93,13 +91,16 @@ class AuthControllerSecurityTest {
         List<?> filters = securityFilterChain.getFilters();
         int jwt = filters.indexOf(filters.stream()
                 .filter(JwtAuthenticationFilter.class::isInstance)
-                .findFirst().orElseThrow());
+                .findFirst()
+                .orElseThrow());
         int session = filters.indexOf(filters.stream()
                 .filter(SessionManagementFilter.class::isInstance)
-                .findFirst().orElseThrow());
+                .findFirst()
+                .orElseThrow());
         int authorization = filters.indexOf(filters.stream()
                 .filter(AuthorizationFilter.class::isInstance)
-                .findFirst().orElseThrow());
+                .findFirst()
+                .orElseThrow());
 
         assertThat(jwt).isGreaterThan(session).isLessThan(authorization);
     }
@@ -107,11 +108,9 @@ class AuthControllerSecurityTest {
     @Test
     void demoSessionRequiresCsrfAndSetsHttpOnlyCookie() throws Exception {
         Instant expiresAt = Instant.now().plusSeconds(300);
-        given(authService.createDemoSession()).willReturn(
-                new AuthSession(TOKEN, 7L, Provider.DEMO, expiresAt));
+        given(authService.createDemoSession()).willReturn(new AuthSession(TOKEN, 7L, Provider.DEMO, expiresAt));
 
-        mvc.perform(post("/api/auth/demo"))
-                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/auth/demo")).andExpect(status().isForbidden());
 
         mvc.perform(withCsrf(post("/api/auth/demo")))
                 .andExpect(status().isOk())
@@ -124,10 +123,8 @@ class AuthControllerSecurityTest {
 
     @Test
     void managementHealthAndPrometheusAllowAnonymousScraping() throws Exception {
-        mvc.perform(get("/actuator/health/readiness"))
-                .andExpect(status().isNotFound());
-        mvc.perform(get("/actuator/prometheus"))
-                .andExpect(status().isNotFound());
+        mvc.perform(get("/actuator/health/readiness")).andExpect(status().isNotFound());
+        mvc.perform(get("/actuator/prometheus")).andExpect(status().isNotFound());
     }
 
     @Test
@@ -149,7 +146,8 @@ class AuthControllerSecurityTest {
     void logoutFailureStillClearsCookieAndReturnsServerError() throws Exception {
         stubAuthenticatedUser();
         willThrow(new IllegalStateException("Authenticated user not found"))
-                .given(authService).logout(7L);
+                .given(authService)
+                .logout(7L);
 
         MockHttpServletRequestBuilder logout = withCsrf(post("/api/auth/logout"));
         mvc.perform(logout.cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
