@@ -294,8 +294,10 @@ public class TaskService {
      */
     public List<TaskHistoryResponse> getTaskHistory(Long taskId) {
         // 1. Task 존재 확인 (deleted=false)
-        taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
-                .orElseThrow(() -> new TaskNotFoundException(taskId));
+        if (taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
+                .isEmpty()) {
+            throw new TaskNotFoundException(taskId);
+        }
 
         // 2. 이력 조회
         List<TaskHistory> histories = historyRepository.findByTask_IdOrderByCreatedAtDesc(taskId);

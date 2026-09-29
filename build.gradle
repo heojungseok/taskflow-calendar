@@ -3,6 +3,8 @@ plugins {
     id 'org.springframework.boot' version '3.5.9'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'co.uzzu.dotenv.gradle' version '2.0.0'
+    id 'com.diffplug.spotless' version '8.10.3'
+    id 'net.ltgt.errorprone' version '5.1.1'
 }
 
 group = 'com.taskflow'
@@ -11,12 +13,6 @@ version = '0.0.1-SNAPSHOT'
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
     }
 }
 
@@ -59,13 +55,35 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Static analysis (2.43.0부터 JDK 21 필요. toolchain이 17이라 2.42.0에 고정)
+    errorprone 'com.google.errorprone:error_prone_core:2.42.0'
 }
 
 dependencyLocking {
     lockAllConfigurations()
 }
 
+spotless {
+    java {
+        target 'src/*/java/**/*.java'
+        palantirJavaFormat()
+        removeUnusedImports()
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.errorprone.disableWarningsInGeneratedCode = true
+}
+
+tasks.named('compileTestJava') {
+    // 테스트 메서드 이름은 한글로 짓는다.
+    options.errorprone.disable('UnicodeInCode')
+}
+
 tasks.named('test') {
+    // CI는 ./gradlew test만 실행하고, ci.yml은 배포 제어기가 해시로 고정한다. 포맷 검사를 test에 묶는다.
+    dependsOn 'spotlessCheck'
     useJUnitPlatform()
     // application.yml의 jwt.secret은 기본값이 없다. 테스트 컨텍스트도 값이 있어야 뜬다.
     environment 'JWT_SECRET', 'test-only-secret-key-not-used-anywhere-else-256-bits-long'
