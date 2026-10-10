@@ -66,8 +66,8 @@ async function mockApi(
           data: {
             id: 7,
             name: '세션 만료 확인',
-            createdAt: '2026-08-24T00:00:00',
-            updatedAt: '2026-08-24T00:00:00',
+            createdAt: '2026-08-24T00:00:00Z',
+            updatedAt: '2026-08-24T00:00:00Z',
           },
         },
       });

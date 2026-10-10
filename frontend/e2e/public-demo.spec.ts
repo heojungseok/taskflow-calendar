@@ -149,8 +149,8 @@ test('project list switches between newest and oldest order', async ({ page }) =
       json: {
         success: true,
         data: [
-          { id: 1, name: '먼저 만든 프로젝트', createdAt: '2026-08-21T09:00:00', updatedAt: '2026-08-21T09:00:00' },
-          { id: 2, name: '나중에 만든 프로젝트', createdAt: '2026-08-21T09:00:00', updatedAt: '2026-08-21T09:00:00' },
+          { id: 1, name: '먼저 만든 프로젝트', createdAt: '2026-08-21T09:00:00Z', updatedAt: '2026-08-21T09:00:00Z' },
+          { id: 2, name: '나중에 만든 프로젝트', createdAt: '2026-08-21T09:00:00Z', updatedAt: '2026-08-21T09:00:00Z' },
         ],
       },
     });
