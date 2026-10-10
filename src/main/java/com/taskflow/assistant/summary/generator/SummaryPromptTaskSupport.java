@@ -2,7 +2,6 @@ package com.taskflow.assistant.summary.generator;
 
 import com.taskflow.calendarsync.outbox.OutboxStatus;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
-import com.taskflow.common.TimeZones;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskStatus;
 import java.time.LocalDate;
@@ -39,7 +38,8 @@ public final class SummaryPromptTaskSupport {
     private static final List<String> PRESERVED_KEYWORDS =
             List.of("Google OAuth", "Gemini API key", "OAuth", "API key", "배포", "Sprint Review", "체크리스트", "캡처", "데모");
 
-    public Map<String, Object> toPromptTaskPayload(TaskSyncSnapshot snapshot, LocalDate weekStart, LocalDate weekEnd) {
+    public Map<String, Object> toPromptTaskPayload(
+            TaskSyncSnapshot snapshot, LocalDate weekStart, LocalDate weekEnd, LocalDate today) {
         Task task = snapshot.getTask();
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("id", task.getId());
@@ -65,7 +65,7 @@ public final class SummaryPromptTaskSupport {
             putIfPresent(item, "lastOutboxError", normalizeWhitespace(snapshot.getLatestOutboxError()));
         }
 
-        putIfTrue(item, "isOverdue", isOverdue(task));
+        putIfTrue(item, "isOverdue", isOverdue(task, today));
         putIfTrue(item, "isDeadlineThisWeek", isDeadlineThisWeek(task, weekStart, weekEnd));
         putIfTrue(item, "isEventOverlappingThisWeek", isEventOverlappingThisWeek(task, weekStart, weekEnd));
 
@@ -245,9 +245,9 @@ public final class SummaryPromptTaskSupport {
         return task.getUpdatedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusHours(RECENT_UPDATE_HOURS));
     }
 
-    private boolean isOverdue(Task task) {
+    private boolean isOverdue(Task task, LocalDate today) {
         return task.getDueAt() != null
-                && task.getDueAt().toLocalDate().isBefore(LocalDate.now(TimeZones.SERVICE_ZONE))
+                && task.getDueAt().toLocalDate().isBefore(today)
                 && task.getStatus() != TaskStatus.DONE;
     }
 

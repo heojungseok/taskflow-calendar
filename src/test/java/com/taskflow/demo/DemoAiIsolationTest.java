@@ -26,6 +26,7 @@ import com.taskflow.assistant.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.assistant.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.assistant.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
+import com.taskflow.common.TimeZones;
 import com.taskflow.identity.user.User;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.observability.TaskFlowMetrics;
@@ -34,6 +35,7 @@ import com.taskflow.planning.project.ProjectRepository;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +77,14 @@ class DemoAiIsolationTest {
         given(users.findById(userId)).willReturn(Optional.of(demo));
 
         ProjectWeeklySummaryService service = new ProjectWeeklySummaryService(
-                projects, tasks, generator, sync, cache, new GeminiSummaryProperties(), users);
+                projects,
+                tasks,
+                generator,
+                sync,
+                cache,
+                new GeminiSummaryProperties(),
+                users,
+                Clock.system(TimeZones.SERVICE_ZONE));
 
         assertEquals(
                 WeeklySummaryCacheStatus.DEMO_LOCAL,
@@ -96,7 +105,14 @@ class DemoAiIsolationTest {
         given(users.findById(userId)).willReturn(Optional.of(demo));
 
         ProjectTaskRecommendationService service = new ProjectTaskRecommendationService(
-                projects, tasks, sync, generator, cache, new GeminiRecommendationProperties(), users);
+                projects,
+                tasks,
+                sync,
+                generator,
+                cache,
+                new GeminiRecommendationProperties(),
+                users,
+                Clock.system(TimeZones.SERVICE_ZONE));
 
         assertEquals(
                 TaskRecommendationCacheStatus.DEMO_LOCAL,
@@ -115,7 +131,8 @@ class DemoAiIsolationTest {
         given(tasks.findAllByDeletedFalseAndProject_OwnerUserId(userId)).willReturn(List.of());
         given(sync.resolveAll(List.of())).willReturn(List.of());
 
-        ProjectTaskSearchService service = new ProjectTaskSearchService(tasks, sync, parser, embeddings, users);
+        ProjectTaskSearchService service = new ProjectTaskSearchService(
+                tasks, sync, parser, embeddings, users, Clock.system(TimeZones.SERVICE_ZONE));
 
         assertEquals(SemanticSearchStatus.DISABLED, service.search("데모").getSemanticStatus());
         verifyNoInteractions(parser, embeddings);

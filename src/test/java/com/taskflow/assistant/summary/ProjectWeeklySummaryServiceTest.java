@@ -20,6 +20,7 @@ import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException
 import com.taskflow.assistant.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
+import com.taskflow.common.TimeZones;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.project.ProjectRepository;
@@ -28,7 +29,9 @@ import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskStatus;
 import com.taskflow.planning.task.TaskSyncState;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -83,9 +86,11 @@ class ProjectWeeklySummaryServiceTest {
 
     private Project project;
 
+    private GeminiSummaryProperties geminiProperties;
+
     @BeforeEach
     void setUp() {
-        GeminiSummaryProperties geminiProperties = new GeminiSummaryProperties();
+        geminiProperties = new GeminiSummaryProperties();
         geminiProperties.setModel("gemini-2.5-flash");
         service = new ProjectWeeklySummaryService(
                 projectRepository,
@@ -94,7 +99,8 @@ class ProjectWeeklySummaryServiceTest {
                 taskSyncStateResolver,
                 weeklySummaryCacheService,
                 geminiProperties,
-                userRepository);
+                userRepository,
+                Clock.system(TimeZones.SERVICE_ZONE));
         project = Project.of("TaskFlow", 1L);
         stubResolveAllViaResolve();
     }
@@ -546,5 +552,30 @@ class ProjectWeeklySummaryServiceTest {
         var field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    /** KST 2026-10-12(월) 08:30. UTC로는 아직 10-11(일) 23:30이라 시간대를 잘못 쓰면 날짜가 하루, 주가 한 주 밀린다. */
+    private static final Clock KST_MONDAY_MORNING =
+            Clock.fixed(Instant.parse("2026-10-11T23:30:00Z"), TimeZones.SERVICE_ZONE);
+
+    @Test
+    @DisplayName("generateWeeklySummary_KST월요일새벽에도이번주는KST월요일부터다")
+    void generateWeeklySummary_weekFollowsKstAtMondayMorning() {
+        ProjectWeeklySummaryService kstService = new ProjectWeeklySummaryService(
+                projectRepository,
+                taskRepository,
+                weeklySummaryGenerator,
+                taskSyncStateResolver,
+                weeklySummaryCacheService,
+                geminiProperties,
+                userRepository,
+                KST_MONDAY_MORNING);
+        when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));
+        when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of());
+
+        WeeklySummaryResponse response = kstService.generateWeeklySummary(1L);
+
+        assertEquals(LocalDate.of(2026, 10, 12), response.getWeekStart());
+        assertEquals(LocalDate.of(2026, 10, 18), response.getWeekEnd());
     }
 }

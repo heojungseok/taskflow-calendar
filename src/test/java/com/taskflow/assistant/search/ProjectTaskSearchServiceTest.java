@@ -9,12 +9,15 @@ import com.taskflow.assistant.search.dto.ProjectTaskSearchResponse;
 import com.taskflow.assistant.search.generator.TaskSearchIntentParser;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
+import com.taskflow.common.TimeZones;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskSyncState;
+import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
@@ -72,7 +75,8 @@ class ProjectTaskSearchServiceTest {
                 taskSyncStateResolver,
                 taskSearchIntentParser,
                 taskSearchEmbeddingService,
-                userRepository);
+                userRepository,
+                Clock.system(TimeZones.SERVICE_ZONE));
         stubResolveAllViaResolve();
     }
 
@@ -170,7 +174,8 @@ class ProjectTaskSearchServiceTest {
 
         // THIS_WEEK 의도는 월~일 범위로 자르므로, now().plusDays(n)를 쓰면 주 후반에 다음 주로 넘어가 결과가 사라진다.
         // 요일과 무관하게 이번 주 안에 들어오도록 이번 주 월요일을 기준으로 잡는다.
-        LocalDateTime thisMonday = LocalDate.now()
+        // 서비스는 KST로 주를 자른다. JVM 기본 시간대(UTC)로 월요일을 잡으면 KST 월요일 새벽에 한 주 어긋난다.
+        LocalDateTime thisMonday = LocalDate.now(TimeZones.SERVICE_ZONE)
                 .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                 .atTime(9, 0);
 
@@ -746,5 +751,57 @@ class ProjectTaskSearchServiceTest {
 
     private TaskSyncSnapshot snapshot(Task task, TaskSyncState syncState) {
         return TaskSyncSnapshot.of(task, syncState, null, null, null);
+    }
+
+    /** KST 2026-10-12(월) 08:30. UTC로는 아직 10-11(일) 23:30이라 시간대를 잘못 쓰면 날짜가 하루, 주가 한 주 밀린다. */
+    private static final Clock KST_MONDAY_MORNING =
+            Clock.fixed(Instant.parse("2026-10-11T23:30:00Z"), TimeZones.SERVICE_ZONE);
+
+    @Test
+    void search_todayIntentFollowsKstDateAtMondayMorning() {
+        ProjectTaskSearchService kstService = new ProjectTaskSearchService(
+                taskRepository,
+                taskSyncStateResolver,
+                taskSearchIntentParser,
+                taskSearchEmbeddingService,
+                userRepository,
+                KST_MONDAY_MORNING);
+        Project alpha = project(1L, "Alpha");
+        // UTC 날짜(10-11)로 오늘을 정하면 어제 마감 Task만 남는다
+        Task todayTask = task(20L, alpha, "배포 점검", "운영 배포 점검", LocalDateTime.of(2026, 10, 12, 18, 0));
+        Task yesterdayTask = task(21L, alpha, "배포 회고", "지난 배포 회고", LocalDateTime.of(2026, 10, 11, 18, 0));
+
+        SearchIntent intent = SearchIntent.of(
+                "오늘 배포 일정",
+                SearchQueryType.TOPIC_SEARCH,
+                SearchTargetType.MIXED,
+                SearchDomainType.WORK,
+                SearchActionIntent.UNKNOWN,
+                List.of(),
+                List.of("배포"),
+                List.of(),
+                List.of(),
+                SearchTimeIntent.TODAY,
+                SearchPriorityIntent.NONE,
+                List.of(),
+                SearchSyncIntent.ANY,
+                SearchRelationPolicy.ALLOW_PARTIAL,
+                0.9d,
+                Map.of("topicTerms", 0.95d),
+                List.of());
+        when(taskSearchIntentParser.parse("오늘 배포 일정")).thenReturn(intent);
+        when(taskRepository.findAllByDeletedFalseAndProject_OwnerUserId(1L))
+                .thenReturn(List.of(todayTask, yesterdayTask));
+        doNothing().when(taskSearchEmbeddingService).ensureEmbeddings(List.of(todayTask, yesterdayTask));
+        when(taskSearchEmbeddingService.searchSimilarities(any()))
+                .thenReturn(new SemanticSearchResult(Map.of(), SemanticSearchStatus.READY));
+        when(taskSyncStateResolver.resolve(todayTask)).thenReturn(snapshot(todayTask, TaskSyncState.SYNCED));
+        when(taskSyncStateResolver.resolve(yesterdayTask)).thenReturn(snapshot(yesterdayTask, TaskSyncState.SYNCED));
+
+        ProjectTaskSearchResponse response = kstService.search("오늘 배포 일정");
+
+        assertEquals(
+                List.of("배포 점검"),
+                response.getTaskResults().stream().map(r -> r.getTitle()).toList());
     }
 }

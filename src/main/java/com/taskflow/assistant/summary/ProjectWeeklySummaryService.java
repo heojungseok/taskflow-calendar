@@ -11,7 +11,6 @@ import com.taskflow.assistant.summary.generator.SummaryPromptTaskSupport;
 import com.taskflow.assistant.summary.generator.WeeklySummaryGenerator;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
-import com.taskflow.common.TimeZones;
 import com.taskflow.identity.security.SecurityContextHelper;
 import com.taskflow.identity.user.Provider;
 import com.taskflow.identity.user.UserRepository;
@@ -24,6 +23,7 @@ import com.taskflow.planning.task.TaskStatus;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -65,6 +65,7 @@ public class ProjectWeeklySummaryService {
     private final WeeklySummaryCacheService weeklySummaryCacheService;
     private final GeminiSummaryProperties geminiProperties;
     private final UserRepository userRepository;
+    private final Clock clock;
     private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     public WeeklySummaryResponse generateWeeklySummary(Long projectId) {
@@ -78,7 +79,7 @@ public class ProjectWeeklySummaryService {
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         List<Task> allTasks = taskRepository.findAllByProjectIdAndDeletedFalse(projectId);
-        LocalDate today = LocalDate.now(TimeZones.SERVICE_ZONE);
+        LocalDate today = LocalDate.now(clock);
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate weekEnd = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
         Instant generatedAt = Instant.now();
