@@ -11,7 +11,7 @@ import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException
 import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.config.GoogleOAuthProperties;
-import com.taskflow.web.dto.auth.AuthSession;
+import com.taskflow.security.AuthSession;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;

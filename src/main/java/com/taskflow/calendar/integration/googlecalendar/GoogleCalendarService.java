@@ -1,8 +1,8 @@
 package com.taskflow.calendar.integration.googlecalendar;
 
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
-import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
-import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
+import com.taskflow.common.exception.NonRetryableIntegrationException;
+import com.taskflow.common.exception.RetryableIntegrationException;
 
 /**
  * Google Calendar API 연동 서비스 인터페이스

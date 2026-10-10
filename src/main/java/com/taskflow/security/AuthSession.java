@@ -1,4 +1,4 @@
-package com.taskflow.web.dto.auth;
+package com.taskflow.security;
 
 import com.taskflow.calendar.domain.user.Provider;
 import java.time.Instant;

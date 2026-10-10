@@ -12,9 +12,8 @@ import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.observability.TaskFlowMetrics;
+import com.taskflow.security.AuthSession;
 import com.taskflow.security.JwtTokenProvider;
-import com.taskflow.web.dto.auth.AuthSession;
-import com.taskflow.web.dto.auth.SessionResponse;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -75,22 +74,19 @@ class AuthServiceTest {
     }
 
     @Test
-    void googleSessionUsesJwtExpiryInsteadOfDatabaseExpiry() {
+    void sessionUserTypeComesFromUserProvider() {
         User user = mock(User.class);
-        Instant tokenExpiresAt = Instant.parse("2026-08-25T03:00:00Z");
         given(user.getProvider()).willReturn(Provider.GOOGLE);
         given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
-        SessionResponse response = authService.getSession(USER_ID, tokenExpiresAt);
-
-        assertThat(response).isEqualTo(new SessionResponse(true, "GOOGLE", tokenExpiresAt));
+        assertThat(authService.findUserType(USER_ID)).contains(Provider.GOOGLE);
     }
 
     @Test
-    void missingUserSessionIsAnonymous() {
+    void missingUserHasNoSessionUserType() {
         given(userRepository.findById(USER_ID)).willReturn(Optional.empty());
 
-        assertThat(authService.getSession(USER_ID, Instant.now())).isEqualTo(SessionResponse.anonymous());
+        assertThat(authService.findUserType(USER_ID)).isEmpty();
     }
 
     @Test

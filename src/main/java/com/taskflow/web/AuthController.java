@@ -1,12 +1,13 @@
 package com.taskflow.web;
 
 import com.taskflow.common.ApiResponse;
+import com.taskflow.security.AuthSession;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.service.AuthService;
-import com.taskflow.web.dto.auth.AuthSession;
 import com.taskflow.web.dto.auth.SessionResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.Instant;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -40,8 +41,11 @@ public class AuthController {
         if (authentication == null) {
             return ApiResponse.success(SessionResponse.anonymous());
         }
-        return ApiResponse.success(
-                authService.getSession((Long) authentication.getPrincipal(), jwtTokenProvider.getExpiration(token)));
+        Instant expiresAt = jwtTokenProvider.getExpiration(token);
+        return ApiResponse.success(authService
+                .findUserType((Long) authentication.getPrincipal())
+                .map(userType -> new SessionResponse(true, userType.name(), expiresAt))
+                .orElseGet(SessionResponse::anonymous));
     }
 
     @PostMapping("/demo")

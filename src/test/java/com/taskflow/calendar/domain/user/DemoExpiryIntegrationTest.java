@@ -2,9 +2,9 @@ package com.taskflow.calendar.domain.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.taskflow.security.AuthSession;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.service.AuthService;
-import com.taskflow.web.dto.auth.AuthSession;
 import java.time.Instant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

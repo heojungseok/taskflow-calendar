@@ -1,4 +1,4 @@
-package com.taskflow.calendar.integration.googlecalendar.exception;
+package com.taskflow.common.exception;
 
 /**
  * 재시도 불가능한 외부 연동 예외 (즉시 실패)
