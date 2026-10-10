@@ -18,11 +18,10 @@ import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.SecurityConfig;
+import com.taskflow.security.AuthSession;
 import com.taskflow.security.JwtAuthenticationFilter;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.service.AuthService;
-import com.taskflow.web.dto.auth.AuthSession;
-import com.taskflow.web.dto.auth.SessionResponse;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.util.List;
@@ -75,7 +74,7 @@ class AuthControllerSecurityTest {
         Instant expiresAt = Instant.parse("2026-08-25T03:00:00Z");
         stubAuthenticatedUser();
         given(jwtTokenProvider.getExpiration(TOKEN)).willReturn(expiresAt);
-        given(authService.getSession(7L, expiresAt)).willReturn(new SessionResponse(true, "GOOGLE", expiresAt));
+        given(authService.findUserType(7L)).willReturn(Optional.of(Provider.GOOGLE));
 
         mvc.perform(get("/api/auth/session").cookie(new Cookie("TASKFLOW_SESSION", TOKEN)))
                 .andExpect(status().isOk())
@@ -83,7 +82,7 @@ class AuthControllerSecurityTest {
                 .andExpect(jsonPath("$.data.userType").value("GOOGLE"))
                 .andExpect(jsonPath("$.data.expiresAt").value(expiresAt.toString()));
 
-        verify(authService).getSession(7L, expiresAt);
+        verify(authService).findUserType(7L);
     }
 
     @Test

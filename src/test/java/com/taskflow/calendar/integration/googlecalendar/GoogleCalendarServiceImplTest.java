@@ -15,7 +15,7 @@ import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
+import com.taskflow.common.exception.NonRetryableIntegrationException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;

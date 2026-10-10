@@ -12,7 +12,7 @@ import com.taskflow.calendar.domain.oauth.dto.GoogleOAuthResult;
 import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
+import com.taskflow.common.exception.NonRetryableIntegrationException;
 import com.taskflow.security.JwtTokenProvider;
 import com.taskflow.service.AuthService;
 import com.taskflow.web.SessionCookieService;

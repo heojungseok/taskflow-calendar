@@ -13,11 +13,11 @@ import com.taskflow.calendar.domain.oauth.exception.MissingRefreshTokenException
 import com.taskflow.calendar.domain.oauth.exception.MissingRequiredGoogleScopeException;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.calendar.integration.googlecalendar.exception.NonRetryableIntegrationException;
-import com.taskflow.calendar.integration.googlecalendar.exception.RetryableIntegrationException;
+import com.taskflow.common.exception.NonRetryableIntegrationException;
+import com.taskflow.common.exception.RetryableIntegrationException;
 import com.taskflow.config.GoogleOAuthProperties;
+import com.taskflow.security.AuthSession;
 import com.taskflow.security.JwtTokenProvider;
-import com.taskflow.web.dto.auth.AuthSession;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;

@@ -1,13 +1,14 @@
 package com.taskflow.service;
 
+import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.User;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.observability.TaskFlowMetrics;
+import com.taskflow.security.AuthSession;
 import com.taskflow.security.JwtTokenProvider;
-import com.taskflow.web.dto.auth.AuthSession;
-import com.taskflow.web.dto.auth.SessionResponse;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,11 +39,8 @@ public class AuthService {
                 expiresAt);
     }
 
-    public SessionResponse getSession(Long userId, Instant tokenExpiresAt) {
-        return userRepository
-                .findById(userId)
-                .map(user -> new SessionResponse(true, user.getProvider().name(), tokenExpiresAt))
-                .orElseGet(SessionResponse::anonymous);
+    public Optional<Provider> findUserType(Long userId) {
+        return userRepository.findById(userId).map(User::getProvider);
     }
 
     @Transactional
