@@ -1,15 +1,13 @@
 package com.taskflow.calendarsync.outbox;
 
 import com.taskflow.calendarsync.outbox.exception.InvalidOutboxStateTransitionException;
+import com.taskflow.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(
@@ -19,10 +17,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
             @Index(name = "idx_outbox_task_created", columnList = "task_id, created_at"),
             @Index(name = "idx_outbox_task_status_optype", columnList = "task_id, status, op_type")
         })
-@EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CalendarOutbox {
+public class CalendarOutbox extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,14 +47,6 @@ public class CalendarOutbox {
 
     @Column(name = "last_error", columnDefinition = "TEXT")
     private String lastError;
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
     @Builder
     private CalendarOutbox(

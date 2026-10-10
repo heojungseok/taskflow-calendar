@@ -27,13 +27,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-aop'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     testImplementation 'io.micrometer:micrometer-registry-prometheus'
 
     // Database
     runtimeOnly 'org.postgresql:postgresql'
-    implementation 'com.pgvector:pgvector:0.1.6'
 
     // Lombok (optional)
     compileOnly 'org.projectlombok:lombok'

@@ -1,18 +1,14 @@
 package com.taskflow.identity.user;
 
+import com.taskflow.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import lombok.Getter;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "users")
-@EntityListeners(AuditingEntityListener.class)
 @Getter
-public class User {
+public class User extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -38,14 +34,6 @@ public class User {
 
     @Column(name = "demo_mutation_count", nullable = false, columnDefinition = "integer default 0")
     private int demoMutationCount;
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
     protected User() {}
 

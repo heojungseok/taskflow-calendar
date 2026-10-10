@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -450,12 +451,7 @@ public class ProjectWeeklySummaryService {
                 updateDigest(digest, snapshot.getLatestOutboxError());
             }
 
-            byte[] hashed = digest.digest();
-            StringBuilder hex = new StringBuilder(hashed.length * 2);
-            for (byte value : hashed) {
-                hex.append(String.format("%02x", value));
-            }
-            return hex.toString();
+            return HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available", e);
         }
