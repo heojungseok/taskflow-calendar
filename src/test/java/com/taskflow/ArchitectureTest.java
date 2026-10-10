@@ -1,6 +1,7 @@
 package com.taskflow;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -25,4 +26,8 @@ class ArchitectureTest {
             .should()
             .dependOnClassesThat()
             .resideInAPackage("com.taskflow.calendar.integration..");
+
+    @ArchTest
+    static final ArchRule calendar_하위_패키지_사이에_순환이_없다 =
+            slices().matching("com.taskflow.calendar.(*)..").should().beFreeOfCycles();
 }
