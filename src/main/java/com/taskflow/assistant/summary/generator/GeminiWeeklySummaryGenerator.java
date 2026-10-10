@@ -9,7 +9,6 @@ import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.ErrorCode;
-import com.taskflow.common.TimeZones;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
 import java.io.IOException;
@@ -20,6 +19,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -42,6 +42,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     private final GeminiSummaryProperties properties;
     private final ObjectMapper objectMapper;
     private final TaskFlowMetrics metrics;
+    private final Clock clock;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
@@ -256,17 +257,20 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("projectName", project.getName());
-        payload.put("today", LocalDate.now(TimeZones.SERVICE_ZONE));
+        LocalDate today = LocalDate.now(clock);
+        payload.put("today", today);
         payload.put("weekStart", weekStart);
         payload.put("weekEnd", weekEnd);
         payload.put(
                 "instructions",
                 promptInstructions(syncedTasks, syncedTotalTaskCount, unsyncedTasks, unsyncedTotalTaskCount));
         payload.put(
-                "synced", sectionPayload(SummaryBucket.SYNCED, syncedTasks, syncedTotalTaskCount, weekStart, weekEnd));
+                "synced",
+                sectionPayload(SummaryBucket.SYNCED, syncedTasks, syncedTotalTaskCount, weekStart, weekEnd, today));
         payload.put(
                 "unsynced",
-                sectionPayload(SummaryBucket.UNSYNCED, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd));
+                sectionPayload(
+                        SummaryBucket.UNSYNCED, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd, today));
 
         return "아래 입력 JSON을 바탕으로 synced와 unsynced 두 섹션만 반환하라.\n" + objectMapper.writeValueAsString(payload);
     }
@@ -300,7 +304,8 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             List<TaskSyncSnapshot> tasks,
             int totalTaskCount,
             LocalDate weekStart,
-            LocalDate weekEnd) {
+            LocalDate weekEnd,
+            LocalDate today) {
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("focus", bucket.getPromptFocus());
         section.put("totalTaskCount", totalTaskCount);
@@ -309,7 +314,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         if (hasPartialCoverage(tasks, totalTaskCount)) {
             section.put("coverageHint", "세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.");
         }
-        section.put("tasks", taskPayload(tasks, weekStart, weekEnd));
+        section.put("tasks", taskPayload(tasks, weekStart, weekEnd, today));
         return section;
     }
 
@@ -332,11 +337,11 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     }
 
     private List<Map<String, Object>> taskPayload(
-            List<TaskSyncSnapshot> tasks, LocalDate weekStart, LocalDate weekEnd) {
+            List<TaskSyncSnapshot> tasks, LocalDate weekStart, LocalDate weekEnd, LocalDate today) {
         List<Map<String, Object>> payload = new ArrayList<>();
 
         for (TaskSyncSnapshot snapshot : tasks) {
-            payload.add(promptTaskSupport.toPromptTaskPayload(snapshot, weekStart, weekEnd));
+            payload.add(promptTaskSupport.toPromptTaskPayload(snapshot, weekStart, weekEnd, today));
         }
 
         return payload;

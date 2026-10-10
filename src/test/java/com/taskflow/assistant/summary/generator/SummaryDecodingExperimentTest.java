@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
+import com.taskflow.common.TimeZones;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.task.Task;
@@ -17,6 +18,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,7 +44,10 @@ class SummaryDecodingExperimentTest {
     void generateExperimentReport() throws IOException {
         GeminiSummaryProperties properties = createProperties();
         GeminiWeeklySummaryGenerator generator = new GeminiWeeklySummaryGenerator(
-                properties, objectMapper, new TaskFlowMetrics(new SimpleMeterRegistry()));
+                properties,
+                objectMapper,
+                new TaskFlowMetrics(new SimpleMeterRegistry()),
+                Clock.system(TimeZones.SERVICE_ZONE));
         List<ExperimentScenario> scenarios = List.of(releaseScenario(), onboardingScenario());
         List<Map<String, Object>> scenarioReports = new ArrayList<>();
 

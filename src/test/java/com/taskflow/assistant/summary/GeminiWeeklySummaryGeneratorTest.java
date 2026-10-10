@@ -13,6 +13,7 @@ import com.taskflow.assistant.summary.generator.GeminiWeeklySummaryGenerator;
 import com.taskflow.assistant.summary.generator.SummaryPromptTaskSupport;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.ErrorCode;
+import com.taskflow.common.TimeZones;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.task.Task;
@@ -20,6 +21,8 @@ import com.taskflow.planning.task.TaskStatus;
 import com.taskflow.planning.task.TaskSyncState;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.Method;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,9 +41,11 @@ class GeminiWeeklySummaryGeneratorTest {
     private ObjectMapper objectMapper;
     private Project project;
 
+    private GeminiSummaryProperties properties;
+
     @BeforeEach
     void setUp() {
-        GeminiSummaryProperties properties = new GeminiSummaryProperties();
+        properties = new GeminiSummaryProperties();
         properties.setApiKey("test-key");
         properties.setModel("gemini-2.5-flash");
         properties.setBaseUrl("https://example.com/v1beta");
@@ -49,7 +54,10 @@ class GeminiWeeklySummaryGeneratorTest {
 
         objectMapper = new ObjectMapper().findAndRegisterModules();
         generator = new GeminiWeeklySummaryGenerator(
-                properties, objectMapper, new TaskFlowMetrics(new SimpleMeterRegistry()));
+                properties,
+                objectMapper,
+                new TaskFlowMetrics(new SimpleMeterRegistry()),
+                Clock.system(TimeZones.SERVICE_ZONE));
         project = Project.of("TaskFlow", 1L);
     }
 
@@ -625,5 +633,49 @@ class GeminiWeeklySummaryGeneratorTest {
         Method method = target.getClass().getDeclaredMethod(methodName, parameterTypes);
         method.setAccessible(true);
         return method.invoke(target, args);
+    }
+
+    /** KST 2026-10-12(월) 08:30. UTC로는 아직 10-11(일) 23:30이라 시간대를 잘못 쓰면 날짜가 하루, 주가 한 주 밀린다. */
+    private static final Clock KST_MONDAY_MORNING =
+            Clock.fixed(Instant.parse("2026-10-11T23:30:00Z"), TimeZones.SERVICE_ZONE);
+
+    @Test
+    @DisplayName("prepareRequest_today와지연판정은KST날짜기준이다")
+    void prepareRequest_todayAndOverdueFollowKst() throws Exception {
+        GeminiWeeklySummaryGenerator kstGenerator = new GeminiWeeklySummaryGenerator(
+                properties, objectMapper, new TaskFlowMetrics(new SimpleMeterRegistry()), KST_MONDAY_MORNING);
+        // KST 기준 어제 마감(지연)과 오늘 마감(지연 아님). UTC 날짜(10-11)로 판정하면 둘 다 지연이 아니다.
+        Task yesterday =
+                Task.createTask(project, "어제 마감", null, null, null, LocalDateTime.of(2026, 10, 11, 18, 0), false);
+        Task today = Task.createTask(project, "오늘 마감", null, null, null, LocalDateTime.of(2026, 10, 12, 18, 0), false);
+
+        Object prepared = invokePrivate(
+                kstGenerator,
+                "prepareRequest",
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
+                project,
+                List.of(snapshot(yesterday, TaskSyncState.SYNCED), snapshot(today, TaskSyncState.SYNCED)),
+                2,
+                List.of(),
+                0,
+                LocalDate.of(2026, 10, 12),
+                LocalDate.of(2026, 10, 18));
+
+        JsonNode payload = userPromptPayload(preparedRequestBody(prepared));
+        JsonNode tasks = payload.path("synced").path("tasks");
+        assertEquals(objectMapper.valueToTree(LocalDate.of(2026, 10, 12)), payload.path("today"));
+        assertTrue(taskNamed(tasks, "어제 마감").path("isOverdue").asBoolean(false));
+        assertFalse(taskNamed(tasks, "오늘 마감").path("isOverdue").asBoolean(false));
+    }
+
+    private static JsonNode taskNamed(JsonNode tasks, String title) {
+        for (JsonNode task : tasks) {
+            if (title.equals(task.path("title").asText())) {
+                return task;
+            }
+        }
+        throw new AssertionError("prompt payload has no task: " + title);
     }
 }

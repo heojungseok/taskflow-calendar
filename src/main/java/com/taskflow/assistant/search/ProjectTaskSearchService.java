@@ -7,7 +7,6 @@ import com.taskflow.assistant.search.dto.TaskSearchResultItemResponse;
 import com.taskflow.assistant.search.generator.TaskSearchIntentParser;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
-import com.taskflow.common.TimeZones;
 import com.taskflow.identity.security.SecurityContextHelper;
 import com.taskflow.identity.user.Provider;
 import com.taskflow.identity.user.UserRepository;
@@ -15,6 +14,7 @@ import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskStatus;
 import com.taskflow.planning.task.TaskSyncState;
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -101,6 +101,7 @@ public class ProjectTaskSearchService {
     private final TaskSearchIntentParser taskSearchIntentParser;
     private final TaskSearchEmbeddingService taskSearchEmbeddingService;
     private final UserRepository userRepository;
+    private final Clock clock;
 
     @Transactional
     public ProjectTaskSearchResponse search(String query) {
@@ -957,7 +958,7 @@ public class ProjectTaskSearchService {
 
     private TimeScore timeScore(SearchTimeIntent timeIntent, Task task) {
         LocalDateTime dueAt = task.getDueAt();
-        LocalDateTime now = LocalDateTime.now(TimeZones.SERVICE_ZONE);
+        LocalDateTime now = LocalDateTime.now(clock);
         switch (timeIntent) {
             case TODAY:
                 return timeWindowScore(dueAt, now.toLocalDate(), now.toLocalDate(), true);
@@ -1107,11 +1108,7 @@ public class ProjectTaskSearchService {
         LocalDateTime dueAt = task.getDueAt();
         switch (priorityIntent) {
             case URGENT:
-                return dueAt != null
-                                && dueAt.isBefore(LocalDateTime.now(TimeZones.SERVICE_ZONE)
-                                        .plusDays(2))
-                        ? PRIORITY_MATCH_BOOST
-                        : 0;
+                return dueAt != null && dueAt.isBefore(LocalDateTime.now(clock).plusDays(2)) ? PRIORITY_MATCH_BOOST : 0;
             case IMPORTANT:
                 return task.getStatus() == TaskStatus.BLOCKED || task.getStatus() == TaskStatus.IN_PROGRESS
                         ? PRIORITY_MATCH_BOOST
@@ -1119,9 +1116,7 @@ public class ProjectTaskSearchService {
             case MUST_DO:
                 return task.getStatus() != TaskStatus.DONE ? PRIORITY_MATCH_BOOST : 0;
             case DEFERRED:
-                return dueAt != null && dueAt.isBefore(LocalDateTime.now(TimeZones.SERVICE_ZONE))
-                        ? PRIORITY_MATCH_BOOST
-                        : 0;
+                return dueAt != null && dueAt.isBefore(LocalDateTime.now(clock)) ? PRIORITY_MATCH_BOOST : 0;
             case NONE:
             default:
                 return 0;

@@ -17,6 +17,7 @@ import com.taskflow.assistant.recommendation.generator.TaskRecommendationGenerat
 import com.taskflow.assistant.recommendation.generator.TaskRecommendationItemResult;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
+import com.taskflow.common.TimeZones;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.project.ProjectRepository;
@@ -25,6 +26,7 @@ import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskStatus;
 import com.taskflow.planning.task.TaskSyncState;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -92,7 +94,8 @@ class ProjectTaskRecommendationServiceTest {
                 taskRecommendationGenerator,
                 taskRecommendationCacheService,
                 geminiProperties,
-                userRepository);
+                userRepository,
+                Clock.system(TimeZones.SERVICE_ZONE));
         project = Project.of("TaskFlow", 1L);
         stubResolveAllViaResolve();
     }
@@ -175,7 +178,8 @@ class ProjectTaskRecommendationServiceTest {
         assertEquals(17, response.getTotalEligibleTaskCount());
         assertEquals(5, response.getRecommendedCount());
         assertEquals(5, response.getItems().size());
-        verify(taskRecommendationGenerator).generate(eq(project), any(), eq(5), eq(LocalDate.now()));
+        verify(taskRecommendationGenerator)
+                .generate(eq(project), any(), eq(5), eq(LocalDate.now(TimeZones.SERVICE_ZONE))); // 서비스와 같은 KST 날짜
     }
 
     @Test

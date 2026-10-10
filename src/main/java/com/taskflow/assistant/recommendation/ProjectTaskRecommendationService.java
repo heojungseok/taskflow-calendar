@@ -9,7 +9,6 @@ import com.taskflow.assistant.recommendation.generator.TaskRecommendationGenerat
 import com.taskflow.assistant.recommendation.generator.TaskRecommendationItemResult;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
-import com.taskflow.common.TimeZones;
 import com.taskflow.identity.security.SecurityContextHelper;
 import com.taskflow.identity.user.Provider;
 import com.taskflow.identity.user.UserRepository;
@@ -23,6 +22,7 @@ import com.taskflow.planning.task.TaskSyncState;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -58,6 +58,7 @@ public class ProjectTaskRecommendationService {
     private final TaskRecommendationCacheService taskRecommendationCacheService;
     private final GeminiRecommendationProperties geminiProperties;
     private final UserRepository userRepository;
+    private final Clock clock;
 
     public ProjectTaskRecommendationResponse getRecommendations(Long projectId) {
         Long userId = SecurityContextHelper.getCurrentUserId();
@@ -69,7 +70,7 @@ public class ProjectTaskRecommendationService {
                 .map(user -> user.getProvider() == Provider.DEMO)
                 .orElse(false);
 
-        LocalDate today = LocalDate.now(TimeZones.SERVICE_ZONE);
+        LocalDate today = LocalDate.now(clock);
         Instant generatedAt = Instant.now();
         List<Task> eligibleTasks = taskRepository.findAllByProjectIdAndDeletedFalse(projectId).stream()
                 .filter(task -> task.getStatus() != TaskStatus.DONE)
@@ -138,7 +139,7 @@ public class ProjectTaskRecommendationService {
             List<TaskRecommendationItemResult> generatedItems) {
         Map<Long, TaskSyncSnapshot> candidateMap = new LinkedHashMap<>();
         Map<Long, Integer> candidateScoreMap = new LinkedHashMap<>();
-        LocalDate today = LocalDate.now(TimeZones.SERVICE_ZONE);
+        LocalDate today = LocalDate.now(clock);
         for (TaskSyncSnapshot candidate : candidates) {
             Long taskId = candidate.getTask().getId();
             candidateMap.put(taskId, candidate);
