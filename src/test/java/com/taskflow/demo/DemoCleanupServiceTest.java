@@ -8,14 +8,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
-import com.taskflow.calendar.domain.project.ProjectRepository;
-import com.taskflow.calendar.domain.task.TaskHistoryRepository;
-import com.taskflow.calendar.domain.task.TaskRepository;
+import com.taskflow.calendarsync.outbox.CalendarOutboxRepository;
 import com.taskflow.identity.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.identity.user.Provider;
 import com.taskflow.identity.user.User;
 import com.taskflow.identity.user.UserRepository;
+import com.taskflow.planning.project.ProjectRepository;
+import com.taskflow.planning.task.TaskHistoryRepository;
+import com.taskflow.planning.task.TaskRepository;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;

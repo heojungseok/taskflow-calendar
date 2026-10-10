@@ -30,7 +30,7 @@ Google 계정으로 로그인하면 Task가 Google Calendar 일정으로 생성�
 - **중간 변경 합치기**: Worker를 끄고 실제 `TaskService.updateTask()`를 독립 트랜잭션으로 10회 직렬 호출했습니다. 남은 `PENDING UPSERT` 1건과 10번째 수정값이 일치했습니다. 실제 Google API 호출 1회, 동시 수정이나 운영 처리량을 측정한 결과는 아닙니다.
 - **실패 후 재처리**: DB·Repository·Service·Worker는 실제 구현을 사용하고 `GoogleCalendarClient`만 첫 호출 실패·두 번째 호출 성공으로 통제했습니다. 첫 실패 후 `retryCount=1`과 1분 뒤 재시도 시각이 기록됐고 측정 DB의 재시도 시각을 과거로 옮겨 다음 처리에서 `SUCCESS`를 확인했습니다. 실제 Google 장애나 1분 실대기 검증은 아닙니다.
 
-각 측정 테스트는 1건씩 성공했습니다. 당시 측정용 테스트·실행 기록은 저장소 밖에 보존하며 현재 CI 테스트와는 별도입니다. 구현과 기존 회귀 테스트는 [적재 서비스](src/main/java/com/taskflow/calendar/domain/outbox/CalendarOutboxService.java), [적재 규칙 테스트](src/test/java/com/taskflow/calendar/domain/outbox/CalendarOutboxServiceTest.java), [재처리 대상 테스트](src/test/java/com/taskflow/calendar/domain/outbox/CalendarOutboxProcessableTest.java), [Worker 테스트](src/test/java/com/taskflow/calendar/worker/CalendarOutboxWorkerTest.java)에서 확인할 수 있습니다.
+각 측정 테스트는 1건씩 성공했습니다. 당시 측정용 테스트·실행 기록은 저장소 밖에 보존하며 현재 CI 테스트와는 별도입니다. 구현과 기존 회귀 테스트는 [적재 서비스](src/main/java/com/taskflow/calendarsync/outbox/CalendarOutboxService.java), [적재 규칙 테스트](src/test/java/com/taskflow/calendarsync/outbox/CalendarOutboxServiceTest.java), [재처리 대상 테스트](src/test/java/com/taskflow/calendarsync/outbox/CalendarOutboxProcessableTest.java), [Worker 테스트](src/test/java/com/taskflow/calendarsync/worker/CalendarOutboxWorkerTest.java)에서 확인할 수 있습니다.
 
 </details>
 
@@ -117,7 +117,7 @@ Outbox 레코드는 5가지 상태(`OutboxStatus`)를 가집니다.
 
 </details>
 
-적재 시점에는 `PENDING` 중간 변경을 합치고, 실제 UPSERT 처리 시점에는 Task의 최신 상태를 다시 읽습니다. 외부 호출 횟수는 Worker 실행 시점과 재시도 여부에 따라 달라집니다. [실제 Calendar 처리](src/main/java/com/taskflow/calendar/integration/googlecalendar/GoogleCalendarServiceImpl.java)
+적재 시점에는 `PENDING` 중간 변경을 합치고, 실제 UPSERT 처리 시점에는 Task의 최신 상태를 다시 읽습니다. 외부 호출 횟수는 Worker 실행 시점과 재시도 여부에 따라 달라집니다. [실제 Calendar 처리](src/main/java/com/taskflow/calendarsync/integration/googlecalendar/GoogleCalendarServiceImpl.java)
 
 ### 우선순위 추천 흐름
 
@@ -129,7 +129,7 @@ Outbox 레코드는 5가지 상태(`OutboxStatus`)를 가집니다.
 <img src="docs/images/task-recommendation-flow.svg" width="900"
 alt="TaskFlow 우선순위 추천 — 수동 생성, 데모 로컬 추천, 선택적 캐시와 LLM 호출"/>
 
-추천 개수는 미완료 Task 수의 30%를 올림한 값이며 최대 5개입니다. Redis 캐시는 `summary.cache.enabled=true`일 때만 사용하고 추천 결과의 TTL은 90초입니다. 기본값은 비활성화입니다. [추천 서비스](src/main/java/com/taskflow/calendar/domain/recommendation/ProjectTaskRecommendationService.java)
+추천 개수는 미완료 Task 수의 30%를 올림한 값이며 최대 5개입니다. Redis 캐시는 `summary.cache.enabled=true`일 때만 사용하고 추천 결과의 TTL은 90초입니다. 기본값은 비활성화입니다. [추천 서비스](src/main/java/com/taskflow/assistant/recommendation/ProjectTaskRecommendationService.java)
 
 </details>
 
@@ -141,13 +141,13 @@ alt="TaskFlow 우선순위 추천 — 수동 생성, 데모 로컬 추천, 선�
 - **Soft Delete** — Calendar 삭제가 비동기로 처리되고 이력 추적이 필요해서 논리 삭제를 씁니다. 현재 복구 UI나 API는 없습니다.
 - **DTO 기반 API** — Entity를 직접 노출하지 않습니다.
 
-Task 상태 전이는 [TaskStatusPolicy](src/main/java/com/taskflow/calendar/domain/task/TaskStatusPolicy.java)에서 검증하고, Outbox의 성공·실패 처리는 [CalendarOutbox](src/main/java/com/taskflow/calendar/domain/outbox/CalendarOutbox.java)의 메서드로 묶습니다.
+Task 상태 전이는 [TaskStatusPolicy](src/main/java/com/taskflow/planning/task/TaskStatusPolicy.java)에서 검증하고, Outbox의 성공·실패 처리는 [CalendarOutbox](src/main/java/com/taskflow/calendarsync/outbox/CalendarOutbox.java)의 메서드로 묶습니다.
 
 ## 세션과 외부 권한
 
 공개 서비스라 지금 요청을 보낸 사람이 누구인지, 그 권한이 언제까지 유효한지를 서버가 단독으로 판정해야 합니다.
 
-Google OAuth 또는 데모 로그인 후 JWT를 HttpOnly 세션 쿠키로 전달하고 상태 변경 요청은 CSRF 토큰으로 보호합니다. 사용자 행의 세션 버전을 매 요청에 대조해 로그아웃과 연결 해제를 즉시 반영합니다. [인증 필터](src/main/java/com/taskflow/security/JwtAuthenticationFilter.java) · [세션 무효화 테스트](src/test/java/com/taskflow/calendar/domain/oauth/SessionInvalidationIntegrationTest.java)
+Google OAuth 또는 데모 로그인 후 JWT를 HttpOnly 세션 쿠키로 전달하고 상태 변경 요청은 CSRF 토큰으로 보호합니다. 사용자 행의 세션 버전을 매 요청에 대조해 로그아웃과 연결 해제를 즉시 반영합니다. [인증 필터](src/main/java/com/taskflow/identity/security/JwtAuthenticationFilter.java) · [세션 무효화 테스트](src/test/java/com/taskflow/identity/oauth/SessionInvalidationIntegrationTest.java)
 
 <details>
 <summary>세션 수명·최소 권한·토큰 보관 상세</summary>
@@ -166,7 +166,7 @@ Google OAuth 또는 데모 로그인 후 JWT를 HttpOnly 세션 쿠키로 전달
 
 </details>
 
-**선택 이유** — 로그아웃 때마다 Google 연결까지 해제하면 재로그인 때 권한 동의를 반복하게 됩니다. 앱 세션과 외부 연결의 수명을 분리하고, DB·백업 유출 시 Google 토큰이 바로 노출되지 않도록 별도 키로 컬럼을 암호화했습니다. [토큰 암호화](src/main/java/com/taskflow/security/EncryptedStringConverter.java)
+**선택 이유** — 로그아웃 때마다 Google 연결까지 해제하면 재로그인 때 권한 동의를 반복하게 됩니다. 앱 세션과 외부 연결의 수명을 분리하고, DB·백업 유출 시 Google 토큰이 바로 노출되지 않도록 별도 키로 컬럼을 암호화했습니다. [토큰 암호화](src/main/java/com/taskflow/identity/security/EncryptedStringConverter.java)
 
 ## 관측과 장애 대응
 

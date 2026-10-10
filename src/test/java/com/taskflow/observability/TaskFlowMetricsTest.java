@@ -3,7 +3,7 @@ package com.taskflow.observability;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.taskflow.calendar.domain.search.exception.TaskSearchGenerationException;
+import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
 import com.taskflow.common.ErrorCode;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusConfig;

@@ -2,19 +2,19 @@ package com.taskflow.demo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.taskflow.calendar.domain.outbox.CalendarOutbox;
-import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
-import com.taskflow.calendar.domain.project.Project;
-import com.taskflow.calendar.domain.project.ProjectRepository;
-import com.taskflow.calendar.domain.task.Task;
-import com.taskflow.calendar.domain.task.TaskChangeType;
-import com.taskflow.calendar.domain.task.TaskHistory;
-import com.taskflow.calendar.domain.task.TaskHistoryRepository;
-import com.taskflow.calendar.domain.task.TaskRepository;
+import com.taskflow.calendarsync.outbox.CalendarOutbox;
+import com.taskflow.calendarsync.outbox.CalendarOutboxRepository;
 import com.taskflow.config.JpaAuditingConfig;
 import com.taskflow.identity.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.identity.user.User;
 import com.taskflow.identity.user.UserRepository;
+import com.taskflow.planning.project.Project;
+import com.taskflow.planning.project.ProjectRepository;
+import com.taskflow.planning.task.Task;
+import com.taskflow.planning.task.TaskChangeType;
+import com.taskflow.planning.task.TaskHistory;
+import com.taskflow.planning.task.TaskHistoryRepository;
+import com.taskflow.planning.task.TaskRepository;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
