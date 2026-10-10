@@ -1,7 +1,10 @@
 package com.taskflow.calendar.domain.project.exception;
 
-public class ProjectNotFoundException extends RuntimeException {
+import com.taskflow.common.ErrorCode;
+import com.taskflow.common.exception.ResourceNotFoundException;
+
+public class ProjectNotFoundException extends ResourceNotFoundException {
     public ProjectNotFoundException(Long projectId) {
-        super("Project not found with id: " + projectId);
+        super(ErrorCode.PROJECT_NOT_FOUND, "Project not found with id: " + projectId);
     }
 }

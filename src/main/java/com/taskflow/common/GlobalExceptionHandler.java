@@ -1,7 +1,5 @@
 package com.taskflow.common;
 
-import com.taskflow.calendar.domain.project.exception.ProjectNotFoundException;
-import com.taskflow.calendar.domain.user.exception.UserNotFoundException;
 import com.taskflow.common.exception.BusinessException;
 import com.taskflow.common.exception.ResourceNotFoundException;
 import com.taskflow.common.exception.UnauthorizedException;
@@ -78,24 +76,6 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR));
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUserNotFound(UserNotFoundException e) {
-
-        log.warn("{}", e.getMessage());
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ErrorCode.USER_NOT_FOUND, e.getMessage()));
-    }
-
-    @ExceptionHandler(ProjectNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleProjectNotFound(ProjectNotFoundException e) {
-
-        log.warn("{}", e.getMessage());
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ErrorCode.PROJECT_NOT_FOUND, e.getMessage()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)

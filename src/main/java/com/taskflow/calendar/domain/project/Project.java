@@ -1,6 +1,6 @@
 package com.taskflow.calendar.domain.project;
 
-import com.taskflow.calendar.domain.user.User;
+import com.taskflow.identity.user.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;

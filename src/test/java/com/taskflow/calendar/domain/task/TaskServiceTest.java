@@ -9,15 +9,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
+import com.taskflow.calendar.domain.project.DemoUsageService;
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.project.ProjectRepository;
 import com.taskflow.calendar.domain.summary.TaskSyncStateResolver;
 import com.taskflow.calendar.domain.task.dto.CreateTaskRequest;
 import com.taskflow.calendar.domain.task.dto.DeleteTaskResponse;
 import com.taskflow.calendar.domain.task.exception.TaskNotFoundException;
-import com.taskflow.calendar.domain.user.DemoUsageService;
-import com.taskflow.calendar.domain.user.User;
-import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.identity.user.User;
+import com.taskflow.identity.user.UserRepository;
 import com.taskflow.observability.TaskFlowMetrics;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -175,7 +175,7 @@ class TaskServiceTest {
         CreateTaskRequest request = new CreateTaskRequest("격리", null, 99L, null, null, false);
 
         assertThrows(
-                com.taskflow.calendar.domain.user.exception.UserNotFoundException.class,
+                com.taskflow.identity.user.exception.UserNotFoundException.class,
                 () -> taskService.createTask(PROJECT_ID, request));
 
         verify(userRepository, never()).findById(99L);

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
-import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.identity.security.SecurityContextHelper;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;

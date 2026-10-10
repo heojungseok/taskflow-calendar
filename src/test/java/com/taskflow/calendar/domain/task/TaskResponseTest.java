@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.task.dto.TaskResponse;
-import com.taskflow.calendar.domain.user.User;
+import com.taskflow.identity.user.User;
 import org.junit.jupiter.api.Test;
 
 class TaskResponseTest {
