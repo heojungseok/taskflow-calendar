@@ -58,7 +58,7 @@ public final class RecommendationPromptTaskSupport {
         if (value == null) {
             return;
         }
-        if (value instanceof String && ((String) value).isBlank()) {
+        if (value instanceof String string && string.isBlank()) {
             return;
         }
         target.put(key, value);

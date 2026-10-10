@@ -171,7 +171,7 @@ public final class SummaryPromptTaskSupport {
             return List.of();
         }
 
-        String[] rawSentences = SENTENCE_SPLIT_PATTERN.split(normalized);
+        String[] rawSentences = SENTENCE_SPLIT_PATTERN.split(normalized, -1);
         List<SentenceCandidate> candidates = new ArrayList<>();
         int index = 0;
         for (String rawSentence : rawSentences) {
@@ -280,7 +280,7 @@ public final class SummaryPromptTaskSupport {
         if (value == null) {
             return;
         }
-        if (value instanceof String && ((String) value).isBlank()) {
+        if (value instanceof String string && string.isBlank()) {
             return;
         }
         target.put(key, value);

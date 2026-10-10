@@ -32,6 +32,7 @@ import java.time.ZoneOffset;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -314,20 +315,11 @@ public class ProjectWeeklySummaryService {
         score += schedulePriority(task, today);
 
         switch (task.getStatus()) {
-            case IN_PROGRESS:
-                score += 30;
-                break;
-            case REQUESTED:
-                score += 20;
-                break;
-            case BLOCKED:
-                score += 10;
-                break;
-            case DONE:
-                score -= 20;
-                break;
-            default:
-                break;
+            case IN_PROGRESS -> score += 30;
+            case REQUESTED -> score += 20;
+            case BLOCKED -> score += 10;
+            case DONE -> score -= 20;
+            default -> {}
         }
 
         if (Boolean.TRUE.equals(task.getCalendarSyncEnabled())) {
@@ -394,7 +386,7 @@ public class ProjectWeeklySummaryService {
             return 0;
         }
 
-        String normalized = description.toLowerCase();
+        String normalized = description.toLowerCase(Locale.ROOT);
         int score = 0;
 
         for (String keyword : HIGH_PRIORITY_DESCRIPTION_KEYWORDS) {

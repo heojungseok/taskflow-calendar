@@ -85,30 +85,16 @@ public class GlobalExceptionHandler {
     }
 
     private HttpStatus determineHttpStatus(ErrorCode errorCode) {
-        switch (errorCode) {
-            case TASK_STATUS_TRANSITION_NOT_ALLOWED:
-            case DEMO_RESOURCE_LIMIT:
-                return HttpStatus.CONFLICT;
-            case DEMO_MUTATION_LIMIT:
-                return HttpStatus.TOO_MANY_REQUESTS;
-            case VALIDATION_ERROR:
-            case SCHEDULE_INVALID:
-            case CALENDAR_SYNC_REQUIRES_DUE_AT:
-                return HttpStatus.BAD_REQUEST;
-            case LLM_RATE_LIMITED_TEMPORARY:
-            case LLM_QUOTA_EXHAUSTED:
-            case LLM_429_UNKNOWN:
-                return HttpStatus.TOO_MANY_REQUESTS;
-            case LLM_API_KEY_MISSING:
-            case LLM_CONFIG_INVALID:
-            case LLM_UPSTREAM_TEMPORARY_FAILURE:
-                return HttpStatus.SERVICE_UNAVAILABLE;
-            case LLM_INVALID_RESPONSE:
-                return HttpStatus.BAD_GATEWAY;
-            case WEEKLY_SUMMARY_FORCE_LIVE_DISABLED:
-                return HttpStatus.FORBIDDEN;
-            default:
-                return HttpStatus.BAD_REQUEST;
-        }
+        return switch (errorCode) {
+            case TASK_STATUS_TRANSITION_NOT_ALLOWED, DEMO_RESOURCE_LIMIT -> HttpStatus.CONFLICT;
+            case DEMO_MUTATION_LIMIT -> HttpStatus.TOO_MANY_REQUESTS;
+            case VALIDATION_ERROR, SCHEDULE_INVALID, CALENDAR_SYNC_REQUIRES_DUE_AT -> HttpStatus.BAD_REQUEST;
+            case LLM_RATE_LIMITED_TEMPORARY, LLM_QUOTA_EXHAUSTED, LLM_429_UNKNOWN -> HttpStatus.TOO_MANY_REQUESTS;
+            case LLM_API_KEY_MISSING, LLM_CONFIG_INVALID, LLM_UPSTREAM_TEMPORARY_FAILURE ->
+                HttpStatus.SERVICE_UNAVAILABLE;
+            case LLM_INVALID_RESPONSE -> HttpStatus.BAD_GATEWAY;
+            case WEEKLY_SUMMARY_FORCE_LIVE_DISABLED -> HttpStatus.FORBIDDEN;
+            default -> HttpStatus.BAD_REQUEST;
+        };
     }
 }

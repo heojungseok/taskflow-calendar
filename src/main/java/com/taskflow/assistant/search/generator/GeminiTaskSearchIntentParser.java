@@ -131,17 +131,19 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
     }
 
     private String systemInstruction() {
-        return "당신은 자연어 Task 검색 질의를 구조화하는 intent parsing 보조자다.\n"
-                + "응답은 반드시 JSON 스키마를 따라라.\n"
-                + "허용된 enum 값만 사용하라.\n"
-                + "검색 결과 설명을 쓰지 말고 질의를 해석한 구조만 반환하라.\n"
-                + "queryType과 relationPolicy는 서버가 다시 정규화하는 참고 힌트일 뿐이므로, 언어적으로만 보수적으로 판단하라.\n"
-                + "genericCompanionRequired는 특정 인물명이 아니라 '누군가와', '누구랑', '같이', '함께', '동행'처럼 동행이 필요하다는 일반 조건이 있을 때만 true로 두어라.\n"
-                + "genericCompanionRequired가 true인 경우 '누군가', '누구', '아무개' 같은 일반 표현은 participantTerms에 넣지 마라.\n"
-                + "사람/장소/행동 조건이 함께 드러나는 복합 질의만 RELATIONAL_SEARCH로 두고, 애매하면 TOPIC_SEARCH를 우선하라.\n"
-                + "막연한 탐색 질의만 BROAD_SEARCH다.\n"
-                + "relationPolicy는 같은 일정 안에서 조건이 함께 성립해야 함이 분명할 때만 PREFER_ALL로 두고, 그 외에는 ALLOW_PARTIAL로 둬라.\n"
-                + "suggestedQueries는 질의가 애매할 때 더 구체적인 재검색 문구를 최대 3개 작성하라.";
+        return """
+               당신은 자연어 Task 검색 질의를 구조화하는 intent parsing 보조자다.
+               응답은 반드시 JSON 스키마를 따라라.
+               허용된 enum 값만 사용하라.
+               검색 결과 설명을 쓰지 말고 질의를 해석한 구조만 반환하라.
+               queryType과 relationPolicy는 서버가 다시 정규화하는 참고 힌트일 뿐이므로, 언어적으로만 보수적으로 판단하라.
+               genericCompanionRequired는 특정 인물명이 아니라 '누군가와', '누구랑', '같이', '함께', '동행'처럼 동행이 필요하다는 일반 조건이 있을 때만 true로 두어라.
+               genericCompanionRequired가 true인 경우 '누군가', '누구', '아무개' 같은 일반 표현은 participantTerms에 넣지 마라.
+               사람/장소/행동 조건이 함께 드러나는 복합 질의만 RELATIONAL_SEARCH로 두고, 애매하면 TOPIC_SEARCH를 우선하라.
+               막연한 탐색 질의만 BROAD_SEARCH다.
+               relationPolicy는 같은 일정 안에서 조건이 함께 성립해야 함이 분명할 때만 PREFER_ALL로 두고, 그 외에는 ALLOW_PARTIAL로 둬라.
+               suggestedQueries는 질의가 애매할 때 더 구체적인 재검색 문구를 최대 3개 작성하라.\
+               """;
     }
 
     private String userPrompt(String query) {
@@ -405,10 +407,12 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
             return statuses;
         }
         for (JsonNode item : node) {
-            try {
-                statuses.add(TaskStatus.valueOf(item.asText().trim().toUpperCase(Locale.ROOT)));
-            } catch (IllegalArgumentException ignored) {
-            }
+            // 모델이 모르는 상태값을 주면 버린다
+            String name = item.asText().trim().toUpperCase(Locale.ROOT);
+            Arrays.stream(TaskStatus.values())
+                    .filter(status -> status.name().equals(name))
+                    .findFirst()
+                    .ifPresent(statuses::add);
         }
         return statuses;
     }

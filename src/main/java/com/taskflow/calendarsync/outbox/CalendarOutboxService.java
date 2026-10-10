@@ -249,21 +249,16 @@ public class CalendarOutboxService {
     private LocalDateTime calculateNextRetry(int retryCount) {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
-        switch (retryCount) {
-            case 0:
-                return now.plusMinutes(1);
-            case 1:
-                return now.plusMinutes(5);
-            case 2:
-                return now.plusMinutes(15);
-            case 3:
-                return now.plusHours(1);
-            case 4:
-                return now.plusHours(6);
-            case 5:
-                return now.plusHours(24);
-            default: // maxRetry 초과
-                return null;
-        }
+        return switch (retryCount) {
+            case 0 -> now.plusMinutes(1);
+            case 1 -> now.plusMinutes(5);
+            case 2 -> now.plusMinutes(15);
+            case 3 -> now.plusHours(1);
+            case 4 -> now.plusHours(6);
+            case 5 -> now.plusHours(24);
+            default ->
+                // maxRetry 초과
+                null;
+        };
     }
 }

@@ -78,7 +78,7 @@ public class User {
     public boolean isSessionActive(int tokenVersion, Instant now) {
         return sessionVersion == tokenVersion
                 && (provider == Provider.GOOGLE
-                        || provider == Provider.DEMO && expiresAt != null && expiresAt.isAfter(now));
+                        || (provider == Provider.DEMO && expiresAt != null && expiresAt.isAfter(now)));
     }
 
     public void invalidateSessions() {
