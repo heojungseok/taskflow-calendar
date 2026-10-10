@@ -4,6 +4,7 @@ import com.taskflow.calendar.domain.project.Project;
 import com.taskflow.calendar.domain.user.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -133,7 +134,7 @@ public class Task {
      */
     public void markAsDeleted() {
         this.deleted = true;
-        this.deletedAt = LocalDateTime.now();
+        this.deletedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     /**

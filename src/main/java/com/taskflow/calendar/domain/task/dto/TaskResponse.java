@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.taskflow.calendar.domain.summary.TaskSyncState;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
+import com.taskflow.common.TimeZones;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -39,11 +41,8 @@ public class TaskResponse {
      */
     private final TaskSyncState syncState;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private final LocalDateTime createdAt;
-
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private final LocalDateTime updatedAt;
+    private final Instant createdAt;
+    private final Instant updatedAt;
 
     private TaskResponse(
             Long id,
@@ -58,8 +57,8 @@ public class TaskResponse {
             Boolean calendarSyncEnabled,
             String calendarEventId,
             TaskSyncState syncState,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt) {
+            Instant createdAt,
+            Instant updatedAt) {
         this.id = id;
         this.projectId = projectId;
         this.title = title;
@@ -100,7 +99,7 @@ public class TaskResponse {
                 task.getCalendarSyncEnabled(),
                 task.getCalendarEventId(),
                 syncState,
-                task.getCreatedAt(),
-                task.getUpdatedAt());
+                TimeZones.toUtcInstant(task.getCreatedAt()),
+                TimeZones.toUtcInstant(task.getUpdatedAt()));
     }
 }

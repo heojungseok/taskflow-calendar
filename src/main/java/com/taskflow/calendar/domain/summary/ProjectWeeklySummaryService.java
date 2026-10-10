@@ -17,14 +17,17 @@ import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.common.TimeZones;
 import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.security.SecurityContextHelper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.List;
@@ -73,10 +76,10 @@ public class ProjectWeeklySummaryService {
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         List<Task> allTasks = taskRepository.findAllByProjectIdAndDeletedFalse(projectId);
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(TimeZones.SERVICE_ZONE);
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate weekEnd = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
-        LocalDateTime generatedAt = LocalDateTime.now();
+        Instant generatedAt = Instant.now();
         List<SummaryTaskSnapshot> prioritizedTasks = taskSyncStateResolver.resolveAll(allTasks).stream()
                 .sorted(taskPriorityComparator(today))
                 .collect(Collectors.toList());
@@ -154,7 +157,7 @@ public class ProjectWeeklySummaryService {
             Project project,
             LocalDate weekStart,
             LocalDate weekEnd,
-            LocalDateTime generatedAt,
+            Instant generatedAt,
             List<SummaryTaskSnapshot> syncedTasks,
             List<SummaryTaskSnapshot> unsyncedTasks) {
         return WeeklySummaryResponse.of(
@@ -191,7 +194,7 @@ public class ProjectWeeklySummaryService {
             Project project,
             LocalDate weekStart,
             LocalDate weekEnd,
-            LocalDateTime generatedAt,
+            Instant generatedAt,
             List<SummaryTaskSnapshot> syncedTasks,
             List<SummaryTaskSnapshot> unsyncedTasks,
             WeeklySummaryCacheStatus cacheStatus) {
@@ -417,7 +420,7 @@ public class ProjectWeeklySummaryService {
             return 0;
         }
 
-        LocalDateTime threshold = LocalDateTime.now().minusHours(RECENT_UPDATE_HOURS);
+        LocalDateTime threshold = LocalDateTime.now(ZoneOffset.UTC).minusHours(RECENT_UPDATE_HOURS);
         if (task.getUpdatedAt().isAfter(threshold)) {
             return 25;
         }
@@ -473,11 +476,11 @@ public class ProjectWeeklySummaryService {
 
     private String exactCacheKey(
             Long projectId, LocalDate weekStart, LocalDate weekEnd, String modelName, String fingerprint) {
-        return "weekly-summary:v1:exact:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName + ":"
+        return "weekly-summary:v2:exact:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName + ":"
                 + fingerprint;
     }
 
     private String latestCacheKey(Long projectId, LocalDate weekStart, LocalDate weekEnd, String modelName) {
-        return "weekly-summary:v1:latest:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName;
+        return "weekly-summary:v2:latest:" + projectId + ":" + weekStart + ":" + weekEnd + ":" + modelName;
     }
 }

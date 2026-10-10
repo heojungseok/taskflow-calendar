@@ -10,6 +10,7 @@ import com.taskflow.calendar.domain.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.calendar.domain.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.common.ErrorCode;
+import com.taskflow.common.TimeZones;
 import com.taskflow.config.GeminiSummaryProperties;
 import com.taskflow.observability.TaskFlowMetrics;
 import java.io.IOException;
@@ -254,7 +255,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("projectName", project.getName());
-        payload.put("today", LocalDate.now());
+        payload.put("today", LocalDate.now(TimeZones.SERVICE_ZONE));
         payload.put("weekStart", weekStart);
         payload.put("weekEnd", weekEnd);
         payload.put(

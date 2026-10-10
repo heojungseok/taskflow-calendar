@@ -6,6 +6,7 @@ import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.security.SecurityContextHelper;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -119,7 +120,7 @@ public class CalendarOutboxService {
 
     @Transactional
     public boolean claimProcessing(Long outboxId, LocalDateTime leaseTimeout) {
-        int updated = outboxRepository.claimForProcessing(outboxId, LocalDateTime.now(), leaseTimeout);
+        int updated = outboxRepository.claimForProcessing(outboxId, LocalDateTime.now(ZoneOffset.UTC), leaseTimeout);
         return updated == 1; // ✅ 선점 성공 여부 명확!
     }
 
@@ -196,7 +197,7 @@ public class CalendarOutboxService {
         payload.put("event", event);
 
         Map<String, Object> meta = new HashMap<>();
-        meta.put("requestedAt", LocalDateTime.now().toString());
+        meta.put("requestedAt", LocalDateTime.now(ZoneOffset.UTC).toString());
         meta.put("requestedByUserId", SecurityContextHelper.getCurrentUserId());
         payload.put("meta", meta);
 
@@ -219,7 +220,7 @@ public class CalendarOutboxService {
 
         // meta는 UPSERT와 동일
         Map<String, Object> meta = new HashMap<>();
-        meta.put("requestedAt", LocalDateTime.now().toString());
+        meta.put("requestedAt", LocalDateTime.now(ZoneOffset.UTC).toString());
         meta.put("requestedByUserId", SecurityContextHelper.getCurrentUserId());
         payload.put("meta", meta);
 
@@ -246,7 +247,7 @@ public class CalendarOutboxService {
     }
 
     private LocalDateTime calculateNextRetry(int retryCount) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
         switch (retryCount) {
             case 0:

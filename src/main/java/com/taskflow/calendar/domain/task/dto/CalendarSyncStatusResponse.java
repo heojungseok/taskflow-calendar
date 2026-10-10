@@ -1,11 +1,11 @@
 package com.taskflow.calendar.domain.task.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.OutboxOpType;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
 import com.taskflow.calendar.domain.task.Task;
-import java.time.LocalDateTime;
+import com.taskflow.common.TimeZones;
+import java.time.Instant;
 import lombok.Getter;
 
 /**
@@ -21,12 +21,8 @@ public class CalendarSyncStatusResponse {
     private final OutboxStatus lastOutboxStatus;
     private final OutboxOpType lastOutboxOpType;
     private final String lastOutboxError;
-
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private final LocalDateTime lastSyncedAt;
-
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private final LocalDateTime lastOutboxCreatedAt;
+    private final Instant lastSyncedAt;
+    private final Instant lastOutboxCreatedAt;
 
     private CalendarSyncStatusResponse(
             Long taskId,
@@ -35,8 +31,8 @@ public class CalendarSyncStatusResponse {
             OutboxStatus lastOutboxStatus,
             OutboxOpType lastOutboxOpType,
             String lastOutboxError,
-            LocalDateTime lastSyncedAt,
-            LocalDateTime lastOutboxCreatedAt) {
+            Instant lastSyncedAt,
+            Instant lastOutboxCreatedAt) {
         this.taskId = taskId;
         this.calendarSyncEnabled = calendarSyncEnabled;
         this.calendarEventId = calendarEventId;
@@ -62,7 +58,7 @@ public class CalendarSyncStatusResponse {
                 latestOutbox != null ? latestOutbox.getStatus() : null,
                 latestOutbox != null ? latestOutbox.getOpType() : null,
                 latestOutbox != null ? latestOutbox.getLastError() : null,
-                lastSuccessOutbox != null ? lastSuccessOutbox.getUpdatedAt() : null,
-                latestOutbox != null ? latestOutbox.getCreatedAt() : null);
+                lastSuccessOutbox != null ? TimeZones.toUtcInstant(lastSuccessOutbox.getUpdatedAt()) : null,
+                latestOutbox != null ? TimeZones.toUtcInstant(latestOutbox.getCreatedAt()) : null);
     }
 }

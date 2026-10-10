@@ -26,6 +26,7 @@ import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.GeminiRecommendationProperties;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -189,7 +190,7 @@ class ProjectTaskRecommendationServiceTest {
         when(taskRecommendationCacheService.isEnabled()).thenReturn(true);
         when(taskRecommendationCacheService.find(any()))
                 .thenReturn(Optional.of(ProjectTaskRecommendationResponse.of(
-                        project, LocalDateTime.now(), TaskRecommendationCacheStatus.LIVE, 1, 1, List.of())));
+                        project, Instant.now(), TaskRecommendationCacheStatus.LIVE, 1, 1, List.of())));
 
         ProjectTaskRecommendationResponse response = service.getRecommendations(1L);
 

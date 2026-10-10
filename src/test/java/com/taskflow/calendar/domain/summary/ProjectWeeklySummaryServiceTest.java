@@ -26,6 +26,7 @@ import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.user.UserRepository;
 import com.taskflow.config.GeminiSummaryProperties;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -335,7 +336,7 @@ class ProjectWeeklySummaryServiceTest {
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(cachedTask));
         when(taskSyncStateResolver.resolve(cachedTask)).thenReturn(snapshot(cachedTask, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
-        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:"))))
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:exact:"))))
                 .thenReturn(Optional.of(cachedResponse));
 
         WeeklySummaryResponse response = service.generateWeeklySummary(1L);
@@ -369,7 +370,7 @@ class ProjectWeeklySummaryServiceTest {
 
         assertEquals(WeeklySummaryCacheStatus.LIVE, response.getCacheStatus());
         verify(weeklySummaryCacheService, never())
-                .find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:")));
+                .find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:exact:")));
         verify(weeklySummaryGenerator)
                 .generate(
                         eq(project),
@@ -392,9 +393,9 @@ class ProjectWeeklySummaryServiceTest {
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
-        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:"))))
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:exact:"))))
                 .thenReturn(Optional.empty());
-        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:latest:"))))
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:latest:"))))
                 .thenReturn(Optional.of(cachedResponse));
         when(weeklySummaryGenerator.generate(
                         eq(project),
@@ -425,9 +426,9 @@ class ProjectWeeklySummaryServiceTest {
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
-        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:"))))
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:exact:"))))
                 .thenReturn(Optional.empty());
-        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:latest:"))))
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:latest:"))))
                 .thenReturn(Optional.of(cachedResponse));
         when(weeklySummaryGenerator.generate(
                         eq(project),
@@ -457,9 +458,9 @@ class ProjectWeeklySummaryServiceTest {
         when(taskRepository.findAllByProjectIdAndDeletedFalse(1L)).thenReturn(List.of(task));
         when(taskSyncStateResolver.resolve(task)).thenReturn(snapshot(task, TaskSyncState.SYNC_DISABLED));
         when(weeklySummaryCacheService.isEnabled()).thenReturn(true);
-        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:exact:"))))
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:exact:"))))
                 .thenReturn(Optional.empty());
-        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:latest:"))))
+        when(weeklySummaryCacheService.find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:latest:"))))
                 .thenReturn(Optional.of(cachedResponse));
         when(weeklySummaryGenerator.generate(
                         eq(project),
@@ -502,7 +503,7 @@ class ProjectWeeklySummaryServiceTest {
 
         assertThrows(WeeklySummaryGenerationException.class, () -> service.generateWeeklySummary(1L, true));
         verify(weeklySummaryCacheService, never())
-                .find(argThat(key -> key != null && key.startsWith("weekly-summary:v1:latest:")));
+                .find(argThat(key -> key != null && key.startsWith("weekly-summary:v2:latest:")));
     }
 
     private Task task(
@@ -526,7 +527,7 @@ class ProjectWeeklySummaryServiceTest {
                 project,
                 java.time.LocalDate.now(),
                 java.time.LocalDate.now().plusDays(6),
-                LocalDateTime.now().minusHours(1),
+                Instant.now().minusSeconds(3600),
                 cacheStatus,
                 1,
                 0,

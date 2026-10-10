@@ -11,6 +11,7 @@ import com.google.api.services.calendar.model.EventDateTime;
 import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
 import com.taskflow.calendar.domain.oauth.OAuthGoogleToken;
 import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
+import com.taskflow.common.TimeZones;
 import com.taskflow.common.exception.NonRetryableIntegrationException;
 import com.taskflow.common.exception.RetryableIntegrationException;
 import java.io.IOException;
@@ -26,7 +27,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class GoogleCalendarClientImpl implements GoogleCalendarClient {
 
-    private static final ZoneId CALENDAR_ZONE = ZoneId.of("Asia/Seoul");
+    private static final ZoneId CALENDAR_ZONE = TimeZones.SERVICE_ZONE;
 
     private final OAuthGoogleTokenRepository repository;
     private final GoogleOAuthService googleOAuthService;

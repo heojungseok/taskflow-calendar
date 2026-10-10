@@ -3,6 +3,7 @@ package com.taskflow.calendar.domain.oauth;
 import com.taskflow.security.EncryptedStringConverter;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,8 +51,8 @@ public class OAuthGoogleToken {
         token.refreshToken = refreshToken;
         token.expiryAt = expiryAt;
         token.scope = scope;
-        token.createdAt = LocalDateTime.now();
-        token.updatedAt = LocalDateTime.now();
+        token.createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        token.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
         return token;
     }
 
@@ -59,7 +60,7 @@ public class OAuthGoogleToken {
     public void updateAccessToken(String newAccessToken, LocalDateTime newExpiryAt) {
         this.accessToken = newAccessToken;
         this.expiryAt = newExpiryAt;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     // ✅ 2. Full 갱신 (refresh_token/scope도 바뀔 수 있음)
@@ -76,15 +77,15 @@ public class OAuthGoogleToken {
             this.scope = newScope;
         }
 
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     // ✅ 3. 만료 확인
     public boolean isExpired() {
-        return expiryAt.isBefore(LocalDateTime.now().plusSeconds(60));
+        return expiryAt.isBefore(LocalDateTime.now(ZoneOffset.UTC).plusSeconds(60));
     }
 
     public boolean isExpiringSoon(int minutesBefore) {
-        return LocalDateTime.now().plusMinutes(minutesBefore).isAfter(expiryAt);
+        return LocalDateTime.now(ZoneOffset.UTC).plusMinutes(minutesBefore).isAfter(expiryAt);
     }
 }

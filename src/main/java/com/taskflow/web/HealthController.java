@@ -3,6 +3,7 @@ package com.taskflow.web;
 import com.taskflow.common.ApiResponse;
 import com.taskflow.common.exception.ValidationException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +19,7 @@ public class HealthController {
     public ApiResponse<Map<String, Object>> health() {
         Map<String, Object> data = new HashMap<>();
         data.put("status", "ok");
-        data.put("timestamp", LocalDateTime.now());
+        data.put("timestamp", LocalDateTime.now(ZoneOffset.UTC));
         return ApiResponse.success(data);
     }
 

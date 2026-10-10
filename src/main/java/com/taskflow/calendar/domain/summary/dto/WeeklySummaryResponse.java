@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.taskflow.calendar.domain.project.Project;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public class WeeklySummaryResponse {
 
@@ -18,8 +18,7 @@ public class WeeklySummaryResponse {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private final LocalDate weekEnd;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private final LocalDateTime generatedAt;
+    private final Instant generatedAt;
 
     private final WeeklySummaryCacheStatus cacheStatus;
     private final int totalTaskCount;
@@ -34,7 +33,7 @@ public class WeeklySummaryResponse {
             @JsonProperty("projectName") String projectName,
             @JsonProperty("weekStart") LocalDate weekStart,
             @JsonProperty("weekEnd") LocalDate weekEnd,
-            @JsonProperty("generatedAt") LocalDateTime generatedAt,
+            @JsonProperty("generatedAt") Instant generatedAt,
             @JsonProperty("cacheStatus") WeeklySummaryCacheStatus cacheStatus,
             @JsonProperty("totalTaskCount") int totalTaskCount,
             @JsonProperty("syncedTaskCount") int syncedTaskCount,
@@ -58,7 +57,7 @@ public class WeeklySummaryResponse {
             Project project,
             LocalDate weekStart,
             LocalDate weekEnd,
-            LocalDateTime generatedAt,
+            Instant generatedAt,
             WeeklySummaryCacheStatus cacheStatus,
             int totalTaskCount,
             int syncedTaskCount,
@@ -110,7 +109,7 @@ public class WeeklySummaryResponse {
         return weekEnd;
     }
 
-    public LocalDateTime getGeneratedAt() {
+    public Instant getGeneratedAt() {
         return generatedAt;
     }
 

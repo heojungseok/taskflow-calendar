@@ -4,8 +4,10 @@ import com.taskflow.calendar.domain.outbox.OutboxStatus;
 import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
 import com.taskflow.calendar.domain.task.Task;
 import com.taskflow.calendar.domain.task.TaskStatus;
+import com.taskflow.common.TimeZones;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -241,12 +243,12 @@ public final class SummaryPromptTaskSupport {
         if (task.getUpdatedAt() == null) {
             return false;
         }
-        return task.getUpdatedAt().isAfter(LocalDateTime.now().minusHours(RECENT_UPDATE_HOURS));
+        return task.getUpdatedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusHours(RECENT_UPDATE_HOURS));
     }
 
     private boolean isOverdue(Task task) {
         return task.getDueAt() != null
-                && task.getDueAt().toLocalDate().isBefore(LocalDate.now())
+                && task.getDueAt().toLocalDate().isBefore(LocalDate.now(TimeZones.SERVICE_ZONE))
                 && task.getStatus() != TaskStatus.DONE;
     }
 

@@ -2,7 +2,8 @@ package com.taskflow.calendar.domain.task.dto;
 
 import com.taskflow.calendar.domain.task.TaskChangeType;
 import com.taskflow.calendar.domain.task.TaskHistory;
-import java.time.LocalDateTime;
+import com.taskflow.common.TimeZones;
+import java.time.Instant;
 import lombok.Getter;
 
 /**
@@ -15,14 +16,14 @@ public class TaskHistoryResponse {
     private String beforeValue;
     private String afterValue;
     private String changedByUserName; // User의 이름
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     private TaskHistoryResponse(
             TaskChangeType changeType,
             String beforeValue,
             String afterValue,
             String changedByUserName,
-            LocalDateTime createdAt) {
+            Instant createdAt) {
         this.changeType = changeType;
         this.beforeValue = beforeValue;
         this.afterValue = afterValue;
@@ -36,6 +37,6 @@ public class TaskHistoryResponse {
                 history.getBeforeValue(),
                 history.getAfterValue(),
                 history.getChangedByUser().getName(),
-                history.getCreatedAt());
+                TimeZones.toUtcInstant(history.getCreatedAt()));
     }
 }
