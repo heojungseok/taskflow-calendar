@@ -18,13 +18,16 @@ import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.common.TimeZones;
 import com.taskflow.config.GeminiRecommendationProperties;
 import com.taskflow.security.SecurityContextHelper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -43,7 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ProjectTaskRecommendationService {
 
-    private static final String CACHE_KEY_VERSION = "v4";
+    private static final String CACHE_KEY_VERSION = "v5";
     private static final int MAX_CANDIDATE_COUNT = 8;
     private static final int MAX_RECOMMENDATION_COUNT = 5;
     private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
@@ -67,8 +70,8 @@ public class ProjectTaskRecommendationService {
                 .map(user -> user.getProvider() == Provider.DEMO)
                 .orElse(false);
 
-        LocalDate today = LocalDate.now();
-        LocalDateTime generatedAt = LocalDateTime.now();
+        LocalDate today = LocalDate.now(TimeZones.SERVICE_ZONE);
+        Instant generatedAt = Instant.now();
         List<Task> eligibleTasks = taskRepository.findAllByProjectIdAndDeletedFalse(projectId).stream()
                 .filter(task -> task.getStatus() != TaskStatus.DONE)
                 .collect(Collectors.toList());
@@ -130,13 +133,13 @@ public class ProjectTaskRecommendationService {
 
     private ProjectTaskRecommendationResponse buildResponse(
             Project project,
-            LocalDateTime generatedAt,
+            Instant generatedAt,
             int totalEligibleTaskCount,
             List<SummaryTaskSnapshot> candidates,
             List<TaskRecommendationItemResult> generatedItems) {
         Map<Long, SummaryTaskSnapshot> candidateMap = new LinkedHashMap<>();
         Map<Long, Integer> candidateScoreMap = new LinkedHashMap<>();
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(TimeZones.SERVICE_ZONE);
         for (SummaryTaskSnapshot candidate : candidates) {
             Long taskId = candidate.getTask().getId();
             candidateMap.put(taskId, candidate);
@@ -262,7 +265,7 @@ public class ProjectTaskRecommendationService {
         if (task.getUpdatedAt() == null) {
             return 0;
         }
-        if (task.getUpdatedAt().isAfter(LocalDateTime.now().minusHours(RECENT_UPDATE_HOURS))) {
+        if (task.getUpdatedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusHours(RECENT_UPDATE_HOURS))) {
             return 20;
         }
         return 0;

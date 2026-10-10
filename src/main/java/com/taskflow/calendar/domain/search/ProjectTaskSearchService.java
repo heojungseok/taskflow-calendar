@@ -13,6 +13,7 @@ import com.taskflow.calendar.domain.task.TaskRepository;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.user.Provider;
 import com.taskflow.calendar.domain.user.UserRepository;
+import com.taskflow.common.TimeZones;
 import com.taskflow.security.SecurityContextHelper;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -969,7 +970,7 @@ public class ProjectTaskSearchService {
 
     private TimeScore timeScore(SearchTimeIntent timeIntent, Task task) {
         LocalDateTime dueAt = task.getDueAt();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(TimeZones.SERVICE_ZONE);
         switch (timeIntent) {
             case TODAY:
                 return timeWindowScore(dueAt, now.toLocalDate(), now.toLocalDate(), true);
@@ -1119,7 +1120,11 @@ public class ProjectTaskSearchService {
         LocalDateTime dueAt = task.getDueAt();
         switch (priorityIntent) {
             case URGENT:
-                return dueAt != null && dueAt.isBefore(LocalDateTime.now().plusDays(2)) ? PRIORITY_MATCH_BOOST : 0;
+                return dueAt != null
+                                && dueAt.isBefore(LocalDateTime.now(TimeZones.SERVICE_ZONE)
+                                        .plusDays(2))
+                        ? PRIORITY_MATCH_BOOST
+                        : 0;
             case IMPORTANT:
                 return task.getStatus() == TaskStatus.BLOCKED || task.getStatus() == TaskStatus.IN_PROGRESS
                         ? PRIORITY_MATCH_BOOST
@@ -1127,7 +1132,9 @@ public class ProjectTaskSearchService {
             case MUST_DO:
                 return task.getStatus() != TaskStatus.DONE ? PRIORITY_MATCH_BOOST : 0;
             case DEFERRED:
-                return dueAt != null && dueAt.isBefore(LocalDateTime.now()) ? PRIORITY_MATCH_BOOST : 0;
+                return dueAt != null && dueAt.isBefore(LocalDateTime.now(TimeZones.SERVICE_ZONE))
+                        ? PRIORITY_MATCH_BOOST
+                        : 0;
             case NONE:
             default:
                 return 0;

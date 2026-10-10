@@ -4,6 +4,7 @@ import com.taskflow.config.GeminiSearchProperties;
 import jakarta.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -125,7 +126,7 @@ public class TaskSearchEmbeddingStore {
                     sourceText,
                     textHash,
                     toVectorLiteral(embedding),
-                    Timestamp.valueOf(LocalDateTime.now()));
+                    Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
         } catch (DataAccessException e) {
             available.set(false);
             log.warn(

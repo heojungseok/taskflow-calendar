@@ -12,6 +12,7 @@ import com.taskflow.common.exception.RetryableIntegrationException;
 import com.taskflow.observability.TaskFlowMetrics;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,7 +56,7 @@ public class CalendarOutboxWorker {
 
     void pollAndProcess() {
         try {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
             LocalDateTime leaseTimeout = now.minusMinutes(OutboxPolicy.LEASE_TIMEOUT_MINUTES.value());
 
             log.debug("[Worker] Polling at {}, leaseTimeout={}", now, leaseTimeout);

@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -126,7 +127,7 @@ public class GoogleOAuthService {
             String scope = response.getScope();
 
             // 만료 시각 계산
-            LocalDateTime expiryAt = LocalDateTime.now().plusSeconds(expiresInSeconds);
+            LocalDateTime expiryAt = LocalDateTime.now(ZoneOffset.UTC).plusSeconds(expiresInSeconds);
 
             log.info("Token details. expiresIn={}s, expiryAt={}, scope={}", expiresInSeconds, expiryAt, scope);
 
@@ -181,7 +182,8 @@ public class GoogleOAuthService {
 
             // 새 토큰으로 업데이트 (낙관적 락 활용)
             token.updateAccessToken(
-                    response.getAccessToken(), LocalDateTime.now().plusSeconds(response.getExpiresInSeconds()));
+                    response.getAccessToken(),
+                    LocalDateTime.now(ZoneOffset.UTC).plusSeconds(response.getExpiresInSeconds()));
 
             tokenRepository.save(token);
         } catch (OptimisticLockingFailureException e) {
@@ -317,7 +319,7 @@ public class GoogleOAuthService {
      * OAuthGoogleToken 저장/업데이트 (공통 로직)
      */
     private void saveOrUpdateToken(Long userId, GoogleOAuthResult result) {
-        LocalDateTime expiryAt = LocalDateTime.now().plusSeconds(result.getExpiresInSeconds());
+        LocalDateTime expiryAt = LocalDateTime.now(ZoneOffset.UTC).plusSeconds(result.getExpiresInSeconds());
         Optional<OAuthGoogleToken> existingToken = tokenRepository.findByUserId(userId);
 
         if (existingToken.isPresent()) {

@@ -1,14 +1,14 @@
 package com.taskflow.calendar.domain.recommendation.dto;
 
 import com.taskflow.calendar.domain.project.Project;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public class ProjectTaskRecommendationResponse {
 
     private final Long projectId;
     private final String projectName;
-    private final LocalDateTime generatedAt;
+    private final Instant generatedAt;
     private final TaskRecommendationCacheStatus cacheStatus;
     private final int totalEligibleTaskCount;
     private final int candidateCount;
@@ -18,7 +18,7 @@ public class ProjectTaskRecommendationResponse {
     private ProjectTaskRecommendationResponse(
             Long projectId,
             String projectName,
-            LocalDateTime generatedAt,
+            Instant generatedAt,
             TaskRecommendationCacheStatus cacheStatus,
             int totalEligibleTaskCount,
             int candidateCount,
@@ -36,7 +36,7 @@ public class ProjectTaskRecommendationResponse {
 
     public static ProjectTaskRecommendationResponse of(
             Project project,
-            LocalDateTime generatedAt,
+            Instant generatedAt,
             TaskRecommendationCacheStatus cacheStatus,
             int totalEligibleTaskCount,
             int candidateCount,
@@ -72,7 +72,7 @@ public class ProjectTaskRecommendationResponse {
         return projectName;
     }
 
-    public LocalDateTime getGeneratedAt() {
+    public Instant getGeneratedAt() {
         return generatedAt;
     }
 

@@ -4,6 +4,7 @@ import com.taskflow.calendar.domain.summary.SummaryTaskSnapshot;
 import com.taskflow.calendar.domain.summary.generator.SummaryPromptTaskSupport;
 import com.taskflow.calendar.domain.task.Task;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public final class RecommendationPromptTaskSupport {
         if (task.getUpdatedAt() == null) {
             return false;
         }
-        return task.getUpdatedAt().isAfter(LocalDateTime.now().minusHours(RECENT_UPDATE_HOURS));
+        return task.getUpdatedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusHours(RECENT_UPDATE_HOURS));
     }
 
     private void putIfPresent(Map<String, Object> target, String key, Object value) {

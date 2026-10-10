@@ -3,7 +3,8 @@ package com.taskflow.calendar.domain.outbox.dto;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.OutboxOpType;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
-import java.time.LocalDateTime;
+import com.taskflow.common.TimeZones;
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -21,11 +22,11 @@ public class OutboxResponse {
     private OutboxOpType opType;
     private OutboxStatus status;
     private int retryCount;
-    private LocalDateTime nextRetryAt;
+    private Instant nextRetryAt;
     private String lastError;
     private String payload;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public static OutboxResponse from(CalendarOutbox outbox) {
         return OutboxResponse.builder()
@@ -34,11 +35,11 @@ public class OutboxResponse {
                 .opType(outbox.getOpType())
                 .status(outbox.getStatus())
                 .retryCount(outbox.getRetryCount())
-                .nextRetryAt(outbox.getNextRetryAt())
+                .nextRetryAt(TimeZones.toUtcInstant(outbox.getNextRetryAt()))
                 .lastError(outbox.getLastError())
                 .payload(outbox.getPayload())
-                .createdAt(outbox.getCreatedAt())
-                .updatedAt(outbox.getUpdatedAt())
+                .createdAt(TimeZones.toUtcInstant(outbox.getCreatedAt()))
+                .updatedAt(TimeZones.toUtcInstant(outbox.getUpdatedAt()))
                 .build();
     }
 }
