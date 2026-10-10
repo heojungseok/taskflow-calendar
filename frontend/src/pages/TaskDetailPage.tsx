@@ -127,7 +127,14 @@ export default function TaskDetailPage() {
 
   const updateMutation = useMutation({
     mutationFn: (d: TaskUpdateRequest) => tasksApi.updateTask(tid, d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['task', tid] }); queryClient.invalidateQueries({ queryKey: ['task-sync', tid] }); setIsEditing(false); },
+    // 편집 폼을 먼저 닫으면 재조회 전 이전 값이 잠깐 보였다
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['task', tid] }),
+        queryClient.invalidateQueries({ queryKey: ['task-sync', tid] }),
+      ]);
+      setIsEditing(false);
+    },
   });
 
   const changeStatusMutation = useMutation({
