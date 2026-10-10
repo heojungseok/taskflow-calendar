@@ -738,11 +738,13 @@ function TaskDetailModal({ taskId, onClose, onTaskUpdated, onStatusChange, onDel
 
   const updateMutation = useMutation({
     mutationFn: (payload: TaskUpdateRequest) => tasksApi.updateTask(taskId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['task-history', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['task-sync', taskId] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+        queryClient.invalidateQueries({ queryKey: ['task', taskId] }),
+        queryClient.invalidateQueries({ queryKey: ['task-history', taskId] }),
+        queryClient.invalidateQueries({ queryKey: ['task-sync', taskId] }),
+      ]);
       onTaskUpdated();
       setIsEditing(false);
     },
@@ -1045,10 +1047,12 @@ export default function TaskListPage() {
   const [isRecommendationOutdated, setIsRecommendationOutdated] = useState(false);
 
   const { data: project } = useQuery({ queryKey: ['project', pid], queryFn: () => projectsApi.getProject(pid), enabled: !!pid });
-  const { data: tasks, isLoading, isError } = useQuery({
+  const { data: tasks, isLoading, isError, isPlaceholderData } = useQuery({
     queryKey: ['tasks', pid, statusFilter],
     queryFn: () => tasksApi.getTasks(pid, statusFilter ? { status: statusFilter } : undefined),
     enabled: !!pid,
+    // 필터를 처음 고르면 캐시가 없어 페이지 전체가 로딩 화면으로 바뀌었다. 같은 프로젝트면 이전 목록을 흐리게 유지한다.
+    placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === pid ? previous : undefined),
     // 대기 중인 건이 남아 있는 동안만 폴링한다. 다 끝나면 멈춘다.
     refetchInterval: (query) => (hasTaskSyncInFlight(query.state.data) ? SYNC_POLL_INTERVAL_MS : false),
   });
@@ -1107,8 +1111,9 @@ export default function TaskListPage() {
 
   const createMutation = useMutation({
     mutationFn: (d: TaskCreateRequest) => tasksApi.createTask(pid, d),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
+    // 모달을 먼저 닫으면 새 카드가 재조회 왕복만큼 늦게 나타났다. 목록을 받은 뒤 닫는다.
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
       markRecommendationOutdated();
       if (summary) {
         setShouldAutoRefreshSummary(true);
@@ -1122,11 +1127,13 @@ export default function TaskListPage() {
 
   const changeStatusMutation = useMutation({
     mutationFn: ({ id, to }: { id: number; to: TaskStatus }) => tasksApi.changeStatus(id, to),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
-      queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['task-history', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['task-sync', variables.id] });
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tasks', pid] }),
+        queryClient.invalidateQueries({ queryKey: ['task', variables.id] }),
+        queryClient.invalidateQueries({ queryKey: ['task-history', variables.id] }),
+        queryClient.invalidateQueries({ queryKey: ['task-sync', variables.id] }),
+      ]);
       markRecommendationOutdated();
       if (summary) {
         setShouldAutoRefreshSummary(true);
@@ -1141,8 +1148,9 @@ export default function TaskListPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => tasksApi.deleteTask(id),
-    onSuccess: (_data, deletedId) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
+    // 확인 창을 먼저 닫으면 지운 카드가 재조회 왕복 동안 남아 있었다. 목록에서 빠진 뒤 닫는다.
+    onSuccess: async (_data, deletedId) => {
+      await queryClient.invalidateQueries({ queryKey: ['tasks', pid] });
       markRecommendationOutdated();
       if (summary) {
         setShouldAutoRefreshSummary(true);
@@ -1305,7 +1313,10 @@ export default function TaskListPage() {
           <p className="text-[11px]">새 Task를 추가해보세요</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={clsx('grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 transition-opacity', isPlaceholderData && 'opacity-60')}
+          aria-busy={isPlaceholderData}
+        >
           <AnimatePresence mode="popLayout" initial={false}>
             {tasks?.map((task) => (
               <motion.div

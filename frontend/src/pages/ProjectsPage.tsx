@@ -115,8 +115,8 @@ export default function ProjectsPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: ProjectCreateRequest) => projectsApi.createProject(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
       handleCloseModal();
     },
   });

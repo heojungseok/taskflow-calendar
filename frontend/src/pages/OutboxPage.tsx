@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { outboxApi } from '@/api/endpoints/calendar';
@@ -142,9 +142,11 @@ export default function OutboxPage() {
   const [taskIdInput, setTaskIdInput] = useState('');
   const [taskIdFilter, setTaskIdFilter] = useState<number | undefined>();
 
-  const { data: entries, isLoading, isError } = useQuery({
+  const { data: entries, isLoading, isError, isPlaceholderData } = useQuery({
     queryKey: ['outbox', statusFilter, taskIdFilter],
     queryFn: () => outboxApi.getOutboxList({ status: statusFilter || undefined, taskId: taskIdFilter }),
+    // 필터를 바꿀 때 목록이 로딩 문구로 바뀌지 않도록 이전 결과를 흐리게 유지한다
+    placeholderData: keepPreviousData,
     // 워커가 처리 중인 항목이 있는 동안만 폴링한다
     refetchInterval: (query) => (hasOutboxInFlight(query.state.data) ? SYNC_POLL_INTERVAL_MS : false),
   });
@@ -231,7 +233,10 @@ export default function OutboxPage() {
           </p>
         </div>
       ) : (
-        <ul className="border-t border-[var(--rule)]">
+        <ul
+          className={clsx('border-t border-[var(--rule)] transition-opacity', isPlaceholderData && 'opacity-60')}
+          aria-busy={isPlaceholderData}
+        >
           <AnimatePresence initial={false}>
             {entries.map((e) => (
               <motion.div
