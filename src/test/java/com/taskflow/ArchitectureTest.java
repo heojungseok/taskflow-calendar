@@ -38,8 +38,8 @@ class ArchitectureTest {
             .resideInAPackage("com.taskflow.calendarsync.integration..");
 
     @ArchTest
-    static final ArchRule calendarsync_하위_패키지_사이에_순환이_없다 =
-            slices().matching("com.taskflow.calendarsync.(*)..").should().beFreeOfCycles();
+    static final ArchRule 컨텍스트_안의_하위_패키지_사이에_순환이_없다 =
+            slices().matching("com.taskflow.(*).(*)..").should().beFreeOfCycles();
 
     @ArchTest
     static final ArchRule 최상위_패키지_사이에_순환이_없다 =

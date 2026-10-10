@@ -3,11 +3,11 @@ package com.taskflow.planning.task;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.ValidationException;
 import com.taskflow.identity.security.SecurityContextHelper;
+import com.taskflow.identity.user.DemoUsageService;
 import com.taskflow.identity.user.User;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.identity.user.exception.UserNotFoundException;
 import com.taskflow.observability.TaskFlowMetrics;
-import com.taskflow.planning.project.DemoUsageService;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.project.ProjectRepository;
 import com.taskflow.planning.project.exception.ProjectNotFoundException;
@@ -30,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskService {
     private static final int DEFAULT_SYNC_EVENT_DURATION_HOURS = 1;
 
+    private static final int DEMO_TASK_LIMIT = 100;
+
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -49,7 +51,9 @@ public class TaskService {
         Project project = projectRepository
                 .findByIdAndOwnerUserId(projectId, userId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
-        boolean demoUser = demoUsageService.beforeTaskCreate(userId);
+        // 삭제된 Task도 센다. 지우고 다시 만드는 방식으로 한도를 피하지 못하게 한다.
+        boolean demoUser = demoUsageService.beforeCreate(
+                userId, () -> taskRepository.countByProject_OwnerUserId(userId), DEMO_TASK_LIMIT);
 
         // 2. Assignee 조회 (있는 경우)
         User assignee = null;
