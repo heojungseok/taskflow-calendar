@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -297,12 +298,8 @@ public class ProjectTaskRecommendationService {
                 updateDigest(digest, snapshot.getLatestOutboxError());
             }
 
-            byte[] hashed = digest.digest();
-            StringBuilder hex = new StringBuilder(hashed.length * 2);
-            for (byte value : hashed) {
-                hex.append(String.format("%02x", value));
-            }
-            return "task-recommendation:" + CACHE_KEY_VERSION + ":" + project.getId() + ":" + modelName + ":" + hex;
+            return "task-recommendation:" + CACHE_KEY_VERSION + ":" + project.getId() + ":" + modelName + ":"
+                    + HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available", e);
         }

@@ -1,20 +1,17 @@
 package com.taskflow.planning.task;
 
+import com.taskflow.common.BaseTimeEntity;
 import com.taskflow.identity.user.User;
 import com.taskflow.planning.project.Project;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import lombok.Getter;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "tasks")
-@EntityListeners(AuditingEntityListener.class)
 @Getter
-public class Task {
+public class Task extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,14 +49,6 @@ public class Task {
     private Boolean deleted = false;
 
     private LocalDateTime deletedAt;
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
     protected Task() {}
 
