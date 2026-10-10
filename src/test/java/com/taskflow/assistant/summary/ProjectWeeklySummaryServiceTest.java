@@ -46,6 +46,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectWeeklySummaryServiceTest {
@@ -549,9 +550,8 @@ class ProjectWeeklySummaryServiceTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        var field = target.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(target, value);
+        // updatedAt은 BaseTimeEntity에 있어 상위 클래스까지 찾는다.
+        ReflectionTestUtils.setField(target, fieldName, value);
     }
 
     /** KST 2026-10-12(월) 08:30. UTC로는 아직 10-11(일) 23:30이라 시간대를 잘못 쓰면 날짜가 하루, 주가 한 주 밀린다. */

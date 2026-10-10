@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.taskflow.calendarsync.integration.googlecalendar.GoogleCalendarService;
 import com.taskflow.calendarsync.outbox.*;
+import com.taskflow.common.BaseTimeEntity;
 import com.taskflow.common.exception.NonRetryableIntegrationException;
 import com.taskflow.identity.oauth.GoogleOAuthService;
 import com.taskflow.identity.oauth.OAuthGoogleTokenRepository;
@@ -280,7 +281,7 @@ class CalendarOutboxWorkerTest {
 
             // Reflection으로 updatedAt을 10분 전으로 설정 (lease timeout = 5분)
             try {
-                var field = CalendarOutbox.class.getDeclaredField("updatedAt");
+                var field = BaseTimeEntity.class.getDeclaredField("updatedAt");
                 field.setAccessible(true);
                 field.set(staleOutbox, LocalDateTime.now().minusMinutes(10));
 
@@ -337,7 +338,7 @@ class CalendarOutboxWorkerTest {
 
             // updatedAt을 1분 전으로 설정 (lease timeout 5분 미초과)
             try {
-                var field = CalendarOutbox.class.getDeclaredField("updatedAt");
+                var field = BaseTimeEntity.class.getDeclaredField("updatedAt");
                 field.setAccessible(true);
                 field.set(processingOutbox, LocalDateTime.now().minusMinutes(1));
 
