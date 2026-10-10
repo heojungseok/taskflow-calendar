@@ -7,13 +7,13 @@ import static org.mockito.Mockito.*;
 
 import com.taskflow.assistant.search.dto.ProjectTaskSearchResponse;
 import com.taskflow.assistant.search.generator.TaskSearchIntentParser;
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
-import com.taskflow.assistant.summary.TaskSyncState;
-import com.taskflow.assistant.summary.TaskSyncStateResolver;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
+import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
+import com.taskflow.planning.task.TaskSyncState;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -744,7 +744,7 @@ class ProjectTaskSearchServiceTest {
         return task;
     }
 
-    private SummaryTaskSnapshot snapshot(Task task, TaskSyncState syncState) {
-        return SummaryTaskSnapshot.of(task, syncState, null, null, null);
+    private TaskSyncSnapshot snapshot(Task task, TaskSyncState syncState) {
+        return TaskSyncSnapshot.of(task, syncState, null, null, null);
     }
 }

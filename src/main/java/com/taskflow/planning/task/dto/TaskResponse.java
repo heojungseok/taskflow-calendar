@@ -1,10 +1,10 @@
 package com.taskflow.planning.task.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.taskflow.assistant.summary.TaskSyncState;
 import com.taskflow.common.TimeZones;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;

@@ -1,8 +1,8 @@
 package com.taskflow.assistant.search.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.taskflow.assistant.summary.TaskSyncState;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import java.time.LocalDateTime;
 import lombok.Getter;
 

@@ -162,7 +162,7 @@
   <rect x="200" y="166" width="4"   height="56" rx="2" fill="#d9560c" opacity="0.72"/>
   <text x="280" y="182" text-anchor="middle" font-size="12"  font-weight="700" fill="#16202e">TaskService</text>
   <text x="280" y="198" text-anchor="middle" font-size="9.5" font-weight="600" fill="#c04f0c">① Task 저장</text>
-  <text x="280" y="213" text-anchor="middle" font-size="9.5" fill="#6b7c8d">② Outbox 적재만</text>
+  <text x="280" y="213" text-anchor="middle" font-size="9.5" fill="#6b7c8d">② TaskChangedEvent 발행</text>
   <text x="280" y="226" text-anchor="middle" font-size="8.5" fill="#9aabb8">Google API 호출 ✗</text>
 
   <rect x="374" y="154" width="166" height="80" rx="14"
@@ -172,7 +172,7 @@
   <text x="457" y="182" text-anchor="middle" font-size="12"  font-weight="700" fill="#16202e">OutboxService</text>
   <text x="457" y="198" text-anchor="middle" font-size="9.5" font-weight="600" fill="#c04f0c">⚡ 정적 Coalescing</text>
   <text x="457" y="213" text-anchor="middle" font-size="9.5" fill="#6b7c8d">A-1, A-2, B-1, B-2</text>
-  <text x="457" y="226" text-anchor="middle" font-size="8.5" fill="#9aabb8">enqueue Upsert / Delete</text>
+  <text x="457" y="226" text-anchor="middle" font-size="8.5" fill="#9aabb8">동기 리스너가 enqueue</text>
 
   <rect x="678" y="154" width="140" height="80" rx="14"
         fill="url(#glass-db)" stroke="#c2a469" stroke-width="1.4" filter="url(#shadow-card)"/>
@@ -282,7 +282,7 @@
     <!-- ① React → TaskService -->
     <line x1="158" y1="194" x2="196" y2="194" stroke="#3b4b5c" stroke-width="1.8" marker-end="url(#arr-dark)"/>
 
-    <!-- ② TaskService → OutboxService -->
+    <!-- ② TaskService → (TaskChangedEvent, 같은 트랜잭션) → OutboxService -->
     <line x1="360" y1="194" x2="371" y2="194" stroke="#d9560c" stroke-width="1.8" marker-end="url(#arr-orange)"/>
 
     <!-- ③ TaskService → tasks : 상단 회랑 -->

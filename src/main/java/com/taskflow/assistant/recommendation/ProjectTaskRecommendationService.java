@@ -7,9 +7,8 @@ import com.taskflow.assistant.recommendation.dto.TaskRecommendationCacheStatus;
 import com.taskflow.assistant.recommendation.generator.TaskRecommendationGenerationResult;
 import com.taskflow.assistant.recommendation.generator.TaskRecommendationGenerator;
 import com.taskflow.assistant.recommendation.generator.TaskRecommendationItemResult;
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
-import com.taskflow.assistant.summary.TaskSyncState;
-import com.taskflow.assistant.summary.TaskSyncStateResolver;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
+import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
 import com.taskflow.common.TimeZones;
 import com.taskflow.identity.security.SecurityContextHelper;
 import com.taskflow.identity.user.Provider;
@@ -20,6 +19,7 @@ import com.taskflow.planning.project.exception.ProjectNotFoundException;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -85,13 +85,13 @@ public class ProjectTaskRecommendationService {
                     List.of());
         }
 
-        List<SummaryTaskSnapshot> prioritizedSnapshots = taskSyncStateResolver.resolveAll(eligibleTasks).stream()
+        List<TaskSyncSnapshot> prioritizedSnapshots = taskSyncStateResolver.resolveAll(eligibleTasks).stream()
                 .sorted(candidateComparator(today))
                 .collect(Collectors.toList());
 
         int recommendationCount =
                 Math.min(MAX_RECOMMENDATION_COUNT, Math.max(1, (int) Math.ceil(prioritizedSnapshots.size() * 0.3d)));
-        List<SummaryTaskSnapshot> candidates =
+        List<TaskSyncSnapshot> candidates =
                 prioritizedSnapshots.stream().limit(MAX_CANDIDATE_COUNT).collect(Collectors.toList());
 
         if (demo) {
@@ -134,12 +134,12 @@ public class ProjectTaskRecommendationService {
             Project project,
             Instant generatedAt,
             int totalEligibleTaskCount,
-            List<SummaryTaskSnapshot> candidates,
+            List<TaskSyncSnapshot> candidates,
             List<TaskRecommendationItemResult> generatedItems) {
-        Map<Long, SummaryTaskSnapshot> candidateMap = new LinkedHashMap<>();
+        Map<Long, TaskSyncSnapshot> candidateMap = new LinkedHashMap<>();
         Map<Long, Integer> candidateScoreMap = new LinkedHashMap<>();
         LocalDate today = LocalDate.now(TimeZones.SERVICE_ZONE);
-        for (SummaryTaskSnapshot candidate : candidates) {
+        for (TaskSyncSnapshot candidate : candidates) {
             Long taskId = candidate.getTask().getId();
             candidateMap.put(taskId, candidate);
             candidateScoreMap.put(taskId, candidateScore(candidate, today));
@@ -148,7 +148,7 @@ public class ProjectTaskRecommendationService {
         List<ProjectTaskRecommendationItemResponse> items = new ArrayList<>();
         int rank = 1;
         for (TaskRecommendationItemResult generatedItem : generatedItems) {
-            SummaryTaskSnapshot snapshot = candidateMap.get(generatedItem.getTaskId());
+            TaskSyncSnapshot snapshot = candidateMap.get(generatedItem.getTaskId());
             if (snapshot == null) {
                 continue;
             }
@@ -178,8 +178,8 @@ public class ProjectTaskRecommendationService {
                 items);
     }
 
-    private Comparator<SummaryTaskSnapshot> candidateComparator(LocalDate today) {
-        return Comparator.comparingInt((SummaryTaskSnapshot snapshot) -> candidateScore(snapshot, today))
+    private Comparator<TaskSyncSnapshot> candidateComparator(LocalDate today) {
+        return Comparator.comparingInt((TaskSyncSnapshot snapshot) -> candidateScore(snapshot, today))
                 .reversed()
                 .thenComparing(
                         snapshot -> snapshot.getTask().getDueAt(), Comparator.nullsLast(Comparator.naturalOrder()))
@@ -188,7 +188,7 @@ public class ProjectTaskRecommendationService {
                 .thenComparing(snapshot -> snapshot.getTask().getId(), Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
-    private int candidateScore(SummaryTaskSnapshot snapshot, LocalDate today) {
+    private int candidateScore(TaskSyncSnapshot snapshot, LocalDate today) {
         Task task = snapshot.getTask();
         int score = 0;
 
@@ -234,7 +234,7 @@ public class ProjectTaskRecommendationService {
         return 0;
     }
 
-    private int syncRiskScore(SummaryTaskSnapshot snapshot) {
+    private int syncRiskScore(TaskSyncSnapshot snapshot) {
         int score = 0;
         TaskSyncState syncState = snapshot.getSyncState();
         if (syncState == TaskSyncState.FAILED_SYNC || syncState == TaskSyncState.DELETE_FAILED) {
@@ -286,14 +286,14 @@ public class ProjectTaskRecommendationService {
     }
 
     private String cacheKey(
-            Project project, List<SummaryTaskSnapshot> candidates, int recommendationCount, String modelName) {
+            Project project, List<TaskSyncSnapshot> candidates, int recommendationCount, String modelName) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             updateDigest(digest, project.getId());
             updateDigest(digest, modelName);
             updateDigest(digest, recommendationCount);
 
-            for (SummaryTaskSnapshot snapshot : candidates) {
+            for (TaskSyncSnapshot snapshot : candidates) {
                 Task task = snapshot.getTask();
                 updateDigest(digest, task.getId());
                 updateDigest(digest, task.getTitle());

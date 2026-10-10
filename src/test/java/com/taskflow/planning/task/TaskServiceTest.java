@@ -8,8 +8,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.taskflow.assistant.summary.TaskSyncStateResolver;
-import com.taskflow.calendarsync.outbox.CalendarOutboxService;
 import com.taskflow.identity.user.User;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.observability.TaskFlowMetrics;
@@ -21,6 +19,7 @@ import com.taskflow.planning.task.dto.DeleteTaskResponse;
 import com.taskflow.planning.task.exception.TaskNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,10 +71,7 @@ class TaskServiceTest {
     private TaskHistoryRepository historyRepository;
 
     @Mock
-    private CalendarOutboxService calendarOutboxService;
-
-    @Mock
-    private TaskSyncStateResolver taskSyncStateResolver;
+    private TaskSyncStateReader taskSyncStateReader;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -108,8 +104,8 @@ class TaskServiceTest {
     }
 
     @Test
-    @DisplayName("deleteTask는 soft delete 후 DELETE outbox를 적재한다")
-    void deleteTask_softDeletesAndEnqueuesDelete() {
+    @DisplayName("deleteTask는 soft delete 후 삭제 이벤트를 발행한다")
+    void deleteTask_softDeletesAndPublishesDeletedEvent() {
         when(taskRepository.findByIdAndDeletedFalseAndProject_OwnerUserId(TASK_ID, 1L))
                 .thenReturn(Optional.of(task));
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
@@ -119,7 +115,7 @@ class TaskServiceTest {
         assertEquals(TASK_ID, response.getDeletedTaskId());
         assertTrue(task.getDeleted());
         assertNotNull(task.getDeletedAt());
-        verify(calendarOutboxService).enqueueDelete(task);
+        verify(eventPublisher).publishEvent(new TaskChangedEvent(task, TaskChangedEvent.Type.DELETED));
 
         ArgumentCaptor<TaskHistory> captor = ArgumentCaptor.forClass(TaskHistory.class);
         verify(historyRepository).save(captor.capture());
@@ -144,7 +140,7 @@ class TaskServiceTest {
         when(taskRepository.findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
                         PROJECT_ID, USER_ID, 1L))
                 .thenReturn(List.of());
-        when(taskSyncStateResolver.resolveAll(List.of())).thenReturn(List.of());
+        when(taskSyncStateReader.readAll(List.of())).thenReturn(Map.of());
 
         taskService.listTasks(PROJECT_ID, null, USER_ID);
 
@@ -158,7 +154,7 @@ class TaskServiceTest {
         when(taskRepository.findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
                         PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID, 1L))
                 .thenReturn(List.of());
-        when(taskSyncStateResolver.resolveAll(List.of())).thenReturn(List.of());
+        when(taskSyncStateReader.readAll(List.of())).thenReturn(Map.of());
 
         taskService.listTasks(PROJECT_ID, TaskStatus.IN_PROGRESS, USER_ID);
 

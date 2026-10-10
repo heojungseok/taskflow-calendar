@@ -1,10 +1,5 @@
 package com.taskflow.planning.task;
 
-import com.taskflow.assistant.search.TaskSearchDocumentChangedEvent;
-import com.taskflow.assistant.search.TaskSearchDocumentDeletedEvent;
-import com.taskflow.assistant.summary.TaskSyncStateResolver;
-import com.taskflow.calendarsync.outbox.CalendarOutbox;
-import com.taskflow.calendarsync.outbox.CalendarOutboxService;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.ValidationException;
 import com.taskflow.identity.security.SecurityContextHelper;
@@ -20,6 +15,7 @@ import com.taskflow.planning.task.dto.*;
 import com.taskflow.planning.task.exception.TaskNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +35,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final DemoUsageService demoUsageService;
     private final TaskHistoryRepository historyRepository;
-    private final CalendarOutboxService calendarOutboxService;
-    private final TaskSyncStateResolver taskSyncStateResolver;
+    private final TaskSyncStateReader taskSyncStateReader;
     private final ApplicationEventPublisher eventPublisher;
     private final TaskFlowMetrics metrics;
 
@@ -95,11 +90,7 @@ public class TaskService {
                 buildTaskSnapshot(savedTask), // afterValue: 생성된 Task 정보
                 userId);
 
-        // Outbox 적재
-        if (savedTask.isCalendarSyncActive()) {
-            calendarOutboxService.enqueueUpsert(savedTask);
-        }
-        eventPublisher.publishEvent(new TaskSearchDocumentChangedEvent(savedTask.getId()));
+        eventPublisher.publishEvent(new TaskChangedEvent(savedTask, TaskChangedEvent.Type.CREATED));
 
         return TaskResponse.from(savedTask);
     }
@@ -155,14 +146,7 @@ public class TaskService {
         // 6. 이력 기록 - 수정
         recordHistory(task, TaskChangeType.CONTENT, beforeSnapshot, afterSnapshot, userId);
 
-        // 7. Outbox 적재
-        if (task.isCalendarSyncActive()) {
-            calendarOutboxService.enqueueUpsert(task);
-        } else if (task.getCalendarEventId() != null && !task.isCalendarSyncActive()) {
-            // 동기화 비활성화 시 DELETE
-            calendarOutboxService.enqueueDelete(task);
-        }
-        eventPublisher.publishEvent(new TaskSearchDocumentChangedEvent(task.getId()));
+        eventPublisher.publishEvent(new TaskChangedEvent(task, TaskChangedEvent.Type.UPDATED));
 
         return TaskResponse.from(task);
     }
@@ -194,11 +178,7 @@ public class TaskService {
                 request.getToStatus().name(),
                 userId);
 
-        // 4. Outbox 적재
-        if (task.isCalendarSyncActive()) {
-            calendarOutboxService.enqueueUpsert(task); // DONE이면 [DONE] prefix 추가
-        }
-        eventPublisher.publishEvent(new TaskSearchDocumentChangedEvent(task.getId()));
+        eventPublisher.publishEvent(new TaskChangedEvent(task, TaskChangedEvent.Type.STATUS_CHANGED));
 
         return TaskResponse.from(task);
     }
@@ -240,8 +220,9 @@ public class TaskService {
         }
 
         // Outbox는 건당이 아니라 한 번에 읽는다. 건당이면 목록 크기만큼 쿼리가 나간다.
-        return taskSyncStateResolver.resolveAll(tasks).stream()
-                .map(snapshot -> TaskResponse.from(snapshot.getTask(), snapshot.getSyncState()))
+        Map<Long, TaskSyncState> syncStates = taskSyncStateReader.readAll(tasks);
+        return tasks.stream()
+                .map(task -> TaskResponse.from(task, syncStates.get(task.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -265,9 +246,7 @@ public class TaskService {
         // 3. 이력 기록 - 삭제
         recordHistory(task, TaskChangeType.CONTENT, beforeSnapshot, "deleted=true", requestedByUserId);
 
-        // 3. Outbox 적재
-        calendarOutboxService.enqueueDelete(task);
-        eventPublisher.publishEvent(new TaskSearchDocumentDeletedEvent(taskId));
+        eventPublisher.publishEvent(new TaskChangedEvent(task, TaskChangedEvent.Type.DELETED));
 
         return DeleteTaskResponse.of(taskId);
     }
@@ -288,23 +267,6 @@ public class TaskService {
 
         // 3. DTO 변환
         return histories.stream().map(TaskHistoryResponse::from).collect(Collectors.toList());
-    }
-
-    /**
-     * Task 캘린더 동기화 상태 조회
-     * GET /api/tasks/{taskId}/calendar-sync
-     */
-    public CalendarSyncStatusResponse getCalendarSyncStatus(Long taskId) {
-        Task task = taskRepository
-                .findByIdAndDeletedFalseAndProject_OwnerUserId(taskId, SecurityContextHelper.getCurrentUserId())
-                .orElseThrow(() -> new TaskNotFoundException(taskId));
-
-        CalendarOutbox latestOutbox =
-                calendarOutboxService.findLatestByTaskId(taskId).orElse(null);
-        CalendarOutbox lastSuccessOutbox =
-                calendarOutboxService.findLastSuccessByTaskId(taskId).orElse(null);
-
-        return CalendarSyncStatusResponse.of(task, latestOutbox, lastSuccessOutbox);
     }
 
     // ========== Private 검증 메서드들 ==========

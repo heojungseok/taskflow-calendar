@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
 import com.taskflow.assistant.recommendation.exception.TaskRecommendationGenerationException;
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
@@ -41,13 +41,13 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
 
     @Override
     public TaskRecommendationGenerationResult generate(
-            Project project, List<SummaryTaskSnapshot> candidates, int recommendationCount, LocalDate today) {
+            Project project, List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today) {
         return metrics.observeGeminiCall(
                 "recommendation", () -> generateUnobserved(project, candidates, recommendationCount, today));
     }
 
     private TaskRecommendationGenerationResult generateUnobserved(
-            Project project, List<SummaryTaskSnapshot> candidates, int recommendationCount, LocalDate today) {
+            Project project, List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today) {
         validateConfiguration();
         PreparedRequest preparedRequest = prepareRequest(project, candidates, recommendationCount, today);
         String endpoint =
@@ -106,7 +106,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     }
 
     private PreparedRequest prepareRequest(
-            Project project, List<SummaryTaskSnapshot> candidates, int recommendationCount, LocalDate today) {
+            Project project, List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today) {
         try {
             Map<String, Object> requestBody = new LinkedHashMap<>();
             requestBody.put("system_instruction", createContent(systemInstruction()));
@@ -135,7 +135,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
                 + "프로젝트 전체 요약은 하지 말고, 제공된 후보와 입력 사실만 사용하라.";
     }
 
-    private String userPrompt(List<SummaryTaskSnapshot> candidates, int recommendationCount, LocalDate today)
+    private String userPrompt(List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today)
             throws IOException {
         List<Map<String, Object>> candidatePayload = new ArrayList<>();
         for (int i = 0; i < candidates.size(); i++) {
@@ -191,7 +191,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     }
 
     private TaskRecommendationGenerationResult parseResponse(
-            JsonNode root, List<SummaryTaskSnapshot> candidates, int recommendationCount) throws IOException {
+            JsonNode root, List<TaskSyncSnapshot> candidates, int recommendationCount) throws IOException {
         JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
         if (textNode.isMissingNode() || textNode.asText().isBlank()) {
             throw new TaskRecommendationGenerationException(
@@ -213,7 +213,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
         }
 
         Set<Long> allowedTaskIds = new LinkedHashSet<>();
-        for (SummaryTaskSnapshot candidate : candidates) {
+        for (TaskSyncSnapshot candidate : candidates) {
             allowedTaskIds.add(candidate.getTask().getId());
         }
 

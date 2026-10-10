@@ -18,6 +18,8 @@ import com.taskflow.assistant.summary.dto.WeeklySummarySectionResponse;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.assistant.summary.generator.WeeklySummaryGenerator;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
+import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.project.ProjectRepository;
@@ -25,6 +27,7 @@ import com.taskflow.planning.project.exception.ProjectNotFoundException;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -517,8 +520,8 @@ class ProjectWeeklySummaryServiceTest {
         return task;
     }
 
-    private SummaryTaskSnapshot snapshot(Task task, TaskSyncState syncState) {
-        return SummaryTaskSnapshot.of(task, syncState, null, null, null);
+    private TaskSyncSnapshot snapshot(Task task, TaskSyncState syncState) {
+        return TaskSyncSnapshot.of(task, syncState, null, null, null);
     }
 
     private WeeklySummaryResponse cachedResponse(WeeklySummaryCacheStatus cacheStatus) {

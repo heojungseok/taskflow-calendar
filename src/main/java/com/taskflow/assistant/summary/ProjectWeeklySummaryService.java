@@ -9,6 +9,8 @@ import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.assistant.summary.generator.SummaryPromptTaskSupport;
 import com.taskflow.assistant.summary.generator.WeeklySummaryGenerator;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
+import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
 import com.taskflow.common.TimeZones;
 import com.taskflow.identity.security.SecurityContextHelper;
 import com.taskflow.identity.user.Provider;
@@ -79,13 +81,13 @@ public class ProjectWeeklySummaryService {
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate weekEnd = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
         Instant generatedAt = Instant.now();
-        List<SummaryTaskSnapshot> prioritizedTasks = taskSyncStateResolver.resolveAll(allTasks).stream()
+        List<TaskSyncSnapshot> prioritizedTasks = taskSyncStateResolver.resolveAll(allTasks).stream()
                 .sorted(taskPriorityComparator(today))
                 .collect(Collectors.toList());
-        List<SummaryTaskSnapshot> syncedTasks = prioritizedTasks.stream()
+        List<TaskSyncSnapshot> syncedTasks = prioritizedTasks.stream()
                 .filter(snapshot -> snapshot.getSyncState().isSynced())
                 .collect(Collectors.toList());
-        List<SummaryTaskSnapshot> unsyncedTasks = prioritizedTasks.stream()
+        List<TaskSyncSnapshot> unsyncedTasks = prioritizedTasks.stream()
                 .filter(snapshot -> !snapshot.getSyncState().isSynced())
                 .collect(Collectors.toList());
 
@@ -157,8 +159,8 @@ public class ProjectWeeklySummaryService {
             LocalDate weekStart,
             LocalDate weekEnd,
             Instant generatedAt,
-            List<SummaryTaskSnapshot> syncedTasks,
-            List<SummaryTaskSnapshot> unsyncedTasks) {
+            List<TaskSyncSnapshot> syncedTasks,
+            List<TaskSyncSnapshot> unsyncedTasks) {
         return WeeklySummaryResponse.of(
                 project,
                 weekStart,
@@ -172,12 +174,12 @@ public class ProjectWeeklySummaryService {
                 demoSection(unsyncedTasks, SummaryBucket.UNSYNCED));
     }
 
-    private WeeklySummarySectionResponse demoSection(List<SummaryTaskSnapshot> tasks, SummaryBucket bucket) {
+    private WeeklySummarySectionResponse demoSection(List<TaskSyncSnapshot> tasks, SummaryBucket bucket) {
         if (tasks.isEmpty()) {
             return WeeklySummarySectionResponse.of(
                     0, 0, WeeklySummaryResult.empty(bucket.getEmptySummary(), bucket.getEmptyNextActions()));
         }
-        List<SummaryTaskSnapshot> included = selectIncludedTasks(tasks, bucket);
+        List<TaskSyncSnapshot> included = selectIncludedTasks(tasks, bucket);
         return WeeklySummarySectionResponse.of(
                 tasks.size(),
                 included.size(),
@@ -194,11 +196,11 @@ public class ProjectWeeklySummaryService {
             LocalDate weekStart,
             LocalDate weekEnd,
             Instant generatedAt,
-            List<SummaryTaskSnapshot> syncedTasks,
-            List<SummaryTaskSnapshot> unsyncedTasks,
+            List<TaskSyncSnapshot> syncedTasks,
+            List<TaskSyncSnapshot> unsyncedTasks,
             WeeklySummaryCacheStatus cacheStatus) {
-        List<SummaryTaskSnapshot> syncedIncludedTasks = selectIncludedTasks(syncedTasks, SummaryBucket.SYNCED);
-        List<SummaryTaskSnapshot> unsyncedIncludedTasks = selectIncludedTasks(unsyncedTasks, SummaryBucket.UNSYNCED);
+        List<TaskSyncSnapshot> syncedIncludedTasks = selectIncludedTasks(syncedTasks, SummaryBucket.SYNCED);
+        List<TaskSyncSnapshot> unsyncedIncludedTasks = selectIncludedTasks(unsyncedTasks, SummaryBucket.UNSYNCED);
 
         WeeklySummarySectionsResult generatedSections = shouldCallGenerator(syncedTasks, unsyncedTasks)
                 ? weeklySummaryGenerator.generate(
@@ -229,12 +231,11 @@ public class ProjectWeeklySummaryService {
                 unsynced);
     }
 
-    private boolean shouldCallGenerator(
-            List<SummaryTaskSnapshot> syncedTasks, List<SummaryTaskSnapshot> unsyncedTasks) {
+    private boolean shouldCallGenerator(List<TaskSyncSnapshot> syncedTasks, List<TaskSyncSnapshot> unsyncedTasks) {
         return !syncedTasks.isEmpty() || !unsyncedTasks.isEmpty();
     }
 
-    private List<SummaryTaskSnapshot> selectIncludedTasks(List<SummaryTaskSnapshot> tasks, SummaryBucket bucket) {
+    private List<TaskSyncSnapshot> selectIncludedTasks(List<TaskSyncSnapshot> tasks, SummaryBucket bucket) {
         if (tasks.isEmpty()) {
             return List.of();
         }
@@ -243,11 +244,11 @@ public class ProjectWeeklySummaryService {
         int maxDescBriefChars =
                 bucket == SummaryBucket.SYNCED ? MAX_SYNCED_DESC_BRIEF_CHARS : MAX_UNSYNCED_DESC_BRIEF_CHARS;
 
-        List<SummaryTaskSnapshot> selected = new java.util.ArrayList<>();
+        List<TaskSyncSnapshot> selected = new java.util.ArrayList<>();
         int selectedDescBriefChars = 0;
         int doneCount = 0;
 
-        for (SummaryTaskSnapshot snapshot : tasks) {
+        for (TaskSyncSnapshot snapshot : tasks) {
             if (selected.size() >= maxTasks) {
                 break;
             }
@@ -283,8 +284,8 @@ public class ProjectWeeklySummaryService {
     }
 
     private WeeklySummarySectionResponse buildSection(
-            List<SummaryTaskSnapshot> allTasks,
-            List<SummaryTaskSnapshot> includedTasks,
+            List<TaskSyncSnapshot> allTasks,
+            List<TaskSyncSnapshot> includedTasks,
             SummaryBucket bucket,
             WeeklySummaryResult result) {
         if (allTasks.isEmpty()) {
@@ -298,8 +299,8 @@ public class ProjectWeeklySummaryService {
                 Objects.requireNonNull(result, "Weekly summary result must not be null for non-empty section"));
     }
 
-    private Comparator<SummaryTaskSnapshot> taskPriorityComparator(LocalDate today) {
-        return Comparator.comparingInt((SummaryTaskSnapshot snapshot) -> taskPriority(snapshot.getTask(), today))
+    private Comparator<TaskSyncSnapshot> taskPriorityComparator(LocalDate today) {
+        return Comparator.comparingInt((TaskSyncSnapshot snapshot) -> taskPriority(snapshot.getTask(), today))
                 .reversed()
                 .thenComparing(
                         snapshot -> effectiveEventEndAt(snapshot.getTask()),
@@ -430,7 +431,7 @@ public class ProjectWeeklySummaryService {
             Project project,
             LocalDate weekStart,
             LocalDate weekEnd,
-            List<SummaryTaskSnapshot> prioritizedTasks,
+            List<TaskSyncSnapshot> prioritizedTasks,
             String modelName) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -439,7 +440,7 @@ public class ProjectWeeklySummaryService {
             updateDigest(digest, weekEnd);
             updateDigest(digest, modelName);
 
-            for (SummaryTaskSnapshot snapshot : prioritizedTasks) {
+            for (TaskSyncSnapshot snapshot : prioritizedTasks) {
                 Task task = snapshot.getTask();
                 updateDigest(digest, task.getId());
                 updateDigest(digest, task.getTitle());

@@ -1,4 +1,4 @@
-package com.taskflow.assistant.summary;
+package com.taskflow.planning.task;
 
 public enum TaskSyncState {
     SYNCED,

@@ -1,5 +1,6 @@
 package com.taskflow.assistant.search;
 
+import com.taskflow.planning.task.TaskChangedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -12,12 +13,11 @@ public class TaskSearchEmbeddingSyncListener {
     private final TaskSearchEmbeddingService taskSearchEmbeddingService;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleDocumentChanged(TaskSearchDocumentChangedEvent event) {
-        taskSearchEmbeddingService.refreshTask(event.getTaskId());
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleDocumentDeleted(TaskSearchDocumentDeletedEvent event) {
-        taskSearchEmbeddingService.deleteTask(event.getTaskId());
+    public void on(TaskChangedEvent event) {
+        if (event.type() == TaskChangedEvent.Type.DELETED) {
+            taskSearchEmbeddingService.deleteTask(event.taskId());
+        } else {
+            taskSearchEmbeddingService.refreshTask(event.taskId());
+        }
     }
 }

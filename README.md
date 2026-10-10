@@ -81,6 +81,7 @@ alt="TaskFlow Task 목록과 같은 시각 Google Calendar에 반영된 일정"/
 alt="Outbox Pattern Architecture — TaskFlow Calendar"/>
 
 Task 저장 트랜잭션 안에서는 Outbox 레코드만 만들고, 별도 Worker가 비동기로 Google Calendar를 호출합니다.
+`TaskService`는 `TaskChangedEvent`만 발행하고, calendarsync의 [동기 리스너](src/main/java/com/taskflow/calendarsync/outbox/TaskCalendarSyncListener.java)가 같은 트랜잭션에서 Outbox를 적재합니다. 적재가 실패하면 Task 저장도 롤백되는 것을 [통합 테스트](src/test/java/com/taskflow/calendarsync/outbox/TaskCalendarSyncTransactionTest.java)로 확인합니다.
 API가 실패해도 Task 데이터는 보존되며 재시도 가능한 실패에는 대기 시간을 늘리는 단계형 Backoff를 적용합니다. `retryCount < 6`인 항목만 처리 대상으로 조회합니다.
 
 **선택 이유** — Task 저장과 Calendar 반영을 한 트랜잭션에 두면 Google이 느릴 때 사용자의 저장까지 같이 느려지고, API가 죽으면 Task 자체가 저장되지 않습니다. 사용자의 원본 데이터가 남의 서비스 가용성에 묶이는 구조라 제외했습니다. 저장 후 그 자리에서 비동기로 호출하는 방법은 호출 기록이 메모리에만 남아, 프로세스가 죽으면 무엇이 반영되지 않았는지 알 방법이 없습니다. 메시지 브로커는 이 문제를 풀지만 1인 운영에 브로커를 하나 더 세울 만큼 처리량이 크지 않습니다. Outbox는 이미 있는 PostgreSQL 트랜잭션 안에 "해야 할 일"을 남기므로, 인프라를 늘리지 않고 저장과 반영을 분리합니다.
@@ -132,6 +133,18 @@ alt="TaskFlow 우선순위 추천 — 수동 생성, 데모 로컬 추천, 선�
 추천 개수는 미완료 Task 수의 30%를 올림한 값이며 최대 5개입니다. Redis 캐시는 `summary.cache.enabled=true`일 때만 사용하고 추천 결과의 TTL은 90초입니다. 기본값은 비활성화입니다. [추천 서비스](src/main/java/com/taskflow/assistant/recommendation/ProjectTaskRecommendationService.java)
 
 </details>
+
+### 컨텍스트 경계
+
+| 컨텍스트 | 담당 |
+|---|---|
+| `identity` | 사용자, Google OAuth, JWT 세션 |
+| `planning` | 프로젝트, Task, 변경 이력 |
+| `calendarsync` | Outbox, Google Calendar 연동, Worker |
+| `assistant` | 주간 요약, 할 일 추천, 시맨틱 검색 |
+| `demo` | 공개 데모 계정 만료 정리 (모든 컨텍스트를 정리하는 최상위 모듈) |
+
+의존 방향은 `assistant` → `calendarsync` → `planning` → `identity` 한쪽입니다. planning은 하위 컨텍스트를 모르고 도메인 이벤트(`TaskChangedEvent`)와 포트(`TaskSyncStateReader`)로만 알립니다. `common`·`observability`·`config`는 어떤 컨텍스트에도 의존하지 않습니다. 이 규칙과 패키지 순환 금지는 [ArchitectureTest](src/test/java/com/taskflow/ArchitectureTest.java)가 CI에서 검사합니다.
 
 ### 도메인 상태와 생성 규칙
 

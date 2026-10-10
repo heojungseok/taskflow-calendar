@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.SummaryBucket;
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.TimeZones;
 import com.taskflow.observability.TaskFlowMetrics;
@@ -50,9 +50,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     @Override
     public WeeklySummarySectionsResult generate(
             Project project,
-            List<SummaryTaskSnapshot> syncedTasks,
+            List<TaskSyncSnapshot> syncedTasks,
             int syncedTotalTaskCount,
-            List<SummaryTaskSnapshot> unsyncedTasks,
+            List<TaskSyncSnapshot> unsyncedTasks,
             int unsyncedTotalTaskCount,
             LocalDate weekStart,
             LocalDate weekEnd) {
@@ -69,9 +69,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
     SummaryGenerationTelemetry generateWithTelemetry(
             Project project,
-            List<SummaryTaskSnapshot> syncedTasks,
+            List<TaskSyncSnapshot> syncedTasks,
             int syncedTotalTaskCount,
-            List<SummaryTaskSnapshot> unsyncedTasks,
+            List<TaskSyncSnapshot> unsyncedTasks,
             int unsyncedTotalTaskCount,
             LocalDate weekStart,
             LocalDate weekEnd) {
@@ -89,9 +89,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
     private SummaryGenerationTelemetry generateUnobserved(
             Project project,
-            List<SummaryTaskSnapshot> syncedTasks,
+            List<TaskSyncSnapshot> syncedTasks,
             int syncedTotalTaskCount,
-            List<SummaryTaskSnapshot> unsyncedTasks,
+            List<TaskSyncSnapshot> unsyncedTasks,
             int unsyncedTotalTaskCount,
             LocalDate weekStart,
             LocalDate weekEnd) {
@@ -191,9 +191,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
     private PreparedRequest prepareRequest(
             Project project,
-            List<SummaryTaskSnapshot> syncedTasks,
+            List<TaskSyncSnapshot> syncedTasks,
             int syncedTotalTaskCount,
-            List<SummaryTaskSnapshot> unsyncedTasks,
+            List<TaskSyncSnapshot> unsyncedTasks,
             int unsyncedTotalTaskCount,
             LocalDate weekStart,
             LocalDate weekEnd) {
@@ -246,9 +246,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
     private String userPrompt(
             Project project,
-            List<SummaryTaskSnapshot> syncedTasks,
+            List<TaskSyncSnapshot> syncedTasks,
             int syncedTotalTaskCount,
-            List<SummaryTaskSnapshot> unsyncedTasks,
+            List<TaskSyncSnapshot> unsyncedTasks,
             int unsyncedTotalTaskCount,
             LocalDate weekStart,
             LocalDate weekEnd)
@@ -271,9 +271,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     }
 
     private List<String> promptInstructions(
-            List<SummaryTaskSnapshot> syncedTasks,
+            List<TaskSyncSnapshot> syncedTasks,
             int syncedTotalTaskCount,
-            List<SummaryTaskSnapshot> unsyncedTasks,
+            List<TaskSyncSnapshot> unsyncedTasks,
             int unsyncedTotalTaskCount) {
         List<String> instructions = new ArrayList<>();
         instructions.add("이번 주 기준으로만 요약하라.");
@@ -296,7 +296,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
     private Map<String, Object> sectionPayload(
             SummaryBucket bucket,
-            List<SummaryTaskSnapshot> tasks,
+            List<TaskSyncSnapshot> tasks,
             int totalTaskCount,
             LocalDate weekStart,
             LocalDate weekEnd) {
@@ -312,7 +312,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return section;
     }
 
-    private String summaryLeadHint(SummaryBucket bucket, List<SummaryTaskSnapshot> tasks, int totalTaskCount) {
+    private String summaryLeadHint(SummaryBucket bucket, List<TaskSyncSnapshot> tasks, int totalTaskCount) {
         boolean partialCoverage = hasPartialCoverage(tasks, totalTaskCount);
         if (bucket == SummaryBucket.UNSYNCED) {
             if (partialCoverage) {
@@ -326,15 +326,15 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return "첫 문장은 이번 주 일정 전반을 요약하고, 이후 문장에서 주요 일정과 리스크를 연결한다.";
     }
 
-    private boolean hasPartialCoverage(List<SummaryTaskSnapshot> tasks, int totalTaskCount) {
+    private boolean hasPartialCoverage(List<TaskSyncSnapshot> tasks, int totalTaskCount) {
         return totalTaskCount > 0 && tasks.size() < totalTaskCount;
     }
 
     private List<Map<String, Object>> taskPayload(
-            List<SummaryTaskSnapshot> tasks, LocalDate weekStart, LocalDate weekEnd) {
+            List<TaskSyncSnapshot> tasks, LocalDate weekStart, LocalDate weekEnd) {
         List<Map<String, Object>> payload = new ArrayList<>();
 
-        for (SummaryTaskSnapshot snapshot : tasks) {
+        for (TaskSyncSnapshot snapshot : tasks) {
             payload.add(promptTaskSupport.toPromptTaskPayload(snapshot, weekStart, weekEnd));
         }
 
@@ -821,7 +821,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     }
 
     private PromptMetrics buildPromptMetrics(
-            String requestBody, List<SummaryTaskSnapshot> syncedTasks, List<SummaryTaskSnapshot> unsyncedTasks) {
+            String requestBody, List<TaskSyncSnapshot> syncedTasks, List<TaskSyncSnapshot> unsyncedTasks) {
         return new PromptMetrics(
                 requestBody.getBytes(StandardCharsets.UTF_8).length,
                 sha256(requestBody),
@@ -831,9 +831,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 totalDescBriefChars(unsyncedTasks));
     }
 
-    private int totalDescBriefChars(List<SummaryTaskSnapshot> tasks) {
+    private int totalDescBriefChars(List<TaskSyncSnapshot> tasks) {
         int total = 0;
-        for (SummaryTaskSnapshot snapshot : tasks) {
+        for (TaskSyncSnapshot snapshot : tasks) {
             total += promptTaskSupport.descBriefChars(snapshot.getTask());
         }
         return total;

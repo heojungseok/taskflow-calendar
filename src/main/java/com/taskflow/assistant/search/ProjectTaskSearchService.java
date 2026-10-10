@@ -5,9 +5,8 @@ import com.taskflow.assistant.search.dto.RelatedProjectSearchResultResponse;
 import com.taskflow.assistant.search.dto.SearchIntentResponse;
 import com.taskflow.assistant.search.dto.TaskSearchResultItemResponse;
 import com.taskflow.assistant.search.generator.TaskSearchIntentParser;
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
-import com.taskflow.assistant.summary.TaskSyncState;
-import com.taskflow.assistant.summary.TaskSyncStateResolver;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
+import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
 import com.taskflow.common.TimeZones;
 import com.taskflow.identity.security.SecurityContextHelper;
 import com.taskflow.identity.user.Provider;
@@ -15,6 +14,7 @@ import com.taskflow.identity.user.UserRepository;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -481,7 +481,7 @@ public class ProjectTaskSearchService {
         return suggestedQueries.stream().limit(3).collect(Collectors.toList());
     }
 
-    private ScoredTask scoreTask(SummaryTaskSnapshot snapshot, SearchIntent intent, double semanticSimilarity) {
+    private ScoredTask scoreTask(TaskSyncSnapshot snapshot, SearchIntent intent, double semanticSimilarity) {
         Task task = snapshot.getTask();
         String text = normalizeText(task.getProject().getName(), task.getTitle(), task.getDescription());
 
@@ -1260,7 +1260,7 @@ public class ProjectTaskSearchService {
     }
 
     private static final class ScoredTask {
-        private final SummaryTaskSnapshot snapshot;
+        private final TaskSyncSnapshot snapshot;
         private final int totalScore;
         private final int roleEntityScore;
         private final int mainActionScore;
@@ -1275,7 +1275,7 @@ public class ProjectTaskSearchService {
         private final double semanticSimilarity;
 
         private ScoredTask(
-                SummaryTaskSnapshot snapshot,
+                TaskSyncSnapshot snapshot,
                 int totalScore,
                 int roleEntityScore,
                 int mainActionScore,
@@ -1303,7 +1303,7 @@ public class ProjectTaskSearchService {
             this.semanticSimilarity = semanticSimilarity;
         }
 
-        private SummaryTaskSnapshot snapshot() {
+        private TaskSyncSnapshot snapshot() {
             return snapshot;
         }
 

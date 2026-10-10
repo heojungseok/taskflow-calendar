@@ -1,7 +1,7 @@
 package com.taskflow.assistant.summary.generator;
 
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
 import com.taskflow.calendarsync.outbox.OutboxStatus;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.TimeZones;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskStatus;
@@ -39,8 +39,7 @@ public final class SummaryPromptTaskSupport {
     private static final List<String> PRESERVED_KEYWORDS =
             List.of("Google OAuth", "Gemini API key", "OAuth", "API key", "배포", "Sprint Review", "체크리스트", "캡처", "데모");
 
-    public Map<String, Object> toPromptTaskPayload(
-            SummaryTaskSnapshot snapshot, LocalDate weekStart, LocalDate weekEnd) {
+    public Map<String, Object> toPromptTaskPayload(TaskSyncSnapshot snapshot, LocalDate weekStart, LocalDate weekEnd) {
         Task task = snapshot.getTask();
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("id", task.getId());
