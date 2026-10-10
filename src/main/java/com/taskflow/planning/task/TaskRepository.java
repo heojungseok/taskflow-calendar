@@ -1,0 +1,52 @@
+package com.taskflow.planning.task;
+
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+public interface TaskRepository extends JpaRepository<Task, Long> {
+
+    // Soft Delete 고려 - 단건 조회
+    Optional<Task> findByIdAndDeletedFalse(Long id);
+
+    // ── 소유자 스코프 조회 ────────────────────────────────
+    // 격리 단위는 프로젝트다. 검사를 빠뜨리면 결과가 비는 쪽(fail-closed)으로 떨어진다.
+
+    Optional<Task> findByIdAndDeletedFalseAndProject_OwnerUserId(Long id, Long ownerUserId);
+
+    List<Task> findAllByProjectIdAndDeletedFalseAndProject_OwnerUserId(Long projectId, Long ownerUserId);
+
+    List<Task> findAllByProjectIdAndStatusAndDeletedFalseAndProject_OwnerUserId(
+            Long projectId, TaskStatus status, Long ownerUserId);
+
+    // 담당자 필터는 프로젝트 안에서만 적용된다.
+    // projectId 없이 담당자만으로 조회하면 소유자의 다른 프로젝트 Task까지 섞여 나온다.
+    List<Task> findAllByProjectIdAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+            Long projectId, Long assigneeId, Long ownerUserId);
+
+    List<Task> findAllByProjectIdAndStatusAndAssigneeIdAndDeletedFalseAndProject_OwnerUserId(
+            Long projectId, TaskStatus status, Long assigneeId, Long ownerUserId);
+
+    List<Task> findAllByDeletedFalseAndProject_OwnerUserId(Long ownerUserId);
+
+    // 프로젝트별 Task 목록
+    List<Task> findAllByProjectIdAndDeletedFalse(Long projectId);
+
+    // 프로젝트 + 상태별 필터링
+    List<Task> findAllByProjectIdAndStatusAndDeletedFalse(Long projectId, TaskStatus status);
+
+    // 담당자별 Task 목록
+    List<Task> findAllByAssigneeIdAndDeletedFalse(Long assigneeId);
+
+    // 전체 Task 목록 (삭제되지 않은 것만)
+    List<Task> findAllByDeletedFalse();
+
+    long countByProject_OwnerUserId(Long ownerUserId);
+
+    @Modifying
+    @Query("delete from Task t where t.project.ownerUserId = :userId")
+    int deleteOwnedBy(@Param("userId") Long userId);
+}

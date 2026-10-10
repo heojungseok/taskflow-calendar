@@ -5,8 +5,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.taskflow.calendar.domain.project.Project;
-import com.taskflow.calendar.domain.project.dto.ProjectResponse;
+import com.taskflow.planning.project.Project;
+import com.taskflow.planning.project.dto.ProjectResponse;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;

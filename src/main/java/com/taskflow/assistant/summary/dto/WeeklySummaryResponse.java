@@ -1,0 +1,139 @@
+package com.taskflow.assistant.summary.dto;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.taskflow.planning.project.Project;
+import java.time.Instant;
+import java.time.LocalDate;
+
+public class WeeklySummaryResponse {
+
+    private final Long projectId;
+    private final String projectName;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private final LocalDate weekStart;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private final LocalDate weekEnd;
+
+    private final Instant generatedAt;
+
+    private final WeeklySummaryCacheStatus cacheStatus;
+    private final int totalTaskCount;
+    private final int syncedTaskCount;
+    private final int unsyncedTaskCount;
+    private final WeeklySummarySectionResponse synced;
+    private final WeeklySummarySectionResponse unsynced;
+
+    @JsonCreator
+    private WeeklySummaryResponse(
+            @JsonProperty("projectId") Long projectId,
+            @JsonProperty("projectName") String projectName,
+            @JsonProperty("weekStart") LocalDate weekStart,
+            @JsonProperty("weekEnd") LocalDate weekEnd,
+            @JsonProperty("generatedAt") Instant generatedAt,
+            @JsonProperty("cacheStatus") WeeklySummaryCacheStatus cacheStatus,
+            @JsonProperty("totalTaskCount") int totalTaskCount,
+            @JsonProperty("syncedTaskCount") int syncedTaskCount,
+            @JsonProperty("unsyncedTaskCount") int unsyncedTaskCount,
+            @JsonProperty("synced") WeeklySummarySectionResponse synced,
+            @JsonProperty("unsynced") WeeklySummarySectionResponse unsynced) {
+        this.projectId = projectId;
+        this.projectName = projectName;
+        this.weekStart = weekStart;
+        this.weekEnd = weekEnd;
+        this.generatedAt = generatedAt;
+        this.cacheStatus = cacheStatus;
+        this.totalTaskCount = totalTaskCount;
+        this.syncedTaskCount = syncedTaskCount;
+        this.unsyncedTaskCount = unsyncedTaskCount;
+        this.synced = synced;
+        this.unsynced = unsynced;
+    }
+
+    public static WeeklySummaryResponse of(
+            Project project,
+            LocalDate weekStart,
+            LocalDate weekEnd,
+            Instant generatedAt,
+            WeeklySummaryCacheStatus cacheStatus,
+            int totalTaskCount,
+            int syncedTaskCount,
+            int unsyncedTaskCount,
+            WeeklySummarySectionResponse synced,
+            WeeklySummarySectionResponse unsynced) {
+        return new WeeklySummaryResponse(
+                project.getId(),
+                project.getName(),
+                weekStart,
+                weekEnd,
+                generatedAt,
+                cacheStatus,
+                totalTaskCount,
+                syncedTaskCount,
+                unsyncedTaskCount,
+                synced,
+                unsynced);
+    }
+
+    public WeeklySummaryResponse withCacheStatus(WeeklySummaryCacheStatus cacheStatus) {
+        return new WeeklySummaryResponse(
+                projectId,
+                projectName,
+                weekStart,
+                weekEnd,
+                generatedAt,
+                cacheStatus,
+                totalTaskCount,
+                syncedTaskCount,
+                unsyncedTaskCount,
+                synced,
+                unsynced);
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public LocalDate getWeekStart() {
+        return weekStart;
+    }
+
+    public LocalDate getWeekEnd() {
+        return weekEnd;
+    }
+
+    public Instant getGeneratedAt() {
+        return generatedAt;
+    }
+
+    public WeeklySummaryCacheStatus getCacheStatus() {
+        return cacheStatus;
+    }
+
+    public int getTotalTaskCount() {
+        return totalTaskCount;
+    }
+
+    public int getSyncedTaskCount() {
+        return syncedTaskCount;
+    }
+
+    public int getUnsyncedTaskCount() {
+        return unsyncedTaskCount;
+    }
+
+    public WeeklySummarySectionResponse getSynced() {
+        return synced;
+    }
+
+    public WeeklySummarySectionResponse getUnsynced() {
+        return unsynced;
+    }
+}

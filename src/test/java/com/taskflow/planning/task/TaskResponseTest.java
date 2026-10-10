@@ -1,0 +1,25 @@
+package com.taskflow.planning.task;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.taskflow.identity.user.User;
+import com.taskflow.planning.project.Project;
+import com.taskflow.planning.task.dto.TaskResponse;
+import org.junit.jupiter.api.Test;
+
+class TaskResponseTest {
+
+    @Test
+    void foreignLegacyAssigneeIsNotExposed() throws Exception {
+        User foreign = User.createGoogleUser("foreign@example.test", "foreign");
+        var id = User.class.getDeclaredField("id");
+        id.setAccessible(true);
+        id.set(foreign, 2L);
+        Task task = Task.createTask(Project.of("owned", 1L), "task", null, foreign, null, null, false);
+
+        TaskResponse response = TaskResponse.from(task);
+
+        assertThat(response.getAssigneeUserId()).isNull();
+        assertThat(response.getAssigneeName()).isNull();
+    }
+}
