@@ -55,6 +55,8 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
+    // 패키지 의존 방향 검사. 1.4.1은 slf4j 2.0.17을 요구해 Boot BOM과 버전이 같다.
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
 
     // Static analysis (2.43.0부터 JDK 21 필요. toolchain이 17이라 2.42.0에 고정)
     errorprone 'com.google.errorprone:error_prone_core:2.42.0'
