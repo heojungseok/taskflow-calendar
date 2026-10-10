@@ -1,4 +1,4 @@
-package com.taskflow.planning.project;
+package com.taskflow.identity.user;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,10 +10,6 @@ import static org.mockito.Mockito.verify;
 
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.BusinessException;
-import com.taskflow.identity.user.Provider;
-import com.taskflow.identity.user.User;
-import com.taskflow.identity.user.UserRepository;
-import com.taskflow.planning.task.TaskRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,17 +23,11 @@ class DemoUsageServiceTest {
     @Mock
     UserRepository userRepository;
 
-    @Mock
-    ProjectRepository projectRepository;
-
-    @Mock
-    TaskRepository taskRepository;
-
     DemoUsageService service;
 
     @BeforeEach
     void setUp() {
-        service = new DemoUsageService(userRepository, projectRepository, taskRepository);
+        service = new DemoUsageService(userRepository);
     }
 
     @Test
@@ -52,11 +42,19 @@ class DemoUsageServiceTest {
     }
 
     @Test
-    void taskLimitIncludesDeletedTasks() {
+    void createLimitIsCountedAfterUserRowIsLocked() {
         User user = demoUser(10);
-        given(taskRepository.countByProject_OwnerUserId(1L)).willReturn(100L);
 
-        BusinessException error = assertThrows(BusinessException.class, () -> service.beforeTaskCreate(1L));
+        BusinessException error = assertThrows(
+                BusinessException.class,
+                () -> service.beforeCreate(
+                        1L,
+                        () -> {
+                            // 개수는 사용자 행 잠금 뒤에 읽어야 동시 생성이 한도를 넘지 못한다
+                            verify(userRepository).findByIdForUpdate(1L);
+                            return 100L;
+                        },
+                        100));
 
         assertEquals(ErrorCode.DEMO_RESOURCE_LIMIT, error.getErrorCode());
         verify(user, never()).incrementDemoMutationCount();

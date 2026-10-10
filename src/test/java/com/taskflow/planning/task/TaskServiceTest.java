@@ -8,10 +8,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.taskflow.identity.user.DemoUsageService;
 import com.taskflow.identity.user.User;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.observability.TaskFlowMetrics;
-import com.taskflow.planning.project.DemoUsageService;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.project.ProjectRepository;
 import com.taskflow.planning.task.dto.CreateTaskRequest;

@@ -1,6 +1,7 @@
 package com.taskflow.planning.project;
 
 import com.taskflow.identity.security.SecurityContextHelper;
+import com.taskflow.identity.user.DemoUsageService;
 import com.taskflow.planning.project.dto.CreateProjectRequest;
 import com.taskflow.planning.project.dto.ProjectResponse;
 import com.taskflow.planning.project.exception.ProjectNotFoundException;
@@ -15,13 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProjectService {
 
+    private static final int DEMO_PROJECT_LIMIT = 10;
+
     private final ProjectRepository projectRepository;
     private final DemoUsageService demoUsageService;
 
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request) {
         Long userId = SecurityContextHelper.getCurrentUserId();
-        demoUsageService.beforeProjectCreate(userId);
+        demoUsageService.beforeCreate(userId, () -> projectRepository.countByOwnerUserId(userId), DEMO_PROJECT_LIMIT);
         Project project = Project.of(request.getName(), userId);
         Project savedProject = projectRepository.save(project);
 
