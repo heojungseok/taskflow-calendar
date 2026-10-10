@@ -5,7 +5,7 @@ import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
 import com.taskflow.calendar.domain.outbox.dto.OutboxResponse;
 import com.taskflow.common.ApiResponse;
-import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.identity.security.SecurityContextHelper;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

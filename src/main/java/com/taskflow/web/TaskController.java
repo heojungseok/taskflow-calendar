@@ -4,7 +4,7 @@ import com.taskflow.calendar.domain.task.TaskService;
 import com.taskflow.calendar.domain.task.TaskStatus;
 import com.taskflow.calendar.domain.task.dto.*;
 import com.taskflow.common.ApiResponse;
-import com.taskflow.security.SecurityContextHelper;
+import com.taskflow.identity.security.SecurityContextHelper;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

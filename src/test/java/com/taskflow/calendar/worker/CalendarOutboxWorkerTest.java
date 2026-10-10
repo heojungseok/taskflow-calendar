@@ -3,11 +3,11 @@ package com.taskflow.calendar.worker;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
-import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.domain.outbox.*;
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarService;
 import com.taskflow.common.exception.NonRetryableIntegrationException;
+import com.taskflow.identity.oauth.GoogleOAuthService;
+import com.taskflow.identity.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.observability.TaskFlowMetrics;
 import java.time.LocalDateTime;
 import java.util.List;

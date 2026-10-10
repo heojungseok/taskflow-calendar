@@ -307,9 +307,9 @@ run_application_tests() {
     DB_PASSWORD="$APP_PASSWORD" \
     JPA_DDL_AUTO=validate \
     ./gradlew --no-daemon --rerun-tasks test \
-        --tests 'com.taskflow.calendar.domain.user.DemoExpiryIntegrationTest' \
-        --tests 'com.taskflow.calendar.domain.user.DemoCleanupRepositoryTest' \
-        --tests 'com.taskflow.calendar.domain.oauth.SessionInvalidationIntegrationTest'
+        --tests 'com.taskflow.identity.auth.DemoExpiryIntegrationTest' \
+        --tests 'com.taskflow.demo.DemoCleanupRepositoryTest' \
+        --tests 'com.taskflow.identity.oauth.SessionInvalidationIntegrationTest'
 }
 
 run_full_build() {

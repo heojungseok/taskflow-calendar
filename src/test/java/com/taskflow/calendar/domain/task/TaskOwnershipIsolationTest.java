@@ -3,8 +3,8 @@ package com.taskflow.calendar.domain.task;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.taskflow.calendar.domain.project.Project;
-import com.taskflow.calendar.domain.user.User;
 import com.taskflow.config.JpaAuditingConfig;
+import com.taskflow.identity.user.User;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,7 +1,5 @@
 package com.taskflow.calendar.worker;
 
-import com.taskflow.calendar.domain.oauth.GoogleOAuthService;
-import com.taskflow.calendar.domain.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.calendar.domain.outbox.CalendarOutbox;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxRepository;
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
@@ -9,6 +7,8 @@ import com.taskflow.calendar.domain.outbox.OutboxPolicy;
 import com.taskflow.calendar.integration.googlecalendar.GoogleCalendarService;
 import com.taskflow.common.exception.NonRetryableIntegrationException;
 import com.taskflow.common.exception.RetryableIntegrationException;
+import com.taskflow.identity.oauth.GoogleOAuthService;
+import com.taskflow.identity.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.observability.TaskFlowMetrics;
 import java.time.Duration;
 import java.time.LocalDateTime;

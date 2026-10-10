@@ -11,10 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.taskflow.calendar.domain.outbox.CalendarOutboxService;
 import com.taskflow.calendar.domain.outbox.OutboxStatus;
-import com.taskflow.calendar.domain.user.User;
-import com.taskflow.calendar.domain.user.UserRepository;
-import com.taskflow.config.SecurityConfig;
-import com.taskflow.security.JwtTokenProvider;
+import com.taskflow.identity.security.JwtTokenProvider;
+import com.taskflow.identity.security.SecurityConfig;
+import com.taskflow.identity.user.User;
+import com.taskflow.identity.user.UserRepository;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.util.List;
