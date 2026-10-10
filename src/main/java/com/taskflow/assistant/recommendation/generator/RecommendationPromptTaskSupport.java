@@ -1,7 +1,7 @@
 package com.taskflow.assistant.recommendation.generator;
 
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
 import com.taskflow.assistant.summary.generator.SummaryPromptTaskSupport;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.planning.task.Task;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -15,7 +15,7 @@ public final class RecommendationPromptTaskSupport {
 
     private final SummaryPromptTaskSupport summarySupport = new SummaryPromptTaskSupport();
 
-    public Map<String, Object> toPromptTaskPayload(SummaryTaskSnapshot snapshot, int seed) {
+    public Map<String, Object> toPromptTaskPayload(TaskSyncSnapshot snapshot, int seed) {
         Task task = snapshot.getTask();
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("id", task.getId());

@@ -100,14 +100,4 @@ public class TaskController {
         List<TaskHistoryResponse> responses = taskService.getTaskHistory(taskId);
         return ApiResponse.success(responses);
     }
-
-    /**
-     * Task 캘린더 동기화 상태 조회
-     * GET /api/tasks/{taskId}/calendar-sync
-     */
-    @GetMapping("/tasks/{taskId}/calendar-sync")
-    public ApiResponse<CalendarSyncStatusResponse> getCalendarSyncStatus(@PathVariable Long taskId) {
-        CalendarSyncStatusResponse response = taskService.getCalendarSyncStatus(taskId);
-        return ApiResponse.success(response);
-    }
 }

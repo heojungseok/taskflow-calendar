@@ -1,4 +1,4 @@
-package com.taskflow.planning.task.dto;
+package com.taskflow.calendarsync.outbox.dto;
 
 import com.taskflow.calendarsync.outbox.CalendarOutbox;
 import com.taskflow.calendarsync.outbox.OutboxOpType;

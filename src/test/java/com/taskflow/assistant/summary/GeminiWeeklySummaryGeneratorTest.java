@@ -10,11 +10,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.assistant.summary.generator.GeminiWeeklySummaryGenerator;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
@@ -94,10 +96,10 @@ class GeminiWeeklySummaryGeneratorTest {
     void prepareRequest_generatesStableMetricsAndGrowsWithInput() throws Exception {
         LocalDate weekStart = LocalDate.of(2026, 3, 23);
         LocalDate weekEnd = LocalDate.of(2026, 3, 29);
-        List<SummaryTaskSnapshot> smallSynced = List.of(snapshot(
+        List<TaskSyncSnapshot> smallSynced = List.of(snapshot(
                 task("주말 장보기 일정", "토요일 오전에 장을 봐야 한다. 우유와 달걀, 채소를 사야 한다.", TaskStatus.IN_PROGRESS),
                 TaskSyncState.SYNCED));
-        List<SummaryTaskSnapshot> smallUnsynced = List.of(snapshot(
+        List<TaskSyncSnapshot> smallUnsynced = List.of(snapshot(
                 task("봄 옷장 정리", "외투를 정리하고 겨울 옷은 압축팩에 넣는다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED));
 
         Object firstPrepared = invokePrivate(
@@ -139,14 +141,14 @@ class GeminiWeeklySummaryGeneratorTest {
         assertEquals(1, invokeGetter(firstMetrics, "getSyncedIncludedTaskCount"));
         assertEquals(1, invokeGetter(firstMetrics, "getUnsyncedIncludedTaskCount"));
 
-        List<SummaryTaskSnapshot> largeSynced = List.of(
+        List<TaskSyncSnapshot> largeSynced = List.of(
                 snapshot(
                         task("주말 장보기 일정", "토요일 오전에 장을 봐야 한다. 우유와 달걀, 채소를 사야 한다. 예산도 점검한다.", TaskStatus.IN_PROGRESS),
                         TaskSyncState.SYNCED),
                 snapshot(
                         task("가족 식사 예약", "저녁 식사 예약을 잡고 메뉴 후보를 정한다. 부모님과 시간도 다시 확인한다.", TaskStatus.REQUESTED),
                         TaskSyncState.SYNCED));
-        List<SummaryTaskSnapshot> largeUnsynced = List.of(
+        List<TaskSyncSnapshot> largeUnsynced = List.of(
                 snapshot(
                         task("봄 옷장 정리", "외투를 정리하고 겨울 옷은 압축팩에 넣는다. 세탁이 필요한 옷도 분리한다.", TaskStatus.REQUESTED),
                         TaskSyncState.SYNC_DISABLED),
@@ -590,8 +592,8 @@ class GeminiWeeklySummaryGeneratorTest {
         return task;
     }
 
-    private SummaryTaskSnapshot snapshot(Task task, TaskSyncState syncState) {
-        return SummaryTaskSnapshot.of(task, syncState, null, null, null);
+    private TaskSyncSnapshot snapshot(Task task, TaskSyncState syncState) {
+        return TaskSyncSnapshot.of(task, syncState, null, null, null);
     }
 
     private JsonNode preparedRequestBody(Object prepared) throws Exception {

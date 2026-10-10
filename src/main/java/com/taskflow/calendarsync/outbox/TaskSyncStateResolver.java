@@ -1,22 +1,21 @@
-package com.taskflow.assistant.summary;
+package com.taskflow.calendarsync.outbox;
 
-import com.taskflow.calendarsync.outbox.CalendarOutbox;
-import com.taskflow.calendarsync.outbox.CalendarOutboxService;
-import com.taskflow.calendarsync.outbox.OutboxOpType;
-import com.taskflow.calendarsync.outbox.OutboxStatus;
 import com.taskflow.planning.task.Task;
+import com.taskflow.planning.task.TaskSyncState;
+import com.taskflow.planning.task.TaskSyncStateReader;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class TaskSyncStateResolver {
+public class TaskSyncStateResolver implements TaskSyncStateReader {
 
     private final CalendarOutboxService calendarOutboxService;
 
-    public SummaryTaskSnapshot resolve(Task task) {
+    public TaskSyncSnapshot resolve(Task task) {
         CalendarOutbox latestOutbox =
                 calendarOutboxService.findLatestByTaskId(task.getId()).orElse(null);
 
@@ -27,7 +26,7 @@ public class TaskSyncStateResolver {
      * 목록용. Task마다 resolve()를 부르면 Outbox 조회가 건수만큼 나간다(N+1).
      * 최신 Outbox를 한 번에 받아 같은 분류 로직에 태운다.
      */
-    public List<SummaryTaskSnapshot> resolveAll(List<Task> tasks) {
+    public List<TaskSyncSnapshot> resolveAll(List<Task> tasks) {
         Map<Long, CalendarOutbox> latestByTaskId = calendarOutboxService.findLatestByTaskIds(
                 tasks.stream().map(Task::getId).toList());
 
@@ -36,8 +35,14 @@ public class TaskSyncStateResolver {
                 .toList();
     }
 
-    private SummaryTaskSnapshot toSnapshot(Task task, CalendarOutbox latestOutbox) {
-        return SummaryTaskSnapshot.of(
+    @Override
+    public Map<Long, TaskSyncState> readAll(List<Task> tasks) {
+        return resolveAll(tasks).stream()
+                .collect(Collectors.toMap(snapshot -> snapshot.getTask().getId(), TaskSyncSnapshot::getSyncState));
+    }
+
+    private TaskSyncSnapshot toSnapshot(Task task, CalendarOutbox latestOutbox) {
+        return TaskSyncSnapshot.of(
                 task,
                 classify(task, latestOutbox),
                 latestOutbox != null ? latestOutbox.getStatus() : null,

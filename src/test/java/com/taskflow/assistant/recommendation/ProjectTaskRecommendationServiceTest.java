@@ -15,9 +15,8 @@ import com.taskflow.assistant.recommendation.dto.TaskRecommendationCacheStatus;
 import com.taskflow.assistant.recommendation.generator.TaskRecommendationGenerationResult;
 import com.taskflow.assistant.recommendation.generator.TaskRecommendationGenerator;
 import com.taskflow.assistant.recommendation.generator.TaskRecommendationItemResult;
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
-import com.taskflow.assistant.summary.TaskSyncState;
-import com.taskflow.assistant.summary.TaskSyncStateResolver;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
+import com.taskflow.calendarsync.outbox.TaskSyncStateResolver;
 import com.taskflow.identity.user.UserRepository;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.project.ProjectRepository;
@@ -25,6 +24,7 @@ import com.taskflow.planning.project.exception.ProjectNotFoundException;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -208,7 +208,7 @@ class ProjectTaskRecommendationServiceTest {
         return task;
     }
 
-    private SummaryTaskSnapshot snapshot(Task task, TaskSyncState syncState) {
-        return SummaryTaskSnapshot.of(task, syncState, null, null, null);
+    private TaskSyncSnapshot snapshot(Task task, TaskSyncState syncState) {
+        return TaskSyncSnapshot.of(task, syncState, null, null, null);
     }
 }

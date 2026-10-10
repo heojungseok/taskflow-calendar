@@ -1,10 +1,9 @@
-package com.taskflow.assistant.summary;
+package com.taskflow.calendarsync.outbox;
 
-import com.taskflow.calendarsync.outbox.OutboxOpType;
-import com.taskflow.calendarsync.outbox.OutboxStatus;
 import com.taskflow.planning.task.Task;
+import com.taskflow.planning.task.TaskSyncState;
 
-public class SummaryTaskSnapshot {
+public class TaskSyncSnapshot {
 
     private final Task task;
     private final TaskSyncState syncState;
@@ -12,7 +11,7 @@ public class SummaryTaskSnapshot {
     private final OutboxOpType latestOutboxOpType;
     private final String latestOutboxError;
 
-    private SummaryTaskSnapshot(
+    private TaskSyncSnapshot(
             Task task,
             TaskSyncState syncState,
             OutboxStatus latestOutboxStatus,
@@ -25,13 +24,13 @@ public class SummaryTaskSnapshot {
         this.latestOutboxError = latestOutboxError;
     }
 
-    public static SummaryTaskSnapshot of(
+    public static TaskSyncSnapshot of(
             Task task,
             TaskSyncState syncState,
             OutboxStatus latestOutboxStatus,
             OutboxOpType latestOutboxOpType,
             String latestOutboxError) {
-        return new SummaryTaskSnapshot(task, syncState, latestOutboxStatus, latestOutboxOpType, latestOutboxError);
+        return new TaskSyncSnapshot(task, syncState, latestOutboxStatus, latestOutboxOpType, latestOutboxError);
     }
 
     public Task getTask() {

@@ -1,8 +1,8 @@
 package com.taskflow.assistant.recommendation.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.taskflow.assistant.summary.TaskSyncState;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import java.time.LocalDateTime;
 
 public class ProjectTaskRecommendationItemResponse {

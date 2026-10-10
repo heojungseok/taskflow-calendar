@@ -6,13 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
-import com.taskflow.assistant.summary.SummaryTaskSnapshot;
-import com.taskflow.assistant.summary.TaskSyncState;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
+import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -103,7 +103,7 @@ class SummaryDecodingExperimentTest {
         return properties;
     }
 
-    private SummaryTaskSnapshot snapshot(
+    private TaskSyncSnapshot snapshot(
             Project project,
             String title,
             String description,
@@ -121,7 +121,7 @@ class SummaryDecodingExperimentTest {
         if (status != TaskStatus.REQUESTED) {
             task.changeStatus(status);
         }
-        return SummaryTaskSnapshot.of(task, syncState, null, null, null);
+        return TaskSyncSnapshot.of(task, syncState, null, null, null);
     }
 
     private ExperimentScenario releaseScenario() {
@@ -267,18 +267,18 @@ class SummaryDecodingExperimentTest {
     private static final class ExperimentScenario {
         private final String name;
         private final Project project;
-        private final List<SummaryTaskSnapshot> syncedTasks;
+        private final List<TaskSyncSnapshot> syncedTasks;
         private final int syncedTotalTaskCount;
-        private final List<SummaryTaskSnapshot> unsyncedTasks;
+        private final List<TaskSyncSnapshot> unsyncedTasks;
         private final int unsyncedTotalTaskCount;
         private final List<ExperimentConfig> configs;
 
         private ExperimentScenario(
                 String name,
                 Project project,
-                List<SummaryTaskSnapshot> syncedTasks,
+                List<TaskSyncSnapshot> syncedTasks,
                 int syncedTotalTaskCount,
-                List<SummaryTaskSnapshot> unsyncedTasks,
+                List<TaskSyncSnapshot> unsyncedTasks,
                 int unsyncedTotalTaskCount,
                 List<ExperimentConfig> configs) {
             this.name = name;
@@ -298,7 +298,7 @@ class SummaryDecodingExperimentTest {
             return project;
         }
 
-        private List<SummaryTaskSnapshot> syncedTasks() {
+        private List<TaskSyncSnapshot> syncedTasks() {
             return syncedTasks;
         }
 
@@ -306,7 +306,7 @@ class SummaryDecodingExperimentTest {
             return syncedTotalTaskCount;
         }
 
-        private List<SummaryTaskSnapshot> unsyncedTasks() {
+        private List<TaskSyncSnapshot> unsyncedTasks() {
             return unsyncedTasks;
         }
 

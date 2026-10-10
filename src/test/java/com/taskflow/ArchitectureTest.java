@@ -1,7 +1,5 @@
 package com.taskflow;
 
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
@@ -43,12 +41,17 @@ class ArchitectureTest {
     static final ArchRule calendarsync_하위_패키지_사이에_순환이_없다 =
             slices().matching("com.taskflow.calendarsync.(*)..").should().beFreeOfCycles();
 
-    // TODO(3단계): planning → calendarsync·assistant 의존을 끊고 아래 예외를 지운다.
     @ArchTest
-    static final ArchRule 최상위_패키지_사이에_순환이_없다 = slices().matching("com.taskflow.(*)..")
+    static final ArchRule 최상위_패키지_사이에_순환이_없다 =
+            slices().matching("com.taskflow.(*)..").should().beFreeOfCycles();
+
+    @ArchTest
+    static final ArchRule planning은_calendarsync와_assistant에_의존하지_않는다 = noClasses()
+            .that()
+            .resideInAPackage(PLANNING)
             .should()
-            .beFreeOfCycles()
-            .ignoreDependency(resideInAPackage(PLANNING), resideInAnyPackage(CALENDARSYNC, ASSISTANT));
+            .dependOnClassesThat()
+            .resideInAnyPackage(CALENDARSYNC, ASSISTANT, DEMO);
 
     @ArchTest
     static final ArchRule identity는_다른_컨텍스트에_의존하지_않는다 = noClasses()

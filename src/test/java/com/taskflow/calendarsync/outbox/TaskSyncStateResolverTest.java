@@ -1,4 +1,4 @@
-package com.taskflow.assistant.summary;
+package com.taskflow.calendarsync.outbox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -7,11 +7,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.taskflow.calendarsync.outbox.CalendarOutbox;
-import com.taskflow.calendarsync.outbox.CalendarOutboxService;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskStatus;
+import com.taskflow.planning.task.TaskSyncState;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +51,7 @@ class TaskSyncStateResolverTest {
 
         when(calendarOutboxService.findLatestByTaskId(task.getId())).thenReturn(Optional.of(latest));
 
-        SummaryTaskSnapshot snapshot = resolver.resolve(task);
+        TaskSyncSnapshot snapshot = resolver.resolve(task);
 
         assertEquals(TaskSyncState.SYNCED, snapshot.getSyncState());
     }
@@ -66,7 +65,7 @@ class TaskSyncStateResolverTest {
 
         when(calendarOutboxService.findLatestByTaskId(task.getId())).thenReturn(Optional.of(latest));
 
-        SummaryTaskSnapshot snapshot = resolver.resolve(task);
+        TaskSyncSnapshot snapshot = resolver.resolve(task);
 
         assertEquals(TaskSyncState.PENDING_SYNC, snapshot.getSyncState());
     }
@@ -81,7 +80,7 @@ class TaskSyncStateResolverTest {
 
         when(calendarOutboxService.findLatestByTaskId(task.getId())).thenReturn(Optional.of(latest));
 
-        SummaryTaskSnapshot snapshot = resolver.resolve(task);
+        TaskSyncSnapshot snapshot = resolver.resolve(task);
 
         // SKIPPED는 종결이다. PENDING_SYNC면 화면에 영구 "대기"가 뜬다.
         assertEquals(TaskSyncState.SYNC_DISABLED, snapshot.getSyncState());
@@ -97,7 +96,7 @@ class TaskSyncStateResolverTest {
 
         when(calendarOutboxService.findLatestByTaskId(task.getId())).thenReturn(Optional.of(latest));
 
-        SummaryTaskSnapshot snapshot = resolver.resolve(task);
+        TaskSyncSnapshot snapshot = resolver.resolve(task);
 
         assertEquals(TaskSyncState.SYNC_DISABLED, snapshot.getSyncState());
     }
@@ -112,7 +111,7 @@ class TaskSyncStateResolverTest {
 
         when(calendarOutboxService.findLatestByTaskId(task.getId())).thenReturn(Optional.of(latest));
 
-        SummaryTaskSnapshot snapshot = resolver.resolve(task);
+        TaskSyncSnapshot snapshot = resolver.resolve(task);
 
         assertEquals(TaskSyncState.FAILED_SYNC, snapshot.getSyncState());
     }
@@ -124,7 +123,7 @@ class TaskSyncStateResolverTest {
 
         when(calendarOutboxService.findLatestByTaskId(task.getId())).thenReturn(Optional.empty());
 
-        SummaryTaskSnapshot snapshot = resolver.resolve(task);
+        TaskSyncSnapshot snapshot = resolver.resolve(task);
 
         assertEquals(TaskSyncState.SYNC_DISABLED, snapshot.getSyncState());
     }
@@ -139,7 +138,7 @@ class TaskSyncStateResolverTest {
         latest.markAsSuccess();
         when(calendarOutboxService.findLatestByTaskIds(List.of(11L, 12L))).thenReturn(Map.of(11L, latest));
 
-        List<SummaryTaskSnapshot> snapshots = resolver.resolveAll(List.of(first, second));
+        List<TaskSyncSnapshot> snapshots = resolver.resolveAll(List.of(first, second));
 
         assertEquals(2, snapshots.size());
         assertEquals(TaskSyncState.SYNCED, snapshots.get(0).getSyncState());
