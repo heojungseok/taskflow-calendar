@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * Task 변경을 Outbox로 적재한다.
  *
  * <p>Transactional Outbox라서 Task 변경과 같은 트랜잭션에서 실행돼야 한다. 그래서 @TransactionalEventListener가 아니라 동기
- * @EventListener를 쓴다. 적재가 실패하면 Task 변경도 롤백된다.
+ * {@code @EventListener}를 쓴다. 적재가 실패하면 Task 변경도 롤백된다.
  */
 @Component
 @RequiredArgsConstructor

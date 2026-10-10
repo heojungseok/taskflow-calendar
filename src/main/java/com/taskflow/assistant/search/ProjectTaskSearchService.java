@@ -536,20 +536,7 @@ public class ProjectTaskSearchService {
             return null;
         }
 
-        return new ScoredTask(
-                snapshot,
-                total,
-                roleEntityScore.score(),
-                mainActionScore.score(),
-                secondaryActionScore.score(),
-                relationScore,
-                timeScore.score(),
-                domainScore,
-                semanticScore,
-                statusScore,
-                syncScore,
-                priorityScore,
-                semanticSimilarity);
+        return new ScoredTask(snapshot, total);
     }
 
     private boolean passesMustMatch(
@@ -671,7 +658,7 @@ public class ProjectTaskSearchService {
         if (semanticGroups > 0) {
             score = Math.min(ROLE_ENTITY_WEIGHT, score - Math.min(semanticGroups * 2, 6));
         }
-        return new MatchScore(Math.max(score, perGroup), false, semanticGroups > 0, true);
+        return new MatchScore(Math.max(score, perGroup), semanticGroups > 0, true);
     }
 
     private int relationScore(
@@ -840,7 +827,7 @@ public class ProjectTaskSearchService {
                     exact = true;
                     break;
                 }
-                for (String token : candidate.split("\\s+")) {
+                for (String token : candidate.split("\\s+", -1)) {
                     if (token.length() >= 2 && text.contains(token)) {
                         semantic = true;
                         break;
@@ -928,10 +915,10 @@ public class ProjectTaskSearchService {
         }
 
         if (exact) {
-            return new MatchScore(MAIN_ACTION_WEIGHT, true, false, true);
+            return new MatchScore(MAIN_ACTION_WEIGHT, false, true);
         }
         if (semantic) {
-            return new MatchScore(Math.max(MAIN_ACTION_WEIGHT - 8, 8), false, true, true);
+            return new MatchScore(Math.max(MAIN_ACTION_WEIGHT - 8, 8), true, true);
         }
         return MatchScore.none();
     }
@@ -965,7 +952,7 @@ public class ProjectTaskSearchService {
         if (semanticMatched > 0) {
             score = Math.max(score - semanticMatched, 4);
         }
-        return new MatchScore(score, semanticMatched == 0, semanticMatched > 0, true);
+        return new MatchScore(score, semanticMatched > 0, true);
     }
 
     private TimeScore timeScore(SearchTimeIntent timeIntent, Task task) {
@@ -1197,31 +1184,29 @@ public class ProjectTaskSearchService {
 
     private static final class MatchScore {
         private final int score;
-        private final boolean exact;
         private final boolean semantic;
         private final boolean active;
 
-        private MatchScore(int score, boolean exact, boolean semantic, boolean active) {
+        private MatchScore(int score, boolean semantic, boolean active) {
             this.score = score;
-            this.exact = exact;
             this.semantic = semantic;
             this.active = active;
         }
 
         private static MatchScore exact() {
-            return new MatchScore(ROLE_ENTITY_WEIGHT, true, false, true);
+            return new MatchScore(ROLE_ENTITY_WEIGHT, false, true);
         }
 
         private static MatchScore semantic() {
-            return new MatchScore(Math.max(ROLE_ENTITY_WEIGHT - 9, 8), false, true, true);
+            return new MatchScore(Math.max(ROLE_ENTITY_WEIGHT - 9, 8), true, true);
         }
 
         private static MatchScore none() {
-            return new MatchScore(0, false, false, true);
+            return new MatchScore(0, false, true);
         }
 
         private static MatchScore inactive() {
-            return new MatchScore(0, false, false, false);
+            return new MatchScore(0, false, false);
         }
 
         private int score() {
@@ -1259,73 +1244,5 @@ public class ProjectTaskSearchService {
         }
     }
 
-    private static final class ScoredTask {
-        private final TaskSyncSnapshot snapshot;
-        private final int totalScore;
-        private final int roleEntityScore;
-        private final int mainActionScore;
-        private final int secondaryActionScore;
-        private final int relationScore;
-        private final int timeScore;
-        private final int domainScore;
-        private final int semanticScore;
-        private final int statusScore;
-        private final int syncScore;
-        private final int priorityScore;
-        private final double semanticSimilarity;
-
-        private ScoredTask(
-                TaskSyncSnapshot snapshot,
-                int totalScore,
-                int roleEntityScore,
-                int mainActionScore,
-                int secondaryActionScore,
-                int relationScore,
-                int timeScore,
-                int domainScore,
-                int semanticScore,
-                int statusScore,
-                int syncScore,
-                int priorityScore,
-                double semanticSimilarity) {
-            this.snapshot = snapshot;
-            this.totalScore = totalScore;
-            this.roleEntityScore = roleEntityScore;
-            this.mainActionScore = mainActionScore;
-            this.secondaryActionScore = secondaryActionScore;
-            this.relationScore = relationScore;
-            this.timeScore = timeScore;
-            this.domainScore = domainScore;
-            this.semanticScore = semanticScore;
-            this.statusScore = statusScore;
-            this.syncScore = syncScore;
-            this.priorityScore = priorityScore;
-            this.semanticSimilarity = semanticSimilarity;
-        }
-
-        private TaskSyncSnapshot snapshot() {
-            return snapshot;
-        }
-
-        private int totalScore() {
-            return totalScore;
-        }
-
-        private String debugSummary() {
-            Task task = snapshot.getTask();
-            return "taskId=" + task.getId()
-                    + ", title='" + task.getTitle() + '\''
-                    + ", total=" + totalScore
-                    + ", roleEntity=" + roleEntityScore
-                    + ", mainAction=" + mainActionScore
-                    + ", secondaryAction=" + secondaryActionScore
-                    + ", relation=" + relationScore
-                    + ", time=" + timeScore
-                    + ", domain=" + domainScore
-                    + ", semantic=" + semanticScore + String.format(Locale.ROOT, "(%.3f)", semanticSimilarity)
-                    + ", status=" + statusScore
-                    + ", sync=" + syncScore
-                    + ", priority=" + priorityScore;
-        }
-    }
+    private record ScoredTask(TaskSyncSnapshot snapshot, int totalScore) {}
 }

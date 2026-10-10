@@ -78,6 +78,13 @@ tasks.withType(JavaCompile).configureEach {
     options.errorprone.disableWarningsInGeneratedCode = true
 }
 
+tasks.named('compileJava') {
+    // 운영 코드 경고는 0건이다. 버그로 이어지는 규칙은 다시 들어오지 않도록 빌드를 실패시킨다.
+    options.errorprone.error(
+            'JavaTimeDefaultTimeZone', 'StringCaseLocaleUsage', 'EmptyCatch', 'OperatorPrecedence',
+            'StringSplitter', 'UnusedVariable', 'UnusedMethod', 'ImmutableEnumChecker', 'JavaUtilDate')
+}
+
 tasks.named('compileTestJava') {
     // 테스트 메서드 이름은 한글로 짓는다.
     options.errorprone.disable('UnicodeInCode')

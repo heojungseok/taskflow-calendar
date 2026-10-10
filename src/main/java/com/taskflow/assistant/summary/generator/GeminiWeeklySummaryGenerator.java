@@ -12,7 +12,6 @@ import com.taskflow.common.ErrorCode;
 import com.taskflow.common.TimeZones;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
-import com.taskflow.planning.task.Task;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -237,11 +236,13 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     }
 
     private String systemInstruction() {
-        return "당신은 프로젝트 업무를 주간 단위로 정리하는 요약 보조자다.\n"
-                + "응답은 반드시 JSON 스키마를 따라라.\n"
-                + "summary, highlights, risks, nextActions의 문자열 값은 모두 한국어 존댓말로 작성하라.\n"
-                + "제공된 Task 데이터만 사용하고, 입력에 없는 사실은 추측하지 마라.\n"
-                + "synced와 unsynced는 각자 제공된 데이터만 기준으로 작성하라.";
+        return """
+               당신은 프로젝트 업무를 주간 단위로 정리하는 요약 보조자다.
+               응답은 반드시 JSON 스키마를 따라라.
+               summary, highlights, risks, nextActions의 문자열 값은 모두 한국어 존댓말로 작성하라.
+               제공된 Task 데이터만 사용하고, 입력에 없는 사실은 추측하지 마라.
+               synced와 unsynced는 각자 제공된 데이터만 기준으로 작성하라.\
+               """;
     }
 
     private String userPrompt(
@@ -339,14 +340,6 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         }
 
         return payload;
-    }
-
-    private String compressDescription(Task task) {
-        return promptTaskSupport.compressDescription(task);
-    }
-
-    private List<String> descriptionSignals(String description) {
-        return promptTaskSupport.descriptionSignals(description);
     }
 
     private Map<String, Object> responseJsonSchema() {

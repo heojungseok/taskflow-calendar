@@ -193,17 +193,10 @@ public class ProjectTaskRecommendationService {
         int score = 0;
 
         switch (task.getStatus()) {
-            case BLOCKED:
-                score += 110;
-                break;
-            case IN_PROGRESS:
-                score += 60;
-                break;
-            case REQUESTED:
-                score += 40;
-                break;
-            default:
-                break;
+            case BLOCKED -> score += 110;
+            case IN_PROGRESS -> score += 60;
+            case REQUESTED -> score += 40;
+            default -> {}
         }
 
         score += dueUrgencyScore(task, today);
@@ -245,15 +238,9 @@ public class ProjectTaskRecommendationService {
 
         if (snapshot.getLatestOutboxStatus() != null) {
             switch (snapshot.getLatestOutboxStatus()) {
-                case FAILED:
-                    score += 45;
-                    break;
-                case PENDING:
-                case PROCESSING:
-                    score += 25;
-                    break;
-                default:
-                    break;
+                case FAILED -> score += 45;
+                case PENDING, PROCESSING -> score += 25;
+                default -> {}
             }
         }
 

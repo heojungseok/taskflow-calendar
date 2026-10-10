@@ -14,12 +14,14 @@ public enum SummaryBucket {
 
     private final String promptFocus;
     private final String emptySummary;
+
+    @SuppressWarnings("ImmutableEnumChecker") // 생성자에서 List.copyOf로 불변 리스트만 담는다
     private final List<String> emptyNextActions;
 
     SummaryBucket(String promptFocus, String emptySummary, List<String> emptyNextActions) {
         this.promptFocus = promptFocus;
         this.emptySummary = emptySummary;
-        this.emptyNextActions = emptyNextActions;
+        this.emptyNextActions = List.copyOf(emptyNextActions);
     }
 
     public String getPromptFocus() {

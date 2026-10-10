@@ -49,7 +49,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     private TaskRecommendationGenerationResult generateUnobserved(
             Project project, List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today) {
         validateConfiguration();
-        PreparedRequest preparedRequest = prepareRequest(project, candidates, recommendationCount, today);
+        PreparedRequest preparedRequest = prepareRequest(candidates, recommendationCount, today);
         String endpoint =
                 properties.getBaseUrl().replaceAll("/$", "") + "/models/" + properties.getModel() + ":generateContent";
 
@@ -106,7 +106,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     }
 
     private PreparedRequest prepareRequest(
-            Project project, List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today) {
+            List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today) {
         try {
             Map<String, Object> requestBody = new LinkedHashMap<>();
             requestBody.put("system_instruction", createContent(systemInstruction()));
@@ -130,9 +130,11 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     }
 
     private String systemInstruction() {
-        return "당신은 후보 Task를 비교해 우선 확인 순서를 정하는 추천 보조자다.\n"
-                + "응답은 반드시 JSON 스키마를 따르며, reason·primaryTag·secondaryTag 문자열은 한국어로 작성하라.\n"
-                + "프로젝트 전체 요약은 하지 말고, 제공된 후보와 입력 사실만 사용하라.";
+        return """
+               당신은 후보 Task를 비교해 우선 확인 순서를 정하는 추천 보조자다.
+               응답은 반드시 JSON 스키마를 따르며, reason·primaryTag·secondaryTag 문자열은 한국어로 작성하라.
+               프로젝트 전체 요약은 하지 말고, 제공된 후보와 입력 사실만 사용하라.\
+               """;
     }
 
     private String userPrompt(List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today)

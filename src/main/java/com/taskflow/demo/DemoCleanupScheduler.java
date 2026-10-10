@@ -31,7 +31,7 @@ public class DemoCleanupScheduler {
                 Provider.DEMO, expiredBefore);
         Instant oldest = expired.isEmpty() ? null : expired.get(0).getExpiresAt();
         metrics.setOldestExpiredAgeSeconds(
-                oldest == null ? 0 : Duration.between(oldest, now).getSeconds());
+                oldest == null ? 0 : Duration.between(oldest, now).toSeconds());
         for (User user : expired) {
             try {
                 if (cleanupService.cleanup(user.getId(), expiredBefore)) {

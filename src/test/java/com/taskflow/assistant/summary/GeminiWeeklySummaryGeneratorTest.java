@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.assistant.summary.generator.GeminiWeeklySummaryGenerator;
+import com.taskflow.assistant.summary.generator.SummaryPromptTaskSupport;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
@@ -66,7 +67,7 @@ class GeminiWeeklySummaryGeneratorTest {
                 LocalDateTime.now().plusDays(1),
                 false);
 
-        String compressed = (String) invokePrivate(generator, "compressDescription", new Class[] {Task.class}, task);
+        String compressed = new SummaryPromptTaskSupport().compressDescription(task);
 
         assertTrue(compressed.length() <= 120);
         assertTrue(compressed.contains("Google OAuth") || compressed.contains("Gemini API key"));

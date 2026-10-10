@@ -38,14 +38,14 @@ public class SecurityContextHelper {
         }
 
         // 캐스팅 및 반환
-        if (principal instanceof Long) {
-            return (Long) principal;
+        if (principal instanceof Long l) {
+            return l;
         }
 
         // ✅ 추가: String 타입도 처리 (JWT에서 String으로 올 수 있음)
-        if (principal instanceof String) {
+        if (principal instanceof String string) {
             try {
-                return Long.parseLong((String) principal);
+                return Long.parseLong(string);
             } catch (NumberFormatException e) {
                 throw new UnauthorizedException("Invalid userId format: " + principal);
             }

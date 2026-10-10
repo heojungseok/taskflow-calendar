@@ -72,7 +72,7 @@ public class CalendarOutboxWorker {
             }
             LocalDateTime oldest = processableOutboxes.get(0).getCreatedAt();
             metrics.setOldestProcessableAgeSeconds(
-                    oldest == null ? 0 : Duration.between(oldest, now).getSeconds());
+                    oldest == null ? 0 : Duration.between(oldest, now).toSeconds());
 
             log.info("[Worker] Found {} processable outboxes", processableOutboxes.size());
 
@@ -184,9 +184,10 @@ public class CalendarOutboxWorker {
         try {
             Long userId = outboxService.extractUserIdFromPayload(outbox);
             log.warn(
-                    "[Worker] 401 detected on Outbox {}. Attempting token refresh for userId={}",
+                    "[Worker] 401 detected on Outbox {}. Attempting token refresh for userId={}, cause={}",
                     outbox.getId(),
-                    userId);
+                    userId,
+                    e.getMessage());
 
             googleOAuthService.refreshAccessToken(userId);
 

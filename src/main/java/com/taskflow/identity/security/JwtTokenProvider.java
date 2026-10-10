@@ -34,7 +34,7 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Long userId, int sessionVersion, Instant expiresAt) {
-        Date now = new Date();
+        Date now = Date.from(Instant.now());
 
         return Jwts.builder()
                 .subject(String.valueOf(userId)) // userId를 subject로
