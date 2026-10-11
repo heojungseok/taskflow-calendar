@@ -13,6 +13,13 @@ spring:
     password: ${DB_PASSWORD:taskflow123}
     driver-class-name: org.postgresql.Driver
 
+  data:
+    redis:
+      # 주간 요약·추천 캐시(summary.cache.enabled)용. Lettuce는 첫 명령 때 연결한다.
+      url: ${REDIS_URL:redis://localhost:6379}
+      timeout: 5s
+      connect-timeout: 5s
+
   jpa:
     hibernate:
       # 배포에서는 validate로 내린다. update는 운영 스키마를 말없이 바꾼다.
@@ -123,5 +130,4 @@ summary:
   force-live-enabled: ${WEEKLY_SUMMARY_FORCE_LIVE_ENABLED:false}
   cache:
     enabled: ${WEEKLY_SUMMARY_CACHE_ENABLED:false}
-    redis-url: ${REDIS_URL:}
     ttl-seconds: ${WEEKLY_SUMMARY_CACHE_TTL_SECONDS:259200}

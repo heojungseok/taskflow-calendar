@@ -9,7 +9,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "summary.cache")
 public class WeeklySummaryCacheProperties {
 
-    private boolean enabled;
-    private String redisUrl;
     private long ttlSeconds = 604800;
 }
