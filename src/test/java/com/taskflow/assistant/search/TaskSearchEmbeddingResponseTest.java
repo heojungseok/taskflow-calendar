@@ -21,7 +21,7 @@ class TaskSearchEmbeddingResponseTest {
         GeminiSearchProperties properties = new GeminiSearchProperties();
         properties.setEmbeddingDimensions(2);
         TaskSearchEmbeddingService service = new TaskSearchEmbeddingService(
-                properties, objectMapper, null, null, null, new TaskFlowMetrics(new SimpleMeterRegistry()));
+                properties, objectMapper, null, null, null, new TaskFlowMetrics(new SimpleMeterRegistry()), null);
 
         for (String json : List.of(
                 "{\"embeddings\":[]}",

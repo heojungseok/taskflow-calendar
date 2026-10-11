@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
@@ -47,7 +48,8 @@ class SummaryDecodingExperimentTest {
                 properties,
                 objectMapper,
                 new TaskFlowMetrics(new SimpleMeterRegistry()),
-                Clock.system(TimeZones.SERVICE_ZONE));
+                Clock.system(TimeZones.SERVICE_ZONE),
+                new GeminiClient(objectMapper));
         List<ExperimentScenario> scenarios = List.of(releaseScenario(), onboardingScenario());
         List<Map<String, Object>> scenarioReports = new ArrayList<>();
 

@@ -2,11 +2,16 @@ package com.taskflow.assistant.summary;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.assistant.GeminiCallException;
+import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.assistant.summary.generator.GeminiWeeklySummaryGenerator;
@@ -26,7 +31,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,6 +42,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 class GeminiWeeklySummaryGeneratorTest {
 
     private GeminiWeeklySummaryGenerator generator;
+    private final GeminiClient geminiClient = mock(GeminiClient.class);
     private ObjectMapper objectMapper;
     private Project project;
 
@@ -57,7 +62,8 @@ class GeminiWeeklySummaryGeneratorTest {
                 properties,
                 objectMapper,
                 new TaskFlowMetrics(new SimpleMeterRegistry()),
-                Clock.system(TimeZones.SERVICE_ZONE));
+                Clock.system(TimeZones.SERVICE_ZONE),
+                geminiClient);
         project = Project.of("TaskFlow", 1L);
     }
 
@@ -373,167 +379,44 @@ class GeminiWeeklySummaryGeneratorTest {
     }
 
     @Test
-    @DisplayName("classifyUpstreamFailure_retryAfter헤더가있으면_임시rateLimit로분류한다")
-    void classifyUpstreamFailure_retryAfterClassifiesTemporaryRateLimit() throws Exception {
-        LocalDate weekStart = LocalDate.of(2026, 3, 23);
-        LocalDate weekEnd = LocalDate.of(2026, 3, 29);
-        Object prepared = invokePrivate(
-                generator,
-                "prepareRequest",
-                new Class[] {
-                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
-                },
-                project,
-                List.of(snapshot(
-                        task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS),
-                        TaskSyncState.SYNCED)),
-                1,
-                List.of(snapshot(
-                        task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
-                1,
-                weekStart,
-                weekEnd);
-        Object metrics = invokeGetter(prepared, "getMetrics");
+    @DisplayName("Gemini 호출이 실패하면 분류 결과를 요약 예외로 넘기고 실패 로그에 관측 metrics를 남긴다")
+    void upstreamFailure_carriesClassificationAndLogsMetrics(CapturedOutput output) {
+        when(geminiClient.post(any(), any(), any()))
+                .thenThrow(new GeminiCallException(
+                        ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
+                        "Gemini rate limit is temporary",
+                        429,
+                        700L,
+                        "HEADER",
+                        "120",
+                        null,
+                        List.of("retry-after")));
 
-        Object exception = invokePrivate(
-                generator,
-                "classifyUpstreamFailure",
-                new Class[] {
-                    Project.class,
-                    LocalDate.class,
-                    LocalDate.class,
-                    int.class,
-                    Map.class,
-                    String.class,
-                    long.class,
-                    metrics.getClass()
-                },
-                project,
-                weekStart,
-                weekEnd,
-                429,
-                Map.of("Retry-After", List.of("120")),
-                "{\"error\":{\"message\":\"Too many requests\"}}",
-                700L,
-                metrics);
+        WeeklySummaryGenerationException exception = assertThrows(
+                WeeklySummaryGenerationException.class,
+                () -> generator.generate(
+                        project,
+                        List.of(snapshot(
+                                task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS),
+                                TaskSyncState.SYNCED)),
+                        1,
+                        List.of(snapshot(
+                                task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED),
+                                TaskSyncState.SYNC_DISABLED)),
+                        1,
+                        LocalDate.of(2026, 3, 23),
+                        LocalDate.of(2026, 3, 29)));
 
-        WeeklySummaryGenerationException generationException =
-                assertInstanceOf(WeeklySummaryGenerationException.class, exception);
-        assertEquals(ErrorCode.LLM_RATE_LIMITED_TEMPORARY, generationException.getErrorCode());
-        assertEquals("HEADER", generationException.getClassificationSource());
-        assertEquals("120", generationException.getRetryAfter());
-        assertTrue(generationException.isFallbackEligible());
-    }
-
-    @Test
-    @DisplayName("classifyUpstreamFailure_reason이dailyLimit이면_quota소진으로분류한다")
-    void classifyUpstreamFailure_dailyLimitReasonClassifiesQuotaExhausted() throws Exception {
-        LocalDate weekStart = LocalDate.of(2026, 3, 23);
-        LocalDate weekEnd = LocalDate.of(2026, 3, 29);
-        Object prepared = invokePrivate(
-                generator,
-                "prepareRequest",
-                new Class[] {
-                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
-                },
-                project,
-                List.of(snapshot(
-                        task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS),
-                        TaskSyncState.SYNCED)),
-                1,
-                List.of(snapshot(
-                        task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
-                1,
-                weekStart,
-                weekEnd);
-        Object metrics = invokeGetter(prepared, "getMetrics");
-
-        Object exception = invokePrivate(
-                generator,
-                "classifyUpstreamFailure",
-                new Class[] {
-                    Project.class,
-                    LocalDate.class,
-                    LocalDate.class,
-                    int.class,
-                    Map.class,
-                    String.class,
-                    long.class,
-                    metrics.getClass()
-                },
-                project,
-                weekStart,
-                weekEnd,
-                429,
-                Map.of(),
-                "{\"error\":{\"status\":\"RESOURCE_EXHAUSTED\",\"message\":\"Daily limit reached\",\"details\":[{\"reason\":\"dailyLimitExceeded\"}]}}",
-                700L,
-                metrics);
-
-        WeeklySummaryGenerationException generationException =
-                assertInstanceOf(WeeklySummaryGenerationException.class, exception);
-        assertEquals(ErrorCode.LLM_QUOTA_EXHAUSTED, generationException.getErrorCode());
-        assertEquals("BODY", generationException.getClassificationSource());
-        assertEquals("RESOURCE_EXHAUSTED", generationException.getUpstreamStatus());
-        assertTrue(generationException.getUpstreamReasonHints().contains("dailyLimitExceeded"));
-    }
-
-    @Test
-    @DisplayName("classifyUpstreamFailure_근거가없으면_unknown429로분류하고실패로그에관측metrics를남긴다")
-    void classifyUpstreamFailure_logsMetricsOnFailure(CapturedOutput output) throws Exception {
-        LocalDate weekStart = LocalDate.of(2026, 3, 23);
-        LocalDate weekEnd = LocalDate.of(2026, 3, 29);
-        Object prepared = invokePrivate(
-                generator,
-                "prepareRequest",
-                new Class[] {
-                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
-                },
-                project,
-                List.of(snapshot(
-                        task("주말 장보기 일정", "토요일 오전에 장을 보고 장보기 목록을 점검한다.", TaskStatus.IN_PROGRESS),
-                        TaskSyncState.SYNCED)),
-                1,
-                List.of(snapshot(
-                        task("봄 옷장 정리", "외투를 정리하고 압축팩을 준비한다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED)),
-                1,
-                weekStart,
-                weekEnd);
-        Object metrics = invokeGetter(prepared, "getMetrics");
-
-        Object exception = invokePrivate(
-                generator,
-                "classifyUpstreamFailure",
-                new Class[] {
-                    Project.class,
-                    LocalDate.class,
-                    LocalDate.class,
-                    int.class,
-                    Map.class,
-                    String.class,
-                    long.class,
-                    metrics.getClass()
-                },
-                project,
-                weekStart,
-                weekEnd,
-                429,
-                Map.of(),
-                "{\"error\":{\"message\":\"request rejected\"}}",
-                700L,
-                metrics);
-
-        WeeklySummaryGenerationException generationException =
-                assertInstanceOf(WeeklySummaryGenerationException.class, exception);
-        assertEquals(ErrorCode.LLM_429_UNKNOWN, generationException.getErrorCode());
-        assertEquals("UNKNOWN", generationException.getClassificationSource());
+        assertEquals(ErrorCode.LLM_RATE_LIMITED_TEMPORARY, exception.getErrorCode());
+        assertEquals("HEADER", exception.getClassificationSource());
+        assertEquals("120", exception.getRetryAfter());
+        assertTrue(exception.isFallbackEligible());
         assertTrue(output.getOut().contains("Gemini summary request failed."));
-        assertTrue(output.getOut().contains("requestBodyLength="));
+        assertTrue(output.getOut().contains("statusCode=429"));
         assertTrue(output.getOut().contains("promptInputFingerprint="));
-        assertTrue(output.getOut().contains("syncedDescBriefChars="));
         assertTrue(output.getOut().contains("unsyncedDescBriefChars="));
-        assertTrue(output.getOut().contains("errorCode=LLM_429_UNKNOWN"));
-        assertTrue(output.getOut().contains("classificationSource=UNKNOWN"));
+        assertTrue(output.getOut().contains("errorCode=LLM_RATE_LIMITED_TEMPORARY"));
+        assertTrue(output.getOut().contains("classificationSource=HEADER"));
     }
 
     @Test
@@ -643,7 +526,11 @@ class GeminiWeeklySummaryGeneratorTest {
     @DisplayName("prepareRequest_today와지연판정은KST날짜기준이다")
     void prepareRequest_todayAndOverdueFollowKst() throws Exception {
         GeminiWeeklySummaryGenerator kstGenerator = new GeminiWeeklySummaryGenerator(
-                properties, objectMapper, new TaskFlowMetrics(new SimpleMeterRegistry()), KST_MONDAY_MORNING);
+                properties,
+                objectMapper,
+                new TaskFlowMetrics(new SimpleMeterRegistry()),
+                KST_MONDAY_MORNING,
+                geminiClient);
         // KST 기준 어제 마감(지연)과 오늘 마감(지연 아님). UTC 날짜(10-11)로 판정하면 둘 다 지연이 아니다.
         Task yesterday =
                 Task.createTask(project, "어제 마감", null, null, null, LocalDateTime.of(2026, 10, 11, 18, 0), false);
