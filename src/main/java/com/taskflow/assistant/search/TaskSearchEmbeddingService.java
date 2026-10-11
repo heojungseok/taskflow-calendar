@@ -2,6 +2,8 @@ package com.taskflow.assistant.search;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.assistant.GeminiCallException;
+import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.identity.user.Provider;
@@ -10,14 +12,9 @@ import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +35,7 @@ public class TaskSearchEmbeddingService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final TaskFlowMetrics metrics;
-
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final GeminiClient geminiClient;
 
     /**
      * 의미 검색이 왜 안 도는지까지 알려준다.
@@ -160,9 +156,6 @@ public class TaskSearchEmbeddingService {
 
     private List<List<Double>> requestEmbeddings(List<String> documents) {
 
-        String endpoint = properties.getBaseUrl().replaceAll("/$", "") + "/models/" + properties.getEmbeddingModel()
-                + ":batchEmbedContents";
-
         Map<String, Object> requestBody = new LinkedHashMap<>();
         requestBody.put(
                 "requests",
@@ -177,26 +170,15 @@ public class TaskSearchEmbeddingService {
                         .collect(Collectors.toList()));
 
         try {
-            String json = objectMapper.writeValueAsString(requestBody);
-            HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint))
-                    .header("x-goog-api-key", properties.getApiKey())
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
-                    .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
-                    .build();
-
-            HttpResponse<String> response =
-                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() >= 400) {
-                throw embeddingFailure(response.statusCode(), response.body());
-            }
-
-            JsonNode root = objectMapper.readTree(response.body());
-            return parseEmbeddings(root, documents.size());
-        } catch (IOException | InterruptedException e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
+            String responseBody = geminiClient.post(
+                    properties,
+                    properties.getEmbeddingModel() + ":batchEmbedContents",
+                    objectMapper.writeValueAsString(requestBody));
+            return parseEmbeddings(objectMapper.readTree(responseBody), documents.size());
+        } catch (GeminiCallException e) {
+            throw new TaskSearchGenerationException(
+                    e.getErrorCode(), "Gemini embedding request failed: " + e.getMessage());
+        } catch (IOException e) {
             throw new TaskSearchGenerationException(
                     ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini embedding request failed");
         }
@@ -229,20 +211,6 @@ public class TaskSearchEmbeddingService {
     private TaskSearchGenerationException invalidEmbeddingResponse() {
         return new TaskSearchGenerationException(
                 ErrorCode.LLM_INVALID_RESPONSE, "Gemini embedding response was incomplete");
-    }
-
-    private TaskSearchGenerationException embeddingFailure(int statusCode, String responseBody) {
-        if (statusCode == 429) {
-            String normalized = responseBody == null ? "" : responseBody.toLowerCase(Locale.ROOT);
-            ErrorCode code = normalized.contains("quota")
-                    ? ErrorCode.LLM_QUOTA_EXHAUSTED
-                    : normalized.contains("rate") ? ErrorCode.LLM_RATE_LIMITED_TEMPORARY : ErrorCode.LLM_429_UNKNOWN;
-            return new TaskSearchGenerationException(code, "Gemini embedding request was rate limited");
-        }
-        ErrorCode code = statusCode == 400 || statusCode == 404
-                ? ErrorCode.LLM_CONFIG_INVALID
-                : ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
-        return new TaskSearchGenerationException(code, "Gemini embedding request failed");
     }
 
     private TaskDocument toDocument(Task task) {

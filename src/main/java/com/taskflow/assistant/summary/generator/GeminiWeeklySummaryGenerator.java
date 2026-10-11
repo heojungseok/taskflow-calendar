@@ -2,6 +2,8 @@ package com.taskflow.assistant.summary.generator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.assistant.GeminiCallException;
+import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.SummaryBucket;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
@@ -12,25 +14,17 @@ import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -44,8 +38,8 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     private final ObjectMapper objectMapper;
     private final TaskFlowMetrics metrics;
     private final Clock clock;
+    private final GeminiClient geminiClient;
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
     private final SummaryPromptTaskSupport promptTaskSupport = new SummaryPromptTaskSupport();
 
     @Override
@@ -100,35 +94,18 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
         PreparedRequest preparedRequest = prepareRequest(
                 project, syncedTasks, syncedTotalTaskCount, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd);
-        String endpoint =
-                properties.getBaseUrl().replaceAll("/$", "") + "/models/" + properties.getModel() + ":generateContent";
-
-        HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint))
-                .header("x-goog-api-key", properties.getApiKey())
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
-                .POST(HttpRequest.BodyPublishers.ofString(preparedRequest.getRequestBody(), StandardCharsets.UTF_8))
-                .build();
-
         long startedAt = System.currentTimeMillis();
+        String responseBody;
         try {
-            HttpResponse<String> response =
-                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            long latencyMs = System.currentTimeMillis() - startedAt;
+            responseBody = geminiClient.post(
+                    properties, properties.getModel() + ":generateContent", preparedRequest.getRequestBody());
+        } catch (GeminiCallException e) {
+            throw upstreamFailure(project, weekStart, weekEnd, e, preparedRequest.getMetrics());
+        }
+        long latencyMs = System.currentTimeMillis() - startedAt;
 
-            if (response.statusCode() >= 400) {
-                throw classifyUpstreamFailure(
-                        project,
-                        weekStart,
-                        weekEnd,
-                        response.statusCode(),
-                        response.headers().map(),
-                        response.body(),
-                        latencyMs,
-                        preparedRequest.getMetrics());
-            }
-
-            JsonNode root = objectMapper.readTree(response.body());
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
             UsageMetrics usageMetrics = usageMetrics(root);
             logUsage(project, weekStart, weekEnd, latencyMs, preparedRequest.getMetrics(), usageMetrics);
             return SummaryGenerationTelemetry.of(
@@ -137,49 +114,11 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     usageMetrics.promptTokens,
                     usageMetrics.candidateTokens,
                     usageMetrics.totalTokens);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn(
-                    "Gemini summary request interrupted. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, message={}",
-                    project.getId(),
-                    properties.getModel(),
-                    weekStart,
-                    weekEnd,
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE.getCode(),
-                    System.currentTimeMillis() - startedAt,
-                    properties.getTemperature(),
-                    effectiveTopK(),
-                    effectiveTopP(),
-                    preparedRequest.getMetrics().getRequestBodyLength(),
-                    preparedRequest.getMetrics().getPromptInputFingerprint(),
-                    preparedRequest.getMetrics().getSyncedIncludedTaskCount(),
-                    preparedRequest.getMetrics().getUnsyncedIncludedTaskCount(),
-                    preparedRequest.getMetrics().getSyncedDescBriefChars(),
-                    preparedRequest.getMetrics().getUnsyncedDescBriefChars(),
-                    abbreviate(e.getMessage()));
-            throw new WeeklySummaryGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini API request was interrupted", true);
         } catch (IOException e) {
-            log.warn(
-                    "Gemini summary request failed before response. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, message={}",
-                    project.getId(),
-                    properties.getModel(),
-                    weekStart,
-                    weekEnd,
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE.getCode(),
-                    System.currentTimeMillis() - startedAt,
-                    properties.getTemperature(),
-                    effectiveTopK(),
-                    effectiveTopP(),
-                    preparedRequest.getMetrics().getRequestBodyLength(),
-                    preparedRequest.getMetrics().getPromptInputFingerprint(),
-                    preparedRequest.getMetrics().getSyncedIncludedTaskCount(),
-                    preparedRequest.getMetrics().getUnsyncedIncludedTaskCount(),
-                    preparedRequest.getMetrics().getSyncedDescBriefChars(),
-                    preparedRequest.getMetrics().getUnsyncedDescBriefChars(),
-                    abbreviate(e.getMessage()));
             throw new WeeklySummaryGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini API request failed: " + e.getMessage(), true);
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
+                    "Gemini response was not readable: " + e.getMessage(),
+                    true);
         }
     }
 
@@ -467,55 +406,17 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         return values;
     }
 
-    private WeeklySummaryGenerationException classifyUpstreamFailure(
-            Project project,
-            LocalDate weekStart,
-            LocalDate weekEnd,
-            int statusCode,
-            Map<String, List<String>> responseHeaders,
-            String responseBody,
-            long latencyMs,
-            PromptMetrics metrics) {
-        ErrorCode errorCode;
-        boolean fallbackEligible;
-        String message;
-        String classificationSource = null;
-        String retryAfter = firstHeaderValueIgnoreCase(responseHeaders, "Retry-After");
-        String upstreamStatus = null;
-        List<String> reasonHints = List.of();
-
-        if (statusCode == 429) {
-            Classified429 classified429 = classify429(responseHeaders, responseBody);
-            errorCode = classified429.errorCode();
-            fallbackEligible = true;
-            message = classified429.message();
-            classificationSource = classified429.classificationSource();
-            retryAfter = classified429.retryAfter();
-            upstreamStatus = classified429.upstreamStatus();
-            reasonHints = classified429.reasonHints();
-        } else if (statusCode == 400 || statusCode == 404) {
-            errorCode = ErrorCode.LLM_CONFIG_INVALID;
-            fallbackEligible = false;
-            message = "Gemini configuration is invalid";
-        } else if (statusCode >= 500) {
-            errorCode = ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
-            fallbackEligible = true;
-            message = "Gemini temporary failure";
-        } else {
-            errorCode = ErrorCode.LLM_CONFIG_INVALID;
-            fallbackEligible = false;
-            message = "Gemini request failed";
-        }
-
+    private WeeklySummaryGenerationException upstreamFailure(
+            Project project, LocalDate weekStart, LocalDate weekEnd, GeminiCallException e, PromptMetrics metrics) {
         log.warn(
-                "Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}",
+                "Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}, message={}",
                 project.getId(),
                 properties.getModel(),
                 weekStart,
                 weekEnd,
-                statusCode,
-                errorCode.getCode(),
-                latencyMs,
+                e.getStatusCode(),
+                e.getErrorCode().getCode(),
+                e.getLatencyMs(),
                 properties.getTemperature(),
                 effectiveTopK(),
                 effectiveTopP(),
@@ -525,246 +426,19 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 metrics.getUnsyncedIncludedTaskCount(),
                 metrics.getSyncedDescBriefChars(),
                 metrics.getUnsyncedDescBriefChars(),
-                classificationSource != null ? classificationSource : "UNKNOWN",
-                retryAfter,
-                upstreamStatus,
-                reasonHints);
-
+                e.getClassificationSource() != null ? e.getClassificationSource() : "UNKNOWN",
+                e.getRetryAfter(),
+                e.getUpstreamStatus(),
+                e.getReasonHints(),
+                abbreviate(e.getMessage()));
         return new WeeklySummaryGenerationException(
-                errorCode, message, fallbackEligible, classificationSource, retryAfter, upstreamStatus, reasonHints);
-    }
-
-    private Classified429 classify429(Map<String, List<String>> responseHeaders, String responseBody) {
-        String retryAfter = firstHeaderValueIgnoreCase(responseHeaders, "Retry-After");
-        if (retryAfter != null && !retryAfter.isBlank()) {
-            return new Classified429(
-                    ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
-                    "Gemini rate limit is temporary",
-                    "HEADER",
-                    retryAfter,
-                    null,
-                    List.of("retry-after"));
-        }
-
-        ParsedUpstream429 parsed = parseUpstream429(responseBody);
-        if (containsQuotaHint(parsed.reasonHints(), parsed.message(), parsed.upstreamStatus())) {
-            return new Classified429(
-                    ErrorCode.LLM_QUOTA_EXHAUSTED,
-                    "Gemini quota exhausted",
-                    "BODY",
-                    retryAfter,
-                    parsed.upstreamStatus(),
-                    parsed.reasonHints());
-        }
-        if (containsRateLimitHint(parsed.reasonHints(), parsed.message(), parsed.upstreamStatus())) {
-            return new Classified429(
-                    ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
-                    "Gemini rate limit is temporary",
-                    "BODY",
-                    retryAfter,
-                    parsed.upstreamStatus(),
-                    parsed.reasonHints());
-        }
-
-        String normalizedMessage = normalizeHintText(parsed.message().isBlank() ? responseBody : parsed.message());
-        if (containsQuotaKeyword(normalizedMessage)) {
-            return new Classified429(
-                    ErrorCode.LLM_QUOTA_EXHAUSTED,
-                    "Gemini quota exhausted",
-                    "MESSAGE",
-                    retryAfter,
-                    parsed.upstreamStatus(),
-                    parsed.reasonHints());
-        }
-        if (containsRateLimitKeyword(normalizedMessage)) {
-            return new Classified429(
-                    ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
-                    "Gemini rate limit is temporary",
-                    "MESSAGE",
-                    retryAfter,
-                    parsed.upstreamStatus(),
-                    parsed.reasonHints());
-        }
-
-        return new Classified429(
-                ErrorCode.LLM_429_UNKNOWN,
-                "Gemini 429 classification unknown",
-                "UNKNOWN",
-                retryAfter,
-                parsed.upstreamStatus(),
-                parsed.reasonHints());
-    }
-
-    private ParsedUpstream429 parseUpstream429(String responseBody) {
-        if (responseBody == null || responseBody.isBlank()) {
-            return new ParsedUpstream429("", null, List.of());
-        }
-
-        try {
-            JsonNode root = objectMapper.readTree(responseBody);
-            JsonNode errorNode = root.path("error");
-            String message = firstNonBlank(
-                    errorNode.path("message").asText(null), root.path("message").asText(null), responseBody);
-            String upstreamStatus = firstNonBlank(
-                    errorNode.path("status").asText(null), root.path("status").asText(null));
-            List<String> reasonHints = extractReasonHints(errorNode);
-            return new ParsedUpstream429(message == null ? "" : message, upstreamStatus, reasonHints);
-        } catch (IOException e) {
-            return new ParsedUpstream429(responseBody, null, List.of());
-        }
-    }
-
-    private List<String> extractReasonHints(JsonNode errorNode) {
-        if (errorNode == null || errorNode.isMissingNode() || errorNode.isNull()) {
-            return List.of();
-        }
-
-        Set<String> hints = new LinkedHashSet<>();
-        collectReasonHints(errorNode.path("details"), hints);
-        collectReasonHints(errorNode.path("errors"), hints);
-        collectReasonHints(errorNode.path("violations"), hints);
-        return List.copyOf(hints);
-    }
-
-    private void collectReasonHints(JsonNode node, Set<String> hints) {
-        if (node == null || node.isMissingNode() || node.isNull()) {
-            return;
-        }
-
-        if (node.isArray()) {
-            for (JsonNode item : node) {
-                collectReasonHints(item, hints);
-            }
-            return;
-        }
-
-        if (!node.isObject()) {
-            return;
-        }
-
-        addHintValue(hints, node.path("reason").asText(null));
-        addHintValue(hints, node.path("errorType").asText(null));
-        addHintValue(hints, node.path("@type").asText(null));
-        collectReasonHints(node.path("metadata"), hints);
-        collectReasonHints(node.path("violations"), hints);
-    }
-
-    private void addHintValue(Set<String> hints, String value) {
-        if (value == null || value.isBlank()) {
-            return;
-        }
-        hints.add(value);
-    }
-
-    private boolean containsQuotaHint(List<String> reasonHints, String message, String upstreamStatus) {
-        if (containsQuotaKeyword(normalizeHintText(upstreamStatus))) {
-            return true;
-        }
-        for (String hint : reasonHints) {
-            if (containsQuotaKeyword(normalizeHintText(hint))) {
-                return true;
-            }
-        }
-        return containsQuotaKeyword(normalizeHintText(message));
-    }
-
-    private boolean containsRateLimitHint(List<String> reasonHints, String message, String upstreamStatus) {
-        if (containsRateLimitKeyword(normalizeHintText(upstreamStatus))) {
-            return true;
-        }
-        for (String hint : reasonHints) {
-            if (containsRateLimitKeyword(normalizeHintText(hint))) {
-                return true;
-            }
-        }
-        return containsRateLimitKeyword(normalizeHintText(message));
-    }
-
-    private boolean containsQuotaKeyword(String normalized) {
-        return containsAnyKeyword(
-                normalized,
-                "quotaexceeded",
-                "dailylimitexceeded",
-                "daily limit",
-                "daily quota",
-                "current quota",
-                "quota exhausted",
-                "insufficient quota",
-                "billing",
-                "billable",
-                "resource exhausted");
-    }
-
-    private boolean containsRateLimitKeyword(String normalized) {
-        return containsAnyKeyword(
-                normalized,
-                "ratelimitexceeded",
-                "rate limit",
-                "too many requests",
-                "retry later",
-                "try again later",
-                "per minute",
-                "retrydelay",
-                "retry delay",
-                "retry after");
-    }
-
-    private boolean containsAnyKeyword(String normalized, String... keywords) {
-        if (normalized == null || normalized.isBlank()) {
-            return false;
-        }
-        for (String keyword : keywords) {
-            if (normalized.contains(keyword)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String normalizeHintText(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.toLowerCase(Locale.ROOT)
-                .replace('_', ' ')
-                .replace('-', ' ')
-                .trim();
-    }
-
-    private String firstHeaderValueIgnoreCase(Map<String, List<String>> responseHeaders, String headerName) {
-        if (responseHeaders == null || responseHeaders.isEmpty()) {
-            return null;
-        }
-        for (Map.Entry<String, List<String>> entry : responseHeaders.entrySet()) {
-            if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(headerName)) {
-                return firstNonBlank(entry.getValue());
-            }
-        }
-        return null;
-    }
-
-    private String firstNonBlank(Collection<String> values) {
-        if (values == null) {
-            return null;
-        }
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value;
-            }
-        }
-        return null;
-    }
-
-    private String firstNonBlank(String... values) {
-        if (values == null) {
-            return null;
-        }
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value;
-            }
-        }
-        return null;
+                e.getErrorCode(),
+                e.getMessage(),
+                e.isTemporary(),
+                e.getClassificationSource(),
+                e.getRetryAfter(),
+                e.getUpstreamStatus(),
+                e.getReasonHints());
     }
 
     private void logUsage(
@@ -932,78 +606,6 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             this.promptTokens = promptTokens;
             this.candidateTokens = candidateTokens;
             this.totalTokens = totalTokens;
-        }
-    }
-
-    private static final class ParsedUpstream429 {
-        private final String message;
-        private final String upstreamStatus;
-        private final List<String> reasonHints;
-
-        private ParsedUpstream429(String message, String upstreamStatus, List<String> reasonHints) {
-            this.message = message;
-            this.upstreamStatus = upstreamStatus;
-            this.reasonHints = reasonHints;
-        }
-
-        private String message() {
-            return message;
-        }
-
-        private String upstreamStatus() {
-            return upstreamStatus;
-        }
-
-        private List<String> reasonHints() {
-            return reasonHints;
-        }
-    }
-
-    private static final class Classified429 {
-        private final ErrorCode errorCode;
-        private final String message;
-        private final String classificationSource;
-        private final String retryAfter;
-        private final String upstreamStatus;
-        private final List<String> reasonHints;
-
-        private Classified429(
-                ErrorCode errorCode,
-                String message,
-                String classificationSource,
-                String retryAfter,
-                String upstreamStatus,
-                List<String> reasonHints) {
-            this.errorCode = errorCode;
-            this.message = message;
-            this.classificationSource = classificationSource;
-            this.retryAfter = retryAfter;
-            this.upstreamStatus = upstreamStatus;
-            this.reasonHints = reasonHints;
-        }
-
-        private ErrorCode errorCode() {
-            return errorCode;
-        }
-
-        private String message() {
-            return message;
-        }
-
-        private String classificationSource() {
-            return classificationSource;
-        }
-
-        private String retryAfter() {
-            return retryAfter;
-        }
-
-        private String upstreamStatus() {
-            return upstreamStatus;
-        }
-
-        private List<String> reasonHints() {
-            return reasonHints;
         }
     }
 }

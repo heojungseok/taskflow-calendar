@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
 import com.taskflow.assistant.recommendation.ProjectTaskRecommendationService;
 import com.taskflow.assistant.recommendation.cache.TaskRecommendationCacheService;
@@ -156,7 +157,8 @@ class DemoAiIsolationTest {
                 store,
                 tasks,
                 users,
-                new TaskFlowMetrics(new SimpleMeterRegistry()));
+                new TaskFlowMetrics(new SimpleMeterRegistry()),
+                mock(GeminiClient.class));
 
         service.ensureEmbeddings(List.of(task));
 

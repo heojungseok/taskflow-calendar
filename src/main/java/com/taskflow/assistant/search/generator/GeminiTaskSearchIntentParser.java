@@ -2,6 +2,8 @@ package com.taskflow.assistant.search.generator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.assistant.GeminiCallException;
+import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.search.*;
 import com.taskflow.assistant.search.GeminiSearchProperties;
 import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
@@ -9,12 +11,6 @@ import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.task.TaskStatus;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -37,8 +33,7 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
     private final GeminiSearchProperties properties;
     private final ObjectMapper objectMapper;
     private final TaskFlowMetrics metrics;
-
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final GeminiClient geminiClient;
 
     @Override
     public SearchIntent parse(String query) {
@@ -48,56 +43,43 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
     private SearchIntent parseUnobserved(String query) {
         validateConfiguration();
 
-        String endpoint =
-                properties.getBaseUrl().replaceAll("/$", "") + "/models/" + properties.getModel() + ":generateContent";
         String requestBody = buildRequestBody(query);
 
-        HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint))
-                .header("x-goog-api-key", properties.getApiKey())
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
-
         long startedAt = System.currentTimeMillis();
+        String responseBody;
         try {
-            HttpResponse<String> response =
-                    httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            long latencyMs = System.currentTimeMillis() - startedAt;
-            if (response.statusCode() >= 400) {
-                throw classifyUpstreamFailure(response.statusCode(), response.body(), latencyMs);
-            }
+            responseBody = geminiClient.post(properties, properties.getModel() + ":generateContent", requestBody);
+        } catch (GeminiCallException e) {
+            log.warn(
+                    "Gemini search intent request failed. statusCode={}, errorCode={}, latencyMs={}",
+                    e.getStatusCode(),
+                    e.getErrorCode().getCode(),
+                    e.getLatencyMs());
+            throw new TaskSearchGenerationException(
+                    e.getErrorCode(), "Gemini search intent request failed: " + e.getMessage());
+        }
+        long latencyMs = System.currentTimeMillis() - startedAt;
 
-            JsonNode root = objectMapper.readTree(response.body());
-            JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
+        JsonNode payload;
+        try {
+            JsonNode textNode = objectMapper.readTree(responseBody).at("/candidates/0/content/parts/0/text");
             if (textNode.isMissingNode() || textNode.asText().isBlank()) {
                 throw new TaskSearchGenerationException(
                         ErrorCode.LLM_INVALID_RESPONSE, "Gemini search intent response did not contain text");
             }
-
-            JsonNode payload;
-            try {
-                payload = objectMapper.readTree(textNode.asText());
-            } catch (IOException e) {
-                throw new TaskSearchGenerationException(
-                        ErrorCode.LLM_INVALID_RESPONSE, "Gemini search intent payload was not valid JSON");
-            }
-
-            log.info(
-                    "Gemini search intent parsed. model={}, latencyMs={}, requestBodyLength={}",
-                    properties.getModel(),
-                    latencyMs,
-                    requestBody.length());
-
-            return normalize(query, payload);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new TaskSearchGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini search intent request was interrupted");
+            payload = objectMapper.readTree(textNode.asText());
         } catch (IOException e) {
             throw new TaskSearchGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini search intent request failed: " + e.getMessage());
+                    ErrorCode.LLM_INVALID_RESPONSE, "Gemini search intent payload was not valid JSON");
         }
+
+        log.info(
+                "Gemini search intent parsed. model={}, latencyMs={}, requestBodyLength={}",
+                properties.getModel(),
+                latencyMs,
+                requestBody.length());
+
+        return normalize(query, payload);
     }
 
     private void validateConfiguration() {
@@ -449,31 +431,5 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
             return 0.0d;
         }
         return Math.max(0.0d, Math.min(1.0d, value));
-    }
-
-    private TaskSearchGenerationException classifyUpstreamFailure(int statusCode, String responseBody, long latencyMs) {
-        ErrorCode errorCode;
-        if (statusCode == 429) {
-            String normalized = responseBody == null ? "" : responseBody.toLowerCase(Locale.ROOT);
-            if (normalized.contains("quota")) {
-                errorCode = ErrorCode.LLM_QUOTA_EXHAUSTED;
-            } else if (normalized.contains("rate")) {
-                errorCode = ErrorCode.LLM_RATE_LIMITED_TEMPORARY;
-            } else {
-                errorCode = ErrorCode.LLM_429_UNKNOWN;
-            }
-        } else if (statusCode == 400 || statusCode == 404) {
-            errorCode = ErrorCode.LLM_CONFIG_INVALID;
-        } else {
-            errorCode = ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
-        }
-
-        log.warn(
-                "Gemini search intent request failed. statusCode={}, errorCode={}, latencyMs={}",
-                statusCode,
-                errorCode.getCode(),
-                latencyMs);
-
-        return new TaskSearchGenerationException(errorCode, "Gemini search intent request failed");
     }
 }

@@ -25,7 +25,7 @@ class SemanticStatusTest {
         when(store.isAvailable()).thenReturn(storeAvailable);
 
         return new TaskSearchEmbeddingService(
-                properties, null, store, null, null, new TaskFlowMetrics(new SimpleMeterRegistry()));
+                properties, null, store, null, null, new TaskFlowMetrics(new SimpleMeterRegistry()), null);
     }
 
     @Test
