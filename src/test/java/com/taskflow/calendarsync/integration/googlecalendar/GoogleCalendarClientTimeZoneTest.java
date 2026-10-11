@@ -9,14 +9,14 @@ import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-class GoogleCalendarClientImplTest {
+class GoogleCalendarClientTimeZoneTest {
 
     @Test
     void taskTimeIsSentAsAsiaSeoul() {
         TimeZone original = TimeZone.getDefault();
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         try {
-            GoogleCalendarClientImpl client = new GoogleCalendarClientImpl(null, null);
+            GoogleCalendarClient client = new GoogleCalendarClient(null, null);
 
             DateTime converted =
                     ReflectionTestUtils.invokeMethod(client, "toDateTime", LocalDateTime.of(2026, 8, 20, 19, 5));
