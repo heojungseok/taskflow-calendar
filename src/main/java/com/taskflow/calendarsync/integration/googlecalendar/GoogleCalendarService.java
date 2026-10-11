@@ -1,22 +1,169 @@
 package com.taskflow.calendarsync.integration.googlecalendar;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendarsync.outbox.CalendarOutbox;
+import com.taskflow.calendarsync.outbox.OutboxOpType;
 import com.taskflow.common.exception.NonRetryableIntegrationException;
 import com.taskflow.common.exception.RetryableIntegrationException;
+import com.taskflow.planning.task.Task;
+import com.taskflow.planning.task.TaskRepository;
+import com.taskflow.planning.task.TaskStatus;
+import java.time.LocalDateTime;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Google Calendar API 연동 서비스 인터페이스
- * - Worker가 Outbox를 처리할 때 호출
- * - 멱등성 보장 (eventId 기반)
+ * Worker가 Outbox를 처리할 때 호출하는 Google Calendar 연동
+ * - Source of Truth: Task의 최신 상태 기준
+ * - 멱등성: eventId 기반 create/update 구분
+ * - 예외 분류: Retryable(5xx) vs NonRetryable(4xx)
  */
-public interface GoogleCalendarService {
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class GoogleCalendarService {
+    private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
+
+    private final GoogleCalendarClient googleCalendarClient;
+    private final TaskRepository taskRepository;
+    private final ObjectMapper objectMapper;
+
+    @Transactional
+    public void handle(CalendarOutbox outbox) throws RetryableIntegrationException, NonRetryableIntegrationException {
+
+        log.info(
+                "[GoogleCalendarService] Processing Outbox {} - OpType: {}, TaskId: {}",
+                outbox.getId(),
+                outbox.getOpType(),
+                outbox.getTaskId());
+
+        try {
+            // 1. Payload 파싱 (userId 추출용)
+            Map<String, Object> payload = objectMapper.readValue(outbox.getPayload(), Map.class);
+            Long taskId = ((Number) payload.get("taskId")).longValue();
+
+            // meta에서 userId 추출
+            @SuppressWarnings("unchecked")
+            Map<String, Object> meta = (Map<String, Object>) payload.get("meta");
+            Long userId = ((Number) meta.get("requestedByUserId")).longValue();
+
+            // 2. OpType별 처리
+            if (OutboxOpType.DELETE.equals(outbox.getOpType())) {
+                handleDelete(userId, payload);
+            } else {
+                handleUpsert(userId, taskId);
+            }
+
+            log.info("[GoogleCalendarService] Successfully processed Outbox {}", outbox.getId());
+
+        } catch (NonRetryableIntegrationException | RetryableIntegrationException e) {
+            throw e; // 그대로 재던짐
+        } catch (Exception e) {
+            log.error(
+                    "[GoogleCalendarService] Unexpected error processing Outbox {}: {}",
+                    outbox.getId(),
+                    e.getMessage(),
+                    e);
+            throw new RetryableIntegrationException("Unexpected error: " + e.getMessage(), e);
+        }
+    }
 
     /**
-     * Outbox를 처리하여 Google Calendar API 호출
-     *
-     * @param outbox 처리할 Outbox
-     * @throws RetryableIntegrationException 재시도 가능한 예외
-     * @throws NonRetryableIntegrationException 재시도 불가능한 예외 (즉시 실패)
+     * UPSERT: Task 최신 상태 기준으로 create 또는 update
      */
-    void handle(CalendarOutbox outbox) throws RetryableIntegrationException, NonRetryableIntegrationException;
+    private void handleUpsert(Long userId, Long taskId) {
+        // Source of Truth: Task 최신 상태 조회
+        Task task = taskRepository.findByIdAndDeletedFalse(taskId).orElse(null);
+
+        // Task 삭제되었거나 동기화 비활성화된 경우 → skip
+        if (task == null || !task.isCalendarSyncActive()) {
+            log.info("[GoogleCalendarService] Task {} - Skipped (deleted or sync disabled)", taskId);
+            return;
+        }
+
+        // Task → CalendarEventDto 변환
+        CalendarEventDto event = buildEventFromTask(task);
+
+        String eventId = task.getCalendarEventId();
+
+        if (eventId != null) {
+            // UPDATE (멱등)
+            log.info("[GoogleCalendarService] Updating event. taskId={}, eventId={}", taskId, eventId);
+            try {
+                googleCalendarClient.updateEvent(userId, eventId, event);
+                return;
+            } catch (NonRetryableIntegrationException e) {
+                if (!isEventGone(e)) {
+                    throw e;
+                }
+                // 구글에서 이벤트가 사라졌다. 재시도해도 같으니 새로 만들고 eventId를 갈아끼운다.
+                log.warn(
+                        "[GoogleCalendarService] Event gone on Google ({}). Recreating. taskId={}, eventId={}",
+                        e.getStatusCode(),
+                        taskId,
+                        eventId);
+            }
+        }
+
+        // CREATE
+        log.info("[GoogleCalendarService] Creating event. taskId={}", taskId);
+        String newEventId = googleCalendarClient.createEvent(userId, event);
+
+        // eventId를 Task에 저장
+        task.setCalendarEventId(newEventId);
+        taskRepository.save(task);
+
+        log.info("[GoogleCalendarService] Event created. taskId={}, eventId={}", taskId, newEventId);
+    }
+
+    private boolean isEventGone(NonRetryableIntegrationException e) {
+        return e.getStatusCode() == 404 || e.getStatusCode() == 410;
+    }
+
+    /**
+     * DELETE: Payload의 eventId 기준으로 삭제
+     */
+    @SuppressWarnings("unchecked")
+    private void handleDelete(Long userId, Map<String, Object> payload) {
+        Map<String, Object> event = (Map<String, Object>) payload.get("event");
+        String eventId = event == null ? null : (String) event.get("eventId");
+        Long taskId = ((Number) payload.get("taskId")).longValue();
+
+        if (eventId == null) {
+            // eventId 없으면 no-op
+            log.info("[GoogleCalendarService] DELETE no-op - Task {} has no eventId", taskId);
+            return;
+        }
+
+        log.info("[GoogleCalendarService] Deleting event. taskId={}, eventId={}", taskId, eventId);
+        googleCalendarClient.deleteEvent(userId, eventId);
+    }
+
+    /**
+     * Task → CalendarEventDto 변환
+     * - DONE 상태면 제목에 [DONE] prefix
+     * - 시간: startAt(없으면 dueAt-1시간) ~ dueAt
+     */
+    private CalendarEventDto buildEventFromTask(Task task) {
+        String title = task.getTitle();
+
+        // DONE 상태면 [DONE] prefix 추가
+        if (TaskStatus.DONE.equals(task.getStatus())) {
+            title = "[DONE] " + title;
+        }
+
+        LocalDateTime endAt = task.getDueAt();
+        LocalDateTime startAt =
+                task.getStartAt() != null ? task.getStartAt() : endAt.minusHours(DEFAULT_EVENT_DURATION_HOURS);
+
+        return CalendarEventDto.builder()
+                .title(title)
+                .description(task.getDescription())
+                .startAt(startAt)
+                .endAt(endAt)
+                .build();
+    }
 }

@@ -118,7 +118,7 @@ Outbox 레코드는 5가지 상태(`OutboxStatus`)를 가집니다.
 
 </details>
 
-적재 시점에는 `PENDING` 중간 변경을 합치고, 실제 UPSERT 처리 시점에는 Task의 최신 상태를 다시 읽습니다. 외부 호출 횟수는 Worker 실행 시점과 재시도 여부에 따라 달라집니다. [실제 Calendar 처리](src/main/java/com/taskflow/calendarsync/integration/googlecalendar/GoogleCalendarServiceImpl.java)
+적재 시점에는 `PENDING` 중간 변경을 합치고, 실제 UPSERT 처리 시점에는 Task의 최신 상태를 다시 읽습니다. 외부 호출 횟수는 Worker 실행 시점과 재시도 여부에 따라 달라집니다. [실제 Calendar 처리](src/main/java/com/taskflow/calendarsync/integration/googlecalendar/GoogleCalendarService.java)
 
 ### 우선순위 추천 흐름
 
