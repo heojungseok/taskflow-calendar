@@ -28,7 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class GoogleCalendarServiceImplTest {
+class GoogleCalendarServiceTest {
 
     private static final Long USER_ID = 1L;
     private static final Long TASK_ID = 10L;
@@ -43,7 +43,7 @@ class GoogleCalendarServiceImplTest {
     private ObjectMapper objectMapper;
 
     @InjectMocks
-    private GoogleCalendarServiceImpl googleCalendarService;
+    private GoogleCalendarService googleCalendarService;
 
     @Test
     @DisplayName("UPSERT 생성 시 Task.startAt을 Google 이벤트 시작 시각으로 사용한다")
