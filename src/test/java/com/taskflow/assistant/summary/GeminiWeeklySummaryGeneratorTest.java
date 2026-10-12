@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(OutputCaptureExtension.class)
 class GeminiWeeklySummaryGeneratorTest {
@@ -99,7 +100,12 @@ class GeminiWeeklySummaryGeneratorTest {
                 + "}]}}]}");
 
         WeeklySummarySectionsResult result = (WeeklySummarySectionsResult) invokePrivate(
-                generator, "parseResponse", new Class[] {JsonNode.class, int.class, int.class}, root, 1, 1);
+                ReflectionTestUtils.getField(generator, "responseFormat"),
+                "parseResponse",
+                new Class[] {JsonNode.class, int.class, int.class},
+                root,
+                1,
+                1);
 
         assertEquals("동기화 요약", result.getSynced().getSummary());
         assertEquals("미동기화 요약", result.getUnsynced().getSummary());
@@ -118,7 +124,7 @@ class GeminiWeeklySummaryGeneratorTest {
                 task("봄 옷장 정리", "외투를 정리하고 겨울 옷은 압축팩에 넣는다.", TaskStatus.REQUESTED), TaskSyncState.SYNC_DISABLED));
 
         Object firstPrepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -131,7 +137,7 @@ class GeminiWeeklySummaryGeneratorTest {
                 weekStart,
                 weekEnd);
         Object secondPrepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -172,7 +178,7 @@ class GeminiWeeklySummaryGeneratorTest {
                         TaskSyncState.SYNC_DISABLED));
 
         Object largerPrepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -201,7 +207,7 @@ class GeminiWeeklySummaryGeneratorTest {
         generatorProperties().setTopP(0.8d);
 
         Object prepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -228,7 +234,7 @@ class GeminiWeeklySummaryGeneratorTest {
         generatorProperties().setTopP(1.5d);
 
         Object prepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -255,7 +261,7 @@ class GeminiWeeklySummaryGeneratorTest {
         LocalDate weekEnd = LocalDate.of(2026, 3, 29);
 
         Object prepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -306,7 +312,7 @@ class GeminiWeeklySummaryGeneratorTest {
         LocalDate weekEnd = LocalDate.of(2026, 3, 29);
 
         Object prepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -352,7 +358,7 @@ class GeminiWeeklySummaryGeneratorTest {
         LocalDate weekEnd = LocalDate.of(2026, 3, 29);
 
         Object prepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -425,7 +431,7 @@ class GeminiWeeklySummaryGeneratorTest {
         LocalDate weekStart = LocalDate.of(2026, 3, 23);
         LocalDate weekEnd = LocalDate.of(2026, 3, 29);
         Object prepared = invokePrivate(
-                generator,
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
@@ -442,7 +448,11 @@ class GeminiWeeklySummaryGeneratorTest {
         Object metrics = invokeGetter(prepared, "getMetrics");
         JsonNode root = objectMapper.readTree(
                 "{\"usageMetadata\":{\"promptTokenCount\":768,\"candidatesTokenCount\":320,\"totalTokenCount\":1088}}");
-        Object usageMetrics = invokePrivate(generator, "usageMetrics", new Class[] {JsonNode.class}, root);
+        Object usageMetrics = invokePrivate(
+                ReflectionTestUtils.getField(generator, "responseFormat"),
+                "usageMetrics",
+                new Class[] {JsonNode.class},
+                root);
 
         invokePrivate(
                 generator,
@@ -537,7 +547,7 @@ class GeminiWeeklySummaryGeneratorTest {
         Task today = Task.createTask(project, "오늘 마감", null, null, null, LocalDateTime.of(2026, 10, 12, 18, 0), false);
 
         Object prepared = invokePrivate(
-                kstGenerator,
+                ReflectionTestUtils.getField(kstGenerator, "promptBuilder"),
                 "prepareRequest",
                 new Class[] {
                     Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
