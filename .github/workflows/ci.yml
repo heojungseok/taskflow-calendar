@@ -73,7 +73,7 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test e2e/session-expiry.spec.ts
+      - run: npx playwright test e2e/session-expiry.spec.ts e2e/ui-stability.spec.ts
       - run: npx playwright test --list
 
   deployment-config:
