@@ -92,6 +92,43 @@ class GeminiClientTest {
     }
 
     @Test
+    void perMinuteQuotaIdMeansTemporaryRateLimitEvenWithQuotaWording() {
+        // 실제 Gemini 분당 제한 응답. status와 메시지는 일일 한도와 똑같이 RESOURCE_EXHAUSTED·"current quota"다.
+        respond(429, Map.of(), geminiQuotaError("GenerateRequestsPerMinutePerProjectPerModel-FreeTier", "37s"));
+
+        GeminiCallException e = fail();
+
+        assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LLM_RATE_LIMITED_TEMPORARY);
+        assertThat(e.getClassificationSource()).isEqualTo("QUOTA_ID");
+        assertThat(e.getRetryAfter()).isEqualTo("37s");
+        assertThat(e.getReasonHints()).contains("GenerateRequestsPerMinutePerProjectPerModel-FreeTier");
+    }
+
+    @Test
+    void perDayQuotaIdMeansQuotaExhaustedEvenWithShortRetryDelay() {
+        // 일일 한도도 retryDelay를 1s처럼 짧게 준다. 기다려도 풀리지 않는다.
+        respond(429, Map.of(), geminiQuotaError("GenerateRequestsPerDayPerProjectPerModel-FreeTier", "1s"));
+
+        GeminiCallException e = fail();
+
+        assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LLM_QUOTA_EXHAUSTED);
+        assertThat(e.getClassificationSource()).isEqualTo("QUOTA_ID");
+    }
+
+    private static String geminiQuotaError(String quotaId, String retryDelay) {
+        return """
+                {"error":{"code":429,
+                 "message":"You exceeded your current quota, please check your plan and billing details.",
+                 "status":"RESOURCE_EXHAUSTED",
+                 "details":[
+                  {"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{
+                    "quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests",
+                    "quotaId":"%s","quotaDimensions":{"location":"global","model":"gemini-2.5-flash"},"quotaValue":"10"}]},
+                  {"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"%s"}]}}
+                """.formatted(quotaId, retryDelay);
+    }
+
+    @Test
     void generateInBodyIsNotMistakenForRateLimit() {
         // 예전 추천·검색 분류는 본문에 "rate"만 있으면 일시 제한으로 봤다. "generateContent"에도 들어 있다.
         respond(429, Map.of(), "{\"error\":{\"message\":\"models/gemini-2.5-flash:generateContent rejected\"}}");
