@@ -1,7 +1,5 @@
 package com.taskflow.planning.task;
 
-import com.taskflow.common.ErrorCode;
-import com.taskflow.common.exception.ValidationException;
 import com.taskflow.identity.security.SecurityContextHelper;
 import com.taskflow.identity.user.DemoUsageService;
 import com.taskflow.identity.user.User;
@@ -28,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TaskService {
-    private static final int DEFAULT_SYNC_EVENT_DURATION_HOURS = 1;
 
     private static final int DEMO_TASK_LIMIT = 100;
 
@@ -61,14 +58,14 @@ public class TaskService {
             assignee = findOwnedAssignee(request.getAssigneeUserId(), userId);
         }
 
-        LocalDateTime normalizedStartAt =
-                normalizeSyncStartAt(request.getCalendarSyncEnabled(), request.getStartAt(), request.getDueAt());
+        LocalDateTime normalizedStartAt = TaskScheduleRules.normalizeSyncStartAt(
+                request.getCalendarSyncEnabled(), request.getStartAt(), request.getDueAt());
 
         // 3. 일정 검증
-        validateSchedule(normalizedStartAt, request.getDueAt());
+        TaskScheduleRules.validateSchedule(normalizedStartAt, request.getDueAt());
 
         // 4. 캘린더 동기화 검증
-        validateCalendarSync(request.getCalendarSyncEnabled(), request.getDueAt());
+        TaskScheduleRules.validateCalendarSync(request.getCalendarSyncEnabled(), request.getDueAt());
 
         // 5. Task 생성
         Task task = Task.createTask(
@@ -91,7 +88,7 @@ public class TaskService {
                 savedTask,
                 TaskChangeType.CONTENT,
                 null, // beforeValue: 생성 시에는 null
-                buildTaskSnapshot(savedTask), // afterValue: 생성된 Task 정보
+                TaskHistorySnapshot.buildTaskSnapshot(savedTask), // afterValue: 생성된 Task 정보
                 userId);
 
         eventPublisher.publishEvent(new TaskChangedEvent(savedTask, TaskChangedEvent.Type.CREATED));
@@ -113,7 +110,7 @@ public class TaskService {
         demoUsageService.beforeMutation(userId);
 
         // 변경 전 스냅샷 저장
-        String beforeSnapshot = buildTaskSnapshot(task);
+        String beforeSnapshot = TaskHistorySnapshot.buildTaskSnapshot(task);
 
         // 2. Assignee 조회 (변경하는 경우)
         User assignee = null;
@@ -129,11 +126,12 @@ public class TaskService {
         Boolean newCalendarSyncEnabled = request.getCalendarSyncEnabled() != null
                 ? request.getCalendarSyncEnabled()
                 : task.getCalendarSyncEnabled();
-        LocalDateTime normalizedStartAt = normalizeSyncStartAt(newCalendarSyncEnabled, newStartAtRaw, newDueAt);
-        validateSchedule(normalizedStartAt, newDueAt);
+        LocalDateTime normalizedStartAt =
+                TaskScheduleRules.normalizeSyncStartAt(newCalendarSyncEnabled, newStartAtRaw, newDueAt);
+        TaskScheduleRules.validateSchedule(normalizedStartAt, newDueAt);
 
         LocalDateTime finalDueAt = request.getDueAt() != null ? request.getDueAt() : task.getDueAt();
-        validateCalendarSync(newCalendarSyncEnabled, finalDueAt);
+        TaskScheduleRules.validateCalendarSync(newCalendarSyncEnabled, finalDueAt);
 
         // 5. Task 업데이트
         task.update(
@@ -145,7 +143,7 @@ public class TaskService {
                 request.getCalendarSyncEnabled());
 
         // 변경 후 스냅샷 저장
-        String afterSnapshot = buildTaskSnapshot(task);
+        String afterSnapshot = TaskHistorySnapshot.buildTaskSnapshot(task);
 
         // 6. 이력 기록 - 수정
         recordHistory(task, TaskChangeType.CONTENT, beforeSnapshot, afterSnapshot, userId);
@@ -242,7 +240,7 @@ public class TaskService {
         demoUsageService.beforeMutation(requestedByUserId);
 
         // 2. 삭제 전 스냅샷 저장 (추가!)
-        String beforeSnapshot = buildTaskSnapshot(task);
+        String beforeSnapshot = TaskHistorySnapshot.buildTaskSnapshot(task);
 
         // 3. Soft Delete 처리
         task.markAsDeleted();
@@ -275,38 +273,6 @@ public class TaskService {
 
     // ========== Private 검증 메서드들 ==========
 
-    /**
-     * 일정 검증: startAt <= dueAt
-     */
-    private void validateSchedule(LocalDateTime startAt, LocalDateTime dueAt) {
-        if (startAt != null && dueAt != null && startAt.isAfter(dueAt)) {
-            throw new ValidationException(ErrorCode.SCHEDULE_INVALID);
-        }
-    }
-
-    /**
-     * 캘린더 동기화 검증: calendarSyncEnabled=true면 dueAt 필수
-     */
-    private void validateCalendarSync(Boolean calendarSyncEnabled, LocalDateTime dueAt) {
-        if (Boolean.TRUE.equals(calendarSyncEnabled) && dueAt == null) {
-            throw new ValidationException(ErrorCode.CALENDAR_SYNC_REQUIRES_DUE_AT);
-        }
-    }
-
-    private LocalDateTime normalizeSyncStartAt(
-            Boolean calendarSyncEnabled, LocalDateTime startAt, LocalDateTime dueAt) {
-        if (!Boolean.TRUE.equals(calendarSyncEnabled)) {
-            return startAt;
-        }
-        if (startAt != null) {
-            return startAt;
-        }
-        if (dueAt == null) {
-            return null;
-        }
-        return dueAt.minusHours(DEFAULT_SYNC_EVENT_DURATION_HOURS);
-    }
-
     private void recordHistory(
             Task task, TaskChangeType changeType, String beforeValue, String afterValue, Long changedByUserId) {
         User user =
@@ -328,20 +294,5 @@ public class TaskService {
             throw new UserNotFoundException(assigneeUserId);
         }
         return userRepository.findById(assigneeUserId).orElseThrow(() -> new UserNotFoundException(assigneeUserId));
-    }
-
-    /**
-     * Task의 현재 상태를 문자열 스냅샷으로 생성
-     */
-    private String buildTaskSnapshot(Task task) {
-        return String.format(
-                "title=%s, description=%s, status=%s, assigneeUserId=%s, startAt=%s, dueAt=%s, calendarSyncEnabled=%s",
-                task.getTitle(),
-                task.getDescription() != null ? task.getDescription() : "null",
-                task.getStatus().name(),
-                task.getAssignee() != null ? task.getAssignee().getId() : "null",
-                task.getStartAt() != null ? task.getStartAt().toString() : "null",
-                task.getDueAt() != null ? task.getDueAt().toString() : "null",
-                task.getCalendarSyncEnabled());
     }
 }
