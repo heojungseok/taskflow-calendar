@@ -19,9 +19,6 @@ import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
 import com.taskflow.planning.task.TaskStatus;
 import com.taskflow.planning.task.TaskSyncState;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -29,11 +26,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +41,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ProjectTaskRecommendationService {
 
-    private static final String CACHE_KEY_VERSION = "v5";
     private static final int MAX_CANDIDATE_COUNT = 8;
     private static final int MAX_RECOMMENDATION_COUNT = 5;
     private static final int DEFAULT_EVENT_DURATION_HOURS = 1;
@@ -109,7 +103,8 @@ public class ProjectTaskRecommendationService {
                     .withCacheStatus(TaskRecommendationCacheStatus.DEMO_LOCAL);
         }
 
-        String cacheKey = cacheKey(project, candidates, recommendationCount, geminiProperties.getModel());
+        String cacheKey = TaskRecommendationCacheKeys.cacheKey(
+                project, candidates, recommendationCount, geminiProperties.getModel());
         if (taskRecommendationCacheService.isEnabled()) {
             ProjectTaskRecommendationResponse cached = taskRecommendationCacheService
                     .find(cacheKey)
@@ -272,42 +267,5 @@ public class ProjectTaskRecommendationService {
             score += 8;
         }
         return score;
-    }
-
-    private String cacheKey(
-            Project project, List<TaskSyncSnapshot> candidates, int recommendationCount, String modelName) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            updateDigest(digest, project.getId());
-            updateDigest(digest, modelName);
-            updateDigest(digest, recommendationCount);
-
-            for (TaskSyncSnapshot snapshot : candidates) {
-                Task task = snapshot.getTask();
-                updateDigest(digest, task.getId());
-                updateDigest(digest, task.getTitle());
-                updateDigest(digest, task.getDescription());
-                updateDigest(digest, task.getStatus());
-                updateDigest(digest, task.getDueAt());
-                updateDigest(digest, task.getUpdatedAt());
-                updateDigest(digest, task.getCalendarSyncEnabled());
-                updateDigest(digest, task.getCalendarEventId());
-                updateDigest(digest, snapshot.getSyncState());
-                updateDigest(digest, snapshot.getLatestOutboxStatus());
-                updateDigest(digest, snapshot.getLatestOutboxOpType());
-                updateDigest(digest, snapshot.getLatestOutboxError());
-            }
-
-            return "task-recommendation:" + CACHE_KEY_VERSION + ":" + project.getId() + ":" + modelName + ":"
-                    + HexFormat.of().formatHex(digest.digest());
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is not available", e);
-        }
-    }
-
-    private void updateDigest(MessageDigest digest, Object value) {
-        String normalized = Objects.toString(value, "<null>");
-        digest.update(normalized.getBytes(StandardCharsets.UTF_8));
-        digest.update((byte) 0);
     }
 }
