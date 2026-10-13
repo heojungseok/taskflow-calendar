@@ -1,6 +1,6 @@
 package com.taskflow.assistant.recommendation.generator;
 
-import com.taskflow.assistant.summary.generator.SummaryPromptTaskSupport;
+import com.taskflow.assistant.summary.generator.TaskDescriptionBrief;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.planning.task.Task;
 import java.time.LocalDateTime;
@@ -12,8 +12,6 @@ import java.util.Map;
 public final class RecommendationPromptTaskSupport {
 
     private static final int RECENT_UPDATE_HOURS = 24;
-
-    private final SummaryPromptTaskSupport summarySupport = new SummaryPromptTaskSupport();
 
     public Map<String, Object> toPromptTaskPayload(TaskSyncSnapshot snapshot, int seed) {
         Task task = snapshot.getTask();
@@ -38,9 +36,9 @@ public final class RecommendationPromptTaskSupport {
                 snapshot.getLatestOutboxStatus() != null
                         ? snapshot.getLatestOutboxStatus().name()
                         : null);
-        putIfPresent(payload, "desc", summarySupport.compressDescription(task));
+        putIfPresent(payload, "desc", TaskDescriptionBrief.compressDescription(task));
 
-        List<String> descSignals = summarySupport.descriptionSignals(task.getDescription());
+        List<String> descSignals = TaskDescriptionBrief.descriptionSignals(task.getDescription());
         if (!descSignals.isEmpty()) {
             payload.put("signals", descSignals);
         }
