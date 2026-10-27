@@ -26,10 +26,10 @@ class GrafanaProvisioningConfigTest {
 
         assertThat(rows)
                 .extracting(row -> row.path("title").asText())
-                .containsExactly("운영 요약", "사용자·이용", "Calendar·Outbox", "Gemini·Cache", "Backend runtime");
+                .containsExactly("운영 요약", "사용자·이용", "Calendar·Outbox", "Gemini·Cache", "Backend runtime", "보안");
         assertThat(rows)
                 .extracting(row -> row.path("collapsed").asBoolean())
-                .containsExactly(false, false, true, true, true);
+                .containsExactly(false, false, true, true, true, true);
         assertThat(panelTitles(dashboard))
                 .contains(
                         "Backend UP",
@@ -42,7 +42,11 @@ class GrafanaProvisioningConfigTest {
                         "Gemini p95",
                         "Cache 처리율",
                         "JVM heap",
-                        "Hikari pending");
+                        "Hikari pending",
+                        "막힌·스캐너 경로 접근 (IP별, 5m)",
+                        "ID 대입 404 (IP별 서로 다른 ID, 10m)",
+                        "OAuth 로그인 실패 (이유별, 1h)",
+                        "nginx 로그 (IP 필터: $ip)");
         assertThat(List.of("HTTP p95", "HTTP 5xx", "Gemini 실패 (10m)"))
                 .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title)
                                 .path("type")
@@ -71,6 +75,25 @@ class GrafanaProvisioningConfigTest {
                         .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
                         .count())
                 .isEqualTo(8);
+    }
+
+    @Test
+    void securityAlertsKeepApprovedContract() throws Exception {
+        String security = Files.readString(Path.of("deploy/grafana/provisioning/alerting/security.yml"));
+        String policies = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+
+        // 정석님이 정한 알림 5개와 한국어 [보안] 메시지, 종료 메시지 없음, 배포 검증 요청 제외(2026-10-27)
+        assertThat(security.lines()
+                        .filter(line -> line.startsWith("      - uid: taskflow-sec-"))
+                        .count())
+                .isEqualTo(5);
+        assertThat(security)
+                .contains("disableResolveMessage: true", "[보안][WARNING] TaskFlow", "service: security")
+                .contains("summary: 경로 훑기 의심", "summary: 인증 실패 반복", "summary: 요청 수 제한 동작")
+                .contains("summary: ID 대입 의심", "summary: OAuth 로그인 실패")
+                .contains("ua != \"taskflow-boundary-check\"", "{{ $externalURL }}d/taskflow/taskflow");
+        assertThat(policies)
+                .contains("receiver: Discord security", "[service, =, security]", "group_by: [alertname, ip]");
     }
 
     private List<String> panelTitles(JsonNode dashboard) {
