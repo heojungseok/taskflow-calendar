@@ -1,34 +1,30 @@
-// nginx·backend 컨테이너 로그를 Loki로 보낸다.
-// Docker API는 socket proxy를 거쳐서만 읽는다. proxy는 컨테이너 목록과 로그 조회만 허용한다.
+// nginx·backend가 syslog(UDP, RFC3164)로 보낸 로그를 받아 Loki로 보낸다.
+// Docker API에는 접근하지 않는다. syslog 태그(nginx, backend)를 service 라벨로 쓴다.
 
-discovery.docker "taskflow" {
-  host = "tcp://docker-socket-proxy:2375"
-
-  filter {
-    name   = "label"
-    values = ["com.docker.compose.project=" + sys.env("COMPOSE_PROJECT")]
+loki.source.syslog "taskflow" {
+  listener {
+    address       = "0.0.0.0:5140"
+    protocol      = "udp"
+    syslog_format = "rfc3164"
   }
+
+  relabel_rules = loki.relabel.taskflow.rules
+  forward_to    = [loki.write.local.receiver]
 }
 
-discovery.relabel "taskflow" {
-  targets = discovery.docker.taskflow.targets
+loki.relabel "taskflow" {
+  forward_to = []
 
   rule {
-    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    source_labels = ["__syslog_message_app_name"]
     regex         = "nginx|backend"
     action        = "keep"
   }
 
   rule {
-    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    source_labels = ["__syslog_message_app_name"]
     target_label  = "service"
   }
-}
-
-loki.source.docker "taskflow" {
-  host       = "tcp://docker-socket-proxy:2375"
-  targets    = discovery.relabel.taskflow.output
-  forward_to = [loki.write.local.receiver]
 }
 
 loki.write "local" {

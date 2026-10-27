@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Spring Boot 기본 콘솔 출력(docker logs)은 그대로 두고, prod에서는 같은 로그를 syslog(UDP)로 Alloy에도 보낸다. -->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <springProfile name="prod">
+        <springProperty name="SYSLOG_HOST" source="app.logging.syslog-host" defaultValue="127.0.0.1"/>
+        <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
+            <syslogHost>${SYSLOG_HOST}</syslogHost>
+            <port>5140</port>
+            <facility>USER</facility>
+            <!-- "backend:"가 syslog 태그가 되어 Alloy에서 service=backend 라벨로 바뀐다. -->
+            <suffixPattern>backend: %-5level %logger{36} : %msg</suffixPattern>
+            <!-- 예외 스택은 여러 줄이라 데이터그램이 쪼개지므로 syslog에는 보내지 않는다(콘솔에는 남음). -->
+            <throwableExcluded>true</throwableExcluded>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="SYSLOG"/>
+        </root>
+    </springProfile>
+</configuration>
