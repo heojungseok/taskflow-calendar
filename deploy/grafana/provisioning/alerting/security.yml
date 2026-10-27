@@ -37,6 +37,7 @@ templates:
 
 # 기준 값은 2026-10-27 정석님이 정한 초안 값이다. 알림을 켠 날부터 14일 뒤 실제 건수를 보고 다시 정한다.
 # 배포 검증 스크립트(User-Agent taskflow-boundary-check) 요청은 알림 조건에서 뺀다.
+# backend 쿼리는 줄 맨 앞의 로그 수준과 로거 이름까지 고정한다. 다른 로그의 예외 메시지에 같은 문구를 넣어 알림을 일으키지 못하게 하기 위해서다.
 groups:
   - orgId: 1
     name: TaskFlow security
@@ -192,11 +193,11 @@ groups:
           - refId: A
             datasourceUid: loki
             relativeTimeRange: {from: 3600, to: 0}
-            model: {refId: A, queryType: instant, expr: 'sum(count_over_time({service="backend"} |= "OAuth callback failed. reason=server_error" [1h])) or vector(0)'}
+            model: {refId: A, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ `^WARN +\S*GoogleOAuthController : OAuth callback failed\. reason=server_error$` [1h])) or vector(0)'}
           - refId: D
             datasourceUid: loki
             relativeTimeRange: {from: 3600, to: 0}
-            model: {refId: D, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ "OAuth callback failed. reason=(state_invalid|google_error|code_missing|refresh_token_unavailable|state_store_full)" [1h])) or vector(0)'}
+            model: {refId: D, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ `^WARN +\S*GoogleOAuthController : OAuth callback failed\. reason=(state_invalid|google_error|code_missing|refresh_token_unavailable|state_store_full)$` [1h])) or vector(0)'}
           - refId: B
             datasourceUid: __expr__
             model: {refId: B, type: reduce, expression: A, reducer: last}
