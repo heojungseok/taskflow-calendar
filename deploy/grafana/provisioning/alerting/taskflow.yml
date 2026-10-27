@@ -67,6 +67,12 @@ policies:
     group_by: [environment]
     group_wait: 30s
     repeat_interval: 4h
+    routes:
+      # 보안 알림(security.yml)은 IP마다 따로 보내고 종료 메시지를 끈 연락처를 쓴다.
+      - receiver: Discord security
+        object_matchers:
+          - [service, =, security]
+        group_by: [alertname, ip]
 
 groups:
   - orgId: 1

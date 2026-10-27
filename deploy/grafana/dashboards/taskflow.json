@@ -41,13 +41,24 @@
       {"id": 31, "type": "timeseries", "title": "Hikari connections", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "hikaricp_connections_active", "legendFormat": "active"}, {"refId": "B", "expr": "hikaricp_connections_max", "legendFormat": "max"}, {"refId": "C", "expr": "hikaricp_connections_pending", "legendFormat": "pending"}], "gridPos": {"h": 7, "w": 12, "x": 0, "y": 7}},
       {"id": 32, "type": "timeseries", "title": "Hikari timeout", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "increase(hikaricp_connections_timeout_total[5m])"}], "gridPos": {"h": 7, "w": 6, "x": 12, "y": 7}},
       {"id": 33, "type": "stat", "title": "Process uptime", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "process_uptime_seconds"}], "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []}, "gridPos": {"h": 7, "w": 6, "x": 18, "y": 7}}
+    ]},
+
+    {"id": 34, "type": "row", "title": "보안", "collapsed": true, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 16}, "panels": [
+      {"id": 35, "type": "timeseries", "title": "막힌·스캐너 경로 접근 (IP별, 5m)", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "sum by (ip) (count_over_time({service=\"nginx\"} | json | __error__=\"\" | ua != \"taskflow-boundary-check\" | path =~ `(?i)^/(actuator|api/admin|api/test)(/.*)?$|.*(\\.env|\\.git/|\\.php|wp-|phpmyadmin|cgi-bin|\\.\\./).*` [5m]))", "legendFormat": "{{ip}}"}], "gridPos": {"h": 7, "w": 6, "x": 0, "y": 0}},
+      {"id": 36, "type": "timeseries", "title": "401·403 (IP별, 5m)", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "sum by (ip, status) (count_over_time({service=\"nginx\"} | json | __error__=\"\" | ua != \"taskflow-boundary-check\" | status =~ \"401|403\" [5m]))", "legendFormat": "{{ip}} / {{status}}"}], "gridPos": {"h": 7, "w": 6, "x": 6, "y": 0}},
+      {"id": 37, "type": "timeseries", "title": "요청 수 제한 429 (경로별, 5m)", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "sum by (path) (count_over_time({service=\"nginx\"} | json | __error__=\"\" | status = \"429\" [5m]))", "legendFormat": "{{path}}"}], "gridPos": {"h": 7, "w": 6, "x": 12, "y": 0}},
+      {"id": 38, "type": "timeseries", "title": "ID 대입 404 (IP별 서로 다른 ID, 10m)", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "count by (ip) (sum by (ip, rid) (count_over_time({service=\"nginx\"} | json | __error__=\"\" | status = \"404\" | regexp `\"path\":\"/api/(?:projects|tasks)/(?P<rid>[0-9]+)` | rid != \"\" [10m])))", "legendFormat": "{{ip}}"}], "gridPos": {"h": 7, "w": 6, "x": 18, "y": 0}},
+      {"id": 39, "type": "timeseries", "title": "OAuth 로그인 실패 (이유별, 1h)", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "sum by (reason) (count_over_time({service=\"backend\"} |~ `^WARN +\\S*GoogleOAuthController : OAuth callback failed\\. reason=[a-z_]+$` | regexp `reason=(?P<reason>[a-z_]+)$` [1h]))", "legendFormat": "{{reason}}"}], "gridPos": {"h": 7, "w": 8, "x": 0, "y": 7}},
+      {"id": 40, "type": "timeseries", "title": "세션 토큰 거부 (이유별, 1h) · session_revoked = 무효화된 토큰 재사용", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "sum by (reason) (count_over_time({service=\"backend\"} |~ `^INFO +\\S*JwtAuthenticationFilter : Session token rejected\\. reason=[a-z_]+$` | regexp `reason=(?P<reason>[a-z_]+)$` [1h]))", "legendFormat": "{{reason}}"}], "gridPos": {"h": 7, "w": 8, "x": 8, "y": 7}},
+      {"id": 41, "type": "timeseries", "title": "스캐너 User-Agent (5m)", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "sum by (ua) (count_over_time({service=\"nginx\"} | json | __error__=\"\" | ua =~ `(?i).*(sqlmap|nikto|nmap|masscan|zgrab|nuclei|gobuster|dirbuster|wpscan).*` [5m]))", "legendFormat": "{{ua}}"}], "gridPos": {"h": 7, "w": 8, "x": 16, "y": 7}},
+      {"id": 42, "type": "logs", "title": "nginx 로그 (IP 필터: $ip)", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "{service=\"nginx\"} | json | __error__=\"\" | ip =~ \"$ip\""}], "options": {"showTime": true, "wrapLogMessage": true, "sortOrder": "Descending"}, "gridPos": {"h": 10, "w": 24, "x": 0, "y": 14}}
     ]}
   ],
   "schemaVersion": 41,
   "tags": ["public-demo", "operations"],
-  "templating": {"list": []},
+  "templating": {"list": [{"name": "ip", "label": "IP (정규식)", "type": "textbox", "query": ".*", "current": {"text": ".*", "value": ".*"}, "hide": 0}]},
   "time": {"from": "now-6h", "to": "now"},
   "title": "TaskFlow",
   "uid": "taskflow",
-  "version": 2
+  "version": 3
 }

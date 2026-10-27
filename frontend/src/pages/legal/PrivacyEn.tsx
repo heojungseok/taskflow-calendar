@@ -23,9 +23,12 @@ export default function PrivacyEn() {
             retrieves that specific event from your primary calendar and accesses its title, description, start time,
             and end time. TaskFlow does not list or import unrelated calendar events.
           </li>
+          <li>Essential session, OAuth-state, and CSRF cookies.</li>
           <li>
-            Essential session, OAuth-state, and CSRF cookies, plus size-limited operational logs needed for security
-            and troubleshooting.
+            Operational logs for security and troubleshooting: IP address, request time, requested URL, response status,
+            browser information (User-Agent), and sign-in failure reasons. Operational logs are processed without consent
+            under Article 15(1)(6) of the Personal Information Protection Act to protect the service and respond to
+            incidents.
           </li>
         </ul>
       </section>
@@ -84,8 +87,8 @@ export default function PrivacyEn() {
             otherwise revoked.
           </li>
           <li>
-            Operational logs are rotated within configured size limits and older log files are overwritten when those
-            limits are reached.
+            Operational logs are retained for 14 days and then deleted automatically. Temporary logs on the server are
+            rotated within configured size limits, and older entries are overwritten first.
           </li>
           <li>
             Disconnecting Google in TaskFlow revokes and deletes the stored Google OAuth tokens and ends your
@@ -133,7 +136,7 @@ export default function PrivacyEn() {
             database account that cannot administer the database server.
           </li>
           <li>
-            <strong>Logging.</strong> Access tokens and refresh tokens are never written to application logs.
+            <strong>Logging.</strong> Access tokens, refresh tokens, and Google sign-in authorization codes are never written to logs.
           </li>
           <li>
             <strong>Minimum scope and administrative access.</strong> TaskFlow requests only the scope its calendar

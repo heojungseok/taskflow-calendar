@@ -1,5 +1,6 @@
 package com.taskflow.identity.security;
 
+import com.taskflow.identity.user.User;
 import com.taskflow.identity.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -31,16 +33,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String token = extractTokenFromCookie(request);
+        boolean tokenValid = token != null && jwtTokenProvider.validateToken(token);
+        if (token != null && !tokenValid) {
+            logRejected("token_invalid");
+        }
         // 2. 토큰이 있고 유효하면
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+        if (tokenValid) {
             // 3. userId 추출
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
             int tokenVersion = jwtTokenProvider.getSessionVersion(token);
-            boolean sessionActive = userRepository
-                    .findById(userId)
-                    .map(user -> user.isSessionActive(tokenVersion, Instant.now()))
-                    .orElse(false);
-            if (!sessionActive) {
+            Optional<User> user = userRepository.findById(userId);
+            if (user.isEmpty()) {
+                logRejected("user_missing");
+                filterChain.doFilter(request, response);
+                return;
+            }
+            if (!user.get().isSessionActive(tokenVersion, Instant.now())) {
+                // 로그아웃·연결 해제로 버전이 올라간 토큰과 DEMO 만료를 나눠 남긴다.
+                logRejected(user.get().getSessionVersion() != tokenVersion ? "session_revoked" : "session_expired");
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -56,6 +66,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 6. 다음 필터로 전달
         filterChain.doFilter(request, response);
+    }
+
+    /** Grafana 보안 Row가 읽는 거부 이유. userId와 토큰 값은 남기지 않는다. */
+    private void logRejected(String reason) {
+        log.info("Session token rejected. reason={}", reason);
     }
 
     private String extractTokenFromCookie(HttpServletRequest request) {

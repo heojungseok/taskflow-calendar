@@ -1,0 +1,209 @@
+apiVersion: 1
+
+# 보안 알림은 지나간 사건이라 '복구'가 없다. 같은 웹훅을 쓰되 종료 메시지를 끈 연락처로 보낸다.
+contactPoints:
+  - orgId: 1
+    name: Discord security
+    receivers:
+      - uid: taskflow-discord-security
+        type: discord
+        settings:
+          url: ${DISCORD_WEBHOOK_URL}
+          title: '{{ template "taskflow.security.title" . }}'
+          message: '{{ template "taskflow.security.message" . }}'
+        disableResolveMessage: true
+
+templates:
+  - orgId: 1
+    name: taskflow-security
+    template: |
+      {{ define "taskflow.security.title" }}[보안][WARNING] TaskFlow {{ .CommonLabels.environment }} · {{ .CommonAnnotations.summary }}{{ end }}
+      {{ define "taskflow.security.message" }}
+      {{- $externalURL := .ExternalURL -}}
+      {{- range .Alerts.Firing }}
+
+      ### [감지] {{ .Annotations.description }}
+      **감지 시각** {{ .StartsAt | tz "Asia/Seoul" | date "2006-01-02 15:04:05 MST" }}
+      {{- if .Labels.ip }}
+      **IP** `{{ .Labels.ip }}`
+      {{- end }}
+      **{{ .Annotations.window }}** {{ .Annotations.observed }}
+      **판단 방법** {{ .Annotations.judge }}
+      **권장 조치** {{ .Annotations.action }}
+      **로그** [{{ if .Labels.ip }}이 IP의 {{ end }}최근 30분 로그 열기]({{ $externalURL }}d/taskflow/taskflow?from=now-30m&to=now{{ if .Labels.ip }}&var-ip={{ .Labels.ip }}{{ end }})
+      **기준** {{ .Annotations.criteria }}
+      {{- end }}
+      {{ end }}
+
+# 기준 값은 2026-10-27 정석님이 정한 초안 값이다. 알림을 켠 날부터 14일 뒤 실제 건수를 보고 다시 정한다.
+# 배포 검증 스크립트(User-Agent taskflow-boundary-check) 요청은 알림 조건에서 뺀다.
+# backend 쿼리는 줄 맨 앞의 로그 수준과 로거 이름까지 고정한다. 다른 로그의 예외 메시지에 같은 문구를 넣어 알림을 일으키지 못하게 하기 위해서다.
+groups:
+  - orgId: 1
+    name: TaskFlow security
+    folder: TaskFlow
+    interval: 1m
+    rules:
+      - uid: taskflow-sec-path-probe
+        title: security path probe
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: security
+          severity: warning
+        annotations:
+          summary: 경로 훑기 의심
+          description: 같은 IP가 막힌·스캐너 경로를 반복 요청
+          window: 최근 10분
+          observed: '서로 다른 경로 {{ $values.B.Value }}개'
+          judge: 같은 IP의 다른 요청이 200으로 성공했는지 로그에서 확인
+          action: 반복되면 Cloudflare에서 이 IP 차단
+          criteria: 같은 IP · 10분 · 막힌·스캐너 경로 5개 이상 (알림을 켠 날부터 14일 뒤 재검토)
+        data:
+          - refId: A
+            datasourceUid: loki
+            relativeTimeRange: {from: 600, to: 0}
+            model: {refId: A, queryType: instant, expr: 'count by (ip) (sum by (ip, path) (count_over_time({service="nginx"} | json | __error__="" | ua != "taskflow-boundary-check" | path =~ `(?i)^/(actuator|api/admin|api/test)(/.*)?$|.*(\.env|\.git/|\.php|wp-|phpmyadmin|cgi-bin|\.\./).*` [10m])))'}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [4]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-sec-auth-failures
+        title: security auth failures
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: security
+          severity: warning
+        annotations:
+          summary: 인증 실패 반복
+          description: 같은 IP에서 401·403이 반복됨
+          window: 최근 10분
+          observed: '401·403 {{ $values.B.Value }}건'
+          judge: 401이 대부분이면 유효한 세션 없이 API를 직접 호출하는 스크립트(정상 브라우저는 401 한 번에 로그인 화면으로 이동). 403이 대부분이면 CSRF 토큰 없는 변경 요청. 로그의 User-Agent와 Referer로 브라우저인지, 다른 사이트에서 왔는지 확인
+          action: 브라우저가 아니고 반복되면 Cloudflare에서 차단. 브라우저인데 반복되면 401 뒤에도 요청을 계속 보내는 화면 버그를 의심
+          criteria: 같은 IP · 10분 · 401·403 20건 이상 (알림을 켠 날부터 14일 뒤 재검토)
+        data:
+          - refId: A
+            datasourceUid: loki
+            relativeTimeRange: {from: 600, to: 0}
+            model: {refId: A, queryType: instant, expr: 'sum by (ip) (count_over_time({service="nginx"} | json | __error__="" | ua != "taskflow-boundary-check" | status =~ "401|403" [10m]))'}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [19]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-sec-rate-limit
+        title: security rate limit
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: security
+          severity: warning
+        annotations:
+          summary: 요청 수 제한 동작
+          description: nginx 요청 수 제한이 요청을 거절함
+          window: 최근 10분
+          observed: '429 {{ $values.B.Value }}건(DEMO 로그인 {{ $values.E.Value }}건)'
+          judge: 경로를 나눠 봄. DEMO 로그인 429면 DEMO 계정을 반복해서 만드는 것이고 기존 DEMO 트래픽 급증 알림과 함께 봄. /api/ 429면 한 IP에 몰렸는지 확인. 이 제한은 조회(GET)를 포함한 모든 /api/에 걸림
+          action: 한 IP이고 브라우저가 아니면 차단. 브라우저 사용자가 걸렸다면 화면이 한 번에 요청을 너무 많이 보내는지, 제한 값이 낮은지 검토
+          criteria: 10분 · 429 10건 이상 또는 DEMO 로그인 429 3건 이상 (알림을 켠 날부터 14일 뒤 재검토)
+        data:
+          - refId: A
+            datasourceUid: loki
+            relativeTimeRange: {from: 600, to: 0}
+            model: {refId: A, queryType: instant, expr: 'sum(count_over_time({service="nginx"} | json | __error__="" | status = "429" [10m])) or vector(0)'}
+          - refId: D
+            datasourceUid: loki
+            relativeTimeRange: {from: 600, to: 0}
+            model: {refId: D, queryType: instant, expr: 'sum(count_over_time({service="nginx"} | json | __error__="" | status = "429" | path = "/api/auth/demo" [10m])) or vector(0)'}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: E
+            datasourceUid: __expr__
+            model: {refId: E, type: reduce, expression: D, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: math, expression: '$B >= 10 || $E >= 3'}
+
+      - uid: taskflow-sec-id-probe
+        title: security id probe
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: security
+          severity: warning
+        annotations:
+          summary: ID 대입 의심
+          description: 같은 IP가 서로 다른 프로젝트·Task ID로 404를 반복해서 받음
+          window: 최근 10분
+          observed: '서로 다른 ID {{ $values.B.Value }}개'
+          judge: 401이 아니라 404라는 것은 유효한 세션(대개 누구나 만들 수 있는 DEMO 계정)으로 남의 ID를 찾고 있다는 뜻. 소유권 격리가 막고 있는지 보여 주는 신호. 같은 IP의 같은 경로 요청 중 200으로 성공한 것이 있는지 확인
+          action: 200 성공이 없으면 해당 IP 차단 검토. 200 성공이 있으면 소유권 검사 누락 가능성이므로 즉시 해당 API 확인
+          criteria: 같은 IP · 10분 · 프로젝트·Task 조회 경로에서 서로 다른 ID로 404 10건 이상 (알림을 켠 날부터 14일 뒤 재검토)
+        data:
+          - refId: A
+            datasourceUid: loki
+            relativeTimeRange: {from: 600, to: 0}
+            model: {refId: A, queryType: instant, expr: 'count by (ip) (sum by (ip, rid) (count_over_time({service="nginx"} | json | __error__="" | status = "404" | regexp `"path":"/api/(?:projects|tasks)/(?P<rid>[0-9]+)` | rid != "" [10m])))'}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [9]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-sec-oauth-failures
+        title: security oauth failures
+        condition: C
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: security
+          severity: warning
+        annotations:
+          summary: OAuth 로그인 실패
+          description: Google 로그인 콜백이 실패함
+          window: 최근 1시간
+          observed: '서버 쪽 실패 {{ $values.B.Value }}건, state 불일치·Google 오류·code 없음·refresh token 없음 {{ $values.E.Value }}건'
+          judge: 서버 쪽 실패(토큰 교환 등)는 Google 설정이나 장애 쪽 문제. state 불일치가 한 IP에 몰리면 위조 콜백을 의심하고, 흩어져 있으면 로그인 창을 오래 열어 둔 사용자. refresh token 없음은 재동의 흐름 문제
+          action: 서버 쪽 실패면 Google Cloud 콘솔의 OAuth 클라이언트(secret, 리디렉션 URI)와 Google 상태 확인. state 불일치가 몰리면 해당 IP 차단
+          criteria: 1시간 · 서버 쪽 실패 1건 이상 또는 그 밖의 실패 3건 이상. 사용자 취소와 Calendar 권한 해제는 패널만 (알림을 켠 날부터 14일 뒤 재검토)
+        data:
+          - refId: A
+            datasourceUid: loki
+            relativeTimeRange: {from: 3600, to: 0}
+            model: {refId: A, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ `^WARN +\S*GoogleOAuthController : OAuth callback failed\. reason=server_error$` [1h])) or vector(0)'}
+          - refId: D
+            datasourceUid: loki
+            relativeTimeRange: {from: 3600, to: 0}
+            model: {refId: D, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ `^WARN +\S*GoogleOAuthController : OAuth callback failed\. reason=(state_invalid|google_error|code_missing|refresh_token_unavailable|state_store_full)$` [1h])) or vector(0)'}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: E
+            datasourceUid: __expr__
+            model: {refId: E, type: reduce, expression: D, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: math, expression: '$B >= 1 || $E >= 3'}

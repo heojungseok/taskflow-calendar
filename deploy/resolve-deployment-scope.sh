@@ -61,6 +61,7 @@ has_unknown_changes() {
     ':(exclude)frontend/tsconfig.json' ':(exclude)frontend/tsconfig.*.json' \
     ':(exclude)compose.production.yml' ':(exclude).env.production.example' \
     ':(exclude)deploy/db/migration/**' ':(exclude)deploy/grafana/**' \
+    ':(exclude)deploy/loki/**' ':(exclude)deploy/alloy/**' \
     ':(exclude)deploy/postgres/init-roles.sh' ':(exclude)deploy/prometheus/prometheus.yml' \
     ':(exclude)deploy/resolve-deployment-scope.sh' ':(exclude)deploy/resolve-deployment-scope-test.sh' \
     ':(exclude)deploy/verify-compose-boundary.sh' ':(exclude)deploy/verify-public-boundary.sh' \
@@ -109,10 +110,10 @@ fi
 
 if has_changes "$backend_sha" \
       compose.production.yml .env.production.example deploy/grafana deploy/postgres/init-roles.sh \
-      deploy/prometheus/prometheus.yml || \
+      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy || \
     has_changes "$frontend_sha" \
       compose.production.yml .env.production.example deploy/grafana deploy/postgres/init-roles.sh \
-      deploy/prometheus/prometheus.yml; then
+      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy; then
   full_changed=true
 fi
 

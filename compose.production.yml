@@ -69,10 +69,11 @@ services:
       WEEKLY_SUMMARY_CACHE_TTL_SECONDS: "900"
       REDIS_URL: redis://redis:6379
       METRICS_ENVIRONMENT: public-demo
+      APP_LOGGING_SYSLOG_HOST: 10.213.47.10
       GEMINI_SUMMARY_API_KEY: ${GEMINI_SUMMARY_API_KEY:-}
       GEMINI_RECOMMENDATION_API_KEY: ${GEMINI_RECOMMENDATION_API_KEY:-}
       GEMINI_SEARCH_API_KEY: ${GEMINI_SEARCH_API_KEY:-}
-    networks: [edge, data, cache, monitoring]
+    networks: [edge, data, cache, monitoring, log-ingest]
     depends_on:
       migrator: { condition: service_completed_successfully }
     healthcheck:
@@ -125,15 +126,39 @@ services:
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./deploy/grafana/dashboards:/var/lib/grafana-dashboards:ro
     tmpfs: ["/var/lib/grafana:size=64m,mode=0700,uid=472,gid=0"]
-    networks: [monitoring, grafana-egress]
+    networks: [monitoring, logging, grafana-egress]
     ports: ["127.0.0.1:${TASKFLOW_GRAFANA_PORT:-3001}:3000"]
+    restart: unless-stopped
+    logging: *logging
+
+  loki:
+    image: grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193
+    command: [-config.file=/etc/loki/loki.yml]
+    volumes:
+      - ./deploy/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    networks: [logging]
+    restart: unless-stopped
+    logging: *logging
+
+  # nginx·backend가 syslog(UDP)로 보낸 로그를 받아 Loki로 넘긴다. Docker 소켓에는 접근하지 않는다.
+  # nginx·backend는 이름 대신 고정 IP로 보낸다. 이름을 쓰면 Alloy가 없을 때 nginx가 시작하지 못한다.
+  alloy:
+    image: grafana/alloy:v1.20.1@sha256:2aa2099af76c0098d4af7a4d6e48f86cb66dc1a000222ad927a1c67c6542d13f
+    command: [run, --disable-reporting, --storage.path=/var/lib/alloy/data, /etc/alloy/config.alloy]
+    volumes:
+      - ./deploy/alloy/config.alloy:/etc/alloy/config.alloy:ro
+    networks:
+      logging: {}
+      log-ingest: { ipv4_address: 10.213.47.10 }
+    depends_on: [loki]
     restart: unless-stopped
     logging: *logging
 
   nginx:
     image: taskflow-frontend:${FRONTEND_GIT_SHA:?required}
     build: { context: frontend, dockerfile: Dockerfile }
-    networks: [edge]
+    networks: [edge, log-ingest]
     ports: ["127.0.0.1:${TASKFLOW_HTTP_PORT:-8088}:8080"]
     depends_on:
       backend: { condition: service_healthy }
@@ -171,7 +196,14 @@ networks:
   cache: { internal: true }
   monitoring: { internal: true }
   grafana-egress: {}
+  logging: { internal: true }
+  # 로그를 보내는 쪽(nginx·backend)과 Alloy만 붙는다. Loki는 여기에 두지 않아 backend가 Loki를 읽거나 지울 수 없다.
+  log-ingest:
+    internal: true
+    ipam:
+      config: [{ subnet: 10.213.47.0/28 }]
 
 volumes:
   postgres-data: { name: taskflow-public-postgres-data }
   prometheus-data: { name: taskflow-public-prometheus-data }
+  loki-data: { name: taskflow-public-loki-data }
