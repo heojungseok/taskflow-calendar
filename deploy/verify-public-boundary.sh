@@ -2,11 +2,13 @@
 set -eu
 
 origin=${PUBLIC_ORIGIN:?required}
+# Grafana 보안 알림은 이 User-Agent를 배포 검증 요청으로 보고 뺀다.
+user_agent=taskflow-boundary-check
 
 check_code() {
   url=$1
   expected=$2
-  code=$(curl --silent --output /dev/null --write-out '%{http_code}' "$url")
+  code=$(curl --silent --user-agent "$user_agent" --output /dev/null --write-out '%{http_code}' "$url")
   if [ "$code" != "$expected" ]; then
     echo "Unexpected HTTP code for $url: $code (expected $expected)" >&2
     exit 1
@@ -16,7 +18,7 @@ check_code() {
 check_forbidden_path() {
   url=$1
   method=${2:-GET}
-  code=$(curl --silent --output /dev/null --write-out '%{http_code}' --request "$method" "$url")
+  code=$(curl --silent --user-agent "$user_agent" --output /dev/null --write-out '%{http_code}' --request "$method" "$url")
   case "$code" in
     404)
       ;;

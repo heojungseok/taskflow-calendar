@@ -227,12 +227,31 @@ postgres_init_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$grafana_sha" "$grafana_sha"
 assert_plan full "$postgres_init_sha" "$postgres_init_sha" false true "$postgres_init_sha"
 
+# 로그 수집 설정만 바뀌어도 full 배포로 잡혀야 한다. 목록에 빠지면 unknown으로 막히거나 조용히 건너뛴다.
+mkdir -p "$repo/deploy/loki"
+printf '%s\n' 'auth_enabled: false' >"$repo/deploy/loki/loki.yml"
+git -C "$repo" add deploy/loki/loki.yml
+git -C "$repo" commit -qm 'loki config'
+loki_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$postgres_init_sha" "$postgres_init_sha"
+assert_plan full "$loki_sha" "$loki_sha" false true "$loki_sha"
+
+mkdir -p "$repo/deploy/alloy"
+printf '%s\n' 'loki.write "local" {}' >"$repo/deploy/alloy/config.alloy"
+git -C "$repo" add deploy/alloy/config.alloy
+git -C "$repo" commit -qm 'alloy config'
+alloy_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$loki_sha" "$loki_sha"
+assert_plan full "$alloy_sha" "$alloy_sha" false true "$alloy_sha"
+
 printf '%s\n' 'backend-v3' >"$repo/src/main/java/App.java"
 printf '%s\n' 'frontend-v3' >"$repo/frontend/src/App.tsx"
 git -C "$repo" commit -qam 'backend and frontend'
 both_sha=$(git -C "$repo" rev-parse HEAD)
 
-write_env "$postgres_init_sha" "$postgres_init_sha"
+write_env "$alloy_sha" "$alloy_sha"
 assert_plan full "$both_sha" "$both_sha" false true "$both_sha"
 
 write_env "$base_sha" "$frontend_sha"

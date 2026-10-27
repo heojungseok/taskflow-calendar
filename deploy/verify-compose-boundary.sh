@@ -26,7 +26,16 @@ jq -e '
   and ((.services.migrator.networks | keys) == ["data"])
   and ((.services.postgres.networks | keys) == ["data"])
   and ((.services.prometheus.networks | keys) == ["monitoring"])
-  and ((.services.grafana.networks | keys | sort) == ["grafana-egress", "monitoring"])
+  and ((.services.grafana.networks | keys | sort) == ["grafana-egress", "logging", "monitoring"])
+  and (.networks.logging.internal and .networks["docker-api"].internal)
+  and ((.services.loki.networks | keys) == ["logging"])
+  and ((.services.alloy.networks | keys | sort) == ["docker-api", "logging"])
+  and ((.services["docker-socket-proxy"].networks | keys) == ["docker-api"])
+  and ([.services | to_entries[] | select(.value.volumes[]? | .source == "/var/run/docker.sock") | .key] == ["docker-socket-proxy"])
+  and (.services["docker-socket-proxy"].volumes[] | select(.source == "/var/run/docker.sock") | .read_only == true)
+  and .services["docker-socket-proxy"].environment.POST == "0"
+  and .volumes["loki-data"].name == "taskflow-public-loki-data"
+  and .volumes["alloy-data"].name == "taskflow-public-alloy-data"
   and (.services.redis.volumes == null)
   and (.services.redis.tmpfs | any(startswith("/data")))
   and ([.services.grafana.volumes[]? | select(.type == "volume")] | length == 0)

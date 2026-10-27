@@ -125,8 +125,46 @@ services:
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./deploy/grafana/dashboards:/var/lib/grafana-dashboards:ro
     tmpfs: ["/var/lib/grafana:size=64m,mode=0700,uid=472,gid=0"]
-    networks: [monitoring, grafana-egress]
+    networks: [monitoring, logging, grafana-egress]
     ports: ["127.0.0.1:${TASKFLOW_GRAFANA_PORT:-3001}:3000"]
+    restart: unless-stopped
+    logging: *logging
+
+  loki:
+    image: grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193
+    command: [-config.file=/etc/loki/loki.yml]
+    volumes:
+      - ./deploy/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    networks: [logging]
+    restart: unless-stopped
+    logging: *logging
+
+  # Docker 소켓은 컨테이너를 만들고 지울 수 있는 관리자 권한이다. Alloy에 직접 주지 않고
+  # 컨테이너·네트워크 목록과 로그 조회(GET)만 통과시키는 proxy를 둔다.
+  # Alloy의 discovery.docker가 컨테이너 라벨을 만들 때 /networks를 읽으므로 NETWORKS도 연다(POST는 막힘).
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    environment:
+      CONTAINERS: "1"
+      NETWORKS: "1"
+      POST: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [docker-api]
+    restart: unless-stopped
+    logging: *logging
+
+  alloy:
+    image: grafana/alloy:v1.20.1@sha256:2aa2099af76c0098d4af7a4d6e48f86cb66dc1a000222ad927a1c67c6542d13f
+    command: [run, --disable-reporting, --storage.path=/var/lib/alloy/data, /etc/alloy/config.alloy]
+    environment:
+      COMPOSE_PROJECT: ${COMPOSE_PROJECT_NAME:-taskflow-public}
+    volumes:
+      - ./deploy/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+    networks: [docker-api, logging]
+    depends_on: [loki, docker-socket-proxy]
     restart: unless-stopped
     logging: *logging
 
@@ -171,7 +209,11 @@ networks:
   cache: { internal: true }
   monitoring: { internal: true }
   grafana-egress: {}
+  logging: { internal: true }
+  docker-api: { internal: true }
 
 volumes:
   postgres-data: { name: taskflow-public-postgres-data }
   prometheus-data: { name: taskflow-public-prometheus-data }
+  loki-data: { name: taskflow-public-loki-data }
+  alloy-data: { name: taskflow-public-alloy-data }

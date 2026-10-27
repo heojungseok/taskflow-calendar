@@ -112,16 +112,19 @@ public class GoogleOAuthController {
                     .orElseThrow(() -> new IllegalArgumentException("Invalid or expired OAuth state"));
         } catch (Exception e) {
             cookieService.clearOAuthState(response);
-            return redirectToFrontendError("oauth_failed");
+            return callbackFailed("state_invalid", "oauth_failed");
         }
 
         cookieService.clearOAuthState(response);
 
+        if ("access_denied".equals(oauthError)) {
+            return callbackFailed("consent_cancelled", "consent_cancelled");
+        }
         if (oauthError != null) {
-            return redirectToFrontendError("access_denied".equals(oauthError) ? "consent_cancelled" : "oauth_failed");
+            return callbackFailed("google_error", "oauth_failed");
         }
         if (code == null || code.isBlank()) {
-            return redirectToFrontendError("oauth_failed");
+            return callbackFailed("code_missing", "oauth_failed");
         }
 
         try {
@@ -146,17 +149,21 @@ public class GoogleOAuthController {
                             .location(URI.create(buildAuthorizeUrl(retryState, CONSENT_RETRY)))
                             .build();
                 } catch (IllegalStateException stateCapacityExceeded) {
-                    return redirectToFrontendError("oauth_failed");
+                    return callbackFailed("state_store_full", "oauth_failed");
                 }
             }
-            return redirectToFrontendError("refresh_token_unavailable");
+            return callbackFailed("refresh_token_unavailable", "refresh_token_unavailable");
         } catch (MissingRequiredGoogleScopeException e) {
-            log.warn("OAuth callback failed. errorCode=calendar_permission_required");
-            return redirectToFrontendError("calendar_permission_required");
+            return callbackFailed("calendar_permission_required", "calendar_permission_required");
         } catch (Exception e) {
-            log.warn("OAuth callback failed. errorCode=oauth_failed");
-            return redirectToFrontendError("oauth_failed");
+            return callbackFailed("server_error", "oauth_failed");
         }
+    }
+
+    /** 실패 이유를 Grafana 보안 알림이 읽는 한 줄로 남긴다. code·state·token 값은 남기지 않는다. */
+    private ResponseEntity<Void> callbackFailed(String reason, String frontendErrorCode) {
+        log.warn("OAuth callback failed. reason={}", reason);
+        return redirectToFrontendError(frontendErrorCode);
     }
 
     private ResponseEntity<Void> redirectToFrontendError(String errorCode) {

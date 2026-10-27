@@ -34,14 +34,18 @@ import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(GoogleOAuthController.class)
+@ExtendWith(OutputCaptureExtension.class)
 @Import({SecurityConfig.class, SessionCookieService.class})
 @TestPropertySource(properties = "app.frontend.base-url=http://frontend.test")
 class GoogleOAuthControllerTest {
@@ -125,7 +129,7 @@ class GoogleOAuthControllerTest {
     }
 
     @Test
-    void mismatchedCookieUsesFixedErrorAndDoesNotConsumeServerState() throws Exception {
+    void mismatchedCookieUsesFixedErrorAndDoesNotConsumeServerState(CapturedOutput output) throws Exception {
         mvc.perform(get("/api/oauth/google/callback")
                         .param("state", "query")
                         .param("code", "code")
@@ -136,10 +140,12 @@ class GoogleOAuthControllerTest {
 
         verify(stateStore, never()).consumeState(any());
         verify(googleOAuthService, never()).exchangeCodeAndGetUserInfo(any());
+
+        assertThat(output).contains("OAuth callback failed. reason=state_invalid");
     }
 
     @Test
-    void deniedCallbackAlsoClearsStateCookie() throws Exception {
+    void deniedCallbackAlsoClearsStateCookie(CapturedOutput output) throws Exception {
         given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
 
         mvc.perform(get("/api/oauth/google/callback")
@@ -152,10 +158,12 @@ class GoogleOAuthControllerTest {
 
         verify(stateStore).consumeState("same");
         verify(googleOAuthService, never()).exchangeCodeAndGetUserInfo(any());
+
+        assertThat(output).contains("OAuth callback failed. reason=consent_cancelled");
     }
 
     @Test
-    void missingCalendarPermissionUsesSpecificError() throws Exception {
+    void missingCalendarPermissionUsesSpecificError(CapturedOutput output) throws Exception {
         GoogleOAuthResult result =
                 new GoogleOAuthResult("user@example.test", "User", "access", "refresh", 3600L, "openid");
         given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
@@ -171,6 +179,8 @@ class GoogleOAuthControllerTest {
                 .andExpect(header().string(
                                 "Location", "http://frontend.test/oauth/callback?error=calendar_permission_required"))
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
+
+        assertThat(output).contains("OAuth callback failed. reason=calendar_permission_required");
     }
 
     @Test
@@ -197,7 +207,7 @@ class GoogleOAuthControllerTest {
     }
 
     @Test
-    void missingRefreshTokenAfterConsentRetryStopsWithFixedError() throws Exception {
+    void missingRefreshTokenAfterConsentRetryStopsWithFixedError(CapturedOutput output) throws Exception {
         GoogleOAuthResult result = oauthResult();
         given(stateStore.consumeState("same")).willReturn(Optional.of(CONSENT_RETRY));
         given(googleOAuthService.exchangeCodeAndGetUserInfo("code")).willReturn(result);
@@ -213,6 +223,43 @@ class GoogleOAuthControllerTest {
                 .andExpect(cookie().maxAge("OAUTH_STATE", 0));
 
         verify(stateStore, never()).generateState(any());
+
+        assertThat(output).contains("OAuth callback failed. reason=refresh_token_unavailable");
+    }
+
+    @Test
+    void googleErrorAndMissingCodeLogDistinctReasons(CapturedOutput output) throws Exception {
+        given(stateStore.consumeState("same")).willReturn(Optional.of(NORMAL));
+
+        mvc.perform(get("/api/oauth/google/callback")
+                        .param("state", "same")
+                        .param("error", "server_error")
+                        .cookie(new Cookie("OAUTH_STATE", "same")))
+                .andExpect(header().string("Location", "http://frontend.test/oauth/callback?error=oauth_failed"));
+        mvc.perform(get("/api/oauth/google/callback").param("state", "same").cookie(new Cookie("OAUTH_STATE", "same")))
+                .andExpect(header().string("Location", "http://frontend.test/oauth/callback?error=oauth_failed"));
+
+        assertThat(output)
+                .contains("OAuth callback failed. reason=google_error")
+                .contains("OAuth callback failed. reason=code_missing");
+    }
+
+    @Test
+    void serverFailureLogsReasonWithoutAuthorizationCode(CapturedOutput output) throws Exception {
+        given(stateStore.consumeState("secret-state")).willReturn(Optional.of(NORMAL));
+        given(googleOAuthService.exchangeCodeAndGetUserInfo("secret-auth-code"))
+                .willThrow(new RuntimeException("Failed to exchange code for token"));
+
+        mvc.perform(get("/api/oauth/google/callback")
+                        .param("state", "secret-state")
+                        .param("code", "secret-auth-code")
+                        .cookie(new Cookie("OAUTH_STATE", "secret-state")))
+                .andExpect(header().string("Location", "http://frontend.test/oauth/callback?error=oauth_failed"));
+
+        assertThat(output)
+                .contains("OAuth callback failed. reason=server_error")
+                .doesNotContain("secret-auth-code")
+                .doesNotContain("secret-state");
     }
 
     @Test

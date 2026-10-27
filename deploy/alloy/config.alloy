@@ -1,0 +1,38 @@
+// nginx·backend 컨테이너 로그를 Loki로 보낸다.
+// Docker API는 socket proxy를 거쳐서만 읽는다. proxy는 컨테이너 목록과 로그 조회만 허용한다.
+
+discovery.docker "taskflow" {
+  host = "tcp://docker-socket-proxy:2375"
+
+  filter {
+    name   = "label"
+    values = ["com.docker.compose.project=" + sys.env("COMPOSE_PROJECT")]
+  }
+}
+
+discovery.relabel "taskflow" {
+  targets = discovery.docker.taskflow.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex         = "nginx|backend"
+    action        = "keep"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "taskflow" {
+  host       = "tcp://docker-socket-proxy:2375"
+  targets    = discovery.relabel.taskflow.output
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
