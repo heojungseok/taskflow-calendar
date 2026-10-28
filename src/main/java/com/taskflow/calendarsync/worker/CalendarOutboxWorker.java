@@ -10,19 +10,24 @@ import com.taskflow.common.exception.RetryableIntegrationException;
 import com.taskflow.identity.oauth.GoogleOAuthService;
 import com.taskflow.identity.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.observability.TaskFlowMetrics;
+import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
  * Calendar Outbox Worker
- * - {@code outbox.worker.fixed-delay}(기본 60초)마다 처리 가능한 Outbox 조회
+ * - 전용 스레드(outbox-worker)에서 {@code outbox.worker.fixed-delay}(기본 60초)마다 처리 가능한 Outbox 조회
  * - 조건부 UPDATE로 원자적 선점 (Race Condition 방지)
  * - Lease timeout: 5분
  * - Max retry: 6회
@@ -42,16 +47,36 @@ public class CalendarOutboxWorker {
     private final OAuthGoogleTokenRepository tokenRepository;
     private final TaskFlowMetrics metrics;
 
+    /** 생성부터 Worker가 집어 들기까지 이보다 오래 기다린 건은 WARN으로 남긴다. 평소 대기는 Worker 주기(60초) 안쪽이다. */
+    private static final long SLOW_THRESHOLD_SECONDS = 60;
+
+    /**
+     * Worker 전용 스레드. Spring 기본 스케줄러는 스레드 하나를 모든 @Scheduled 작업이 나눠 써서,
+     * DEMO 정리 같은 다른 작업이 오래 걸리면 Worker도 밀린다.
+     * TaskScheduler bean을 하나 더 등록하지 않는 이유: Boot가 기본 스케줄러·실행기 자동 설정을 끈다.
+     */
+    private final ScheduledExecutorService workerThread =
+            Executors.newSingleThreadScheduledExecutor(runnable -> new Thread(runnable, "outbox-worker"));
+
     @Value("${outbox.worker.enabled:false}")
     private boolean schedulingEnabled;
 
-    /** 유일한 실행 진입점은 scheduler다. */
-    @Scheduled(fixedDelayString = "${outbox.worker.fixed-delay:60000}")
-    public void scheduledPoll() {
+    @Value("${outbox.worker.fixed-delay:60000}")
+    private long fixedDelayMillis;
+
+    /** 유일한 자동 실행 진입점이다. */
+    @EventListener(ApplicationReadyEvent.class)
+    public void startPolling() {
         if (!schedulingEnabled) {
             return;
         }
-        pollAndProcess();
+        workerThread.scheduleWithFixedDelay(this::pollAndProcess, 0, fixedDelayMillis, TimeUnit.MILLISECONDS);
+    }
+
+    /** 처리 중인 건은 끊긴다. 끊긴 건은 lease(5분)가 지나면 다시 처리된다. */
+    @PreDestroy
+    void stopPolling() {
+        workerThread.shutdownNow();
     }
 
     void pollAndProcess() {
@@ -66,13 +91,9 @@ public class CalendarOutboxWorker {
                     outboxRepository.findProcessable(now, leaseTimeout, OutboxPolicy.MAX_RETRY.value());
 
             if (processableOutboxes.isEmpty()) {
-                metrics.setOldestProcessableAgeSeconds(0);
                 log.debug("[Worker] No processable outboxes found");
                 return;
             }
-            LocalDateTime oldest = processableOutboxes.get(0).getCreatedAt();
-            metrics.setOldestProcessableAgeSeconds(
-                    oldest == null ? 0 : Duration.between(oldest, now).toSeconds());
 
             log.info("[Worker] Found {} processable outboxes", processableOutboxes.size());
 
@@ -93,6 +114,7 @@ public class CalendarOutboxWorker {
                             outbox.getOpType(),
                             outbox.getTaskId(),
                             outbox.getRetryCount());
+                    logIfSlow(outbox);
 
                     processOne(outbox);
 
@@ -140,6 +162,29 @@ public class CalendarOutboxWorker {
             log.error("[Worker] Unexpected error on Outbox {}: {}", outbox.getId(), e.getMessage(), e);
             outboxService.markForRetry(outbox.getId(), "Unexpected error: " + e.getMessage());
             metrics.outboxProcessed("failed", "none");
+        }
+    }
+
+    /**
+     * 08-21의 758.6초 지연은 이 건이 왜 늦었는지 남은 기록이 없어 원인을 가를 수 없었다.
+     * 늦은 건은 Loki(14일 보관)에서 outbox_slow로 찾는다. 처리 결과(성공·건너뜀·실패)와 상관없이
+     * Worker가 집어 든 시점에 남겨, 늦어진 원인이 Worker 쪽인지 Google 호출 쪽인지 나눠 볼 수 있게 한다.
+     */
+    private void logIfSlow(CalendarOutbox outbox) {
+        LocalDateTime createdAt = outbox.getCreatedAt();
+        if (createdAt == null) {
+            return;
+        }
+        long waitedSeconds =
+                Duration.between(createdAt, LocalDateTime.now(ZoneOffset.UTC)).toSeconds();
+        if (waitedSeconds > SLOW_THRESHOLD_SECONDS) {
+            log.warn(
+                    "[Worker] outbox_slow outboxId={} taskId={} opType={} retryCount={} waitedSeconds={}",
+                    outbox.getId(),
+                    outbox.getTaskId(),
+                    outbox.getOpType(),
+                    outbox.getRetryCount(),
+                    waitedSeconds);
         }
     }
 

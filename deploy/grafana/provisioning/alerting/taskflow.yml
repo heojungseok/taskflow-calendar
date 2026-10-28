@@ -137,7 +137,6 @@ groups:
       - uid: taskflow-worker-backlog
         title: worker backlog
         condition: C
-        for: 2m
         noDataState: OK
         execErrState: Error
         isPaused: false
@@ -149,8 +148,8 @@ groups:
           __dashboardUid__: taskflow
           __panelId__: "17"
           summary: Worker 처리 지연
-          impact: 처리 가능한 Outbox 이벤트가 2분 넘게 대기해 Calendar 반영이 늦어질 수 있습니다.
-          action: Backend worker 로그와 Outbox 실패 사유를 확인하고 일시 장애면 worker 재기동 후 대기 시간이 감소하는지 확인하세요.
+          impact: 처리 가능한 Outbox 이벤트가 3분 넘게 처리되지 않아 Calendar 반영이 늦어지고 있습니다. 값은 Prometheus가 지표를 가져갈 때 DB에서 직접 계산해, Worker가 멈춰도 올라갑니다.
+          action: 'Grafana Explore의 Loki에서 {service="backend"} |= "[Worker]"로 최근 처리 로그와 outbox_slow 건을 확인하세요. 처리 로그가 없으면 Worker가 멈춘 것이므로 backend를 재기동하고 대기 시간이 줄어드는지 확인하세요.'
           check_url: /healthz
         data:
           - refId: A
@@ -162,7 +161,7 @@ groups:
             model: {refId: B, type: reduce, expression: A, reducer: last}
           - refId: C
             datasourceUid: __expr__
-            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [120]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [180]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
 
       - uid: taskflow-backend-down
         title: backend metrics collection down

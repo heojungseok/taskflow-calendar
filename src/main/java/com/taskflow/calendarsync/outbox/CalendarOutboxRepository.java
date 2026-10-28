@@ -38,6 +38,30 @@ public interface CalendarOutboxRepository extends JpaRepository<CalendarOutbox, 
             @Param("leaseTimeout") LocalDateTime leaseTimeout,
             @Param("maxRetry") int maxRetry);
 
+    /**
+     * 처리 가능한 Outbox 중 가장 먼저 처리 가능해진 시각. 없으면 null.
+     * findProcessable과 같은 조건이고, 처리 가능해진 시각은 상태마다 다르다:
+     * PENDING은 생성 시각, 재시도 FAILED는 next_retry_at, lease가 끝난 PROCESSING은 lease 만료 시각.
+     * 생성 시각만 보면 오래전에 만든 건이 재시도 차례가 된 순간 Worker가 정상이어도 값이 튄다.
+     */
+    @Query(value = """
+            SELECT MIN(CASE o.status
+                         WHEN 'PENDING' THEN o.created_at
+                         WHEN 'FAILED' THEN o.next_retry_at
+                         ELSE o.updated_at + make_interval(mins => cast(:leaseMinutes AS int))
+                       END)
+            FROM calendar_outbox o
+            WHERE (o.status = 'PENDING'
+                   OR (o.status = 'FAILED' AND o.next_retry_at IS NOT NULL AND o.next_retry_at <= :now)
+                   OR (o.status = 'PROCESSING' AND o.updated_at < :leaseTimeout))
+              AND o.retry_count < :maxRetry
+            """, nativeQuery = true)
+    LocalDateTime findOldestProcessableSince(
+            @Param("now") LocalDateTime now,
+            @Param("leaseTimeout") LocalDateTime leaseTimeout,
+            @Param("leaseMinutes") int leaseMinutes,
+            @Param("maxRetry") int maxRetry);
+
     // 조건부 UPDATE 추가
     @Modifying
     @Query("UPDATE CalendarOutbox o " + "SET o.status = 'PROCESSING', o.updatedAt = CURRENT_TIMESTAMP "

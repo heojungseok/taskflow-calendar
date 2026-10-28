@@ -73,7 +73,6 @@ class TaskFlowMetricsTest {
         metrics.demoCleanupFailed();
         metrics.outboxProcessed("skipped", "no_google_link");
         metrics.setOldestExpiredAgeSeconds(42);
-        metrics.setOldestProcessableAgeSeconds(84);
         metrics.setUserCounts(12, 3, 5);
 
         assertThat(registry.get("demo_sessions_started_total").counter().count())
@@ -90,8 +89,6 @@ class TaskFlowMetricsTest {
                 .isEqualTo(1);
         assertThat(registry.get("demo_oldest_expired_age_seconds").gauge().value())
                 .isEqualTo(42);
-        assertThat(registry.get("outbox_oldest_processable_age_seconds").gauge().value())
-                .isEqualTo(84);
         assertThat(registry.get("taskflow_google_users_registered").gauge().value())
                 .isEqualTo(12);
         assertThat(registry.get("taskflow_google_users_created_24h").gauge().value())
