@@ -1,5 +1,6 @@
 package com.taskflow.calendarsync.worker;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -11,7 +12,9 @@ import com.taskflow.identity.oauth.GoogleOAuthService;
 import com.taskflow.identity.oauth.OAuthGoogleTokenRepository;
 import com.taskflow.observability.TaskFlowMetrics;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -366,30 +371,40 @@ class CalendarOutboxWorkerTest {
     class SchedulingSwitchTest {
 
         @Test
-        @DisplayName("enabled=true면 스케줄 진입점이 폴링을 수행한다")
-        void scheduledPoll_enabled_수행() {
+        @DisplayName("enabled=true면 Worker 전용 스레드에서 폴링한다")
+        void startPolling_enabled_전용스레드에서_수행() {
             // given
             ReflectionTestUtils.setField(worker, "schedulingEnabled", true);
-            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of());
+            ReflectionTestUtils.setField(worker, "fixedDelayMillis", 60_000L);
+            AtomicReference<String> pollingThread = new AtomicReference<>();
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenAnswer(invocation -> {
+                pollingThread.set(Thread.currentThread().getName());
+                return List.of();
+            });
 
             // when
-            worker.scheduledPoll();
+            worker.startPolling();
 
-            // then
-            verify(outboxRepository).findProcessable(any(), any(), anyInt());
+            // then: 다른 @Scheduled 작업과 스레드를 나눠 쓰지 않는다
+            try {
+                verify(outboxRepository, timeout(2_000)).findProcessable(any(), any(), anyInt());
+                assertThat(pollingThread.get()).isEqualTo("outbox-worker");
+            } finally {
+                worker.stopPolling();
+            }
         }
 
         @Test
         @DisplayName("enabled=false면 조회조차 하지 않는다")
-        void scheduledPoll_disabled_skip() {
+        void startPolling_disabled_skip() {
             // given
             ReflectionTestUtils.setField(worker, "schedulingEnabled", false);
 
             // when
-            worker.scheduledPoll();
+            worker.startPolling();
 
             // then
-            verify(outboxRepository, never()).findProcessable(any(), any(), anyInt());
+            verify(outboxRepository, after(300).never()).findProcessable(any(), any(), anyInt());
         }
 
         @Test
@@ -404,6 +419,46 @@ class CalendarOutboxWorkerTest {
 
             // then
             verify(outboxRepository).findProcessable(any(), any(), anyInt());
+        }
+    }
+
+    @Nested
+    @DisplayName("오래 걸린 건 로그")
+    @ExtendWith(OutputCaptureExtension.class)
+    class SlowOutboxLog {
+
+        @Test
+        @DisplayName("생성부터 처리 끝까지 60초를 넘으면 outbox_slow를 남긴다")
+        void 오래걸린건_outbox_slow(CapturedOutput output) {
+            // given
+            ReflectionTestUtils.setField(
+                    outbox, "createdAt", LocalDateTime.now(ZoneOffset.UTC).minusMinutes(13));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(outbox));
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
+
+            // when
+            worker.pollAndProcess();
+
+            // then
+            assertThat(output.getOut())
+                    .containsPattern(
+                            "outbox_slow outboxId=100 taskId=1 opType=UPSERT retryCount=0 waitedSeconds=78\\d");
+        }
+
+        @Test
+        @DisplayName("60초 안에 끝나면 남기지 않는다")
+        void 빨리끝난건_로그없음(CapturedOutput output) {
+            // given
+            ReflectionTestUtils.setField(
+                    outbox, "createdAt", LocalDateTime.now(ZoneOffset.UTC).minusSeconds(10));
+            when(outboxRepository.findProcessable(any(), any(), anyInt())).thenReturn(List.of(outbox));
+            when(outboxService.claimProcessing(eq(OUTBOX_ID), any())).thenReturn(true);
+
+            // when
+            worker.pollAndProcess();
+
+            // then
+            assertThat(output).doesNotContain("outbox_slow");
         }
     }
 }

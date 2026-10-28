@@ -193,7 +193,7 @@ Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림�
 | 알림 | 조건 | severity |
 |---|---|---|
 | backend metrics collection down | `up{job="taskflow"} < 1`, 2분 지속 | critical |
-| worker backlog | 처리 가능 Outbox 최고 연령 > 120초, 2분 지속 | warning |
+| worker backlog | 처리 가능해진 뒤 처리되지 않은 Outbox 최장 대기 > 180초(Prometheus 수집 때 DB에서 계산) | warning |
 | cleanup failure | 15분간 데모 정리 실패 발생 | warning |
 | cleanup overdue | 만료 데모 데이터 최고 연령 > 600초, 5분 지속 | warning |
 | demo usage | 1시간 데모 세션 3건 이상 + `SKIPPED` Outbox 5건 이상 | warning |
