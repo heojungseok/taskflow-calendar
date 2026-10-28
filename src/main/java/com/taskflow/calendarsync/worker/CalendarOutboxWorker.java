@@ -47,7 +47,7 @@ public class CalendarOutboxWorker {
     private final OAuthGoogleTokenRepository tokenRepository;
     private final TaskFlowMetrics metrics;
 
-    /** 생성부터 처리 끝까지 이보다 오래 걸린 건은 WARN으로 남긴다. 평소 지연은 Worker 주기(60초) 안쪽이다. */
+    /** 생성부터 Worker가 집어 들기까지 이보다 오래 기다린 건은 WARN으로 남긴다. 평소 대기는 Worker 주기(60초) 안쪽이다. */
     private static final long SLOW_THRESHOLD_SECONDS = 60;
 
     /**
@@ -114,6 +114,7 @@ public class CalendarOutboxWorker {
                             outbox.getOpType(),
                             outbox.getTaskId(),
                             outbox.getRetryCount());
+                    logIfSlow(outbox);
 
                     processOne(outbox);
 
@@ -141,7 +142,6 @@ public class CalendarOutboxWorker {
             outboxService.markSuccess(outbox.getId());
             metrics.outboxProcessed("success", "none");
             log.info("[Worker] Successfully processed Outbox {}", outbox.getId());
-            logIfSlow(outbox);
 
         } catch (RetryableIntegrationException e) {
             // 재시도 가능한 예외 (네트워크, 5xx 등)
@@ -167,7 +167,8 @@ public class CalendarOutboxWorker {
 
     /**
      * 08-21의 758.6초 지연은 이 건이 왜 늦었는지 남은 기록이 없어 원인을 가를 수 없었다.
-     * 늦은 건은 Loki(14일 보관)에서 outbox_slow로 찾는다.
+     * 늦은 건은 Loki(14일 보관)에서 outbox_slow로 찾는다. 처리 결과(성공·건너뜀·실패)와 상관없이
+     * Worker가 집어 든 시점에 남겨, 늦어진 원인이 Worker 쪽인지 Google 호출 쪽인지 나눠 볼 수 있게 한다.
      */
     private void logIfSlow(CalendarOutbox outbox) {
         LocalDateTime createdAt = outbox.getCreatedAt();

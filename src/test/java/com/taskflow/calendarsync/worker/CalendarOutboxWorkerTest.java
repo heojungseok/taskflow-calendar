@@ -428,7 +428,7 @@ class CalendarOutboxWorkerTest {
     class SlowOutboxLog {
 
         @Test
-        @DisplayName("생성부터 처리 끝까지 60초를 넘으면 outbox_slow를 남긴다")
+        @DisplayName("생성부터 Worker가 집어 들 때까지 60초를 넘으면 outbox_slow를 남긴다")
         void 오래걸린건_outbox_slow(CapturedOutput output) {
             // given
             ReflectionTestUtils.setField(
@@ -446,7 +446,7 @@ class CalendarOutboxWorkerTest {
         }
 
         @Test
-        @DisplayName("60초 안에 끝나면 남기지 않는다")
+        @DisplayName("60초 안에 집어 들면 남기지 않는다")
         void 빨리끝난건_로그없음(CapturedOutput output) {
             // given
             ReflectionTestUtils.setField(
