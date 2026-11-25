@@ -110,6 +110,8 @@ class GrafanaProvisioningConfigTest {
 
         assertThat(compose)
                 .contains("GF_USERS_DEFAULT_LANGUAGE: ko-KR")
+                .contains(
+                        "GF_SERVER_ROOT_URL: \"${TASKFLOW_GRAFANA_ROOT_URL:-http://localhost:${TASKFLOW_GRAFANA_PORT:-3001}/}\"")
                 .contains("GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana-dashboards/taskflow.json")
                 .contains("GF_USERS_ALLOW_SIGN_UP: \"false\"", "GF_SNAPSHOTS_ENABLED: \"false\"")
                 .contains("GF_PUBLIC_DASHBOARDS_ENABLED: \"false\"", "GF_ANALYTICS_REPORTING_ENABLED: \"false\"");
