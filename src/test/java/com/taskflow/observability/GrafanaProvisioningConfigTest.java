@@ -132,6 +132,17 @@ class GrafanaProvisioningConfigTest {
                 .doesNotContain("\"range\":{\"from\"");
     }
 
+    @Test
+    void discordMessageSwitchesToOneLineSummaryFromThreeAlertsToStayWithinDiscordLength() throws Exception {
+        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+
+        assertThat(alerts)
+                .contains("{{- if le (len .Alerts) 2 }}{{ template \"taskflow.discord.detail\" . }}"
+                        + "{{ else }}{{ template \"taskflow.discord.summary\" . }}{{ end }}")
+                .contains("{{ define \"taskflow.discord.summary\" }}", "- [발생] {{ .Annotations.summary }}")
+                .contains("{{ $externalURL }}alerting/list");
+    }
+
     private String rule(String uid) throws Exception {
         String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
         int start = alerts.indexOf("uid: " + uid);
