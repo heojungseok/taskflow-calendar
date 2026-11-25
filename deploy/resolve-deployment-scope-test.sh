@@ -82,6 +82,15 @@ docs_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$full_sha" "$full_sha"
 assert_plan none "$full_sha" "$full_sha" false false "$docs_sha"
 
+mkdir -p "$repo/incident-agent" "$repo/.github/workflows"
+printf '%s\n' '[workspace]' >"$repo/incident-agent/Cargo.toml"
+printf '%s\n' 'name: incident-agent' >"$repo/.github/workflows/incident-agent.yml"
+git -C "$repo" add incident-agent .github/workflows/incident-agent.yml
+git -C "$repo" commit -qm 'incident agent without deployment'
+incident_agent_sha=$(git -C "$repo" rev-parse HEAD)
+assert_plan none "$full_sha" "$full_sha" false false "$incident_agent_sha"
+git -C "$repo" reset -q --hard "$docs_sha"
+
 printf '%s\n' 'unknown production contract' >"$repo/deploy/new-production-contract.yml"
 git -C "$repo" add deploy/new-production-contract.yml
 git -C "$repo" commit -qm 'unknown path'

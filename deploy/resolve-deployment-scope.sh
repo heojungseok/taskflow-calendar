@@ -49,6 +49,7 @@ has_unknown_changes() {
   has_changes "$from_sha" . \
     ':(exclude).gitignore' ':(exclude).env.example' ':(exclude)README.md' ':(exclude)LICENSE*' \
     ':(exclude)docs/**' ':(exclude).github/workflows/ci.yml' \
+    ':(exclude).github/workflows/incident-agent.yml' ':(exclude)incident-agent/**' \
     ':(exclude)Dockerfile' ':(exclude).dockerignore' ':(exclude)build.gradle' \
     ':(exclude)settings.gradle' ':(exclude)gradle/**' ':(exclude)gradle.lockfile' \
     ':(exclude)gradlew' ':(exclude)gradlew.bat' ':(exclude)src/main/**' ':(exclude)src/test/**' \
