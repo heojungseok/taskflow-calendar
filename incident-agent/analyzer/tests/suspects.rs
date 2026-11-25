@@ -111,3 +111,44 @@ fn commit_touching_the_class_of_the_new_error_is_the_commit_suspect() {
         sha: "aaaaaaa".to_owned()
     }));
 }
+
+#[test]
+fn at_most_three_suspects_one_of_each_kind() {
+    let mut evidence = usual_and_new_errors();
+    evidence.logs.push(log(
+        1_020,
+        "ERROR c.t.i.OAuthController : IllegalStateException state mismatch",
+    ));
+    evidence.metrics = vec![
+        MetricSeries {
+            name: "a".to_owned(),
+            baseline: 1.0,
+            points: vec![(1_010, 5.0)],
+        },
+        MetricSeries {
+            name: "b".to_owned(),
+            baseline: 1.0,
+            points: vec![(1_020, 5.0)],
+        },
+    ];
+    evidence.commits = vec![
+        Commit {
+            sha: "c1".to_owned(),
+            files: vec!["x/TaskSearchService.java".to_owned()],
+        },
+        Commit {
+            sha: "c2".to_owned(),
+            files: vec!["x/OAuthController.java".to_owned()],
+        },
+    ];
+
+    let report = run(evidence);
+
+    assert_eq!(report.suspects.len(), 3);
+    assert!(matches!(report.suspects[0], Suspect::NewError { .. }));
+    assert!(matches!(
+        report.suspects[1],
+        Suspect::FirstChangedMetric { .. }
+    ));
+    assert!(matches!(report.suspects[2], Suspect::RelatedCommit { .. }));
+}
