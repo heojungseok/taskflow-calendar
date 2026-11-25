@@ -25,12 +25,31 @@ pub struct Window {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Evidence {}
+pub struct Evidence {
+    pub logs: Vec<LogLine>,
+    pub baseline_logs: Vec<LogLine>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Knowledge {}
+pub struct Knowledge {
+    pub incidents: Vec<KnownIncident>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
     pub alerts: Vec<Alert>,
+    pub known_incident: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LogLine {
+    pub service: Service,
+    pub at_unix: u64,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KnownIncident {
+    pub source: String,
+    pub signature: String,
 }
