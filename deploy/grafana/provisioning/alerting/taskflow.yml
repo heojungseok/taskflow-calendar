@@ -40,10 +40,15 @@ templates:
       {{- else }}
       **Grafana** [대시보드 열기]({{ $externalURL }}d/taskflow/taskflow)
       {{- end }}
-      {{- if or (eq .Labels.service "backend") (eq .Labels.service "nginx") }}
-      **로그** [최근 1시간 {{ .Labels.service }} 로그 보기]({{ $externalURL }}explore?schemaVersion=1&orgId=1&panes={{ printf `{"a":{"datasource":"loki","queries":[{"refId":"A","expr":"{service=\"%s\"}","datasource":{"type":"loki","uid":"loki"}}],"range":{"from":"now-1h","to":"now"}}}` .Labels.service | urlquery }})
+      **일시정지** [이 알림 끄기]({{ $externalURL }}alerting/silence/new?alertmanager=grafana&matcher=alertname%3D{{ .Labels.alertname | urlquery }})
       {{- end }}
-      **일시정지** [이 알림 끄기]({{ .SilenceURL }})
+      {{- $backendLogs := false }}{{ $nginxLogs := false }}
+      {{- range .Alerts.Firing }}{{ if eq .Labels.service "backend" }}{{ $backendLogs = true }}{{ end }}{{ if eq .Labels.service "nginx" }}{{ $nginxLogs = true }}{{ end }}{{ end }}
+      {{- if $backendLogs }}
+      **로그** [backend 최근 로그 보기]({{ $externalURL }}explore?schemaVersion=1&orgId=1&panes={{ `{"a":{"datasource":"loki","queries":[{"refId":"A","expr":"{service=\"backend\"}"}]}}` | urlquery }})
+      {{- end }}
+      {{- if $nginxLogs }}
+      **로그** [nginx 최근 로그 보기]({{ $externalURL }}explore?schemaVersion=1&orgId=1&panes={{ `{"a":{"datasource":"loki","queries":[{"refId":"A","expr":"{service=\"nginx\"}"}]}}` | urlquery }})
       {{- end }}
       {{- else }}
       **현재 상태** 복구 {{ len .Alerts.Resolved }}건

@@ -119,14 +119,17 @@ class GrafanaProvisioningConfigTest {
     }
 
     @Test
-    void firingDiscordMessageLinksToSilenceAndRecentLogs() throws Exception {
+    void firingDiscordMessageLinksToSilenceAndRecentLogsWithinDiscordLength() throws Exception {
         String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
 
         assertThat(alerts)
-                .contains("**일시정지** [이 알림 끄기]({{ .SilenceURL }})")
-                .contains("(eq .Labels.service \"backend\") (eq .Labels.service \"nginx\")")
-                .contains("\"datasource\":{\"type\":\"loki\",\"uid\":\"loki\"}")
-                .contains(".Labels.service | urlquery }}");
+                .contains(
+                        "alerting/silence/new?alertmanager=grafana&matcher=alertname%3D{{ .Labels.alertname | urlquery }}")
+                .doesNotContain(".SilenceURL")
+                .contains("{{- if $backendLogs }}", "{{- if $nginxLogs }}")
+                .contains("explore?schemaVersion=1&orgId=1&panes=")
+                .contains("\"expr\":\"{service=\\\"backend\\\"}\"")
+                .doesNotContain("\"range\":{\"from\"");
     }
 
     private String rule(String uid) throws Exception {
