@@ -13,6 +13,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_BOOTSTRAP_PASSWORD:?required}
       TASKFLOW_DB_OWNER_PASSWORD: ${TASKFLOW_DB_OWNER_PASSWORD:?required}
       TASKFLOW_DB_APP_PASSWORD: ${TASKFLOW_DB_APP_PASSWORD:?required}
+      TASKFLOW_DB_MONITOR_PASSWORD: ${TASKFLOW_DB_MONITOR_PASSWORD:?required}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./deploy/postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
@@ -97,6 +98,18 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    restart: unless-stopped
+    logging: *logging
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+    environment:
+      DATA_SOURCE_URI: postgres:5432/taskflow?sslmode=disable
+      DATA_SOURCE_USER: taskflow_monitor
+      DATA_SOURCE_PASS: ${TASKFLOW_DB_MONITOR_PASSWORD:?required}
+    networks: [data, monitoring]
+    depends_on:
+      postgres: { condition: service_healthy }
     restart: unless-stopped
     logging: *logging
 

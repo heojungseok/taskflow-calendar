@@ -26,10 +26,11 @@ class GrafanaProvisioningConfigTest {
 
         assertThat(rows)
                 .extracting(row -> row.path("title").asText())
-                .containsExactly("운영 요약", "사용자·이용", "Calendar·Outbox", "Gemini·Cache", "Backend runtime", "보안");
+                .containsExactly(
+                        "운영 요약", "사용자·이용", "Calendar·Outbox", "Gemini·Cache", "Backend runtime", "DB·자원", "보안");
         assertThat(rows)
                 .extracting(row -> row.path("collapsed").asBoolean())
-                .containsExactly(false, false, true, true, true, true);
+                .containsExactly(false, false, true, true, true, true, true);
         assertThat(panelTitles(dashboard))
                 .contains(
                         "Backend UP",
@@ -46,7 +47,10 @@ class GrafanaProvisioningConfigTest {
                         "막힌·스캐너 경로 접근 (IP별, 5m)",
                         "ID 대입 404 (IP별 서로 다른 ID, 10m)",
                         "OAuth 로그인 실패 (이유별, 1h)",
-                        "nginx 로그 (IP 필터: $ip)");
+                        "nginx 로그 (IP 필터: $ip)",
+                        "DB 지표 수집",
+                        "DB 연결 수",
+                        "DB 크기");
         assertThat(List.of("HTTP p95", "HTTP 5xx", "Gemini 실패 (10m)"))
                 .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title)
                                 .path("type")
@@ -65,6 +69,8 @@ class GrafanaProvisioningConfigTest {
                 .doesNotContain(".CommonAnnotations")
                 .contains("uid: taskflow-gemini-quota-exhausted", "uid: taskflow-gemini-repeated-failures")
                 .contains("summary: DEMO 트래픽 급증", "summary: Backend 메트릭 수집 중단")
+                .contains("uid: taskflow-database-metrics-down", "summary: DB 메트릭 수집 중단")
+                .contains("uid: taskflow-database-connections-high", "summary: DB 연결 수 한도 근접")
                 .contains("check_url: /api/auth/session", "noDataState: Alerting", "noDataState: OK")
                 .contains("__dashboardUid__: taskflow", "__panelId__: \"2\"")
                 .contains("**결과** 알럿 상태가 정상화됐습니다.", "**추가 확인 필요**")
@@ -74,7 +80,7 @@ class GrafanaProvisioningConfigTest {
         assertThat(alerts.lines()
                         .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
                         .count())
-                .isEqualTo(10);
+                .isEqualTo(12);
     }
 
     @Test

@@ -25,6 +25,10 @@ jq -e '
   and ((.services.backend.networks | keys | sort) == ["cache", "data", "edge", "log-ingest", "monitoring"])
   and ((.services.migrator.networks | keys) == ["data"])
   and ((.services.postgres.networks | keys) == ["data"])
+  and ((.services["postgres-exporter"].networks | keys | sort) == ["data", "monitoring"])
+  and (.services["postgres-exporter"].image | test("^prometheuscommunity/postgres-exporter:v[0-9.]+@sha256:[0-9a-f]{64}$"))
+  and .services["postgres-exporter"].environment.DATA_SOURCE_USER == "taskflow_monitor"
+  and (.services["postgres-exporter"].ports == null)
   and ((.services.prometheus.networks | keys) == ["monitoring"])
   and ((.services.grafana.networks | keys | sort) == ["grafana-egress", "logging", "monitoring"])
   and (.networks.logging.internal and .networks["log-ingest"].internal)
