@@ -78,17 +78,35 @@ class GrafanaProvisioningConfigTest {
     }
 
     @Test
-    void logPipelineAlertsSearchTheHeartbeatTheBackendWrites() throws Exception {
-        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+    void logPipelineSilentAlertSearchesTheHeartbeatLineTheBackendWrites() throws Exception {
+        String silentRule = rule("taskflow-log-pipeline-silent");
 
-        assertThat(alerts)
-                .contains("uid: taskflow-log-pipeline-silent", "uid: taskflow-backend-error-logs")
-                .contains("|= \"" + LogPipelineHeartbeat.MESSAGE + "\"")
-                .contains("summary: Backend 로그 수집 끊김", "summary: Backend ERROR 로그 발생");
-        String silentRule = alerts.substring(
-                alerts.indexOf("uid: taskflow-log-pipeline-silent"),
-                alerts.indexOf("uid: taskflow-backend-error-logs"));
-        assertThat(silentRule).contains("noDataState: Alerting").doesNotContain("noDataState: OK");
+        assertThat(silentRule)
+                .contains("summary: Backend 로그 수집 끊김")
+                .contains("|~ `^INFO +\\S*" + LogPipelineHeartbeat.class.getSimpleName() + " : "
+                        + LogPipelineHeartbeat.MESSAGE + "$`")
+                .contains("noDataState: Alerting")
+                .doesNotContain("noDataState: OK");
+    }
+
+    @Test
+    void backendErrorAlertMatchesTheSyslogLevelPrefixAndIgnoresLokiOutages() throws Exception {
+        String errorRule = rule("taskflow-backend-error-logs");
+        String logback = Files.readString(Path.of("src/main/resources/logback-spring.xml"));
+
+        assertThat(logback).contains("<suffixPattern>backend: %-5level %logger{36} : %msg</suffixPattern>");
+        assertThat(errorRule)
+                .contains("summary: Backend ERROR 로그 발생")
+                .contains("|~ \"^ERROR \" [5m]")
+                .contains("execErrState: OK")
+                .doesNotContain("execErrState: Error");
+    }
+
+    private String rule(String uid) throws Exception {
+        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+        int start = alerts.indexOf("uid: " + uid);
+        int next = alerts.indexOf("\n      - uid: ", start + 1);
+        return alerts.substring(start, next < 0 ? alerts.length() : next);
     }
 
     @Test

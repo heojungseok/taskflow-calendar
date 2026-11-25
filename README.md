@@ -187,8 +187,10 @@ Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림�
 
 2026-08-27에는 알림 규칙 8종을 구성하고 그중 backend 중단 알림의 Discord 발생·복구 전달을 검증했습니다. demo usage와 traffic spike 알림은 메트릭이 없을 때 0으로 평가해 No data 오탐을 방지합니다.
 
+2026-11-25에는 로그 수집 끊김과 Backend ERROR 로그 알림을 더했습니다. 공개 데모는 요청이 하루 몇 건뿐이라 Loki에 로그가 없을 때 조용한 것인지 수집이 끊긴 것인지 구분할 수 없어, Backend가 5분마다 남기는 heartbeat로 수집 경로를 확인합니다.
+
 <details>
-<summary>알림 8종의 조건</summary>
+<summary>알림 10종의 조건</summary>
 
 | 알림 | 조건 | severity |
 |---|---|---|
@@ -200,6 +202,8 @@ Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림�
 | demo traffic spike | 10분간 데모 세션 20건 또는 `SKIPPED` Outbox 50건 | warning |
 | gemini quota exhausted | 5분간 `LLM_QUOTA_EXHAUSTED` 발생 (기능별) | warning |
 | gemini repeated failures | 10분간 Gemini 실패 3건 초과 (기능별) | warning |
+| backend log pipeline silent | 15분간 Loki에 Backend heartbeat 0건 (데이터가 없어도 발생) | warning |
+| backend error logs | 5분간 Backend ERROR 로그 1건 이상 | warning |
 
 </details>
 
