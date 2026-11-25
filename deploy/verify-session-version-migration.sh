@@ -301,12 +301,11 @@ run_application_tests() {
     docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
         psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname postgres \
         --command="ALTER DATABASE $database SET timezone TO '$database_timezone'" >/dev/null
-    JAVA_TOOL_OPTIONS="-Duser.timezone=$jvm_timezone" \
     DB_URL="jdbc:postgresql://127.0.0.1:$PORT/$database" \
     DB_USERNAME=taskflow_app \
     DB_PASSWORD="$APP_PASSWORD" \
     JPA_DDL_AUTO=validate \
-    ./gradlew --no-daemon test --rerun \
+    ./gradlew --no-daemon -PtestJvmTimezone="$jvm_timezone" test --rerun \
         --tests 'com.taskflow.identity.auth.DemoExpiryIntegrationTest' \
         --tests 'com.taskflow.demo.DemoCleanupRepositoryTest' \
         --tests 'com.taskflow.identity.oauth.SessionInvalidationIntegrationTest'
@@ -319,12 +318,11 @@ run_full_build() {
     docker exec -e PGPASSWORD="$BOOTSTRAP_PASSWORD" "$POSTGRES_CONTAINER" \
         psql --set=ON_ERROR_STOP=1 --username taskflow_bootstrap --dbname postgres \
         --command="ALTER DATABASE $database SET timezone TO '$database_timezone'" >/dev/null
-    JAVA_TOOL_OPTIONS="-Duser.timezone=$jvm_timezone" \
     DB_URL="jdbc:postgresql://127.0.0.1:$PORT/$database" \
     DB_USERNAME=taskflow_owner \
     DB_PASSWORD="$OWNER_PASSWORD" \
     JPA_DDL_AUTO=validate \
-    ./gradlew --no-daemon build test --rerun
+    ./gradlew --no-daemon -PtestJvmTimezone="$jvm_timezone" build test --rerun
 }
 
 run_application_tests taskflow Asia/Seoul UTC
