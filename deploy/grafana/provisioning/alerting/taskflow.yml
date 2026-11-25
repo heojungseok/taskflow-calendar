@@ -22,6 +22,21 @@ templates:
       {{- if gt (len .Alerts.Firing) 0 -}}[장애][{{ $severity }}] TaskFlow {{ .GroupLabels.environment }} · {{ len .Alerts }}건{{- else -}}[복구][{{ $severity }}] TaskFlow {{ .GroupLabels.environment }} · {{ len .Alerts }}건{{- end -}}
       {{ end }}
       {{ define "taskflow.discord.message" }}
+      {{- if le (len .Alerts) 2 }}{{ template "taskflow.discord.detail" . }}{{ else }}{{ template "taskflow.discord.summary" . }}{{ end }}
+      {{- end }}
+      {{ define "taskflow.discord.summary" }}
+      {{- $externalURL := .ExternalURL }}
+      **현재 상태** 발생 {{ len .Alerts.Firing }}건 / 복구 {{ len .Alerts.Resolved }}건 (3건 이상이라 요약)
+      {{- range .Alerts.Firing }}
+      - [발생] {{ .Annotations.summary }} · {{ .Labels.service }} · {{ .StartsAt | tz "Asia/Seoul" | date "15:04" }}
+      {{- end }}
+      {{- range .Alerts.Resolved }}
+      - [복구] {{ .Annotations.summary }} · {{ .Labels.service }} · {{ .EndsAt | tz "Asia/Seoul" | date "15:04" }}
+      {{- end }}
+
+      **Grafana** [알림 목록]({{ $externalURL }}alerting/list) · [대시보드]({{ $externalURL }}d/taskflow/taskflow)
+      {{- end }}
+      {{ define "taskflow.discord.detail" }}
       {{- $externalURL := .ExternalURL -}}
       {{- if gt (len .Alerts.Firing) 0 }}
       **현재 상태** 발생 {{ len .Alerts.Firing }}건{{ if gt (len .Alerts.Resolved) 0 }} / 복구 {{ len .Alerts.Resolved }}건{{ end }}
@@ -359,7 +374,7 @@ groups:
         annotations:
           summary: Backend ERROR 로그 발생
           impact: 최근 5분 동안 Backend가 ERROR 로그를 남겼습니다. 사용자 요청이나 Worker가 실패하고 있을 수 있습니다.
-          action: 'Grafana Explore에서 {service="backend"} |~ "^ERROR " 로 메시지를 확인하고, 예외 스택은 Backend 컨테이너 로그에서 같은 시각을 찾으세요. Loki 장애는 로그 수집 끊김 알림이 알립니다.'
+          action: 'Grafana Explore에서 {service="backend"} |~ "^ERROR " 로 메시지를 확인하고, 요청 중 오류면 메시지 뒤 traceId= 값으로 {service="backend"} |= "traceId=<값>" 을 검색해 같은 요청의 로그를 보세요. 예외 원인은 같은 줄의 " | " 뒤에 있습니다. Loki 장애는 로그 수집 끊김 알림이 알립니다.'
           check_url: /api/auth/session
         data:
           - refId: A
