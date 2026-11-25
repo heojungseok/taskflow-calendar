@@ -18,6 +18,7 @@ import com.taskflow.identity.user.UserRepository;
 import com.taskflow.identity.web.SessionCookieService;
 import jakarta.servlet.http.Cookie;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -72,7 +73,7 @@ class SessionInvalidationIntegrationTest {
                 user.getId(),
                 "access-token",
                 "refresh-token",
-                LocalDateTime.now().plusHours(1),
+                LocalDateTime.now(ZoneOffset.UTC).plusHours(1),
                 "openid"));
         doThrow(tokenError(400, "invalid_grant"))
                 .when(googleOAuthService)
