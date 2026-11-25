@@ -28,6 +28,7 @@ pub struct Window {
 pub struct Evidence {
     pub logs: Vec<LogLine>,
     pub baseline_logs: Vec<LogLine>,
+    pub commits: Vec<Commit>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -39,6 +40,7 @@ pub struct Knowledge {
 pub struct Report {
     pub alerts: Vec<Alert>,
     pub known_incident: Option<String>,
+    pub suspects: Vec<Suspect>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,4 +54,25 @@ pub struct LogLine {
 pub struct KnownIncident {
     pub source: String,
     pub signature: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Suspect {
+    NewError {
+        fingerprint: String,
+        first_seen_unix: u64,
+        count: usize,
+    },
+    FirstChangedMetric {
+        name: String,
+        changed_at_unix: u64,
+    },
+    RelatedCommit {
+        sha: String,
+    },
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Commit {
+    pub sha: String,
+    pub files: Vec<String>,
 }

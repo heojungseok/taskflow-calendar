@@ -1,6 +1,7 @@
 use crate::grouping::group_alerts;
 use crate::known::match_known;
 use crate::model::{Alert, Evidence, Knowledge, Report, Service, Window};
+use crate::new_error::new_error_suspect;
 use crate::ports::{Clock, EvidenceSource};
 
 const LOOKBACK_SECS: u64 = 900;
@@ -26,6 +27,7 @@ fn report_for(
     let collected = collect_evidence(&alerts, source, clock);
     Report {
         known_incident: match_known(knowledge, &collected),
+        suspects: new_error_suspect(&collected).into_iter().collect(),
         alerts,
     }
 }
