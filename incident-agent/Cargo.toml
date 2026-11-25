@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["*"]
-exclude = ["target"]
+exclude = ["target", "knowledge"]
 
 [workspace.package]
 edition = "2024"
