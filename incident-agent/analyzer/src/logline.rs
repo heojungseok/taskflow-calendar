@@ -15,3 +15,20 @@ pub(crate) fn parse_error(text: &str) -> Option<ErrorLine<'_>> {
     let logger = head.split_whitespace().next()?;
     Some(ErrorLine { logger, rest })
 }
+
+pub(crate) fn replace_quoted(text: &str, replacement: impl Fn(&str) -> String) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(start) = rest.find(['"', '\'']) {
+        let quote = &rest[start..=start];
+        let after = &rest[start + 1..];
+        let Some(end) = after.find(quote) else {
+            break;
+        };
+        out.push_str(&rest[..start]);
+        out.push_str(&replacement(&after[..end]));
+        rest = &after[end + 1..];
+    }
+    out.push_str(rest);
+    out
+}

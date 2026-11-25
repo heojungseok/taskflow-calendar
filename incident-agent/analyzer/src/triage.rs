@@ -1,12 +1,14 @@
 use std::collections::BTreeSet;
 
+use crate::analysis::analyze;
 use crate::commit::related_commit;
 use crate::grouping::group_alerts;
 use crate::known::match_known;
 use crate::metric::first_changed_metric;
 use crate::model::{Alert, Evidence, Knowledge, Missing, Report, Service, Suspect, Window};
 use crate::new_error::new_error_suspect;
-use crate::ports::{Clock, EvidenceSource};
+use crate::ports::{Clock, EvidenceSource, Model};
+use crate::prompt;
 
 const LOOKBACK_SECS: u64 = 900;
 
@@ -15,10 +17,11 @@ pub fn triage(
     knowledge: &Knowledge,
     evidence: &impl EvidenceSource,
     clock: &impl Clock,
+    model: &impl Model,
 ) -> Vec<Report> {
     group_alerts(alerts)
         .into_iter()
-        .map(|incident| report_for(incident, knowledge, evidence, clock))
+        .map(|incident| report_for(incident, knowledge, evidence, clock, model))
         .collect()
 }
 
@@ -27,11 +30,16 @@ fn report_for(
     knowledge: &Knowledge,
     source: &impl EvidenceSource,
     clock: &impl Clock,
+    model: &impl Model,
 ) -> Report {
     let collected = collect_evidence(&alerts, source, clock);
+    let known_incident = match_known(knowledge, &collected);
+    let suspects = suspects_for(&collected);
+    let prompt = prompt::build(&collected, &suspects, known_incident.as_deref());
     Report {
-        known_incident: match_known(knowledge, &collected),
-        suspects: suspects_for(&collected),
+        analysis: analyze(model, &prompt),
+        known_incident,
+        suspects,
         missing: collected.missing,
         alerts,
     }

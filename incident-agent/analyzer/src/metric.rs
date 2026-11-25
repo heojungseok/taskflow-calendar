@@ -15,12 +15,16 @@ pub(crate) fn first_changed_metric(evidence: &Evidence) -> Option<Suspect> {
 }
 
 fn changed_at(series: &MetricSeries) -> Option<u64> {
+    changed_points(series).into_iter().map(|(at, _)| at).min()
+}
+
+pub(crate) fn changed_points(series: &MetricSeries) -> Vec<(u64, f64)> {
     series
         .points
         .iter()
         .filter(|(_, value)| has_changed(series, *value))
-        .map(|(at, _)| *at)
-        .min()
+        .copied()
+        .collect()
 }
 
 fn has_changed(series: &MetricSeries, value: f64) -> bool {

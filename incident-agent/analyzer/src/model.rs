@@ -44,6 +44,7 @@ pub struct Report {
     pub known_incident: Option<String>,
     pub suspects: Vec<Suspect>,
     pub missing: Vec<Missing>,
+    pub analysis: Analysis,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -100,4 +101,30 @@ pub enum Missing {
     Evidence,
     Logs,
     Baseline,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Analysis {
+    Guess {
+        cause: String,
+        evidence: String,
+        confidence: Confidence,
+        cited_lines: Vec<usize>,
+    },
+    Unknown,
+    Skipped(SkipReason),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Confidence {
+    High,
+    Medium,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SkipReason {
+    ModelTimeout,
+    ModelUnavailable,
+    InvalidAnswer,
+    UnsupportedCitation,
 }

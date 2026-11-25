@@ -1,7 +1,7 @@
 mod common;
 
 use analyzer::{Evidence, Knowledge, triage};
-use common::{FixedClock, FixedEvidence, alert};
+use common::{FixedClock, FixedEvidence, ScriptedModel, alert};
 
 #[test]
 fn related_alerts_within_five_minutes_become_one_incident_and_unrelated_ones_stay_apart() {
@@ -17,6 +17,7 @@ fn related_alerts_within_five_minutes_become_one_incident_and_unrelated_ones_sta
         &Knowledge::default(),
         &FixedEvidence(Evidence::default()),
         &FixedClock(1_600),
+        &ScriptedModel::unknown(),
     );
 
     let grouped: Vec<Vec<(&str, u64)>> = reports
@@ -52,6 +53,7 @@ fn five_minutes_are_counted_from_the_first_alert_of_the_incident() {
         &Knowledge::default(),
         &FixedEvidence(Evidence::default()),
         &FixedClock(1_400),
+        &ScriptedModel::unknown(),
     );
 
     let sizes: Vec<usize> = reports.iter().map(|report| report.alerts.len()).collect();

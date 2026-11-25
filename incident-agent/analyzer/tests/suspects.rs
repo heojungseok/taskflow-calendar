@@ -4,7 +4,7 @@ use analyzer::{
     Commit, ErrorGroup, Evidence, Knowledge, LogLine, MetricSeries, Report, Service, Suspect,
     triage,
 };
-use common::{FixedClock, FixedEvidence, alert};
+use common::{FixedClock, FixedEvidence, ScriptedModel, alert};
 
 fn log(at_unix: u64, text: &str) -> LogLine {
     LogLine {
@@ -20,6 +20,7 @@ fn run(evidence: Evidence) -> Report {
         &Knowledge::default(),
         &FixedEvidence(evidence),
         &FixedClock(1_200),
+        &ScriptedModel::unknown(),
     )
     .remove(0)
 }
