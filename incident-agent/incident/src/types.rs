@@ -1,4 +1,4 @@
-use analyzer::{Alert, Report, Service};
+use analyzer::{Alert, Report};
 use contract::{ActionRequest, ActionResult, DiscordUserId, GitSha, Outcome, TotpCode};
 
 #[derive(Debug, Clone)]
@@ -8,6 +8,7 @@ pub struct Settings {
     pub restart_after_secs: u64,
     pub button_ttl_secs: u64,
     pub rollback_window_secs: u64,
+    pub recurrence_window_secs: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,10 +52,11 @@ pub struct Approval {
 pub enum Event {
     AlertsReceived(Vec<Alert>),
     Analyzed {
-        report: Report,
+        batch: u64,
+        reports: Vec<Report>,
         last_deploy: Option<Deploy>,
     },
-    AlertsResolved(Vec<Service>),
+    AlertsResolved(Vec<Alert>),
     Tick,
     VerdictGiven {
         incident: u64,
@@ -89,7 +91,7 @@ pub enum Notice {
 
 #[derive(Debug, Clone)]
 pub enum Command {
-    Analyze(Vec<Alert>),
+    Analyze { batch: u64, alerts: Vec<Alert> },
     Post(Notice),
     WriteRequest(ActionRequest),
     SaveDraft { incident: u64, markdown: String },
