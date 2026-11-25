@@ -30,7 +30,7 @@ public class GeminiClient {
     /**
      * 요청 본문을 POST하고 응답 본문을 돌려준다.
      *
-     * @param modelMethod {@code gemini-2.5-flash:generateContent}처럼 모델과 메서드
+     * @param modelMethod {@code gemini-3.5-flash-lite:generateContent}처럼 모델과 메서드
      * @return 응답 본문
      * @throws GeminiCallException 4xx·5xx 응답이나 응답 전 실패
      */

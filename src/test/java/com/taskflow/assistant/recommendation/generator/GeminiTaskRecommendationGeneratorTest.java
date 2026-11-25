@@ -1,6 +1,7 @@
 package com.taskflow.assistant.recommendation.generator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -13,7 +14,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
+import com.taskflow.assistant.recommendation.exception.TaskRecommendationGenerationException;
 import com.taskflow.observability.TaskFlowMetrics;
+import com.taskflow.planning.project.Project;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.LocalDate;
 import java.util.List;
@@ -36,11 +39,10 @@ class GeminiTaskRecommendationGeneratorTest {
         GeminiTaskRecommendationGenerator generator =
                 new GeminiTaskRecommendationGenerator(properties, objectMapper, metrics, geminiClient);
 
-        try {
-            generator.generate(null, List.of(), 1, LocalDate.of(2026, 11, 25));
-        } catch (RuntimeException ignored) {
-            // 응답 "{}"는 해석에 실패한다. 이 테스트는 보낸 요청만 본다.
-        }
+        // 응답 "{}"에는 추천 후보가 없어 해석에 실패한다. 이 테스트는 보낸 요청만 본다.
+        assertThrows(
+                TaskRecommendationGenerationException.class,
+                () -> generator.generate(Project.of("TaskFlow", 1L), List.of(), 1, LocalDate.of(2026, 11, 25)));
 
         ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
         verify(geminiClient).post(eq(properties), anyString(), body.capture());
