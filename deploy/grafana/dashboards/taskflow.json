@@ -58,6 +58,7 @@
   "tags": ["public-demo", "operations"],
   "templating": {"list": [{"name": "ip", "label": "IP (정규식)", "type": "textbox", "query": ".*", "current": {"text": ".*", "value": ".*"}, "hide": 0}]},
   "time": {"from": "now-6h", "to": "now"},
+  "timezone": "Asia/Seoul",
   "title": "TaskFlow",
   "uid": "taskflow",
   "version": 3

@@ -102,6 +102,31 @@ class GrafanaProvisioningConfigTest {
                 .doesNotContain("execErrState: Error");
     }
 
+    @Test
+    void grafanaShowsKoreanUiAndKstTaskflowHomeWithoutPublicSharing() throws Exception {
+        String compose = Files.readString(Path.of("compose.production.yml"));
+        JsonNode dashboard =
+                new ObjectMapper().readTree(Files.readString(Path.of("deploy/grafana/dashboards/taskflow.json")));
+
+        assertThat(compose)
+                .contains("GF_USERS_DEFAULT_LANGUAGE: ko-KR")
+                .contains("GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana-dashboards/taskflow.json")
+                .contains("GF_USERS_ALLOW_SIGN_UP: \"false\"", "GF_SNAPSHOTS_ENABLED: \"false\"")
+                .contains("GF_PUBLIC_DASHBOARDS_ENABLED: \"false\"", "GF_ANALYTICS_REPORTING_ENABLED: \"false\"");
+        assertThat(dashboard.path("timezone").asText()).isEqualTo("Asia/Seoul");
+    }
+
+    @Test
+    void firingDiscordMessageLinksToSilenceAndRecentLogs() throws Exception {
+        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+
+        assertThat(alerts)
+                .contains("**일시정지** [이 알림 끄기]({{ .SilenceURL }})")
+                .contains("(eq .Labels.service \"backend\") (eq .Labels.service \"nginx\")")
+                .contains("\"datasource\":{\"type\":\"loki\",\"uid\":\"loki\"}")
+                .contains(".Labels.service | urlquery }}");
+    }
+
     private String rule(String uid) throws Exception {
         String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
         int start = alerts.indexOf("uid: " + uid);
