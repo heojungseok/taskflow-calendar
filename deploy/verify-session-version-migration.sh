@@ -306,7 +306,7 @@ run_application_tests() {
     DB_USERNAME=taskflow_app \
     DB_PASSWORD="$APP_PASSWORD" \
     JPA_DDL_AUTO=validate \
-    ./gradlew --no-daemon --rerun-tasks test \
+    ./gradlew --no-daemon test --rerun \
         --tests 'com.taskflow.identity.auth.DemoExpiryIntegrationTest' \
         --tests 'com.taskflow.demo.DemoCleanupRepositoryTest' \
         --tests 'com.taskflow.identity.oauth.SessionInvalidationIntegrationTest'
@@ -324,7 +324,7 @@ run_full_build() {
     DB_USERNAME=taskflow_owner \
     DB_PASSWORD="$OWNER_PASSWORD" \
     JPA_DDL_AUTO=validate \
-    ./gradlew --no-daemon --rerun-tasks build
+    ./gradlew --no-daemon build test --rerun
 }
 
 run_application_tests taskflow Asia/Seoul UTC
