@@ -11,6 +11,7 @@ FLYWAY_IMAGE="flyway/flyway:11.13-alpine@sha256:ed275452f578feab0d94f8660da7ced3
 BOOTSTRAP_PASSWORD="session-migration-bootstrap-test-only"
 OWNER_PASSWORD="session-migration-owner-test-only"
 APP_PASSWORD="session-migration-app-test-only"
+MONITOR_PASSWORD="session-migration-monitor-test-only"
 BACKUP_DIR=$(mktemp -d)
 V3_DUMP="$BACKUP_DIR/taskflow-v3.dump"
 
@@ -32,6 +33,7 @@ docker run -d \
     -e POSTGRES_PASSWORD="$BOOTSTRAP_PASSWORD" \
     -e TASKFLOW_DB_OWNER_PASSWORD="$OWNER_PASSWORD" \
     -e TASKFLOW_DB_APP_PASSWORD="$APP_PASSWORD" \
+    -e TASKFLOW_DB_MONITOR_PASSWORD="$MONITOR_PASSWORD" \
     -v "$PROJECT_ROOT/deploy/postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro" \
     "$POSTGRES_IMAGE" >/dev/null
 
