@@ -308,7 +308,8 @@ run_application_tests() {
     ./gradlew --no-daemon -PtestJvmTimezone="$jvm_timezone" test --rerun \
         --tests 'com.taskflow.identity.auth.DemoExpiryIntegrationTest' \
         --tests 'com.taskflow.demo.DemoCleanupRepositoryTest' \
-        --tests 'com.taskflow.identity.oauth.SessionInvalidationIntegrationTest'
+        --tests 'com.taskflow.identity.oauth.SessionInvalidationIntegrationTest' \
+        --tests 'com.taskflow.TestJvmTimezoneTest'
 }
 
 run_full_build() {
