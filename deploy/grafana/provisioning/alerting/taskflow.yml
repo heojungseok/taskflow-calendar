@@ -275,6 +275,93 @@ groups:
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0.8]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
 
+      - uid: taskflow-container-memory-high
+        title: container memory near limit
+        condition: C
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: containers
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "48"
+          summary: 컨테이너 메모리 한도 근접
+          impact: 한 컨테이너의 메모리가 한도의 90%를 10분 넘게 넘어, 곧 OOM으로 재시작되거나 응답이 느려질 수 있습니다.
+          action: 컨테이너 메모리 패널에서 어느 서비스인지 확인하고, Backend라면 JVM heap 패널과 최근 오류 로그를 함께 확인하세요.
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'max(taskflow_container_memory_bytes / taskflow_container_memory_limit_bytes)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0.9]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-container-cpu-high
+        title: container cpu high
+        condition: C
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: containers
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "47"
+          summary: 컨테이너 CPU 과다
+          impact: 한 컨테이너가 CPU 코어 하나의 90% 이상을 15분 넘게 써서, 같은 Mac mini의 다른 서비스가 느려질 수 있습니다.
+          action: 컨테이너 CPU 패널에서 서비스를 확인하고, 같은 시간대의 요청량·Worker 적체·DEMO 트래픽을 함께 확인하세요.
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'max(taskflow_container_cpu_ratio)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0.9]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-container-stats-stale
+        title: container stats collection stale
+        condition: C
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: containers
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "49"
+          summary: 컨테이너 자원 수집 중단
+          impact: Mac mini의 컨테이너 자원 수집이 3분 넘게 갱신되지 않아 메모리·CPU 과다를 알아챌 수 없습니다.
+          action: Mac mini의 수집 LaunchAgent 상태와 수집 폴더의 파일 시각을 먼저 보고, container-stats-exporter 컨테이너와 Prometheus target 상태를 확인하세요.
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'time() - max(node_textfile_mtime_seconds)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [180]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
       - uid: taskflow-cleanup-failure
         title: cleanup failure
         condition: C

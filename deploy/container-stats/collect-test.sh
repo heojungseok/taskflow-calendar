@@ -18,7 +18,6 @@ case "$1" in
 esac
 MOCK
 chmod +x "$work/docker"
-mkdir "$work/out"
 
 DOCKER="$work/docker" sh "$script_dir/collect.sh" "$work/out"
 metrics=$work/out/containers.prom

@@ -14,6 +14,7 @@ if [ -n "$ids" ]; then
   stats=$("$docker_bin" stats --no-stream --format '{{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}' $ids)
 fi
 
+mkdir -p "$out_dir"
 tmp=$(mktemp "$out_dir/.containers.prom.XXXXXX")
 trap 'rm -f "$tmp"' EXIT
 printf '%s\n%s\n' "$services" "$stats" | awk -F'\t' '
