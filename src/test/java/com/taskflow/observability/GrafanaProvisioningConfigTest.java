@@ -74,7 +74,69 @@ class GrafanaProvisioningConfigTest {
         assertThat(alerts.lines()
                         .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
                         .count())
-                .isEqualTo(8);
+                .isEqualTo(10);
+    }
+
+    @Test
+    void logPipelineSilentAlertSearchesTheHeartbeatLineTheBackendWrites() throws Exception {
+        String silentRule = rule("taskflow-log-pipeline-silent");
+
+        assertThat(silentRule)
+                .contains("summary: Backend 로그 수집 끊김")
+                .contains("|~ `^INFO +\\S*" + LogPipelineHeartbeat.class.getSimpleName() + " : "
+                        + LogPipelineHeartbeat.MESSAGE + "$`")
+                .contains("noDataState: Alerting")
+                .doesNotContain("noDataState: OK");
+    }
+
+    @Test
+    void backendErrorAlertMatchesTheSyslogLevelPrefixAndIgnoresLokiOutages() throws Exception {
+        String errorRule = rule("taskflow-backend-error-logs");
+        String logback = Files.readString(Path.of("src/main/resources/logback-spring.xml"));
+
+        assertThat(logback).contains("<suffixPattern>backend: %-5level %logger{36} : %msg</suffixPattern>");
+        assertThat(errorRule)
+                .contains("summary: Backend ERROR 로그 발생")
+                .contains("|~ \"^ERROR \" [5m]")
+                .contains("execErrState: OK")
+                .doesNotContain("execErrState: Error");
+    }
+
+    @Test
+    void grafanaShowsKoreanUiAndKstTaskflowHomeWithoutPublicSharing() throws Exception {
+        String compose = Files.readString(Path.of("compose.production.yml"));
+        JsonNode dashboard =
+                new ObjectMapper().readTree(Files.readString(Path.of("deploy/grafana/dashboards/taskflow.json")));
+
+        assertThat(compose)
+                .contains("GF_USERS_DEFAULT_LANGUAGE: ko-KR")
+                .contains(
+                        "GF_SERVER_ROOT_URL: \"${TASKFLOW_GRAFANA_ROOT_URL:-http://localhost:${TASKFLOW_GRAFANA_PORT:-3001}/}\"")
+                .contains("GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana-dashboards/taskflow.json")
+                .contains("GF_USERS_ALLOW_SIGN_UP: \"false\"", "GF_SNAPSHOTS_ENABLED: \"false\"")
+                .contains("GF_PUBLIC_DASHBOARDS_ENABLED: \"false\"", "GF_ANALYTICS_REPORTING_ENABLED: \"false\"");
+        assertThat(dashboard.path("timezone").asText()).isEqualTo("Asia/Seoul");
+    }
+
+    @Test
+    void firingDiscordMessageLinksToSilenceAndRecentLogsWithinDiscordLength() throws Exception {
+        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+
+        assertThat(alerts)
+                .contains(
+                        "alerting/silence/new?alertmanager=grafana&matcher=alertname%3D{{ .Labels.alertname | urlquery }}")
+                .doesNotContain(".SilenceURL")
+                .contains("{{- if $backendLogs }}", "{{- if $nginxLogs }}")
+                .contains("explore?schemaVersion=1&orgId=1&panes=")
+                .contains("\"expr\":\"{service=\\\"backend\\\"}\"")
+                .doesNotContain("\"range\":{\"from\"");
+    }
+
+    private String rule(String uid) throws Exception {
+        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+        int start = alerts.indexOf("uid: " + uid);
+        int next = alerts.indexOf("\n      - uid: ", start + 1);
+        return alerts.substring(start, next < 0 ? alerts.length() : next);
     }
 
     @Test
