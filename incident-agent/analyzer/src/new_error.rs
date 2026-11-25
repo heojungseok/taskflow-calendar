@@ -1,40 +1,29 @@
+use std::collections::{BTreeMap, BTreeSet};
+
 use crate::model::{Evidence, LogLine, Suspect};
 
-struct Group {
-    fingerprint: String,
-    first_seen_unix: u64,
-    count: usize,
-}
-
 pub(crate) fn new_error_suspect(evidence: &Evidence) -> Option<Suspect> {
-    let baseline: Vec<String> = error_fingerprints(&evidence.baseline_logs)
+    let baseline: BTreeSet<String> = error_fingerprints(&evidence.baseline_logs)
         .map(|(fingerprint, _)| fingerprint)
         .collect();
-    let mut groups: Vec<Group> = Vec::new();
+    let mut groups: BTreeMap<String, (u64, usize)> = BTreeMap::new();
     for (fingerprint, at_unix) in error_fingerprints(&evidence.logs) {
-        if baseline.contains(&fingerprint) {
-            continue;
-        }
-        match groups.iter_mut().find(|g| g.fingerprint == fingerprint) {
-            Some(group) => {
-                group.count += 1;
-                group.first_seen_unix = group.first_seen_unix.min(at_unix);
-            }
-            None => groups.push(Group {
-                fingerprint,
-                first_seen_unix: at_unix,
-                count: 1,
-            }),
+        if !baseline.contains(&fingerprint) {
+            let (first_seen, count) = groups.entry(fingerprint).or_insert((at_unix, 0));
+            *first_seen = (*first_seen).min(at_unix);
+            *count += 1;
         }
     }
     groups
         .into_iter()
-        .max_by_key(|g| (g.count, std::cmp::Reverse(g.first_seen_unix)))
-        .map(|g| Suspect::NewError {
-            fingerprint: g.fingerprint,
-            first_seen_unix: g.first_seen_unix,
-            count: g.count,
-        })
+        .max_by_key(|(_, (first_seen, count))| (*count, std::cmp::Reverse(*first_seen)))
+        .map(
+            |(fingerprint, (first_seen_unix, count))| Suspect::NewError {
+                fingerprint,
+                first_seen_unix,
+                count,
+            },
+        )
 }
 
 fn error_fingerprints(lines: &[LogLine]) -> impl Iterator<Item = (String, u64)> + '_ {

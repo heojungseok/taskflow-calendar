@@ -2,11 +2,8 @@ use std::path::Path;
 
 use crate::model::{Evidence, Suspect};
 
-pub(crate) fn related_commit(evidence: &Evidence, new_error: &Suspect) -> Option<Suspect> {
-    let Suspect::NewError { fingerprint, .. } = new_error else {
-        return None;
-    };
-    let class = class_name(fingerprint)?;
+pub(crate) fn related_commit(evidence: &Evidence, error_fingerprint: &str) -> Option<Suspect> {
+    let class = class_name(error_fingerprint)?;
     evidence
         .commits
         .iter()
