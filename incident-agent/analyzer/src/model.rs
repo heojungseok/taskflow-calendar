@@ -30,6 +30,7 @@ pub struct Evidence {
     pub baseline_logs: Vec<LogLine>,
     pub commits: Vec<Commit>,
     pub metrics: Vec<MetricSeries>,
+    pub missing: Vec<Missing>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -42,6 +43,7 @@ pub struct Report {
     pub alerts: Vec<Alert>,
     pub known_incident: Option<String>,
     pub suspects: Vec<Suspect>,
+    pub missing: Vec<Missing>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,9 +62,8 @@ pub struct KnownIncident {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Suspect {
     NewError {
-        fingerprint: String,
-        first_seen_unix: u64,
-        count: usize,
+        first: ErrorGroup,
+        most_frequent: Option<ErrorGroup>,
     },
     FirstChangedMetric {
         name: String,
@@ -82,5 +83,21 @@ pub struct Commit {
 pub struct MetricSeries {
     pub name: String,
     pub baseline: f64,
+    pub floor: f64,
     pub points: Vec<(u64, f64)>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ErrorGroup {
+    pub fingerprint: String,
+    pub logger: String,
+    pub first_seen_unix: u64,
+    pub count: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Missing {
+    Evidence,
+    Logs,
+    Baseline,
 }

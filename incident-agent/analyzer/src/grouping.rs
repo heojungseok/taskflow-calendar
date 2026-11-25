@@ -2,13 +2,6 @@ use crate::model::{Alert, Service};
 
 const GROUPING_WINDOW_SECS: u64 = 300;
 
-const DEPENDENCY_EDGES: [(&str, &str); 4] = [
-    ("postgres", "backend"),
-    ("redis", "backend"),
-    ("backend", "nginx"),
-    ("alloy", "loki"),
-];
-
 pub(crate) fn group_alerts(alerts: &[Alert]) -> Vec<Vec<Alert>> {
     let mut sorted = alerts.to_vec();
     sorted.sort_by_key(|alert| alert.starts_at_unix);
@@ -37,33 +30,16 @@ fn joins(incident: &[Alert], alert: &Alert) -> bool {
 }
 
 fn connected(a: &Service, b: &Service) -> bool {
-    if a == b {
-        return true;
-    }
-    let mut reached = vec![a.as_str()];
-    let mut next = 0;
-    while let Some(&current) = reached.get(next) {
-        next += 1;
-        for neighbor in neighbors(current) {
-            if neighbor == b.as_str() {
-                return true;
-            }
-            if !reached.contains(&neighbor) {
-                reached.push(neighbor);
-            }
-        }
-    }
-    false
+    a == b
+        || component(a.as_str())
+            .zip(component(b.as_str()))
+            .is_some_and(|(x, y)| x == y)
 }
 
-fn neighbors(service: &str) -> impl Iterator<Item = &'static str> {
-    DEPENDENCY_EDGES.into_iter().filter_map(move |(x, y)| {
-        if x == service {
-            Some(y)
-        } else if y == service {
-            Some(x)
-        } else {
-            None
-        }
-    })
+fn component(service: &str) -> Option<u8> {
+    match service {
+        "postgres" | "redis" | "backend" | "nginx" => Some(0),
+        "alloy" | "loki" => Some(1),
+        _ => None,
+    }
 }

@@ -1,24 +1,29 @@
 use std::path::Path;
 
-use crate::model::{Evidence, Suspect};
+use crate::model::{Commit, ErrorGroup, Evidence, Suspect};
 
-pub(crate) fn related_commit(evidence: &Evidence, error_fingerprint: &str) -> Option<Suspect> {
-    let class = class_name(error_fingerprint)?;
-    evidence
-        .commits
-        .iter()
-        .find(|commit| commit.files.iter().any(|file| stem(file) == Some(class)))
+pub(crate) fn related_commit(evidence: &Evidence, new_error: &Suspect) -> Option<Suspect> {
+    let Suspect::NewError {
+        first,
+        most_frequent,
+    } = new_error
+    else {
+        return None;
+    };
+    [Some(first), most_frequent.as_ref()]
+        .into_iter()
+        .flatten()
+        .find_map(|group| find_commit(&evidence.commits, group))
         .map(|commit| Suspect::RelatedCommit {
             sha: commit.sha.clone(),
         })
 }
 
-fn class_name(fingerprint: &str) -> Option<&str> {
-    let logger = fingerprint
-        .strip_prefix("ERROR")?
-        .split_whitespace()
-        .next()?;
-    logger.rsplit('.').next()
+fn find_commit<'a>(commits: &'a [Commit], group: &ErrorGroup) -> Option<&'a Commit> {
+    let class = group.logger.rsplit('.').next()?;
+    commits
+        .iter()
+        .find(|commit| commit.files.iter().any(|file| stem(file) == Some(class)))
 }
 
 fn stem(file: &str) -> Option<&str> {
