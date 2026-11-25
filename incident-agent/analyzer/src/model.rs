@@ -24,11 +24,12 @@ pub struct Window {
     pub to_unix: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Evidence {
     pub logs: Vec<LogLine>,
     pub baseline_logs: Vec<LogLine>,
     pub commits: Vec<Commit>,
+    pub metrics: Vec<MetricSeries>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -75,4 +76,11 @@ pub enum Suspect {
 pub struct Commit {
     pub sha: String,
     pub files: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MetricSeries {
+    pub name: String,
+    pub baseline: f64,
+    pub points: Vec<(u64, f64)>,
 }

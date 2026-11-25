@@ -1,6 +1,6 @@
 mod common;
 
-use analyzer::{Evidence, Knowledge, LogLine, Report, Service, Suspect, triage};
+use analyzer::{Evidence, Knowledge, LogLine, MetricSeries, Report, Service, Suspect, triage};
 use common::{FixedClock, FixedEvidence, alert};
 
 fn log(at_unix: u64, text: &str) -> LogLine {
@@ -49,4 +49,35 @@ fn error_that_did_not_exist_yesterday_is_the_first_suspect_even_if_rarer() {
         }
         other => panic!("expected new error, got {other:?}"),
     }
+}
+
+#[test]
+fn metric_that_changed_first_is_the_metric_suspect() {
+    let evidence = Evidence {
+        metrics: vec![
+            MetricSeries {
+                name: "http 5xx ratio".to_owned(),
+                baseline: 0.01,
+                points: vec![(1_000, 0.01), (1_070, 0.2)],
+            },
+            MetricSeries {
+                name: "search latency p95".to_owned(),
+                baseline: 0.1,
+                points: vec![(1_000, 0.1), (1_010, 0.9)],
+            },
+            MetricSeries {
+                name: "jvm heap".to_owned(),
+                baseline: 0.5,
+                points: vec![(1_000, 0.52), (1_070, 0.55)],
+            },
+        ],
+        ..Evidence::default()
+    };
+
+    let report = run(evidence);
+
+    assert!(report.suspects.contains(&Suspect::FirstChangedMetric {
+        name: "search latency p95".to_owned(),
+        changed_at_unix: 1_010,
+    }));
 }

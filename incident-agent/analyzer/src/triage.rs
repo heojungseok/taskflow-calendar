@@ -1,6 +1,7 @@
 use crate::grouping::group_alerts;
 use crate::known::match_known;
-use crate::model::{Alert, Evidence, Knowledge, Report, Service, Window};
+use crate::metric::first_changed_metric;
+use crate::model::{Alert, Evidence, Knowledge, Report, Service, Suspect, Window};
 use crate::new_error::new_error_suspect;
 use crate::ports::{Clock, EvidenceSource};
 
@@ -27,7 +28,7 @@ fn report_for(
     let collected = collect_evidence(&alerts, source, clock);
     Report {
         known_incident: match_known(knowledge, &collected),
-        suspects: new_error_suspect(&collected).into_iter().collect(),
+        suspects: suspects_for(&collected),
         alerts,
     }
 }
@@ -49,4 +50,11 @@ fn collect_evidence(
         }
     }
     source.collect(&window, &services).unwrap_or_default()
+}
+
+fn suspects_for(evidence: &Evidence) -> Vec<Suspect> {
+    new_error_suspect(evidence)
+        .into_iter()
+        .chain(first_changed_metric(evidence))
+        .collect()
 }
