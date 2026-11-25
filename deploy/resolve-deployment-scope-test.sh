@@ -89,6 +89,10 @@ git -C "$repo" add incident-agent .github/workflows/incident-agent.yml
 git -C "$repo" commit -qm 'incident agent without deployment'
 incident_agent_sha=$(git -C "$repo" rev-parse HEAD)
 assert_plan none "$full_sha" "$full_sha" false false "$incident_agent_sha"
+printf '%s\n' 'backend-with-incident-agent' >"$repo/src/main/java/App.java"
+git -C "$repo" commit -qam 'incident agent and backend'
+incident_backend_sha=$(git -C "$repo" rev-parse HEAD)
+assert_plan backend "$incident_backend_sha" "$full_sha" false false "$incident_backend_sha"
 git -C "$repo" reset -q --hard "$docs_sha"
 
 printf '%s\n' 'unknown production contract' >"$repo/deploy/new-production-contract.yml"
