@@ -8,8 +8,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class LogPipelineHeartbeat {
 
+    public static final String MESSAGE = "log pipeline heartbeat";
+
     @Scheduled(fixedDelay = 300_000, initialDelay = 60_000)
     public void beat() {
-        log.info("log pipeline heartbeat");
+        log.info(MESSAGE);
     }
 }

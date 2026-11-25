@@ -74,7 +74,21 @@ class GrafanaProvisioningConfigTest {
         assertThat(alerts.lines()
                         .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
                         .count())
-                .isEqualTo(8);
+                .isEqualTo(10);
+    }
+
+    @Test
+    void logPipelineAlertsSearchTheHeartbeatTheBackendWrites() throws Exception {
+        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+
+        assertThat(alerts)
+                .contains("uid: taskflow-log-pipeline-silent", "uid: taskflow-backend-error-logs")
+                .contains("|= \"" + LogPipelineHeartbeat.MESSAGE + "\"")
+                .contains("summary: Backend 로그 수집 끊김", "summary: Backend ERROR 로그 발생");
+        String silentRule = alerts.substring(
+                alerts.indexOf("uid: taskflow-log-pipeline-silent"),
+                alerts.indexOf("uid: taskflow-backend-error-logs"));
+        assertThat(silentRule).contains("noDataState: Alerting").doesNotContain("noDataState: OK");
     }
 
     @Test
