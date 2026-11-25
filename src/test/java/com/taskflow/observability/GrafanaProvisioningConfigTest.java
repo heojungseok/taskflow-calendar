@@ -175,6 +175,42 @@ class GrafanaProvisioningConfigTest {
                 .contains("receiver: Discord security", "[service, =, security]", "group_by: [alertname, ip]");
     }
 
+    @Test
+    void everyAlertLinksToAnExistingDashboardPanelWithUniqueIds() throws Exception {
+        JsonNode dashboard =
+                new ObjectMapper().readTree(Files.readString(Path.of("deploy/grafana/dashboards/taskflow.json")));
+        List<String> ids = new ArrayList<>();
+        collectPanelIds(dashboard.path("panels"), ids);
+        List<String> linked = new ArrayList<>();
+        for (String file : List.of("taskflow.yml", "security.yml")) {
+            Files.readString(Path.of("deploy/grafana/provisioning/alerting/" + file))
+                    .lines()
+                    .map(String::trim)
+                    .filter(line -> line.startsWith("__panelId__:"))
+                    .map(line -> line.substring("__panelId__:".length()).trim().replace("\"", ""))
+                    .forEach(linked::add);
+        }
+
+        assertThat(ids).doesNotHaveDuplicates();
+        assertThat(ids).containsAll(linked);
+    }
+
+    @Test
+    void databaseAlertsWatchExporterReachabilityAndShowTheValueTheyEvaluate() throws Exception {
+        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+        JsonNode dashboard =
+                new ObjectMapper().readTree(Files.readString(Path.of("deploy/grafana/dashboards/taskflow.json")));
+
+        assertThat(alerts).contains("up{job=\"postgres\"}", "pg_scrape_collector_success");
+        assertThat(findPanel(dashboard.path("panels"), "DB 연결 수").toString()).contains("sum(pg_stat_activity_count)");
+        assertThat(findPanel(dashboard.path("panels"), "DB 지표 수집")
+                        .path("fieldConfig")
+                        .path("defaults")
+                        .path("noValue")
+                        .asText())
+                .isEqualTo("DOWN");
+    }
+
     private List<String> panelTitles(JsonNode dashboard) {
         List<String> titles = new ArrayList<>();
         collectPanelTitles(dashboard.path("panels"), titles);
@@ -187,6 +223,13 @@ class GrafanaProvisioningConfigTest {
                 titles.add(panel.path("title").asText());
             }
             collectPanelTitles(panel.path("panels"), titles);
+        });
+    }
+
+    private void collectPanelIds(JsonNode panels, List<String> ids) {
+        panels.forEach(panel -> {
+            ids.add(panel.path("id").asText());
+            collectPanelIds(panel.path("panels"), ids);
         });
     }
 

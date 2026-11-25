@@ -238,7 +238,7 @@ groups:
           - refId: A
             datasourceUid: prometheus
             relativeTimeRange: {from: 300, to: 0}
-            model: {refId: A, expr: 'min(pg_up)', instant: true}
+            model: {refId: A, expr: 'min(pg_up) * min(up{job="postgres"}) * min(pg_scrape_collector_success{collector=~"stat_activity|settings|database"})', instant: true}
           - refId: B
             datasourceUid: __expr__
             model: {refId: B, type: reduce, expression: A, reducer: last}
