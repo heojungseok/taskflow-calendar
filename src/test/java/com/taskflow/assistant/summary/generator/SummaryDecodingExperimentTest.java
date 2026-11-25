@@ -102,7 +102,7 @@ class SummaryDecodingExperimentTest {
     private GeminiSummaryProperties createProperties() {
         GeminiSummaryProperties properties = new GeminiSummaryProperties();
         properties.setApiKey(requiredEnv("GEMINI_SUMMARY_API_KEY"));
-        properties.setModel(envOrDefault("GEMINI_SUMMARY_MODEL", "gemini-3.1-flash-lite-preview"));
+        properties.setModel(envOrDefault("GEMINI_SUMMARY_MODEL", "gemini-3.1-flash-lite"));
         properties.setBaseUrl(
                 envOrDefault("GEMINI_SUMMARY_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"));
         properties.setTimeoutSeconds(Integer.parseInt(envOrDefault("GEMINI_SUMMARY_TIMEOUT_SECONDS", "20")));

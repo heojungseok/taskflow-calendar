@@ -85,7 +85,7 @@ google:
 gemini:
   summary:
     api-key: ${GEMINI_SUMMARY_API_KEY:}
-    model: ${GEMINI_SUMMARY_MODEL:gemini-3.1-flash-lite-preview}
+    model: ${GEMINI_SUMMARY_MODEL:gemini-3.1-flash-lite}
     base-url: https://generativelanguage.googleapis.com/v1beta
     timeout-seconds: 20
     temperature: ${GEMINI_SUMMARY_TEMPERATURE:1.0}
@@ -93,13 +93,13 @@ gemini:
     top-p: ${GEMINI_SUMMARY_TOP_P:0.8}
   recommendation:
     api-key: ${GEMINI_RECOMMENDATION_API_KEY:}
-    model: ${GEMINI_RECOMMENDATION_MODEL:gemini-3.1-flash-lite-preview}
+    model: ${GEMINI_RECOMMENDATION_MODEL:gemini-3.1-flash-lite}
     base-url: https://generativelanguage.googleapis.com/v1beta
     timeout-seconds: 20
     temperature: 0.2
   search:
     api-key: ${GEMINI_SEARCH_API_KEY:}
-    model: ${GEMINI_SEARCH_MODEL:gemini-3.1-flash-lite-preview}
+    model: ${GEMINI_SEARCH_MODEL:gemini-3.1-flash-lite}
     embedding-model: ${GEMINI_SEARCH_EMBEDDING_MODEL:gemini-embedding-001}
     base-url: https://generativelanguage.googleapis.com/v1beta
     timeout-seconds: 20
