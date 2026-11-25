@@ -104,7 +104,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
             generationConfig.put("temperature", properties.getTemperature());
             generationConfig.put("responseMimeType", "application/json");
             generationConfig.put("responseJsonSchema", responseJsonSchema());
-            generationConfig.put("thinkingConfig", Map.of("thinkingBudget", 0));
+            generationConfig.put("thinkingConfig", GeminiClient.MINIMAL_THINKING);
             requestBody.put("generationConfig", generationConfig);
 
             return new PreparedRequest(objectMapper.writeValueAsString(requestBody));

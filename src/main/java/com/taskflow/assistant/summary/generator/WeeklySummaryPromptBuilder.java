@@ -1,6 +1,7 @@
 package com.taskflow.assistant.summary.generator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.SummaryBucket;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
@@ -63,7 +64,7 @@ final class WeeklySummaryPromptBuilder {
             }
             generationConfig.put("responseMimeType", "application/json");
             generationConfig.put("responseJsonSchema", WeeklySummaryResponseFormat.responseJsonSchema());
-            generationConfig.put("thinkingConfig", Map.of("thinkingBudget", 0));
+            generationConfig.put("thinkingConfig", GeminiClient.MINIMAL_THINKING);
             requestBody.put("generationConfig", generationConfig);
 
             String serializedRequestBody = objectMapper.writeValueAsString(requestBody);
