@@ -94,7 +94,7 @@ class GrafanaProvisioningConfigTest {
         String errorRule = rule("taskflow-backend-error-logs");
         String logback = Files.readString(Path.of("src/main/resources/logback-spring.xml"));
 
-        assertThat(logback).contains("<suffixPattern>backend: %-5level %logger{36} : %msg</suffixPattern>");
+        assertThat(logback).contains("<suffixPattern>backend: %-5level %logger{36} : %msg");
         assertThat(errorRule)
                 .contains("summary: Backend ERROR 로그 발생")
                 .contains("|~ \"^ERROR \" [5m]")

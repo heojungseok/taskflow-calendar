@@ -15,8 +15,8 @@
             <port>5140</port>
             <facility>USER</facility>
             <!-- "backend:"가 syslog 태그가 되어 Alloy에서 service=backend 라벨로 바뀐다. -->
-            <suffixPattern>backend: %-5level %logger{36} : %msg</suffixPattern>
-            <!-- 예외 스택은 여러 줄이라 데이터그램이 쪼개지므로 syslog에는 보내지 않는다(콘솔에는 남음). -->
+            <suffixPattern>backend: %-5level %logger{36} : %msg%replace( traceId=%X{traceId}){' traceId=$', ''}%.-2000replace(%replace( | %rEx{12}){'\s*\R\s*', ' | '}){'( \| )+$', ''}</suffixPattern>
+            <!-- 여러 줄 스택은 데이터그램이 쪼개지므로 따로 보내지 않고, 위 패턴이 한 줄로 이어 붙여 보낸다. -->
             <throwableExcluded>true</throwableExcluded>
         </appender>
         <root level="INFO">
