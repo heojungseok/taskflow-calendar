@@ -1,24 +1,32 @@
 use std::collections::BTreeSet;
 
+use crate::analysis::analyze;
 use crate::commit::related_commit;
 use crate::grouping::group_alerts;
 use crate::known::match_known;
 use crate::metric::first_changed_metric;
-use crate::model::{Alert, Evidence, Knowledge, Missing, Report, Service, Suspect, Window};
+use crate::model::{
+    Alert, Analysis, Evidence, Knowledge, Missing, Report, Service, SkipReason, Suspect, Window,
+};
 use crate::new_error::new_error_suspect;
-use crate::ports::{Clock, EvidenceSource};
+use crate::ports::{Clock, EvidenceSource, Model};
+use crate::prompt::{self, Prompt};
 
 const LOOKBACK_SECS: u64 = 900;
+
+const MAX_MODEL_CALLS: usize = 3;
 
 pub fn triage(
     alerts: &[Alert],
     knowledge: &Knowledge,
     evidence: &impl EvidenceSource,
     clock: &impl Clock,
+    model: &impl Model,
 ) -> Vec<Report> {
+    let mut calls = 0;
     group_alerts(alerts)
         .into_iter()
-        .map(|incident| report_for(incident, knowledge, evidence, clock))
+        .map(|incident| report_for(incident, knowledge, evidence, clock, (model, &mut calls)))
         .collect()
 }
 
@@ -27,14 +35,35 @@ fn report_for(
     knowledge: &Knowledge,
     source: &impl EvidenceSource,
     clock: &impl Clock,
+    (model, calls): (&impl Model, &mut usize),
 ) -> Report {
     let collected = collect_evidence(&alerts, source, clock);
+    let known_incident = match_known(knowledge, &collected);
+    let suspects = suspects_for(&collected);
+    let analysis = if known_incident.is_some() {
+        Analysis::Skipped(SkipReason::KnownIncident)
+    } else {
+        let prompt = prompt::build(&collected, &suspects);
+        analysis_for(model, &prompt, calls)
+    };
     Report {
-        known_incident: match_known(knowledge, &collected),
-        suspects: suspects_for(&collected),
+        analysis,
+        known_incident,
+        suspects,
         missing: collected.missing,
         alerts,
     }
+}
+
+fn analysis_for(model: &impl Model, prompt: &Prompt, calls: &mut usize) -> Analysis {
+    if prompt.lines.is_empty() {
+        return Analysis::Skipped(SkipReason::NoEvidence);
+    }
+    if *calls >= MAX_MODEL_CALLS {
+        return Analysis::Skipped(SkipReason::CallLimit);
+    }
+    *calls += 1;
+    analyze(model, prompt)
 }
 
 fn collect_evidence(

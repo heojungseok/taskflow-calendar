@@ -4,7 +4,7 @@ use analyzer::{
     Evidence, EvidenceError, EvidenceSource, Knowledge, LogLine, MetricSeries, Missing, Report,
     Service, Suspect, Window, triage,
 };
-use common::{FixedClock, FixedEvidence, alert};
+use common::{FixedClock, FixedEvidence, ScriptedModel, alert};
 
 struct FailingEvidence;
 
@@ -20,6 +20,7 @@ fn run(source: &impl EvidenceSource) -> Report {
         &Knowledge::default(),
         source,
         &FixedClock(1_200),
+        &ScriptedModel::unknown(),
     )
     .remove(0)
 }

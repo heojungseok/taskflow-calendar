@@ -1,4 +1,5 @@
-use crate::logline::parse_error;
+use crate::logline::{LogEntry, parse_error, parse_log, replace_quoted};
+use crate::mask::{mask_identifying, mask_secrets};
 
 pub(crate) struct Fingerprint {
     pub(crate) text: String,
@@ -6,34 +7,30 @@ pub(crate) struct Fingerprint {
 }
 
 pub(crate) fn fingerprint(log_text: &str) -> Option<Fingerprint> {
-    let line = parse_error(log_text)?;
-    let rest = cut_at(cut_at(line.rest, " | "), " traceId=");
-    let normalized = mask_ids(&mask_quotes(rest));
-    Some(Fingerprint {
-        text: format!("ERROR {} : {}", line.logger, normalized.trim()),
-        logger: line.logger.to_owned(),
-    })
+    parse_error(log_text).map(|entry| build(&entry))
+}
+
+pub(crate) fn fingerprint_any_level(log_text: &str) -> Option<Fingerprint> {
+    parse_log(log_text).map(|entry| build(&entry))
+}
+
+fn build(entry: &LogEntry<'_>) -> Fingerprint {
+    let rest = cut_at(cut_at(entry.rest, " | "), " traceId=");
+    let quoted = replace_quoted(rest, |_, _, _| "\"*\"".to_owned());
+    let normalized = mask_secrets(&mask_ids(&mask_identifying(&quoted)));
+    Fingerprint {
+        text: format!(
+            "{} {} : {}",
+            entry.level.as_str(),
+            entry.logger,
+            normalized.trim()
+        ),
+        logger: entry.logger.to_owned(),
+    }
 }
 
 fn cut_at<'a>(text: &'a str, marker: &str) -> &'a str {
     text.split_once(marker).map_or(text, |(head, _)| head)
-}
-
-fn mask_quotes(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    let mut rest = text;
-    while let Some(start) = rest.find(['"', '\'']) {
-        let quote = &rest[start..=start];
-        let after = &rest[start + 1..];
-        let Some(end) = after.find(quote) else {
-            break;
-        };
-        out.push_str(&rest[..start]);
-        out.push_str("\"*\"");
-        rest = &after[end + 1..];
-    }
-    out.push_str(rest);
-    out
 }
 
 fn is_id_char(c: char) -> bool {

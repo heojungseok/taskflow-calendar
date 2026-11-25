@@ -1,7 +1,7 @@
 mod common;
 
 use analyzer::{Evidence, Knowledge, KnownIncident, LogLine, Service, triage};
-use common::{FixedClock, FixedEvidence, alert};
+use common::{FixedClock, FixedEvidence, ScriptedModel, alert};
 
 fn evidence_with(text: &str) -> Evidence {
     evidence_from("backend", text)
@@ -38,6 +38,7 @@ fn matching_signature_marks_the_incident_as_known_with_its_document() {
             "ERROR o.h.e.j.s.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30000ms",
         )),
         &FixedClock(1_100),
+        &ScriptedModel::unknown(),
     );
 
     assert_eq!(
@@ -55,6 +56,7 @@ fn no_matching_signature_leaves_the_incident_unknown() {
             "ERROR c.t.TaskService : NullPointerException",
         )),
         &FixedClock(1_100),
+        &ScriptedModel::unknown(),
     );
 
     assert_eq!(reports[0].known_incident, None);
@@ -81,6 +83,7 @@ fn signature_inside_visitor_controlled_text_does_not_mark_the_incident_known() {
             &knowledge(),
             &FixedEvidence(evidence_from(service, text)),
             &FixedClock(1_100),
+            &ScriptedModel::unknown(),
         );
 
         assert_eq!(reports[0].known_incident, None, "{text}");
