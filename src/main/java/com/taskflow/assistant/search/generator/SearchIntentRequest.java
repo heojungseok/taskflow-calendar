@@ -1,6 +1,7 @@
 package com.taskflow.assistant.search.generator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.search.*;
 import com.taskflow.assistant.search.GeminiSearchProperties;
 import java.io.IOException;
@@ -21,7 +22,7 @@ final class SearchIntentRequest {
             generationConfig.put("temperature", properties.getTemperature());
             generationConfig.put("responseMimeType", "application/json");
             generationConfig.put("responseJsonSchema", responseJsonSchema());
-            generationConfig.put("thinkingConfig", Map.of("thinkingBudget", 0));
+            generationConfig.put("thinkingConfig", GeminiClient.MINIMAL_THINKING);
             requestBody.put("generationConfig", generationConfig);
 
             return objectMapper.writeValueAsString(requestBody);

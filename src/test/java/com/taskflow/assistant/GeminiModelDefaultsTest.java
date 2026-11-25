@@ -13,7 +13,7 @@ import org.springframework.core.io.ClassPathResource;
 
 class GeminiModelDefaultsTest {
 
-    @DisplayName("환경 변수가 없으면 운영 기본값으로 GA 모델 gemini-3.1-flash-lite를 쓴다")
+    @DisplayName("환경 변수가 없으면 운영 기본값으로 GA 모델 gemini-3.5-flash-lite를 쓴다")
     @ParameterizedTest
     @ValueSource(strings = {"gemini.summary.model", "gemini.recommendation.model", "gemini.search.model"})
     void defaultModelIsGa(String key) throws IOException {
@@ -24,6 +24,6 @@ class GeminiModelDefaultsTest {
 
         String model = new PropertySourcesPropertyResolver(sources).getProperty(key);
 
-        assertEquals("gemini-3.1-flash-lite", model);
+        assertEquals("gemini-3.5-flash-lite", model);
     }
 }
