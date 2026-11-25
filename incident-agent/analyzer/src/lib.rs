@@ -1,3 +1,4 @@
+mod commit;
 mod grouping;
 mod known;
 mod metric;

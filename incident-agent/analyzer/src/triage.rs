@@ -1,3 +1,4 @@
+use crate::commit::related_commit;
 use crate::grouping::group_alerts;
 use crate::known::match_known;
 use crate::metric::first_changed_metric;
@@ -53,8 +54,13 @@ fn collect_evidence(
 }
 
 fn suspects_for(evidence: &Evidence) -> Vec<Suspect> {
-    new_error_suspect(evidence)
+    let new_error = new_error_suspect(evidence);
+    let commit = new_error
+        .as_ref()
+        .and_then(|suspect| related_commit(evidence, suspect));
+    new_error
         .into_iter()
         .chain(first_changed_metric(evidence))
+        .chain(commit)
         .collect()
 }

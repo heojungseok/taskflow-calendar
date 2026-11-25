@@ -1,6 +1,8 @@
 mod common;
 
-use analyzer::{Evidence, Knowledge, LogLine, MetricSeries, Report, Service, Suspect, triage};
+use analyzer::{
+    Commit, Evidence, Knowledge, LogLine, MetricSeries, Report, Service, Suspect, triage,
+};
 use common::{FixedClock, FixedEvidence, alert};
 
 fn log(at_unix: u64, text: &str) -> LogLine {
@@ -79,5 +81,33 @@ fn metric_that_changed_first_is_the_metric_suspect() {
     assert!(report.suspects.contains(&Suspect::FirstChangedMetric {
         name: "search latency p95".to_owned(),
         changed_at_unix: 1_010,
+    }));
+}
+
+#[test]
+fn commit_touching_the_class_of_the_new_error_is_the_commit_suspect() {
+    let evidence = Evidence {
+        commits: vec![
+            Commit {
+                sha: "aaaaaaa".to_owned(),
+                files: vec!["README.md".to_owned()],
+            },
+            Commit {
+                sha: "bbbbbbb".to_owned(),
+                files: vec![
+                    "src/main/java/com/taskflow/planning/TaskSearchService.java".to_owned(),
+                ],
+            },
+        ],
+        ..usual_and_new_errors()
+    };
+
+    let report = run(evidence);
+
+    assert!(report.suspects.contains(&Suspect::RelatedCommit {
+        sha: "bbbbbbb".to_owned()
+    }));
+    assert!(!report.suspects.contains(&Suspect::RelatedCommit {
+        sha: "aaaaaaa".to_owned()
     }));
 }
