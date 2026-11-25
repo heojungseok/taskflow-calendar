@@ -6,7 +6,6 @@ import java.util.TimeZone;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** 시간대 조합 검증이 넘긴 JVM 시간대가 다른 설정에 덮이거나 잘못된 ID로 GMT가 되지 않았는지 확인한다. */
 class TestJvmTimezoneTest {
 
     @Test
