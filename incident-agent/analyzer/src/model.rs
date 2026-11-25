@@ -105,14 +105,49 @@ pub enum Missing {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Analysis {
-    Guess {
+    Guess(Guess),
+    Unknown,
+    Skipped(SkipReason),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Guess {
+    cause: String,
+    evidence: String,
+    confidence: Confidence,
+    cited_lines: Vec<usize>,
+}
+
+impl Guess {
+    pub(crate) fn new(
         cause: String,
         evidence: String,
         confidence: Confidence,
         cited_lines: Vec<usize>,
-    },
-    Unknown,
-    Skipped(SkipReason),
+    ) -> Self {
+        Self {
+            cause,
+            evidence,
+            confidence,
+            cited_lines,
+        }
+    }
+
+    pub fn cause(&self) -> &str {
+        &self.cause
+    }
+
+    pub fn evidence(&self) -> &str {
+        &self.evidence
+    }
+
+    pub fn confidence(&self) -> Confidence {
+        self.confidence
+    }
+
+    pub fn cited_lines(&self) -> &[usize] {
+        &self.cited_lines
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -127,4 +162,7 @@ pub enum SkipReason {
     ModelUnavailable,
     InvalidAnswer,
     UnsupportedCitation,
+    NoEvidence,
+    KnownIncident,
+    CallLimit,
 }
