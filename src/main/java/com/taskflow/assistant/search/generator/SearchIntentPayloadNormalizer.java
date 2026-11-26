@@ -21,11 +21,11 @@ final class SearchIntentPayloadNormalizer {
         SearchQueryType queryType =
                 SearchQueryType.fromValue(payload.path("queryType").asString("TOPIC_SEARCH"));
         SearchTargetType targetType =
-                SearchTargetType.fromValue(payload.path("targetType").asString());
+                SearchTargetType.fromValue(payload.path("targetType").asString(""));
         SearchDomainType domainType =
-                SearchDomainType.fromValue(payload.path("domainType").asString());
+                SearchDomainType.fromValue(payload.path("domainType").asString(""));
         SearchActionIntent mainAction =
-                SearchActionIntent.fromValue(payload.path("mainAction").asString());
+                SearchActionIntent.fromValue(payload.path("mainAction").asString(""));
         List<SearchActionIntent> secondaryActions = normalizeActionIntents(payload.path("secondaryActions"));
         List<String> topicTerms = normalizeTopicTerms(payload.path("topicTerms"));
         List<String> participantTerms = normalizeTerms(payload.path("participantTerms"), MAX_PARTICIPANT_TERMS);
@@ -33,12 +33,12 @@ final class SearchIntentPayloadNormalizer {
         boolean genericCompanionRequired =
                 payload.path("genericCompanionRequired").asBoolean(false);
         SearchTimeIntent timeIntent =
-                SearchTimeIntent.fromValue(payload.path("timeIntent").asString());
+                SearchTimeIntent.fromValue(payload.path("timeIntent").asString(""));
         SearchPriorityIntent priorityIntent =
-                SearchPriorityIntent.fromValue(payload.path("priorityIntent").asString());
+                SearchPriorityIntent.fromValue(payload.path("priorityIntent").asString(""));
         List<TaskStatus> statusIntents = normalizeStatusIntents(payload.path("statusIntents"));
         SearchSyncIntent syncIntent =
-                SearchSyncIntent.fromValue(payload.path("syncIntent").asString());
+                SearchSyncIntent.fromValue(payload.path("syncIntent").asString(""));
         SearchRelationPolicy relationPolicy =
                 SearchRelationPolicy.fromValue(payload.path("relationPolicy").asString("ALLOW_PARTIAL"));
         double overallConfidence =
@@ -80,7 +80,7 @@ final class SearchIntentPayloadNormalizer {
         Set<SearchActionIntent> intents = new LinkedHashSet<>();
         if (node.isArray()) {
             for (JsonNode item : node) {
-                SearchActionIntent intent = SearchActionIntent.fromValue(item.asString());
+                SearchActionIntent intent = SearchActionIntent.fromValue(item.asString(""));
                 if (intent != SearchActionIntent.UNKNOWN) {
                     intents.add(intent);
                 }
@@ -134,7 +134,7 @@ final class SearchIntentPayloadNormalizer {
         }
         for (JsonNode item : node) {
             // 모델이 모르는 상태값을 주면 버린다
-            String name = item.asString().trim().toUpperCase(Locale.ROOT);
+            String name = item.asString("").trim().toUpperCase(Locale.ROOT);
             Arrays.stream(TaskStatus.values())
                     .filter(status -> status.name().equals(name))
                     .findFirst()

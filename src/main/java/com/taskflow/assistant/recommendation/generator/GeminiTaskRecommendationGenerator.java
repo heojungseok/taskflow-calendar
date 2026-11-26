@@ -2,6 +2,7 @@ package com.taskflow.assistant.recommendation.generator;
 
 import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.GeminiPayloadReader;
 import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
 import com.taskflow.assistant.recommendation.exception.TaskRecommendationGenerationException;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
@@ -182,14 +183,14 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     private TaskRecommendationGenerationResult parseResponse(
             JsonNode root, List<TaskSyncSnapshot> candidates, int recommendationCount) {
         JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
-        if (textNode.isMissingNode() || textNode.asString().isBlank()) {
+        if (textNode.isMissingNode() || textNode.asString("").isBlank()) {
             throw new TaskRecommendationGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE, "Gemini recommendation response did not contain text");
         }
 
         JsonNode payload;
         try {
-            payload = objectMapper.readTree(textNode.asString());
+            payload = new GeminiPayloadReader(objectMapper).read(textNode.asString(""));
         } catch (JacksonException e) {
             throw new TaskRecommendationGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE, "Gemini recommendation payload was not valid JSON");

@@ -1,5 +1,6 @@
 package com.taskflow.assistant.summary.generator;
 
+import com.taskflow.assistant.GeminiPayloadReader;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.SummaryBucket;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
@@ -78,9 +79,9 @@ final class WeeklySummaryResponseFormat {
     WeeklySummarySectionsResult parseResponse(JsonNode root, int syncedTotalTaskCount, int unsyncedTotalTaskCount) {
         JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
 
-        if (textNode.isMissingNode() || textNode.asString().isBlank()) {
+        if (textNode.isMissingNode() || textNode.asString("").isBlank()) {
             JsonNode blockReason = root.at("/promptFeedback/blockReason");
-            String reason = blockReason.isMissingNode() ? "unknown" : blockReason.asString();
+            String reason = blockReason.isMissingNode() ? "unknown" : blockReason.asString("unknown");
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE,
                     "Gemini response did not contain summary text. blockReason=" + reason,
@@ -89,7 +90,7 @@ final class WeeklySummaryResponseFormat {
 
         JsonNode payload;
         try {
-            payload = objectMapper.readTree(textNode.asString());
+            payload = new GeminiPayloadReader(objectMapper).read(textNode.asString(""));
         } catch (JacksonException e) {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE, "Gemini response payload was not valid JSON", false);

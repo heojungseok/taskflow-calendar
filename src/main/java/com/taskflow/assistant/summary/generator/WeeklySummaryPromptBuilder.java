@@ -5,7 +5,6 @@ import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.SummaryBucket;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.planning.project.Project;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -16,6 +15,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 /** 주간 요약 Gemini 요청 본문(시스템 지시, 입력 JSON, 생성 설정)과 그 지표를 만든다. */
@@ -70,7 +70,7 @@ final class WeeklySummaryPromptBuilder {
             String serializedRequestBody = objectMapper.writeValueAsString(requestBody);
             return new PreparedRequest(
                     serializedRequestBody, buildPromptMetrics(serializedRequestBody, syncedTasks, unsyncedTasks));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to build Gemini request body", e);
         }
     }
@@ -96,8 +96,7 @@ final class WeeklySummaryPromptBuilder {
             List<TaskSyncSnapshot> unsyncedTasks,
             int unsyncedTotalTaskCount,
             LocalDate weekStart,
-            LocalDate weekEnd)
-            throws IOException {
+            LocalDate weekEnd) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("projectName", project.getName());
         LocalDate today = LocalDate.now(clock);

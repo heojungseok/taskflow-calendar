@@ -1,16 +1,17 @@
 package com.taskflow.observability;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.taskflow.calendarsync.outbox.CalendarOutboxRepository;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.micrometer.metrics.test.autoconfigure.AutoConfigureMetrics;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +33,9 @@ class ManagementEndpointSecurityTest {
     @Autowired
     TaskFlowMetrics metrics;
 
+    @Autowired
+    CalendarOutboxRepository outboxRepository;
+
     @Test
     void healthAndPrometheusAreAnonymousOnManagementPort() throws Exception {
         assertEquals(200, get("/actuator/health/readiness"));
@@ -48,27 +52,31 @@ class ManagementEndpointSecurityTest {
         assertTrue(prometheus.contains("http_server_requests_seconds_bucket"));
     }
 
-    @ParameterizedTest
-    @ValueSource(
-            strings = {
-                "http_server_requests_seconds_count",
-                "hikaricp_connections_pending",
-                "hikaricp_connections_timeout_total",
-                "hikaricp_connections_max",
-                "jvm_memory_used_bytes",
-                "jvm_memory_max_bytes",
-                "jvm_gc_pause_seconds_count",
-                "logback_events_total",
-                "process_cpu_usage",
-                "process_uptime_seconds"
-            })
+    @Test
     @DisplayName("Grafana 알림·대시보드가 읽는 Spring 지표 이름이 그대로 나온다")
-    void grafanaMetricNamesStayExposed(String metricName) throws Exception {
+    void grafanaMetricNamesStayExposed() throws Exception {
         System.gc();
+        outboxRepository.count();
         assertEquals(200, get(serverPort, "/api/auth/session"));
 
         String prometheus = getBody("/actuator/prometheus");
-        assertTrue(prometheus.contains(metricName + "{") || prometheus.contains(metricName + " "), metricName);
+        assertThat(List.of(
+                        "http_server_requests_seconds_count",
+                        "http_server_requests_seconds_bucket",
+                        "hikaricp_connections_active",
+                        "hikaricp_connections_pending",
+                        "hikaricp_connections_timeout_total",
+                        "hikaricp_connections_max",
+                        "jvm_memory_used_bytes",
+                        "jvm_memory_max_bytes",
+                        "jvm_gc_pause_seconds_count",
+                        "jvm_gc_pause_seconds_sum",
+                        "logback_events_total",
+                        "process_cpu_usage",
+                        "process_uptime_seconds",
+                        "spring_data_repository_invocations_seconds_count",
+                        "spring_data_repository_invocations_seconds_sum"))
+                .allSatisfy(name -> assertThat(prometheus).containsPattern("(?m)^" + name + "[{ ]"));
     }
 
     private int get(String path) throws Exception {
