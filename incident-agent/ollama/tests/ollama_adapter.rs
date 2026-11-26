@@ -3,7 +3,7 @@ mod common;
 use std::time::Duration;
 
 use analyzer::{ANSWER_SCHEMA, Model, ModelError};
-use common::{OK_BODY, serve};
+use common::{OK_BODY, closed_port_url, serve};
 use ollama::Ollama;
 
 #[test]
@@ -50,4 +50,33 @@ fn no_answer_within_the_timeout_is_a_model_timeout() {
         .explain("p");
 
     assert_eq!(result, Err(ModelError::Timeout));
+}
+
+#[test]
+fn server_that_is_not_running_is_unavailable() {
+    let result = Ollama::new(&closed_port_url(), "qwen").explain("p");
+
+    assert!(matches!(result, Err(ModelError::Unavailable(_))));
+}
+
+#[test]
+fn http_error_is_unavailable_with_the_server_message() {
+    let server = serve(404, r#"{"error":"model 'qwen' not found"}"#, Duration::ZERO);
+
+    let result = Ollama::new(&server.url, "qwen").explain("p");
+
+    let Err(ModelError::Unavailable(message)) = result else {
+        panic!("expected Unavailable, got {result:?}");
+    };
+    assert!(message.contains("404"), "{message}");
+    assert!(message.contains("model 'qwen' not found"), "{message}");
+}
+
+#[test]
+fn response_that_is_not_the_chat_shape_is_unavailable() {
+    let server = serve(200, r#"{"done":true}"#, Duration::ZERO);
+
+    let result = Ollama::new(&server.url, "qwen").explain("p");
+
+    assert!(matches!(result, Err(ModelError::Unavailable(_))));
 }
