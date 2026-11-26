@@ -18,9 +18,6 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 public class GeminiClient {
 
-    /** Gemini 3 계열은 thinkingBudget을 거부하거나 무시한다. 생각 단계를 최소로 줄여 응답 지연을 막는다. */
-    public static final Map<String, Object> MINIMAL_THINKING = Map.of("thinkingLevel", "minimal");
-
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final Gemini429Classifier classifier429;
 

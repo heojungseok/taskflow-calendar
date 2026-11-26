@@ -1,7 +1,7 @@
 package com.taskflow.assistant.summary.generator;
 
-import com.taskflow.assistant.GeminiPayloadReader;
-import com.taskflow.assistant.summary.GeminiSummaryProperties;
+import com.taskflow.assistant.llm.LlmJsonReader;
+import com.taskflow.assistant.llm.LlmResponse;
 import com.taskflow.assistant.summary.SummaryBucket;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
@@ -19,11 +19,9 @@ import tools.jackson.databind.ObjectMapper;
 /** 주간 요약 응답의 JSON 스키마와 그 응답을 읽는 규칙. */
 final class WeeklySummaryResponseFormat {
 
-    private final GeminiSummaryProperties properties;
     private final ObjectMapper objectMapper;
 
-    WeeklySummaryResponseFormat(GeminiSummaryProperties properties, ObjectMapper objectMapper) {
-        this.properties = properties;
+    WeeklySummaryResponseFormat(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -76,32 +74,32 @@ final class WeeklySummaryResponseFormat {
         return schema;
     }
 
-    WeeklySummarySectionsResult parseResponse(JsonNode root, int syncedTotalTaskCount, int unsyncedTotalTaskCount) {
-        JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
-
-        if (textNode.isMissingNode() || textNode.asString("").isBlank()) {
-            JsonNode blockReason = root.at("/promptFeedback/blockReason");
-            String reason = blockReason.isMissingNode() ? "unknown" : blockReason.asString("unknown");
+    WeeklySummarySectionsResult parseResponse(
+            LlmResponse response, int syncedTotalTaskCount, int unsyncedTotalTaskCount) {
+        if (response.text() == null || response.text().isBlank()) {
+            String reason = response.finishReason() == null ? "unknown" : response.finishReason();
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE,
-                    "Gemini response did not contain summary text. blockReason=" + reason,
+                    "Gemini response did not contain summary text. finishReason=" + reason,
                     false);
         }
 
         JsonNode payload;
         try {
-            payload = new GeminiPayloadReader(objectMapper).read(textNode.asString(""));
+            payload = new LlmJsonReader(objectMapper).read(response.text());
         } catch (JacksonException e) {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE, "Gemini response payload was not valid JSON", false);
         }
 
         return WeeklySummarySectionsResult.of(
-                parseSection(payload.path("synced"), SummaryBucket.SYNCED, syncedTotalTaskCount),
-                parseSection(payload.path("unsynced"), SummaryBucket.UNSYNCED, unsyncedTotalTaskCount));
+                parseSection(payload.path("synced"), SummaryBucket.SYNCED, syncedTotalTaskCount, response.model()),
+                parseSection(
+                        payload.path("unsynced"), SummaryBucket.UNSYNCED, unsyncedTotalTaskCount, response.model()));
     }
 
-    private WeeklySummaryResult parseSection(JsonNode sectionNode, SummaryBucket bucket, int totalTaskCount) {
+    private WeeklySummaryResult parseSection(
+            JsonNode sectionNode, SummaryBucket bucket, int totalTaskCount, String model) {
         if (totalTaskCount == 0) {
             return WeeklySummaryResult.empty(bucket.getEmptySummary(), bucket.getEmptyNextActions());
         }
@@ -125,7 +123,7 @@ final class WeeklySummaryResponseFormat {
                 toStringList(sectionNode.path("highlights")),
                 toStringList(sectionNode.path("risks")),
                 toStringList(sectionNode.path("nextActions")),
-                properties.getModel());
+                model);
     }
 
     private List<String> toStringList(JsonNode node) {
@@ -143,25 +141,5 @@ final class WeeklySummaryResponseFormat {
         }
 
         return values;
-    }
-
-    UsageMetrics usageMetrics(JsonNode root) {
-        JsonNode usage = root.path("usageMetadata");
-        return new UsageMetrics(
-                usage.path("promptTokenCount").asInt(0),
-                usage.path("candidatesTokenCount").asInt(0),
-                usage.path("totalTokenCount").asInt(0));
-    }
-
-    static final class UsageMetrics {
-        final int promptTokens;
-        final int candidateTokens;
-        final int totalTokens;
-
-        private UsageMetrics(int promptTokens, int candidateTokens, int totalTokens) {
-            this.promptTokens = promptTokens;
-            this.candidateTokens = candidateTokens;
-            this.totalTokens = totalTokens;
-        }
     }
 }

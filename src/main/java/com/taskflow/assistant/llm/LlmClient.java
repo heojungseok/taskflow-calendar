@@ -24,11 +24,20 @@ public class LlmClient {
     }
 
     public LlmResponse generate(LlmRequest request) {
-        String name = routing.providerFor(request.feature());
+        return providerFor(request.feature()).generate(request);
+    }
+
+    public String modelId(LlmFeature feature) {
+        LlmProvider provider = providerFor(feature);
+        return provider.name() + ":" + provider.model(feature);
+    }
+
+    private LlmProvider providerFor(LlmFeature feature) {
+        String name = routing.providerFor(feature);
         LlmProvider provider = providers.get(name);
         if (provider == null) {
             throw new IllegalStateException("Unknown LLM provider: " + name);
         }
-        return provider.generate(request);
+        return provider;
     }
 }

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.taskflow.assistant.llm.FakeLlmProvider;
 import com.taskflow.assistant.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.assistant.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResponse;
@@ -99,7 +100,7 @@ class ProjectWeeklySummaryServiceTest {
                 weeklySummaryGenerator,
                 taskSyncStateResolver,
                 weeklySummaryCacheService,
-                geminiProperties,
+                FakeLlmProvider.returning("{}").client(),
                 userRepository,
                 Clock.system(TimeZones.SERVICE_ZONE));
         project = Project.of("TaskFlow", 1L);
@@ -567,7 +568,7 @@ class ProjectWeeklySummaryServiceTest {
                 weeklySummaryGenerator,
                 taskSyncStateResolver,
                 weeklySummaryCacheService,
-                geminiProperties,
+                FakeLlmProvider.returning("{}").client(),
                 userRepository,
                 KST_MONDAY_MORNING);
         when(projectRepository.findByIdAndOwnerUserId(1L, 1L)).thenReturn(Optional.of(project));

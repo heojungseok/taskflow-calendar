@@ -33,6 +33,11 @@ public class GeminiLlmProvider implements LlmProvider {
     }
 
     @Override
+    public String model(LlmFeature feature) {
+        return settings.get(feature).getModel();
+    }
+
+    @Override
     public LlmResponse generate(LlmRequest request) {
         GeminiProperties properties = settings.get(request.feature());
         String apiKey = properties.getApiKey();

@@ -1,38 +1,25 @@
 package com.taskflow.assistant.search.generator;
 
-import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.llm.LlmFeature;
+import com.taskflow.assistant.llm.LlmRequest;
 import com.taskflow.assistant.search.*;
 import com.taskflow.assistant.search.GeminiSearchProperties;
 import java.util.*;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 
-/** 검색 의도 파싱용 Gemini 요청 본문: 시스템 지시, 예시가 담긴 사용자 프롬프트, 응답 스키마. */
+/** 검색 의도 파싱용 LLM 요청: 시스템 지시, 예시가 담긴 사용자 프롬프트, 응답 스키마. */
 final class SearchIntentRequest {
 
     private SearchIntentRequest() {}
 
-    static String buildRequestBody(GeminiSearchProperties properties, ObjectMapper objectMapper, String query) {
-        try {
-            Map<String, Object> requestBody = new LinkedHashMap<>();
-            requestBody.put("system_instruction", createContent(systemInstruction()));
-            requestBody.put("contents", List.of(createContent(userPrompt(query))));
-
-            Map<String, Object> generationConfig = new LinkedHashMap<>();
-            generationConfig.put("temperature", properties.getTemperature());
-            generationConfig.put("responseMimeType", "application/json");
-            generationConfig.put("responseJsonSchema", responseJsonSchema());
-            generationConfig.put("thinkingConfig", GeminiClient.MINIMAL_THINKING);
-            requestBody.put("generationConfig", generationConfig);
-
-            return objectMapper.writeValueAsString(requestBody);
-        } catch (JacksonException e) {
-            throw new IllegalStateException("Failed to build Gemini search request body", e);
-        }
-    }
-
-    private static Map<String, Object> createContent(String text) {
-        return Map.of("parts", List.of(Map.of("text", text)));
+    static LlmRequest build(GeminiSearchProperties properties, String query) {
+        return new LlmRequest(
+                LlmFeature.SEARCH_INTENT,
+                systemInstruction(),
+                userPrompt(query),
+                responseJsonSchema(),
+                properties.getTemperature(),
+                null,
+                null);
     }
 
     private static String systemInstruction() {

@@ -1,16 +1,16 @@
-package com.taskflow.assistant;
+package com.taskflow.assistant.llm;
 
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.ObjectReader;
 
-public class GeminiPayloadReader {
+public class LlmJsonReader {
 
-    // Jackson 3는 JSON 뒤에 토큰이 남으면 기본으로 실패하지만 Gemini는 JSON 뒤에 텍스트를 붙이기도 한다.
+    // Jackson 3는 JSON 뒤에 토큰이 남으면 기본으로 실패하지만 모델은 JSON 뒤에 텍스트를 붙이기도 한다.
     private final ObjectReader reader;
 
-    public GeminiPayloadReader(ObjectMapper objectMapper) {
+    public LlmJsonReader(ObjectMapper objectMapper) {
         this.reader = objectMapper.reader().without(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     }
 

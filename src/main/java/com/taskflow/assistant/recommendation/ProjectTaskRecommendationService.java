@@ -1,5 +1,7 @@
 package com.taskflow.assistant.recommendation;
 
+import com.taskflow.assistant.llm.LlmClient;
+import com.taskflow.assistant.llm.LlmFeature;
 import com.taskflow.assistant.recommendation.cache.TaskRecommendationCacheService;
 import com.taskflow.assistant.recommendation.dto.ProjectTaskRecommendationItemResponse;
 import com.taskflow.assistant.recommendation.dto.ProjectTaskRecommendationResponse;
@@ -51,7 +53,7 @@ public class ProjectTaskRecommendationService {
     private final TaskSyncStateResolver taskSyncStateResolver;
     private final TaskRecommendationGenerator taskRecommendationGenerator;
     private final TaskRecommendationCacheService taskRecommendationCacheService;
-    private final GeminiRecommendationProperties geminiProperties;
+    private final LlmClient llmClient;
     private final UserRepository userRepository;
     private final Clock clock;
 
@@ -104,7 +106,7 @@ public class ProjectTaskRecommendationService {
         }
 
         String cacheKey = TaskRecommendationCacheKeys.cacheKey(
-                project, candidates, recommendationCount, geminiProperties.getModel());
+                project, candidates, recommendationCount, llmClient.modelId(LlmFeature.RECOMMENDATION));
         if (taskRecommendationCacheService.isEnabled()) {
             ProjectTaskRecommendationResponse cached = taskRecommendationCacheService
                     .find(cacheKey)

@@ -42,6 +42,17 @@ class LlmClientTest {
     }
 
     @Test
+    @DisplayName("기능이 지금 쓰는 제공자와 모델을 캐시 키용 이름으로 알려 준다")
+    void modelIdFollowsRoute() {
+        LlmClient client = new LlmClient(
+                List.of(new RecordingProvider("gemini"), new RecordingProvider("ollama")),
+                new LlmRoutingProperties(Map.of(LlmFeature.WEEKLY_SUMMARY, "ollama")));
+
+        assertThat(client.modelId(LlmFeature.WEEKLY_SUMMARY)).isEqualTo("ollama:ollama-model");
+        assertThat(client.modelId(LlmFeature.RECOMMENDATION)).isEqualTo("gemini:gemini-model");
+    }
+
+    @Test
     @DisplayName("없는 제공자를 고르면 기동할 때 실패한다")
     void unknownProviderFailsFast() {
         assertThatThrownBy(() -> new LlmClient(
@@ -63,6 +74,11 @@ class LlmClientTest {
         @Override
         public String name() {
             return name;
+        }
+
+        @Override
+        public String model(LlmFeature feature) {
+            return name + "-model";
         }
 
         @Override

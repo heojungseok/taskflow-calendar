@@ -34,6 +34,9 @@ public class LlmCallException extends BusinessException {
 
     /** 다시 시도하거나 저장된 결과로 대신할 만한 실패인가. 설정 오류(4xx)는 아니다. */
     public boolean isTemporary() {
+        if (getErrorCode() == ErrorCode.LLM_API_KEY_MISSING) {
+            return false;
+        }
         return statusCode == 0 || statusCode == 429 || statusCode >= 500;
     }
 

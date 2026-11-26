@@ -31,6 +31,11 @@ public class OllamaLlmProvider implements LlmProvider {
     }
 
     @Override
+    public String model(LlmFeature feature) {
+        return properties.getModel();
+    }
+
+    @Override
     public LlmResponse generate(LlmRequest request) {
         long startedAt = System.currentTimeMillis();
         try {
