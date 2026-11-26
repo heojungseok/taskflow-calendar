@@ -130,7 +130,9 @@ impl Ollama {
 
 impl Model for Ollama {
     fn explain(&self, prompt: &str) -> Result<String, ModelError> {
-        self.chat(prompt).map(|reply| reply.content)
+        self.chat(prompt)
+            .inspect_err(|error| eprintln!("model {} failed: {error}", self.model))
+            .map(|reply| reply.content)
     }
 }
 
