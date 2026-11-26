@@ -4,7 +4,7 @@
 - 로거: `com.taskflow.identity.oauth.GoogleOAuthService`
 - 관련 알림: backend error logs, security oauth failures
 - 방문자 유발: 가능
-- 확정: 대기
+- 확정: 2026-11-26 허정석
 
 ## 증상
 Google 로그인 콜백에서 authorization code를 토큰으로 바꾸는 호출이 실패해 로그인이 오류로 끝난다. 컨트롤러가 `reason=server_error` WARN을 남기고 보안 알림(oauth failures)도 함께 울릴 수 있다.
