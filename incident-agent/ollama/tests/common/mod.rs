@@ -61,3 +61,23 @@ pub fn closed_port_url() -> String {
     drop(listener);
     url
 }
+
+pub fn serve_late_chunked_body(delay: Duration) -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    thread::spawn(move || {
+        let Ok((mut stream, _)) = listener.accept() else {
+            return;
+        };
+        let mut buffer = [0; 8192];
+        let _ = stream.read(&mut buffer);
+        let _ = stream.write_all(
+            b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n",
+        );
+        let _ = stream.flush();
+        thread::sleep(delay);
+        let chunk = format!("{:x}\r\n{OK_BODY}\r\n0\r\n\r\n", OK_BODY.len());
+        let _ = stream.write_all(chunk.as_bytes());
+    });
+    url
+}
