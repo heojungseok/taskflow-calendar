@@ -9,6 +9,7 @@ const SYSTEM_INSTRUCTION: &str =
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 const MAX_ANSWER_TOKENS: u32 = 512;
 const CONTEXT_TOKENS: u32 = 4096;
+const MAX_LOG_CHARS: usize = 300;
 const NANOS_PER_MILLI: u64 = 1_000_000;
 const MAX_RESPONSE_BYTES: u64 = 1024 * 1024;
 
@@ -34,6 +35,8 @@ struct ChatResponse {
     message: ChatMessage,
     #[serde(default)]
     load_duration: u64,
+    #[serde(default)]
+    prompt_eval_count: u32,
     #[serde(default)]
     prompt_eval_duration: u64,
     #[serde(default)]
@@ -101,6 +104,12 @@ impl Ollama {
         let body = body.map_err(model_error)?;
         let reply: ChatResponse = serde_json::from_str(&body)
             .map_err(|error| ModelError::Unavailable(error.to_string()))?;
+        if reply.prompt_eval_count + MAX_ANSWER_TOKENS > CONTEXT_TOKENS {
+            eprintln!(
+                "model {} prompt used {} of {CONTEXT_TOKENS} context tokens",
+                self.model, reply.prompt_eval_count
+            );
+        }
         Ok(Reply {
             content: reply.message.content,
             load_ms: reply.load_duration / NANOS_PER_MILLI,
@@ -131,7 +140,7 @@ impl Ollama {
 impl Model for Ollama {
     fn explain(&self, prompt: &str) -> Result<String, ModelError> {
         self.chat(prompt)
-            .inspect_err(|error| eprintln!("model {} failed: {error}", self.model))
+            .inspect_err(|error| eprintln!("model {} failed: {}", self.model, log_text(error)))
             .map(|reply| reply.content)
     }
 }
@@ -141,4 +150,13 @@ fn model_error(error: ureq::Error) -> ModelError {
         ureq::Error::Timeout(_) => ModelError::Timeout,
         other => ModelError::Unavailable(other.to_string()),
     }
+}
+
+fn log_text(error: &ModelError) -> String {
+    error
+        .to_string()
+        .chars()
+        .take(MAX_LOG_CHARS)
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect()
 }
