@@ -133,6 +133,7 @@ pub struct ErrorGroup {
     pub logger: String,
     pub first_seen_unix: u64,
     pub count: usize,
+    pub trace_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

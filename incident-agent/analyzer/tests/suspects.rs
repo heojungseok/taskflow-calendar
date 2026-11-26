@@ -300,3 +300,16 @@ fn at_most_three_suspects_one_of_each_kind() {
     ));
     assert!(matches!(report.suspects[2], Suspect::RelatedCommit { .. }));
 }
+
+#[test]
+fn new_error_keeps_up_to_three_trace_ids_for_finding_the_requests() {
+    let report = run(usual_and_new_errors());
+
+    let Some(Suspect::NewError { first, .. }) = report.suspects.first() else {
+        panic!("expected new error, got {:?}", report.suspects);
+    };
+    assert_eq!(
+        first.trace_ids,
+        ["4f2a9c01d3e5b6a0", "4f2a9c01d3e5b6a1", "4f2a9c01d3e5b6a2"]
+    );
+}

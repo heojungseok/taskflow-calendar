@@ -163,6 +163,7 @@ fn t39_의심_항목을_짧게_보인다() {
                 logger: "c.t.TaskSearchService".to_owned(),
                 first_seen_unix: T0,
                 count: 3,
+                trace_ids: Vec::new(),
             },
             most_frequent: None,
         },
