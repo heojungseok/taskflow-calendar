@@ -11,6 +11,17 @@ contactPoints:
           title: '{{ template "taskflow.discord.title" . }}'
           message: '{{ template "taskflow.discord.message" . }}'
         disableResolveMessage: false
+  - orgId: 1
+    name: incident-agent
+    receivers:
+      - uid: incident-agent-webhook
+        type: webhook
+        settings:
+          url: http://incident-agent:8080/grafana
+          httpMethod: POST
+          authorization_scheme: Bearer
+          authorization_credentials: ${AGENT_WEBHOOK_TOKEN}
+        disableResolveMessage: false
 
 templates:
   - orgId: 1
@@ -92,11 +103,17 @@ policies:
     group_wait: 30s
     repeat_interval: 4h
     routes:
+      # 모든 알림을 분석기에도 보낸다. continue라서 아래 Discord 경로도 이어서 평가한다.
+      - receiver: incident-agent
+        continue: true
+        group_by: [alertname, service]
       # 보안 알림(security.yml)은 IP마다 따로 보내고 종료 메시지를 끈 연락처를 쓴다.
       - receiver: Discord security
         object_matchers:
           - [service, =, security]
         group_by: [alertname, ip]
+      # 위 경로가 continue로 매칭되면 root receiver로 떨어지지 않으므로 나머지는 Discord로 명시한다.
+      - receiver: Discord
 
 groups:
   - orgId: 1
