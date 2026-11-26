@@ -34,6 +34,8 @@ jq -e '
   and (.services["container-stats-exporter"].image | test("^prom/node-exporter:v[0-9.]+@sha256:[0-9a-f]{64}$"))
   and (.services["container-stats-exporter"].ports == null)
   and ([.services["container-stats-exporter"].volumes[] | select(.target == "/textfile") | .read_only] == [true])
+  and ((.services["container-stats-exporter"].volumes | length) == 1)
+  and ([.services[] | .volumes[]? | (.source // "") | select(test("docker\\.sock|/\\.docker"))] | length == 0)
   and (.services["container-stats-exporter"].command | index("--collector.disable-defaults") != null)
   and ((.services.prometheus.networks | keys) == ["monitoring"])
   and ((.services.grafana.networks | keys | sort) == ["grafana-egress", "logging", "monitoring"])
