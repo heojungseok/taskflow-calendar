@@ -1,13 +1,6 @@
 FROM rust:1.99.1-slim-bookworm@sha256:f2c004e3d2d8b547e8cf7ffbc29205385f4e71d23e53e4e383065db5e9f822cd AS build
 WORKDIR /src
-COPY Cargo.toml Cargo.lock ./
-COPY agent agent
-COPY analyzer analyzer
-COPY contract contract
-COPY executor executor
-COPY incident incident
-COPY ollama ollama
-COPY bakeoff bakeoff
+COPY --exclude=knowledge . .
 RUN cargo build --locked --release -p agent
 
 FROM debian:bookworm-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e
