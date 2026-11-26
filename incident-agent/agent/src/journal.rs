@@ -13,6 +13,8 @@ const INFORMATIONAL: [&str; 4] = [
     "reconciled-classification-required",
 ];
 
+const ANALYZER_SCOPE: &str = "agent";
+
 struct Row {
     time: String,
     sha: GitSha,
@@ -45,7 +47,7 @@ fn read_rows(path: &Path) -> Option<Vec<Row>> {
     for line in body.lines().filter(|line| !line.is_empty()) {
         rows.push(parse_row(line)?);
     }
-    rows.retain(|row| !INFORMATIONAL.contains(&row.status.as_str()));
+    rows.retain(|row| !INFORMATIONAL.contains(&row.status.as_str()) && row.scope != ANALYZER_SCOPE);
     Some(rows)
 }
 
@@ -165,6 +167,39 @@ mod tests {
         ];
         rows.extend(backend_release(B, 1));
         rows.push(row("2025-11-26T02:00:00Z", B, "no-change", "none"));
+        let deploy = deploy_from(&rows).unwrap();
+        assert_eq!(deploy.previous_sha.as_str(), A);
+        assert_eq!(deploy.scope, DeployScope::Backend);
+    }
+
+    #[test]
+    fn t35_분석기_배포_행은_사이에_있든_뒤에_있든_건너뛴다() {
+        let agent_at = |hour: u32, state: &str| {
+            row(&format!("2025-11-26T{hour:02}:30:00Z"), C, state, "agent")
+        };
+        let mut rows = vec![
+            row("2025-11-26T00:00:00Z", A, "success", "backend"),
+            agent_at(0, "deployment-running"),
+            agent_at(0, "success"),
+        ];
+        rows.extend(backend_release(B, 1));
+        rows.push(agent_at(1, "deployment-running"));
+        rows.push(agent_at(1, "deployment-failed"));
+        rows.push(agent_at(2, "success"));
+        let deploy = deploy_from(&rows).unwrap();
+        assert_eq!(deploy.sha.as_str(), B);
+        assert_eq!(deploy.previous_sha.as_str(), A);
+        assert_eq!(deploy.scope, DeployScope::Backend);
+    }
+
+    #[test]
+    fn t35_backend_관찰과_성공_사이에_낀_분석기_배포_행도_건너뛴다() {
+        let mut release = backend_release(B, 1);
+        release.insert(2, row("2025-11-26T01:10:00Z", C, "success", "agent"));
+        let rows = after(
+            vec![row("2025-11-26T00:00:00Z", A, "success", "backend")],
+            release,
+        );
         let deploy = deploy_from(&rows).unwrap();
         assert_eq!(deploy.previous_sha.as_str(), A);
         assert_eq!(deploy.scope, DeployScope::Backend);
