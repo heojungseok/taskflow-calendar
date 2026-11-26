@@ -12,7 +12,7 @@ RUN cargo build --locked --release -p agent
 
 FROM debian:bookworm-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e
 COPY --from=build /src/target/release/agent /usr/local/bin/agent
-COPY knowledge/*.md /knowledge/
-RUN mkdir /data && chown 10001:10001 /data
+RUN mkdir -m 0755 /knowledge && mkdir /data && chown 10001:10001 /data
+COPY --chmod=0444 knowledge/*.md /knowledge/
 USER 10001:10001
 ENTRYPOINT ["/usr/local/bin/agent"]
