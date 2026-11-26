@@ -3,7 +3,7 @@ mod common;
 use std::time::Duration;
 
 use analyzer::{ANSWER_SCHEMA, Model, ModelError};
-use common::{OK_BODY, closed_port_url, serve, serve_late_chunked_body};
+use common::{OK_BODY, closed_port_url, serve, serve_late_chunked_body, serve_with_headers};
 use ollama::Ollama;
 
 #[test]
@@ -105,4 +105,30 @@ fn answer_body_that_arrives_after_the_timeout_is_a_model_timeout() {
         .explain("p");
 
     assert_eq!(result, Err(ModelError::Timeout));
+}
+
+#[test]
+fn redirect_is_not_followed() {
+    let elsewhere = serve(200, OK_BODY, Duration::ZERO);
+    let location = format!("Location: {}/api/chat\r\n", elsewhere.url);
+    let server = serve_with_headers(307, &location, "", Duration::ZERO);
+
+    let result = Ollama::new(&server.url, "qwen").explain("p");
+
+    let Err(ModelError::Unavailable(message)) = result else {
+        panic!("expected Unavailable, got {result:?}");
+    };
+    assert!(message.contains("307"), "{message}");
+    assert!(elsewhere.received_nothing());
+}
+
+#[test]
+fn oversized_answer_is_unavailable() {
+    let content = "x".repeat(1024 * 1024);
+    let body = format!(r#"{{"message":{{"role":"assistant","content":"{content}"}},"done":true}}"#);
+    let server = serve(200, &body, Duration::ZERO);
+
+    let result = Ollama::new(&server.url, "qwen").explain("p");
+
+    assert!(matches!(result, Err(ModelError::Unavailable(_))));
 }

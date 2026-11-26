@@ -1,4 +1,4 @@
-#![allow(dead_code, unreachable_pub)]
+#![allow(unreachable_pub)]
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
@@ -18,13 +18,24 @@ impl FakeOllama {
         let body = self.requests.recv_timeout(Duration::from_secs(5)).unwrap();
         serde_json::from_str(&body).unwrap()
     }
+
+    pub fn received_nothing(&self) -> bool {
+        self.requests
+            .recv_timeout(Duration::from_millis(300))
+            .is_err()
+    }
 }
 
 pub fn serve(status: u16, body: &str, delay: Duration) -> FakeOllama {
+    serve_with_headers(status, "", body, delay)
+}
+
+pub fn serve_with_headers(status: u16, headers: &str, body: &str, delay: Duration) -> FakeOllama {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
     let (sender, requests) = channel();
     let body = body.to_owned();
+    let headers = headers.to_owned();
     thread::spawn(move || {
         let Ok((stream, _)) = listener.accept() else {
             return;
@@ -46,7 +57,7 @@ pub fn serve(status: u16, body: &str, delay: Duration) -> FakeOllama {
         sender.send(String::from_utf8(request).unwrap()).unwrap();
         thread::sleep(delay);
         let response = format!(
-            "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            "HTTP/1.1 {status} X\r\n{headers}Content-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
             body.len()
         );
         let mut stream = stream;

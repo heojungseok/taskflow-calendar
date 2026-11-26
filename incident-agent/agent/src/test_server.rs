@@ -2,7 +2,6 @@ use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
 
 pub(crate) struct Request {
     pub(crate) target: String,
@@ -11,7 +10,6 @@ pub(crate) struct Request {
 pub(crate) struct Reply {
     pub(crate) status: u16,
     pub(crate) body: String,
-    pub(crate) delay: Duration,
 }
 
 impl Reply {
@@ -23,7 +21,6 @@ impl Reply {
         Self {
             status,
             body: body.to_owned(),
-            delay: Duration::ZERO,
         }
     }
 }
@@ -87,7 +84,6 @@ fn answer(mut stream: TcpStream, handler: &dyn Fn(&Request) -> Reply, seen: &Mut
     };
     let reply = handler(&request);
     seen.lock().unwrap().push(request);
-    thread::sleep(reply.delay);
     let response = format!(
         "HTTP/1.1 {} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
         reply.status,
