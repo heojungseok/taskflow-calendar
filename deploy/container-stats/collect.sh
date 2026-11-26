@@ -52,5 +52,32 @@ printf '%s\n%s\nHOST\t%s\n' "$services" "$stats" "$host" | awk -F'\t' '
     printf "taskflow_docker_cpus %d\n", host[2]
   }
 ' >"$tmp"
+if [ -n "${TASKFLOW_DEPLOY_JOURNAL:-}" ] && [ -f "$TASKFLOW_DEPLOY_JOURNAL" ]; then
+  awk -F'\t' '
+    $3 ~ /^(deployment|approval|rollback)-running$/ { started = $1 }
+    $3 == "success" { succeeded = $1 }
+    END {
+      if (started != "") print "taskflow_deploy_last_started_timestamp_seconds", started
+      if (succeeded != "") print "taskflow_deploy_last_success_timestamp_seconds", succeeded
+    }
+  ' "$TASKFLOW_DEPLOY_JOURNAL" | awk '
+    function days(y, m, d,   era, yoe, doy) {
+      if (m <= 2) y -= 1
+      era = int(y / 400); yoe = y - era * 400
+      doy = int((153 * (m > 2 ? m - 3 : m + 9) + 2) / 5) + d - 1
+      return era * 146097 + yoe * 365 + int(yoe / 4) - int(yoe / 100) + doy - 719468
+    }
+    {
+      t = $2; gsub(/[^0-9]/, "", t)
+      if (length(t) != 14) next
+      printf "%s %.0f\n", $1, days(substr(t, 1, 4) + 0, substr(t, 5, 2) + 0, substr(t, 7, 2) + 0) * 86400 \
+        + substr(t, 9, 2) * 3600 + substr(t, 11, 2) * 60 + substr(t, 13, 2)
+    }
+  ' >>"$tmp"
+fi
+if [ -n "${TASKFLOW_BACKUP_STAMP:-}" ] && [ -f "$TASKFLOW_BACKUP_STAMP" ]; then
+  awk '/^[0-9]+$/ { printf "taskflow_db_backup_last_success_timestamp_seconds %.0f\n", $1; exit }' \
+    "$TASKFLOW_BACKUP_STAMP" >>"$tmp"
+fi
 chmod 644 "$tmp"
 mv "$tmp" "$out_dir/containers.prom"

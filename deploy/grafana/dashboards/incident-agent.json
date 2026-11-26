@@ -1,0 +1,29 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "refresh": "1m",
+  "panels": [
+    {"id": 1, "type": "row", "title": "요약 (24h)", "collapsed": false, "panels": [], "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}},
+    {"id": 2, "type": "stat", "title": "분석기 UP", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "max(up{job=\"incident-agent\"}) or vector(0)"}], "gridPos": {"h": 5, "w": 4, "x": 0, "y": 1}},
+    {"id": 3, "type": "stat", "title": "받은 알림", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(incident_agent_alerts_received_total[24h])) or vector(0)"}], "gridPos": {"h": 5, "w": 4, "x": 4, "y": 1}},
+    {"id": 4, "type": "stat", "title": "분석 결과", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (result) (increase(incident_agent_analyses_total[24h]))", "legendFormat": "{{result}}"}], "gridPos": {"h": 5, "w": 6, "x": 8, "y": 1}},
+    {"id": 5, "type": "stat", "title": "판정 (맞음·틀림)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (verdict) (increase(incident_agent_verdicts_total[24h]))", "legendFormat": "{{verdict}}"}], "gridPos": {"h": 5, "w": 4, "x": 14, "y": 1}},
+    {"id": 6, "type": "stat", "title": "모델 실패", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(incident_agent_model_calls_total{result!=\"ok\"}[24h])) or vector(0)"}], "gridPos": {"h": 5, "w": 3, "x": 18, "y": 1}},
+    {"id": 7, "type": "stat", "title": "Discord 실패", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(incident_agent_discord_failures_total[24h])) or vector(0)"}], "gridPos": {"h": 5, "w": 3, "x": 21, "y": 1}},
+    {"id": 8, "type": "row", "title": "분석·모델", "collapsed": false, "panels": [], "gridPos": {"h": 1, "w": 24, "x": 0, "y": 6}},
+    {"id": 9, "type": "timeseries", "title": "분석 결과 (1h)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (result, reason) (increase(incident_agent_analyses_total[1h]))", "legendFormat": "{{result}} {{reason}}"}], "gridPos": {"h": 7, "w": 8, "x": 0, "y": 7}, "fieldConfig": {"defaults": {"min": 0}, "overrides": []}},
+    {"id": 10, "type": "timeseries", "title": "모델 호출 (1h)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (result) (increase(incident_agent_model_calls_total[1h]))", "legendFormat": "{{result}}"}], "gridPos": {"h": 7, "w": 8, "x": 8, "y": 7}, "fieldConfig": {"defaults": {"min": 0}, "overrides": []}},
+    {"id": 11, "type": "timeseries", "title": "모델 평균 응답 시간 (1h)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum by (result) (increase(incident_agent_model_seconds_total[1h])) / sum by (result) (increase(incident_agent_model_calls_total[1h]))", "legendFormat": "{{result}}"}], "gridPos": {"h": 7, "w": 8, "x": 16, "y": 7}, "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []}},
+    {"id": 12, "type": "timeseries", "title": "조치 요청·결과 (1h)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(incident_agent_action_requests_total[1h])) or vector(0)", "legendFormat": "요청"}, {"refId": "B", "expr": "sum by (outcome) (increase(incident_agent_action_results_total[1h]))", "legendFormat": "{{outcome}}"}], "gridPos": {"h": 7, "w": 12, "x": 0, "y": 14}, "fieldConfig": {"defaults": {"min": 0}, "overrides": []}},
+    {"id": 13, "type": "timeseries", "title": "하루 분석 한도 초과 (1h)", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"refId": "A", "expr": "sum(increase(incident_agent_limit_exceeded_total[1h])) or vector(0)"}], "gridPos": {"h": 7, "w": 12, "x": 12, "y": 14}, "fieldConfig": {"defaults": {"min": 0}, "overrides": []}},
+    {"id": 14, "type": "logs", "title": "분석기 로그", "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"refId": "A", "expr": "{service=\"incident-agent\"}"}], "options": {"showTime": true, "wrapLogMessage": true, "sortOrder": "Descending"}, "gridPos": {"h": 10, "w": 24, "x": 0, "y": 21}}
+  ],
+  "schemaVersion": 41,
+  "tags": ["incident-agent", "operations"],
+  "templating": {"list": []},
+  "time": {"from": "now-24h", "to": "now"},
+  "timezone": "Asia/Seoul",
+  "title": "장애 분석기",
+  "uid": "incident-agent",
+  "version": 1
+}

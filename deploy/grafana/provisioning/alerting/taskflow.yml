@@ -58,7 +58,9 @@ templates:
       **대상** {{ .Labels.service }}
       **영향** {{ .Annotations.impact }}
       **권장 조치** {{ .Annotations.action }}
+      {{- if .Annotations.check_url }}
       **1차 확인** 공개 데모 origin의 `{{ .Annotations.check_url }}`
+      {{- end }}
       {{- if .PanelURL }}
       **Grafana** [관련 패널 열기]({{ .PanelURL }})
       {{- else if .DashboardURL }}
@@ -85,7 +87,9 @@ templates:
       **복구 시각** {{ .EndsAt | tz "Asia/Seoul" | date "2006-01-02 15:04:05 MST" }}
       **대상** {{ .Labels.service }}
       **결과** 알럿 상태가 정상화됐습니다.
+      {{- if .Annotations.check_url }}
       **추가 확인 필요** 공개 데모 origin의 `{{ .Annotations.check_url }}`
+      {{- end }}
       {{- if .PanelURL }}
       **Grafana** [관련 패널 열기]({{ .PanelURL }})
       {{- else if .DashboardURL }}
@@ -103,9 +107,11 @@ policies:
     group_wait: 30s
     repeat_interval: 4h
     routes:
-      # 모든 알림을 분석기에도 보낸다. continue라서 아래 Discord 경로도 이어서 평가한다.
+      # 알림을 분석기에도 보낸다. continue라서 아래 Discord 경로도 이어서 평가한다.
       - receiver: incident-agent
         continue: true
+        object_matchers:
+          - [service, "!=", incident-agent]
         group_by: [alertname, service]
       # 보안 알림(security.yml)은 IP마다 따로 보내고 종료 메시지를 끈 연락처를 쓴다.
       - receiver: Discord security
