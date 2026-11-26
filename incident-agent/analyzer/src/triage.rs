@@ -46,7 +46,7 @@ fn report_for(
     {
         Analysis::Skipped(SkipReason::KnownIncident)
     } else {
-        let prompt = prompt::build(&collected, &suspects);
+        let prompt = prompt::build(&alerts, &collected, &suspects);
         analysis_for(model, &prompt, calls)
     };
     Report {
