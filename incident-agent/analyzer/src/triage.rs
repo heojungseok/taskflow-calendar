@@ -48,7 +48,7 @@ fn report_for(
         (Analysis::Skipped(SkipReason::KnownIncident), 0)
     } else {
         let prompt = prompt::build(&alerts, &collected, &suspects);
-        (analysis_for(model, &prompt, calls), prompt.lines.len())
+        analysis_for(model, &prompt, calls)
     };
     Report {
         trail: Trail {
@@ -64,15 +64,15 @@ fn report_for(
     }
 }
 
-fn analysis_for(model: &impl Model, prompt: &Prompt, calls: &mut usize) -> Analysis {
+fn analysis_for(model: &impl Model, prompt: &Prompt, calls: &mut usize) -> (Analysis, usize) {
     if prompt.lines.is_empty() {
-        return Analysis::Skipped(SkipReason::NoEvidence);
+        return (Analysis::Skipped(SkipReason::NoEvidence), 0);
     }
     if *calls >= MAX_MODEL_CALLS {
-        return Analysis::Skipped(SkipReason::CallLimit);
+        return (Analysis::Skipped(SkipReason::CallLimit), 0);
     }
     *calls += 1;
-    analyze(model, prompt)
+    (analyze(model, prompt), prompt.lines.len())
 }
 
 fn collect_evidence(

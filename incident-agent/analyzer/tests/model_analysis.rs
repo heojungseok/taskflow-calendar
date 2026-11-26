@@ -355,6 +355,7 @@ fn at_most_three_incidents_are_sent_to_the_model_per_run() {
         reports[3].analysis,
         Analysis::Skipped(SkipReason::CallLimit)
     );
+    assert_eq!(reports[3].trail.sent_lines, 0);
 }
 
 #[test]
@@ -425,4 +426,40 @@ fn report_says_which_window_was_read_and_how_much_reached_the_model() {
             sent_lines: 2,
         }
     );
+}
+
+#[test]
+fn known_incident_sends_nothing_to_the_model() {
+    let knowledge = knowledge_from(
+        "search-npe-trail",
+        &[(
+            "search-npe.md",
+            knowledge_doc(
+                "ERROR c.t.p.TaskSearchService : NullPointerException for task #",
+                "com.taskflow.planning.TaskSearchService",
+                "불가",
+                "2026-11-26 정석님",
+            ),
+        )],
+    );
+
+    let report = run_with(evidence(), &knowledge, &ScriptedModel::unknown());
+
+    assert_eq!(report.trail.sent_lines, 0);
+}
+
+#[test]
+fn only_an_exact_lowercase_trace_id_escapes_token_masking() {
+    let lines = [
+        "ERROR c.t.p.A : one traceId=9f1a2b3c4d5e6f7012ab",
+        "ERROR c.t.p.B : two traceId=9F1A2B3C4D5E6F70",
+        "ERROR c.t.p.C : three xtraceId=9f1a2b3c4d5e6f70",
+    ];
+    let prompt = prompt_of(evidence_with(
+        lines.iter().map(|line| log(1_010, line)).collect(),
+    ));
+
+    assert!(!prompt.contains("9f1a2b3c4d5e6f7012ab"), "{prompt}");
+    assert!(!prompt.contains("9F1A2B3C4D5E6F70"), "{prompt}");
+    assert!(!prompt.contains("xtraceId=9f1a2b3c4d5e6f70"), "{prompt}");
 }

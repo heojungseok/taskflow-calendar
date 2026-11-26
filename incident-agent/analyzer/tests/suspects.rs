@@ -313,3 +313,33 @@ fn new_error_keeps_up_to_three_trace_ids_for_finding_the_requests() {
         ["4f2a9c01d3e5b6a0", "4f2a9c01d3e5b6a1", "4f2a9c01d3e5b6a2"]
     );
 }
+
+fn trace_ids_of(lines: &[&str]) -> Vec<String> {
+    let logs = lines
+        .iter()
+        .enumerate()
+        .map(|(i, text)| log(1_010 + i as u64, text))
+        .collect();
+    let report = run(Evidence {
+        logs,
+        ..Evidence::default()
+    });
+    match report.suspects.first() {
+        Some(Suspect::NewError { first, .. }) => first.trace_ids.clone(),
+        other => panic!("expected new error, got {other:?}"),
+    }
+}
+
+#[test]
+fn same_trace_id_is_kept_once() {
+    let line = "ERROR c.t.p.A : failed traceId=0123456789abcdef";
+
+    assert_eq!(trace_ids_of(&[line, line]), ["0123456789abcdef"]);
+}
+
+#[test]
+fn trace_id_inside_the_visitor_message_is_not_taken_for_the_request_id() {
+    let line = "ERROR c.t.p.A : bad /api/x?traceId=deadbeefdeadbeef traceId=0123456789abcdef | java.lang.IllegalStateException";
+
+    assert_eq!(trace_ids_of(&[line]), ["0123456789abcdef"]);
+}

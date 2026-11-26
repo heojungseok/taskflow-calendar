@@ -1,9 +1,9 @@
 use std::cmp::Reverse;
 
 use crate::fingerprint::fingerprint;
+use crate::logline::request_trace_id;
 use crate::model::{ErrorGroup, Evidence, LogLine, Suspect};
 
-const TRACE_ID_LEN: usize = 16;
 const MAX_TRACE_IDS: usize = 3;
 
 pub(crate) fn new_error_suspect(evidence: &Evidence) -> Option<Suspect> {
@@ -57,15 +57,13 @@ fn fingerprints(
 ) -> impl Iterator<Item = (String, String, u64, Option<String>)> + '_ {
     lines.iter().filter_map(|line| {
         let f = fingerprint(&line.text)?;
-        Some((f.text, f.logger, line.at_unix, trace_id(&line.text)))
+        Some((
+            f.text,
+            f.logger,
+            line.at_unix,
+            request_trace_id(&line.text).map(str::to_owned),
+        ))
     })
-}
-
-fn trace_id(text: &str) -> Option<String> {
-    let (_, after) = text.split_once("traceId=")?;
-    let id: String = after.chars().take(TRACE_ID_LEN).collect();
-    (id.len() == TRACE_ID_LEN && id.chars().all(|c| matches!(c, '0'..='9' | 'a'..='f')))
-        .then_some(id)
 }
 
 fn keep_trace_id(group: &mut ErrorGroup, trace_id: Option<String>) {
