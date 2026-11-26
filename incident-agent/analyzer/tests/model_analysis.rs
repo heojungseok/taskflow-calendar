@@ -272,7 +272,7 @@ fn low_confidence_says_unknown_and_still_hands_over_the_suspects() {
 }
 
 #[test]
-fn unreadable_logs_get_a_metric_only_analysis_capped_at_medium() {
+fn unreadable_logs_with_only_a_metric_to_cite_say_unknown() {
     let model = ScriptedModel::answering(&answer("high", "[1]"));
     let evidence = Evidence {
         metrics: vec![MetricSeries {
@@ -287,10 +287,7 @@ fn unreadable_logs_get_a_metric_only_analysis_capped_at_medium() {
 
     let report = run(evidence, &model);
 
-    let Analysis::Guess(guess) = &report.analysis else {
-        panic!("expected guess, got {:?}", report.analysis);
-    };
-    assert_eq!(guess.confidence(), Confidence::Medium);
+    assert_eq!(report.analysis, Analysis::Unknown);
     let prompt = model.prompts.borrow()[0].clone();
     assert!(prompt.contains("로그를 읽지 못함"));
     assert!(prompt.contains("L1:") && prompt.contains("jvm heap"));
@@ -405,4 +402,31 @@ fn commit_line_shows_its_label_sha_and_files() {
         )),
         "{prompt}"
     );
+}
+
+#[test]
+fn answer_citing_only_a_changed_metric_while_new_errors_exist_is_unknown() {
+    let evidence = Evidence {
+        metrics: vec![MetricSeries {
+            name: "jvm heap".to_owned(),
+            baseline: 0.4,
+            floor: 0.0,
+            points: vec![(1_010, 0.9)],
+        }],
+        ..evidence()
+    };
+    let prompt = prompt_of(evidence.clone());
+    let metric_line = prompt
+        .lines()
+        .find(|line| line.contains("지표 jvm heap"))
+        .and_then(|line| line.strip_prefix('L')?.split(':').next())
+        .unwrap()
+        .to_owned();
+
+    let report = run(
+        evidence,
+        &ScriptedModel::answering(&answer("high", &format!("[{metric_line}]"))),
+    );
+
+    assert_eq!(report.analysis, Analysis::Unknown);
 }
