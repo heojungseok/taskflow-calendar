@@ -220,3 +220,46 @@ fn failed_command_is_recorded_without_retry() {
         [Command::RestartBackend { .. }]
     ));
 }
+
+#[test]
+fn analyzer_deploys_do_not_block_backend_rollback() {
+    let fixture = Fixture::new();
+    fixture.write_journal(&[
+        ("success", "backend", PREVIOUS_SHA),
+        ("deployment-running", "agent", OTHER_SHA),
+        ("success", "agent", OTHER_SHA),
+        ("deployment-running", "backend", CURRENT_SHA),
+        ("observing", "backend", CURRENT_SHA),
+        ("success", "backend", CURRENT_SHA),
+        ("deployment-running", "agent", OTHER_SHA),
+        ("deployment-failed", "agent", OTHER_SHA),
+    ]);
+    let request = fixture.write_request("req-40", rollback(PREVIOUS_SHA), &valid_code());
+    let runner = RecordingRunner::default();
+
+    let result = execute(&request, &fixture.setup, &runner, &FixedClock(NOW)).unwrap();
+
+    assert_eq!(result.outcome(), &Outcome::Executed {});
+    assert!(matches!(
+        runner.calls.borrow().as_slice(),
+        [Command::RollbackBackend { .. }]
+    ));
+}
+
+#[test]
+fn analyzer_deploys_in_progress_or_failed_do_not_block_backend_restart() {
+    let tails: [JournalRow; 2] = [
+        ("deployment-running", "agent", OTHER_SHA),
+        ("deployment-failed", "agent", OTHER_SHA),
+    ];
+    for (index, tail) in tails.into_iter().enumerate() {
+        let fixture = Fixture::new();
+        fixture.write_journal(&[("success", "backend", CURRENT_SHA), tail]);
+        let request = fixture.write_request(&format!("req-41-{index}"), restart(), &valid_code());
+        let runner = RecordingRunner::default();
+
+        let result = execute(&request, &fixture.setup, &runner, &FixedClock(NOW)).unwrap();
+
+        assert_eq!(result.outcome(), &Outcome::Executed {}, "case {index}");
+    }
+}

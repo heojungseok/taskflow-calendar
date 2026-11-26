@@ -12,6 +12,8 @@ const INFORMATIONAL: [&str; 4] = [
     "reconciled-classification-required",
 ];
 
+const ANALYZER_SCOPE: &str = "agent";
+
 struct Row {
     sha: GitSha,
     status: String,
@@ -72,7 +74,7 @@ fn read_rows(journal: &Path) -> Result<Vec<Row>, String> {
         .map(parse_row)
         .collect();
     let mut rows = rows?;
-    rows.retain(|row| !INFORMATIONAL.contains(&row.status.as_str()));
+    rows.retain(|row| !INFORMATIONAL.contains(&row.status.as_str()) && row.scope != ANALYZER_SCOPE);
     Ok(rows)
 }
 
