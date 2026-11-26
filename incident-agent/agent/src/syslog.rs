@@ -1,4 +1,4 @@
-use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
+use std::net::UdpSocket;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -13,29 +13,30 @@ static SINK: OnceLock<Syslog> = OnceLock::new();
 
 struct Syslog {
     socket: UdpSocket,
-    target: SocketAddr,
+    target: String,
 }
 
 impl Syslog {
     fn connect(addr: &str) -> std::io::Result<Self> {
-        let target = addr.to_socket_addrs()?.next().ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::NotFound, "syslog address not found")
-        })?;
-        let local = if target.is_ipv4() {
-            "0.0.0.0:0"
-        } else {
-            "[::]:0"
-        };
+        let valid_port = addr
+            .rsplit_once(':')
+            .is_some_and(|(_, port)| port.parse::<u16>().is_ok());
+        if !valid_port {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "syslog address needs host:port",
+            ));
+        }
         Ok(Self {
-            socket: UdpSocket::bind(local)?,
-            target,
+            socket: UdpSocket::bind("0.0.0.0:0")?,
+            target: addr.to_owned(),
         })
     }
 
     fn send(&self, unix: u64, message: &str) {
         let _ = self
             .socket
-            .send_to(format_line(unix, message).as_bytes(), self.target);
+            .send_to(format_line(unix, message).as_bytes(), self.target.as_str());
     }
 }
 

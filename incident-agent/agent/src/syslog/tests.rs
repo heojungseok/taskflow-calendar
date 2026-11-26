@@ -39,9 +39,15 @@ fn t44_설정한_주소로_udp_한_줄을_보낸다() {
 }
 
 #[test]
-fn t44_찾을_수_없는_주소는_연결_오류다() {
-    assert!(Syslog::connect("no-such-host.invalid:5140").is_err());
+fn t44_포트가_없는_주소는_연결_오류다() {
     assert!(Syslog::connect("missing-port").is_err());
+    assert!(Syslog::connect("alloy:not-a-port").is_err());
+}
+
+#[test]
+fn t44_아직_찾을_수_없는_이름도_시작을_막지_않고_보낼_때마다_다시_찾는다() {
+    let sink = Syslog::connect("no-such-host.invalid:5140").unwrap();
+    sink.send(NOV_26_063842, "dropped");
 }
 
 #[test]
