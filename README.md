@@ -238,25 +238,25 @@ alt="TaskFlow Grafana 대시보드 하단 — Gemini와 캐시, Backend runtime"
 - [TaskFlow 아키텍처 설계 ② — Google OAuth 연동과 운영 가시성 확보](https://velog.io/@jungseokheo/taskflow-google-oauth-calendar-api) — OAuth 2.0 인증, Access Token 자동 갱신, 외부 API 예외 분류와 Outbox 관측 화면
 - [TaskFlow LLM API 연동](https://velog.io/@jungseokheo/taskflow-llm-retrospective) — 주간 요약·우선순위 추천·자연어 검색에서 API 연결보다 어려웠던 입력 데이터 정리와 운영 이슈
 
-초기 글의 Java 11·localStorage JWT·사용자 역조회는 현재 Java 17·HttpOnly 세션 쿠키·`requestedByUserId` 기반 처리로 바뀌었습니다. API 호출 절감률과 토큰 사용량 등 당시 수치는 각 글의 조건에서 읽어야 하며 현재 버전의 성능 보장으로 사용하지 않습니다.
+초기 글의 Java 11·localStorage JWT·사용자 역조회는 현재 Java 21·HttpOnly 세션 쿠키·`requestedByUserId` 기반 처리로 바뀌었습니다. API 호출 절감률과 토큰 사용량 등 당시 수치는 각 글의 조건에서 읽어야 하며 현재 버전의 성능 보장으로 사용하지 않습니다.
 
 ## 기술 스택
 
 | 구분 | 사용 기술 |
 |---|---|
-| Backend | Java 17, Spring Boot 3.5.9, Spring Data JPA, Spring Security, Gradle 8.14 |
+| Backend | Java 21, Spring Boot 4.1.3, Spring Data JPA, Spring Security, Gradle 8.14 |
 | Database | PostgreSQL 17.11 + pgvector 0.8.6 |
 | Frontend | React 19, TypeScript 5.9, Vite 7, Framer Motion |
 | External | Google Calendar API, Google Gemini API, Redis (선택) |
 | Ops | Docker Compose, Nginx, Flyway, Cloudflare Tunnel, Prometheus, Grafana |
-| CI | GitHub Actions (Java 17, Node.js 22) |
+| CI | GitHub Actions (Java 21, Node.js 22) |
 
 ## 로컬 실행
 
 <details>
 <summary>필수 환경·실행·종료 절차</summary>
 
-Java 17, Node.js 22, Docker & Docker Compose가 필요합니다.
+Java 21, Node.js 22, Docker & Docker Compose가 필요합니다.
 
 ```bash
 git clone https://github.com/heojungseok/taskflow-calendar.git

@@ -1,7 +1,5 @@
 package com.taskflow.assistant.recommendation.cache;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.recommendation.dto.ProjectTaskRecommendationResponse;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
@@ -9,6 +7,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import tools.jackson.databind.ObjectMapper;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +31,7 @@ public class RedisTaskRecommendationCacheService implements TaskRecommendationCa
                     objectMapper.readValue(json, ProjectTaskRecommendationResponse.class);
             record("hit");
             return Optional.of(response);
-        } catch (RuntimeException | JsonProcessingException e) {
+        } catch (RuntimeException e) {
             record("error");
             log.warn(
                     "Recommendation cache read failed; continuing without cache. errorType={}",
@@ -46,7 +45,7 @@ public class RedisTaskRecommendationCacheService implements TaskRecommendationCa
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(response), TTL);
             record("write");
-        } catch (RuntimeException | JsonProcessingException e) {
+        } catch (RuntimeException e) {
             record("error");
             log.warn(
                     "Recommendation cache write failed; continuing without cache. errorType={}",

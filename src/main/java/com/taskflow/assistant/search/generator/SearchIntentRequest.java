@@ -1,11 +1,11 @@
 package com.taskflow.assistant.search.generator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.search.*;
 import com.taskflow.assistant.search.GeminiSearchProperties;
-import java.io.IOException;
 import java.util.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /** 검색 의도 파싱용 Gemini 요청 본문: 시스템 지시, 예시가 담긴 사용자 프롬프트, 응답 스키마. */
 final class SearchIntentRequest {
@@ -26,7 +26,7 @@ final class SearchIntentRequest {
             requestBody.put("generationConfig", generationConfig);
 
             return objectMapper.writeValueAsString(requestBody);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to build Gemini search request body", e);
         }
     }

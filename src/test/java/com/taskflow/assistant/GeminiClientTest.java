@@ -3,7 +3,6 @@ package com.taskflow.assistant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
 import com.taskflow.common.ErrorCode;
 import java.io.IOException;
@@ -15,6 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 /** 실제 HTTP 응답으로 Gemini 호출 실패 분류를 확인한다. 네 기능(요약·추천·검색 의도·임베딩)이 이 분류를 같이 쓴다. */
 class GeminiClientTest {

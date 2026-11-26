@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
@@ -29,6 +28,7 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import tools.jackson.databind.ObjectMapper;
 
 @EnabledIfEnvironmentVariable(named = "SUMMARY_DECODE_EXPERIMENT_ENABLED", matches = "(?i)true")
 class SummaryDecodingExperimentTest {
@@ -38,7 +38,7 @@ class SummaryDecodingExperimentTest {
     private static final List<String> OVERCLAIM_PHRASES = List.of("완료", "성공적", "순조", "문제없", "안정적", "잘 진행", "원활", "마무리");
     private static final List<String> COVERAGE_GUARD_PHRASES = List.of("우선순위 대표 업무 기준", "제공된 업무 기준", "포함된 업무 기준");
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     @DisplayName("summary decoding 조합별 live 실험 결과를 자동 보고서로 저장한다")

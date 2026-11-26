@@ -8,8 +8,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
@@ -38,6 +36,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @ExtendWith(OutputCaptureExtension.class)
 class GeminiWeeklySummaryGeneratorTest {
@@ -58,7 +58,7 @@ class GeminiWeeklySummaryGeneratorTest {
         properties.setTimeoutSeconds(5);
         properties.setTemperature(0.2);
 
-        objectMapper = new ObjectMapper().findAndRegisterModules();
+        objectMapper = new ObjectMapper();
         generator = new GeminiWeeklySummaryGenerator(
                 properties,
                 objectMapper,
@@ -247,7 +247,7 @@ class GeminiWeeklySummaryGeneratorTest {
 
         JsonNode thinkingConfig =
                 preparedRequestBody(prepared).path("generationConfig").path("thinkingConfig");
-        assertEquals("minimal", thinkingConfig.path("thinkingLevel").asText());
+        assertEquals("minimal", thinkingConfig.path("thinkingLevel").asString());
         assertTrue(thinkingConfig.path("thinkingBudget").isMissingNode());
     }
 
@@ -305,27 +305,27 @@ class GeminiWeeklySummaryGeneratorTest {
                 request.path("contents").get(0).path("parts").get(0).path("text");
 
         assertTrue(instructions
-                .asText()
+                .asString()
                 .contains("summary는 status·syncState·outbox 결과만 사실로 사용하고, 완료·성공적·순조·문제없음·위험없음 같은 표현은 근거 없으면 쓰지 마라."));
-        assertTrue(instructions.asText().contains("summary와 목록 문장은 모두 한국어 존댓말로 작성하라."));
-        assertTrue(instructions.asText().contains("제공된 tasks만 우선순위 대표 업무로 보고"));
-        assertTrue(instructions.asText().contains("우선순위 대표 업무 기준"));
-        assertTrue(instructions.asText().contains("섹션 전체를 단정하지 마라"));
-        assertFalse(instructions.asText().contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
+        assertTrue(instructions.asString().contains("summary와 목록 문장은 모두 한국어 존댓말로 작성하라."));
+        assertTrue(instructions.asString().contains("제공된 tasks만 우선순위 대표 업무로 보고"));
+        assertTrue(instructions.asString().contains("우선순위 대표 업무 기준"));
+        assertTrue(instructions.asString().contains("섹션 전체를 단정하지 마라"));
+        assertFalse(instructions.asString().contains("첫 문장은 섹션 전체 경향을 먼저 요약"));
         JsonNode syncedSection = userPromptPayload(request).path("synced");
         assertEquals(3, syncedSection.path("totalTaskCount").asInt());
         assertEquals(1, syncedSection.path("includedTaskCount").asInt());
         assertEquals(
                 "첫 문장부터 우선순위 대표 업무 기준으로 핵심 일정과 리스크를 요약하고, 이후 문장에서 대표 task를 연결한다.",
-                syncedSection.path("summaryLeadHint").asText());
+                syncedSection.path("summaryLeadHint").asString());
         assertEquals(
                 "세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.",
-                syncedSection.path("coverageHint").asText());
+                syncedSection.path("coverageHint").asString());
 
         JsonNode unsyncedSection = userPromptPayload(request).path("unsynced");
         assertEquals(
                 "첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.",
-                unsyncedSection.path("summaryLeadHint").asText());
+                unsyncedSection.path("summaryLeadHint").asString());
         assertTrue(unsyncedSection.path("coverageHint").isMissingNode());
     }
 
@@ -357,7 +357,7 @@ class GeminiWeeklySummaryGeneratorTest {
                 .path("parts")
                 .get(0)
                 .path("text")
-                .asText();
+                .asString();
         assertTrue(instructions.contains(
                 "summary는 status·syncState·outbox 결과만 사실로 사용하고, 완료·성공적·순조·문제없음·위험없음 같은 표현은 근거 없으면 쓰지 마라."));
         assertTrue(instructions.contains("summary와 목록 문장은 모두 한국어 존댓말로 작성하라."));
@@ -369,10 +369,10 @@ class GeminiWeeklySummaryGeneratorTest {
         assertTrue(payload.path("unsynced").path("coverageHint").isMissingNode());
         assertEquals(
                 "첫 문장은 이번 주 일정 전반을 요약하고, 이후 문장에서 주요 일정과 리스크를 연결한다.",
-                payload.path("synced").path("summaryLeadHint").asText());
+                payload.path("synced").path("summaryLeadHint").asString());
         assertEquals(
                 "첫 문장은 미동기화 업무 전반의 상태를 요약하고, 이후 문장에서 주요 task를 연결한다.",
-                payload.path("unsynced").path("summaryLeadHint").asText());
+                payload.path("unsynced").path("summaryLeadHint").asString());
     }
 
     @Test
@@ -402,10 +402,10 @@ class GeminiWeeklySummaryGeneratorTest {
 
         assertEquals(
                 "첫 문장부터 우선순위 대표 업무 기준으로 누락 위험과 반영 필요 사항을 요약하고, 이후 문장에서 대표 task를 연결한다.",
-                unsyncedSection.path("summaryLeadHint").asText());
+                unsyncedSection.path("summaryLeadHint").asString());
         assertEquals(
                 "세부 요약은 우선순위 대표 업무만 근거로 삼고, 포함되지 않은 task까지 확장하지 않는다.",
-                unsyncedSection.path("coverageHint").asText());
+                unsyncedSection.path("coverageHint").asString());
     }
 
     @Test
@@ -534,7 +534,7 @@ class GeminiWeeklySummaryGeneratorTest {
                 .path("parts")
                 .get(0)
                 .path("text")
-                .asText();
+                .asString();
         String jsonPayload = promptText.substring(promptText.indexOf('\n') + 1);
         return objectMapper.readTree(jsonPayload);
     }
@@ -593,7 +593,7 @@ class GeminiWeeklySummaryGeneratorTest {
 
     private static JsonNode taskNamed(JsonNode tasks, String title) {
         for (JsonNode task : tasks) {
-            if (title.equals(task.path("title").asText())) {
+            if (title.equals(task.path("title").asString())) {
                 return task;
             }
         }

@@ -1,7 +1,5 @@
 package com.taskflow.assistant.search;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
@@ -11,7 +9,6 @@ import com.taskflow.identity.user.UserRepository;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskRepository;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -22,6 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -178,7 +178,7 @@ public class TaskSearchEmbeddingService {
         } catch (GeminiCallException e) {
             throw new TaskSearchGenerationException(
                     e.getErrorCode(), "Gemini embedding request failed: " + e.getMessage());
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new TaskSearchGenerationException(
                     ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini embedding request failed");
         }

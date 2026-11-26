@@ -76,7 +76,7 @@ public class GoogleOAuthController {
     }
 
     private String buildAuthorizeUrl(String state, OAuthStateStore.OAuthAttempt attempt) {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(properties.getAuthorizationUri())
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(properties.getAuthorizationUri())
                 .queryParam("client_id", properties.getClientId())
                 .queryParam("redirect_uri", properties.getRedirectUri())
                 .queryParam("response_type", "code")

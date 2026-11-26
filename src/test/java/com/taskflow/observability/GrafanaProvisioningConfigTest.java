@@ -2,13 +2,13 @@ package com.taskflow.observability;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class GrafanaProvisioningConfigTest {
 
@@ -19,13 +19,13 @@ class GrafanaProvisioningConfigTest {
 
         List<JsonNode> rows = new ArrayList<>();
         dashboard.path("panels").forEach(panel -> {
-            if ("row".equals(panel.path("type").asText())) {
+            if ("row".equals(panel.path("type").asString())) {
                 rows.add(panel);
             }
         });
 
         assertThat(rows)
-                .extracting(row -> row.path("title").asText())
+                .extracting(row -> row.path("title").asString())
                 .containsExactly(
                         "운영 요약", "사용자·이용", "Calendar·Outbox", "Gemini·Cache", "Backend runtime", "DB·자원", "보안");
         assertThat(rows)
@@ -57,7 +57,7 @@ class GrafanaProvisioningConfigTest {
         assertThat(List.of("HTTP p95", "HTTP 5xx", "Gemini 실패 (10m)"))
                 .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title)
                                 .path("type")
-                                .asText())
+                                .asString())
                         .isEqualTo("timeseries"));
     }
 
@@ -127,7 +127,7 @@ class GrafanaProvisioningConfigTest {
                 .contains("GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana-dashboards/taskflow.json")
                 .contains("GF_USERS_ALLOW_SIGN_UP: \"false\"", "GF_SNAPSHOTS_ENABLED: \"false\"")
                 .contains("GF_PUBLIC_DASHBOARDS_ENABLED: \"false\"", "GF_ANALYTICS_REPORTING_ENABLED: \"false\"");
-        assertThat(dashboard.path("timezone").asText()).isEqualTo("Asia/Seoul");
+        assertThat(dashboard.path("timezone").asString()).isEqualTo("Asia/Seoul");
     }
 
     @Test
@@ -213,7 +213,7 @@ class GrafanaProvisioningConfigTest {
                         .path("fieldConfig")
                         .path("defaults")
                         .path("noValue")
-                        .asText())
+                        .asString())
                 .isEqualTo("DOWN");
     }
 
@@ -237,8 +237,8 @@ class GrafanaProvisioningConfigTest {
 
     private void collectPanelTitles(JsonNode panels, List<String> titles) {
         panels.forEach(panel -> {
-            if (!"row".equals(panel.path("type").asText())) {
-                titles.add(panel.path("title").asText());
+            if (!"row".equals(panel.path("type").asString())) {
+                titles.add(panel.path("title").asString());
             }
             collectPanelTitles(panel.path("panels"), titles);
         });
@@ -246,14 +246,14 @@ class GrafanaProvisioningConfigTest {
 
     private void collectPanelIds(JsonNode panels, List<String> ids) {
         panels.forEach(panel -> {
-            ids.add(panel.path("id").asText());
+            ids.add(panel.path("id").asString());
             collectPanelIds(panel.path("panels"), ids);
         });
     }
 
     private JsonNode findPanel(JsonNode panels, String title) {
         for (JsonNode panel : panels) {
-            if (title.equals(panel.path("title").asText())) {
+            if (title.equals(panel.path("title").asString())) {
                 return panel;
             }
             JsonNode nested = findPanel(panel.path("panels"), title);
@@ -261,6 +261,6 @@ class GrafanaProvisioningConfigTest {
                 return nested;
             }
         }
-        return com.fasterxml.jackson.databind.node.MissingNode.getInstance();
+        return tools.jackson.databind.node.MissingNode.getInstance();
     }
 }

@@ -1,7 +1,5 @@
 package com.taskflow.assistant.summary.generator;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
@@ -11,12 +9,14 @@ import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
-import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
@@ -116,7 +116,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                     usageMetrics.promptTokens,
                     usageMetrics.candidateTokens,
                     usageMetrics.totalTokens);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
                     "Gemini response was not readable: " + e.getMessage(),

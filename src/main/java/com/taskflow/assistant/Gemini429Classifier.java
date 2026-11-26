@@ -1,14 +1,14 @@
 package com.taskflow.assistant;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.common.ErrorCode;
-import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Gemini 429를 한도 소진(QUOTA)과 일시적 제한(RATE)으로 가른다.
@@ -73,17 +73,17 @@ final class Gemini429Classifier {
             JsonNode root = objectMapper.readTree(body);
             JsonNode error = root.path("error");
             String message = GeminiClient.firstNonBlank(
-                    error.path("message").asText(null), root.path("message").asText(null), body);
+                    error.path("message").asString(null), root.path("message").asString(null), body);
             String status = GeminiClient.firstNonBlank(
-                    error.path("status").asText(null), root.path("status").asText(null));
+                    error.path("status").asString(null), root.path("status").asString(null));
             JsonNode retryDelay = error.findValue("retryDelay");
             return new ParsedUpstream(
                     message == null ? "" : message,
                     status,
                     reasonHints(error),
-                    error.findValuesAsText("quotaId"),
-                    retryDelay == null ? null : retryDelay.asText(null));
-        } catch (IOException e) {
+                    error.findValuesAsString("quotaId"),
+                    retryDelay == null ? null : retryDelay.asString(null));
+        } catch (JacksonException e) {
             return new ParsedUpstream(body, null, List.of(), List.of(), null);
         }
     }
@@ -108,7 +108,7 @@ final class Gemini429Classifier {
             return;
         }
         for (String field : List.of("reason", "errorType", "@type", "quotaId")) {
-            String value = node.path(field).asText(null);
+            String value = node.path(field).asString(null);
             if (value != null && !value.isBlank()) {
                 hints.add(value);
             }

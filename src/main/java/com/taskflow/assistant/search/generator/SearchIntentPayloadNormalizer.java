@@ -1,9 +1,9 @@
 package com.taskflow.assistant.search.generator;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.taskflow.assistant.search.*;
 import com.taskflow.planning.task.TaskStatus;
 import java.util.*;
+import tools.jackson.databind.JsonNode;
 
 /** Gemini가 돌려준 검색 의도 JSON을 허용 값·개수·신뢰도 범위 안으로 정규화한다. */
 final class SearchIntentPayloadNormalizer {
@@ -19,13 +19,13 @@ final class SearchIntentPayloadNormalizer {
 
     static SearchIntent normalize(String rawQuery, JsonNode payload) {
         SearchQueryType queryType =
-                SearchQueryType.fromValue(payload.path("queryType").asText("TOPIC_SEARCH"));
+                SearchQueryType.fromValue(payload.path("queryType").asString("TOPIC_SEARCH"));
         SearchTargetType targetType =
-                SearchTargetType.fromValue(payload.path("targetType").asText());
+                SearchTargetType.fromValue(payload.path("targetType").asString());
         SearchDomainType domainType =
-                SearchDomainType.fromValue(payload.path("domainType").asText());
+                SearchDomainType.fromValue(payload.path("domainType").asString());
         SearchActionIntent mainAction =
-                SearchActionIntent.fromValue(payload.path("mainAction").asText());
+                SearchActionIntent.fromValue(payload.path("mainAction").asString());
         List<SearchActionIntent> secondaryActions = normalizeActionIntents(payload.path("secondaryActions"));
         List<String> topicTerms = normalizeTopicTerms(payload.path("topicTerms"));
         List<String> participantTerms = normalizeTerms(payload.path("participantTerms"), MAX_PARTICIPANT_TERMS);
@@ -33,14 +33,14 @@ final class SearchIntentPayloadNormalizer {
         boolean genericCompanionRequired =
                 payload.path("genericCompanionRequired").asBoolean(false);
         SearchTimeIntent timeIntent =
-                SearchTimeIntent.fromValue(payload.path("timeIntent").asText());
+                SearchTimeIntent.fromValue(payload.path("timeIntent").asString());
         SearchPriorityIntent priorityIntent =
-                SearchPriorityIntent.fromValue(payload.path("priorityIntent").asText());
+                SearchPriorityIntent.fromValue(payload.path("priorityIntent").asString());
         List<TaskStatus> statusIntents = normalizeStatusIntents(payload.path("statusIntents"));
         SearchSyncIntent syncIntent =
-                SearchSyncIntent.fromValue(payload.path("syncIntent").asText());
+                SearchSyncIntent.fromValue(payload.path("syncIntent").asString());
         SearchRelationPolicy relationPolicy =
-                SearchRelationPolicy.fromValue(payload.path("relationPolicy").asText("ALLOW_PARTIAL"));
+                SearchRelationPolicy.fromValue(payload.path("relationPolicy").asString("ALLOW_PARTIAL"));
         double overallConfidence =
                 clampConfidence(payload.path("overallConfidence").asDouble(0.0d));
         Map<String, Double> fieldConfidence = normalizeFieldConfidence(payload.path("fieldConfidence"));
@@ -80,7 +80,7 @@ final class SearchIntentPayloadNormalizer {
         Set<SearchActionIntent> intents = new LinkedHashSet<>();
         if (node.isArray()) {
             for (JsonNode item : node) {
-                SearchActionIntent intent = SearchActionIntent.fromValue(item.asText());
+                SearchActionIntent intent = SearchActionIntent.fromValue(item.asString());
                 if (intent != SearchActionIntent.UNKNOWN) {
                     intents.add(intent);
                 }
@@ -97,7 +97,7 @@ final class SearchIntentPayloadNormalizer {
         Set<String> terms = new LinkedHashSet<>();
         if (node.isArray()) {
             for (JsonNode item : node) {
-                String normalized = item.asText("").trim();
+                String normalized = item.asString("").trim();
                 if (!normalized.isBlank() && !isTopicStopword(normalized)) {
                     terms.add(normalized);
                 }
@@ -134,7 +134,7 @@ final class SearchIntentPayloadNormalizer {
         }
         for (JsonNode item : node) {
             // 모델이 모르는 상태값을 주면 버린다
-            String name = item.asText().trim().toUpperCase(Locale.ROOT);
+            String name = item.asString().trim().toUpperCase(Locale.ROOT);
             Arrays.stream(TaskStatus.values())
                     .filter(status -> status.name().equals(name))
                     .findFirst()
@@ -148,9 +148,9 @@ final class SearchIntentPayloadNormalizer {
         if (!node.isObject()) {
             return confidence;
         }
-        node.fieldNames()
-                .forEachRemaining(field ->
-                        confidence.put(field, clampConfidence(node.path(field).asDouble(0.0d))));
+        for (String field : node.propertyNames()) {
+            confidence.put(field, clampConfidence(node.path(field).asDouble(0.0d)));
+        }
         return confidence;
     }
 
@@ -158,7 +158,7 @@ final class SearchIntentPayloadNormalizer {
         Set<String> queries = new LinkedHashSet<>();
         if (node.isArray()) {
             for (JsonNode item : node) {
-                String normalized = item.asText("").trim();
+                String normalized = item.asString("").trim();
                 if (!normalized.isBlank()) {
                     queries.add(normalized);
                 }

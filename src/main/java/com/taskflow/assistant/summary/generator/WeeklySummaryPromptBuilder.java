@@ -1,6 +1,5 @@
 package com.taskflow.assistant.summary.generator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.SummaryBucket;
@@ -17,6 +16,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.databind.ObjectMapper;
 
 /** 주간 요약 Gemini 요청 본문(시스템 지시, 입력 JSON, 생성 설정)과 그 지표를 만든다. */
 final class WeeklySummaryPromptBuilder {

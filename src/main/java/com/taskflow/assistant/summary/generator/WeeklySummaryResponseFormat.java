@@ -1,19 +1,19 @@
 package com.taskflow.assistant.summary.generator;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.SummaryBucket;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.common.ErrorCode;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /** 주간 요약 응답의 JSON 스키마와 그 응답을 읽는 규칙. */
 final class WeeklySummaryResponseFormat {
@@ -75,13 +75,12 @@ final class WeeklySummaryResponseFormat {
         return schema;
     }
 
-    WeeklySummarySectionsResult parseResponse(JsonNode root, int syncedTotalTaskCount, int unsyncedTotalTaskCount)
-            throws IOException {
+    WeeklySummarySectionsResult parseResponse(JsonNode root, int syncedTotalTaskCount, int unsyncedTotalTaskCount) {
         JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
 
-        if (textNode.isMissingNode() || textNode.asText().isBlank()) {
+        if (textNode.isMissingNode() || textNode.asString().isBlank()) {
             JsonNode blockReason = root.at("/promptFeedback/blockReason");
-            String reason = blockReason.isMissingNode() ? "unknown" : blockReason.asText();
+            String reason = blockReason.isMissingNode() ? "unknown" : blockReason.asString();
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE,
                     "Gemini response did not contain summary text. blockReason=" + reason,
@@ -90,8 +89,8 @@ final class WeeklySummaryResponseFormat {
 
         JsonNode payload;
         try {
-            payload = objectMapper.readTree(textNode.asText());
-        } catch (IOException e) {
+            payload = objectMapper.readTree(textNode.asString());
+        } catch (JacksonException e) {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE, "Gemini response payload was not valid JSON", false);
         }
@@ -112,7 +111,7 @@ final class WeeklySummaryResponseFormat {
                     false);
         }
 
-        String summary = sectionNode.path("summary").asText("").trim();
+        String summary = sectionNode.path("summary").asString("").trim();
         if (summary.isBlank()) {
             throw new WeeklySummaryGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE,
@@ -136,7 +135,7 @@ final class WeeklySummaryResponseFormat {
         }
 
         for (JsonNode item : node) {
-            String value = item.asText("").trim();
+            String value = item.asString("").trim();
             if (!value.isBlank()) {
                 values.add(value);
             }

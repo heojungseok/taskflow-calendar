@@ -1,7 +1,5 @@
 package com.taskflow.assistant.search.generator;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.search.*;
@@ -9,12 +7,14 @@ import com.taskflow.assistant.search.GeminiSearchProperties;
 import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
-import java.io.IOException;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
@@ -55,12 +55,12 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
         JsonNode payload;
         try {
             JsonNode textNode = objectMapper.readTree(responseBody).at("/candidates/0/content/parts/0/text");
-            if (textNode.isMissingNode() || textNode.asText().isBlank()) {
+            if (textNode.isMissingNode() || textNode.asString().isBlank()) {
                 throw new TaskSearchGenerationException(
                         ErrorCode.LLM_INVALID_RESPONSE, "Gemini search intent response did not contain text");
             }
-            payload = objectMapper.readTree(textNode.asText());
-        } catch (IOException e) {
+            payload = objectMapper.readTree(textNode.asString());
+        } catch (JacksonException e) {
             throw new TaskSearchGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE, "Gemini search intent payload was not valid JSON");
         }

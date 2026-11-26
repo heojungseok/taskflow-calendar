@@ -10,8 +10,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
 import com.taskflow.assistant.recommendation.exception.TaskRecommendationGenerationException;
@@ -23,10 +21,12 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class GeminiTaskRecommendationGeneratorTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     @DisplayName("Gemini 3 계열이 받는 thinkingLevel minimal을 보내고 거부되는 thinkingBudget은 보내지 않는다")
@@ -48,7 +48,7 @@ class GeminiTaskRecommendationGeneratorTest {
         verify(geminiClient).post(eq(properties), anyString(), body.capture());
         JsonNode thinkingConfig =
                 objectMapper.readTree(body.getValue()).path("generationConfig").path("thinkingConfig");
-        assertEquals("minimal", thinkingConfig.path("thinkingLevel").asText());
+        assertEquals("minimal", thinkingConfig.path("thinkingLevel").asString());
         assertTrue(thinkingConfig.path("thinkingBudget").isMissingNode());
     }
 }
