@@ -1,10 +1,10 @@
 mod common;
 
 use analyzer::{
-    ANSWER_SCHEMA, Analysis, Confidence, Evidence, Knowledge, KnownIncident, LogLine, MetricSeries,
-    Missing, ModelError, Report, Service, SkipReason, Suspect, triage,
+    ANSWER_SCHEMA, Analysis, Confidence, Evidence, Knowledge, LogLine, MetricSeries, Missing,
+    ModelError, Report, Service, SkipReason, Suspect, triage,
 };
-use common::{FixedClock, FixedEvidence, ScriptedModel, alert};
+use common::{FixedClock, FixedEvidence, ScriptedModel, alert, knowledge_doc, knowledge_from};
 
 const NEW_ERROR: &str = "ERROR c.t.p.TaskSearchService : NullPointerException for task 101";
 
@@ -315,12 +315,18 @@ fn no_evidence_at_all_skips_the_model() {
 #[test]
 fn known_incident_is_answered_by_its_document_without_the_model() {
     let model = ScriptedModel::answering(&answer("high", "[1]"));
-    let knowledge = Knowledge {
-        incidents: vec![KnownIncident {
-            source: "incidents/search-npe.md".to_owned(),
-            signature: "ERROR c.t.p.TaskSearchService : NullPointerException".to_owned(),
-        }],
-    };
+    let knowledge = knowledge_from(
+        "search-npe",
+        &[(
+            "search-npe.md",
+            knowledge_doc(
+                "ERROR c.t.p.TaskSearchService : NullPointerException for task #",
+                "com.taskflow.planning.TaskSearchService",
+                "불가",
+                "2026-11-26 정석님",
+            ),
+        )],
+    );
 
     let report = run_with(evidence(), &knowledge, &model);
 

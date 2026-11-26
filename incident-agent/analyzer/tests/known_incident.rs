@@ -1,7 +1,7 @@
 mod common;
 
-use analyzer::{Evidence, Knowledge, KnownIncident, LogLine, Service, triage};
-use common::{FixedClock, FixedEvidence, ScriptedModel, alert};
+use analyzer::{Analysis, Evidence, Knowledge, LogLine, Service, SkipReason, triage};
+use common::{FixedClock, FixedEvidence, ScriptedModel, alert, knowledge_doc, knowledge_from};
 
 fn evidence_with(text: &str) -> Evidence {
     evidence_from("backend", text)
@@ -18,22 +18,26 @@ fn evidence_from(service: &str, text: &str) -> Evidence {
     }
 }
 
-fn knowledge() -> Knowledge {
-    Knowledge {
-        incidents: vec![KnownIncident {
-            source: "incidents/db-connection-pool-exhausted.md".to_owned(),
-            signature:
-                "ERROR o.h.e.j.s.SqlExceptionHelper : HikariPool# - Connection is not available"
-                    .to_owned(),
-        }],
-    }
+fn knowledge(visitor: &str) -> Knowledge {
+    knowledge_from(
+        &format!("known-{visitor}"),
+        &[(
+            "db-pool.md",
+            knowledge_doc(
+                "ERROR o.h.e.j.s.SqlExceptionHelper : HikariPool# - Connection is not available",
+                "org.hibernate.engine.jdbc.spi.SqlExceptionHelper",
+                visitor,
+                "2026-11-26 정석님",
+            ),
+        )],
+    )
 }
 
 #[test]
 fn matching_signature_marks_the_incident_as_known_with_its_document() {
     let reports = triage(
         &[alert("backend error logs", "backend", 1_000)],
-        &knowledge(),
+        &knowledge("불가"),
         &FixedEvidence(evidence_with(
             "ERROR o.h.e.j.s.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30000ms",
         )),
@@ -42,8 +46,11 @@ fn matching_signature_marks_the_incident_as_known_with_its_document() {
     );
 
     assert_eq!(
-        reports[0].known_incident.as_deref(),
-        Some("incidents/db-connection-pool-exhausted.md")
+        reports[0]
+            .known_incident
+            .as_ref()
+            .map(|k| k.source.as_str()),
+        Some("db-pool.md")
     );
 }
 
@@ -51,7 +58,7 @@ fn matching_signature_marks_the_incident_as_known_with_its_document() {
 fn no_matching_signature_leaves_the_incident_unknown() {
     let reports = triage(
         &[alert("backend error logs", "backend", 1_000)],
-        &knowledge(),
+        &knowledge("불가"),
         &FixedEvidence(evidence_with(
             "ERROR c.t.TaskService : NullPointerException",
         )),
@@ -80,7 +87,7 @@ fn signature_inside_visitor_controlled_text_does_not_mark_the_incident_known() {
     ] {
         let reports = triage(
             &[alert("backend error logs", "backend", 1_000)],
-            &knowledge(),
+            &knowledge("불가"),
             &FixedEvidence(evidence_from(service, text)),
             &FixedClock(1_100),
             &ScriptedModel::unknown(),
@@ -88,4 +95,24 @@ fn signature_inside_visitor_controlled_text_does_not_mark_the_incident_known() {
 
         assert_eq!(reports[0].known_incident, None, "{text}");
     }
+}
+
+#[test]
+fn known_incident_that_visitors_can_trigger_is_attached_but_does_not_skip_analysis() {
+    let reports = triage(
+        &[alert("backend error logs", "backend", 1_000)],
+        &knowledge("가능"),
+        &FixedEvidence(evidence_with(
+            "ERROR o.h.e.j.s.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30000ms",
+        )),
+        &FixedClock(1_100),
+        &ScriptedModel::unknown(),
+    );
+
+    let known = reports[0].known_incident.as_ref().expect("known");
+    assert!(known.visitor_triggerable);
+    assert_ne!(
+        reports[0].analysis,
+        Analysis::Skipped(SkipReason::KnownIncident)
+    );
 }

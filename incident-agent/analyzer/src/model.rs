@@ -35,13 +35,23 @@ pub struct Evidence {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Knowledge {
-    pub incidents: Vec<KnownIncident>,
+    incidents: Vec<KnownIncident>,
+}
+
+impl Knowledge {
+    pub(crate) fn from_verified(incidents: Vec<KnownIncident>) -> Self {
+        Self { incidents }
+    }
+
+    pub fn incidents(&self) -> &[KnownIncident] {
+        &self.incidents
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
     pub alerts: Vec<Alert>,
-    pub known_incident: Option<String>,
+    pub known_incident: Option<KnownMatch>,
     pub suspects: Vec<Suspect>,
     pub missing: Vec<Missing>,
     pub analysis: Analysis,
@@ -56,8 +66,37 @@ pub struct LogLine {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KnownIncident {
+    source: String,
+    signature: String,
+    visitor_triggerable: bool,
+}
+
+impl KnownIncident {
+    pub(crate) fn new(source: String, signature: String, visitor_triggerable: bool) -> Self {
+        Self {
+            source,
+            signature,
+            visitor_triggerable,
+        }
+    }
+
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
+    pub fn signature(&self) -> &str {
+        &self.signature
+    }
+
+    pub fn visitor_triggerable(&self) -> bool {
+        self.visitor_triggerable
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KnownMatch {
     pub source: String,
-    pub signature: String,
+    pub visitor_triggerable: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

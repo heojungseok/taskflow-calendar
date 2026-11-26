@@ -40,7 +40,10 @@ fn report_for(
     let collected = collect_evidence(&alerts, source, clock);
     let known_incident = match_known(knowledge, &collected);
     let suspects = suspects_for(&collected);
-    let analysis = if known_incident.is_some() {
+    let analysis = if known_incident
+        .as_ref()
+        .is_some_and(|known| !known.visitor_triggerable)
+    {
         Analysis::Skipped(SkipReason::KnownIncident)
     } else {
         let prompt = prompt::build(&collected, &suspects);
