@@ -131,11 +131,29 @@ pub(crate) fn trail_text(trail: &Trail) -> String {
     )
 }
 
-pub(crate) fn loki_link(base: &str, window: &Window) -> String {
+const BACKEND_ERRORS: &str = r#"{service="backend"} |~ "^(ERROR|WARN) ""#;
+
+pub(crate) fn log_links(base: &str, window: &Window, trace_id: Option<&str>) -> String {
+    let mut line = format!(
+        "로그 보기: [ERROR·WARN](<{}>)",
+        loki_link(base, window, BACKEND_ERRORS)
+    );
+    if let Some(id) = trace_id {
+        let expr = format!(r#"{{service="backend"}} |= "traceId={id}""#);
+        let short: String = id.chars().take(8).collect();
+        line.push_str(&format!(
+            " · [첫 요청 {short}](<{}>)",
+            loki_link(base, window, &expr)
+        ));
+    }
+    line
+}
+
+fn loki_link(base: &str, window: &Window, expr: &str) -> String {
     let panes = serde_json::json!({
         "a": {
             "datasource": "loki",
-            "queries": [{"refId": "A", "expr": "{service=~\"backend|nginx\"}"}],
+            "queries": [{"refId": "A", "expr": expr}],
             "range": {
                 "from": (window.from_unix * 1000).to_string(),
                 "to": (window.to_unix * 1000).to_string(),
