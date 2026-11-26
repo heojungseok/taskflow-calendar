@@ -14,7 +14,7 @@ contactPoints:
   - orgId: 1
     name: incident-agent
     receivers:
-      - uid: taskflow-incident-agent
+      - uid: incident-agent-webhook
         type: webhook
         settings:
           url: http://incident-agent:8080/grafana
