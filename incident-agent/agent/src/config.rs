@@ -20,6 +20,7 @@ pub(crate) struct Config {
     pub(crate) discord_channel_id: u64,
     pub(crate) owner: DiscordUserId,
     pub(crate) github_repo: Option<String>,
+    pub(crate) grafana_url: Option<String>,
 }
 
 #[derive(Debug)]
@@ -94,6 +95,7 @@ pub(crate) fn load(lookup: impl Fn(&str) -> Option<String>) -> Result<Config, Co
         discord_channel_id: channel_id,
         owner,
         github_repo: (reader.lookup)("AGENT_GITHUB_REPO").filter(|value| !value.is_empty()),
+        grafana_url: (reader.lookup)("AGENT_GRAFANA_URL").filter(|value| !value.is_empty()),
     };
     if reader.problems.is_empty() {
         return Ok(config);
@@ -163,6 +165,7 @@ mod tests {
         assert_eq!(config.discord_channel_id, 1_234_567_890);
         assert_eq!(config.owner.as_str(), "1234567890");
         assert_eq!(config.github_repo, None);
+        assert_eq!(config.grafana_url, None);
         assert_eq!(config.model_name, "secret-value-of-AGENT_MODEL_NAME");
     }
 
