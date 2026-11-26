@@ -112,6 +112,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bakeoff"
+version = "0.1.0"
+dependencies = [
+ "analyzer",
+ "ollama",
+ "serde",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "base32"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
