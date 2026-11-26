@@ -1,4 +1,5 @@
 use analyzer::{ANSWER_SCHEMA, Model, ModelError};
+use serde::Deserialize;
 use serde_json::{Value, json};
 
 const SYSTEM_INSTRUCTION: &str =
@@ -51,19 +52,57 @@ impl Ollama {
     }
 }
 
-impl Model for Ollama {
-    fn explain(&self, prompt: &str) -> Result<String, ModelError> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Reply {
+    pub content: String,
+    pub load_ms: u64,
+    pub prompt_eval_ms: u64,
+    pub eval_count: u64,
+    pub eval_ms: u64,
+}
+
+#[derive(Deserialize)]
+struct ChatResponse {
+    message: ChatMessage,
+    #[serde(default)]
+    load_duration: u64,
+    #[serde(default)]
+    prompt_eval_duration: u64,
+    #[serde(default)]
+    eval_count: u64,
+    #[serde(default)]
+    eval_duration: u64,
+}
+
+#[derive(Deserialize)]
+struct ChatMessage {
+    content: String,
+}
+
+const NANOS_PER_MILLI: u64 = 1_000_000;
+
+impl Ollama {
+    pub fn chat(&self, prompt: &str) -> Result<Reply, ModelError> {
         let body = self.request_body(prompt)?;
         let mut response = ureq::post(format!("{}/api/chat", self.base_url))
             .send_json(&body)
             .map_err(|error| ModelError::Unavailable(error.to_string()))?;
-        let reply: Value = response
+        let reply: ChatResponse = response
             .body_mut()
             .read_json()
             .map_err(|error| ModelError::Unavailable(error.to_string()))?;
-        reply["message"]["content"]
-            .as_str()
-            .map(str::to_owned)
-            .ok_or_else(|| ModelError::Unavailable("응답에 message.content가 없다".to_owned()))
+        Ok(Reply {
+            content: reply.message.content,
+            load_ms: reply.load_duration / NANOS_PER_MILLI,
+            prompt_eval_ms: reply.prompt_eval_duration / NANOS_PER_MILLI,
+            eval_count: reply.eval_count,
+            eval_ms: reply.eval_duration / NANOS_PER_MILLI,
+        })
+    }
+}
+
+impl Model for Ollama {
+    fn explain(&self, prompt: &str) -> Result<String, ModelError> {
+        self.chat(prompt).map(|reply| reply.content)
     }
 }
