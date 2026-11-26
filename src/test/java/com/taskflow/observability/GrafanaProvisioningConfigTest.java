@@ -50,7 +50,10 @@ class GrafanaProvisioningConfigTest {
                         "nginx 로그 (IP 필터: $ip)",
                         "DB 지표 수집",
                         "DB 연결 수",
-                        "DB 크기");
+                        "DB 크기",
+                        "컨테이너 CPU",
+                        "컨테이너 메모리",
+                        "자원 수집 지연");
         assertThat(List.of("HTTP p95", "HTTP 5xx", "Gemini 실패 (10m)"))
                 .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title)
                                 .path("type")
@@ -71,6 +74,9 @@ class GrafanaProvisioningConfigTest {
                 .contains("summary: DEMO 트래픽 급증", "summary: Backend 메트릭 수집 중단")
                 .contains("uid: taskflow-database-metrics-down", "summary: DB 메트릭 수집 중단")
                 .contains("uid: taskflow-database-connections-high", "summary: DB 연결 수 한도 근접")
+                .contains("uid: taskflow-container-memory-high", "summary: Docker 메모리 압박")
+                .contains("uid: taskflow-container-cpu-high", "summary: 컨테이너 CPU 과다")
+                .contains("uid: taskflow-container-stats-stale", "summary: 컨테이너 자원 수집 중단")
                 .contains("check_url: /api/auth/session", "noDataState: Alerting", "noDataState: OK")
                 .contains("__dashboardUid__: taskflow", "__panelId__: \"2\"")
                 .contains("**결과** 알럿 상태가 정상화됐습니다.", "**추가 확인 필요**")
@@ -80,7 +86,7 @@ class GrafanaProvisioningConfigTest {
         assertThat(alerts.lines()
                         .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
                         .count())
-                .isEqualTo(12);
+                .isEqualTo(15);
     }
 
     @Test
@@ -209,6 +215,18 @@ class GrafanaProvisioningConfigTest {
                         .path("noValue")
                         .asText())
                 .isEqualTo("DOWN");
+    }
+
+    @Test
+    void containerAlertsNameTheServiceAndStaleCollectionAlertsOnNoData() throws Exception {
+        String alerts = Files.readString(Path.of("deploy/grafana/provisioning/alerting/taskflow.yml"));
+
+        assertThat(rule("taskflow-container-stats-stale"))
+                .contains("noDataState: Alerting", "file=\"/textfile/containers.prom\"")
+                .doesNotContain("noDataState: OK");
+        assertThat(rule("taskflow-container-cpu-high")).contains("max by (service)", "avg_over_time");
+        assertThat(rule("taskflow-container-memory-high")).contains("taskflow_docker_memory_total_bytes");
+        assertThat(alerts).doesNotContain("Mac mini", "LaunchAgent");
     }
 
     private List<String> panelTitles(JsonNode dashboard) {

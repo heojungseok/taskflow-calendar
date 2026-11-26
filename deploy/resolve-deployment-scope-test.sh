@@ -259,6 +259,15 @@ alloy_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$loki_sha" "$loki_sha"
 assert_plan full "$alloy_sha" "$alloy_sha" false true "$alloy_sha"
 
+mkdir -p "$repo/deploy/container-stats"
+printf '%s\n' '#!/bin/sh' >"$repo/deploy/container-stats/collect.sh"
+git -C "$repo" add deploy/container-stats/collect.sh
+git -C "$repo" commit -qm 'container stats collector'
+container_stats_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$alloy_sha" "$alloy_sha"
+assert_plan full "$container_stats_sha" "$container_stats_sha" false true "$container_stats_sha"
+
 printf '%s\n' 'backend-v3' >"$repo/src/main/java/App.java"
 printf '%s\n' 'frontend-v3' >"$repo/frontend/src/App.tsx"
 git -C "$repo" commit -qam 'backend and frontend'

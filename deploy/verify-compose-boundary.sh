@@ -30,6 +30,13 @@ jq -e '
   and .services["postgres-exporter"].environment.DATA_SOURCE_USER == "taskflow_monitor"
   and (.services["postgres-exporter"].environment.DATA_SOURCE_NAME == null)
   and (.services["postgres-exporter"].ports == null)
+  and ((.services["container-stats-exporter"].networks | keys) == ["monitoring"])
+  and (.services["container-stats-exporter"].image | test("^prom/node-exporter:v[0-9.]+@sha256:[0-9a-f]{64}$"))
+  and (.services["container-stats-exporter"].ports == null)
+  and ([.services["container-stats-exporter"].volumes[] | select(.target == "/textfile") | .read_only] == [true])
+  and ((.services["container-stats-exporter"].volumes | length) == 1)
+  and ([.services[] | .volumes[]? | (.source // "") | select(test("docker\\.sock|/\\.docker"))] | length == 0)
+  and (.services["container-stats-exporter"].command | index("--collector.disable-defaults") != null)
   and ((.services.prometheus.networks | keys) == ["monitoring"])
   and ((.services.grafana.networks | keys | sort) == ["grafana-egress", "logging", "monitoring"])
   and (.networks.logging.internal and .networks["log-ingest"].internal)

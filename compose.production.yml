@@ -113,6 +113,15 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  container-stats-exporter:
+    image: prom/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
+    command: [--collector.disable-defaults, --collector.textfile, --collector.textfile.directory=/textfile]
+    volumes:
+      - /tmp/taskflow-container-stats:/textfile:ro
+    networks: [monitoring]
+    restart: unless-stopped
+    logging: *logging
+
   prometheus:
     image: prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
     command:
