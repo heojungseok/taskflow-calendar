@@ -97,13 +97,7 @@ fn kst_clock(unix: u64) -> String {
 }
 
 fn month_day(days_since_epoch: u64) -> String {
-    let z = days_since_epoch + 719_468;
-    let doe = z % 146_097;
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let (month, day) = crate::rfc3339::month_day(days_since_epoch);
     format!("{month:02}-{day:02}")
 }
 

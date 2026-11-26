@@ -72,7 +72,7 @@ impl ForBatch {
             }
         }
         if let Some(failure) = first_failure {
-            eprintln!("evidence prometheus failed: {failure}");
+            crate::syslog::line(&format!("evidence prometheus failed: {failure}"));
         }
         Metrics {
             series,
@@ -87,7 +87,7 @@ impl ForBatch {
         match github::changed_files(&self.sources.http, github, deploy) {
             Ok(commit) => vec![commit],
             Err(failure) => {
-                eprintln!("evidence github failed: {failure}");
+                crate::syslog::line(&format!("evidence github failed: {failure}"));
                 Vec::new()
             }
         }
@@ -104,7 +104,7 @@ impl ForBatch {
         match loki::fetch(&sources.http, &sources.loki_url, services, span, direction) {
             Ok(lines) => Some(lines),
             Err(failure) => {
-                eprintln!("evidence loki {what} failed: {failure}");
+                crate::syslog::line(&format!("evidence loki {what} failed: {failure}"));
                 None
             }
         }

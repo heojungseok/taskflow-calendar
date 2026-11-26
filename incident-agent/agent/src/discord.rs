@@ -31,7 +31,7 @@ impl DiscordChat {
 impl Chat for DiscordChat {
     fn post(&self, notice: &Notice) {
         if self.notices.send(notice.clone()).is_err() {
-            eprintln!("discord notice dropped: channel closed");
+            crate::syslog::line("discord notice dropped: channel closed");
         }
     }
 }
@@ -98,7 +98,7 @@ impl Handler {
         if let Some(event) = event
             && self.events.send(event).is_err()
         {
-            eprintln!("discord event dropped: core stopped");
+            crate::syslog::line("discord event dropped: core stopped");
         }
         response(reply)
     }
@@ -111,7 +111,7 @@ impl Handler {
         };
         let reply = self.dispatch(&interaction);
         if component.create_response(&ctx.http, reply).await.is_err() {
-            eprintln!("discord response failed");
+            crate::syslog::line("discord response failed");
         }
     }
 
@@ -133,7 +133,7 @@ impl Handler {
         };
         let reply = self.dispatch(&interaction);
         if modal.create_response(&ctx.http, reply).await.is_err() {
-            eprintln!("discord response failed");
+            crate::syslog::line("discord response failed");
         }
     }
 }
@@ -159,7 +159,7 @@ async fn post_notices(
         let rendered = render(&notice, grafana_url.as_deref());
         if let Err(error) = channel.send_message(&http, message(&rendered)).await {
             telemetry.add("incident_agent_discord_failures_total", &[], 1.0);
-            eprintln!("discord post failed: {error}");
+            crate::syslog::line(&format!("discord post failed: {error}"));
         }
     }
 }

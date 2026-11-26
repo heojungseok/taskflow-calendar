@@ -41,7 +41,7 @@ impl<C: Chat, K: Clock> Core<C, K> {
                         queue.extend(self.execute(command, now));
                     }
                 }
-                Err(error) => eprintln!("event not handled: {error}"),
+                Err(error) => crate::syslog::line(&format!("event not handled: {error}")),
             }
         }
     }
@@ -51,7 +51,7 @@ impl<C: Chat, K: Clock> Core<C, K> {
         match command {
             Command::Analyze { batch, alerts } => {
                 if self.analysis.send((batch, alerts)).is_err() {
-                    eprintln!("analysis stopped, batch {batch} dropped");
+                    crate::syslog::line(&format!("analysis stopped, batch {batch} dropped"));
                 }
                 None
             }
@@ -64,7 +64,7 @@ impl<C: Chat, K: Clock> Core<C, K> {
                 let Err(error) = written else {
                     return None;
                 };
-                eprintln!("request not written: {:?}", error.kind());
+                crate::syslog::line(&format!("request not written: {:?}", error.kind()));
                 let failed = Outcome::Failed {
                     reason: "request not written".to_owned(),
                 };
@@ -73,7 +73,7 @@ impl<C: Chat, K: Clock> Core<C, K> {
             }
             Command::SaveDraft { incident, markdown } => {
                 if let Err(error) = drafts::save(&self.paths.drafts_dir, incident, &markdown) {
-                    eprintln!("draft not saved: {:?}", error.kind());
+                    crate::syslog::line(&format!("draft not saved: {:?}", error.kind()));
                 }
                 None
             }

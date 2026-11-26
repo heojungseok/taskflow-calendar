@@ -20,6 +20,7 @@ mod prometheus;
 mod requests;
 mod results;
 mod rfc3339;
+mod syslog;
 mod telemetry;
 #[cfg(test)]
 mod test_server;
@@ -70,7 +71,7 @@ fn start_core(
 ) -> Result<(), String> {
     let (knowledge, issues) = load_knowledge(&config.knowledge_dir);
     for issue in issues {
-        eprintln!("knowledge {} {:?}", issue.file, issue.kind);
+        crate::syslog::line(&format!("knowledge {} {:?}", issue.file, issue.kind));
     }
     let incidents = Incidents::open(&config.db_path, config::settings(config.owner.clone()))
         .map_err(|error| format!("incident store: {error}"))?;
@@ -147,6 +148,11 @@ async fn serve(config: Config) -> Result<(), String> {
 
 fn run() -> Result<(), String> {
     let config = config::load(|key| std::env::var(key).ok()).map_err(|error| error.to_string())?;
+    if let Some(addr) = &config.syslog_addr
+        && let Err(error) = syslog::init(addr)
+    {
+        syslog::line(&format!("syslog disabled: {:?}", error.kind()));
+    }
     let runtime = tokio::runtime::Runtime::new().map_err(|error| error.kind().to_string())?;
     runtime.block_on(serve(config))
 }
@@ -155,7 +161,7 @@ fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("{error}");
+            crate::syslog::line(&error);
             ExitCode::FAILURE
         }
     }
