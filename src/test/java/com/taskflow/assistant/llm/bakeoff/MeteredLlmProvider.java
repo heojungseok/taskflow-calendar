@@ -7,7 +7,7 @@ import com.taskflow.assistant.llm.LlmResponse;
 
 final class MeteredLlmProvider implements LlmProvider {
 
-    private static final ThreadLocal<Integer> LAST_OUTPUT_TOKENS = new ThreadLocal<>();
+    private static final ThreadLocal<LlmResponse> LAST_RESPONSE = new ThreadLocal<>();
 
     private final LlmProvider delegate;
 
@@ -16,11 +16,17 @@ final class MeteredLlmProvider implements LlmProvider {
     }
 
     static void reset() {
-        LAST_OUTPUT_TOKENS.remove();
+        LAST_RESPONSE.remove();
     }
 
     static Integer lastOutputTokens() {
-        return LAST_OUTPUT_TOKENS.get();
+        LlmResponse response = LAST_RESPONSE.get();
+        return response == null ? null : response.outputTokens();
+    }
+
+    static String lastText() {
+        LlmResponse response = LAST_RESPONSE.get();
+        return response == null ? null : response.text();
     }
 
     @Override
@@ -36,7 +42,7 @@ final class MeteredLlmProvider implements LlmProvider {
     @Override
     public LlmResponse generate(LlmRequest request) {
         LlmResponse response = delegate.generate(request);
-        LAST_OUTPUT_TOKENS.set(response.outputTokens());
+        LAST_RESPONSE.set(response);
         return response;
     }
 }

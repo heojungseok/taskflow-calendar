@@ -4,9 +4,15 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.OptionalDouble;
 import java.util.TreeMap;
+import java.util.stream.DoubleStream;
 
 final class ReportWriter {
+
+    private static final int MIN_SAMPLES_FOR_P95 = 20;
+    private static final String BASELINE_ID = "baseline(상수 기본값·seed 순서, LLM 없음)";
 
     private ReportWriter() {}
 
@@ -20,7 +26,9 @@ final class ReportWriter {
         for (String line : header) {
             md.append("- ").append(line).append('\n');
         }
-        md.append("\n지연 p50/p95는 성공한 호출 중 cold start를 뺀 값이고, 품질 지표는 성공한 호출의 평균이다.\n");
+        md.append("\n지연은 성공한 호출 중 cold start를 뺀 값이다. 표본이 ")
+                .append(MIN_SAMPLES_FOR_P95)
+                .append("개 미만이면 p95 대신 p50과 max만 본다. 품질 지표는 성공한 호출의 평균이다.\n");
         for (FeatureRunner runner : runners) {
             md.append("\n## ").append(runner.feature()).append("\n\n");
             md.append(featureTable(runner, candidateIds, results));
@@ -36,7 +44,7 @@ final class ReportWriter {
         for (FeatureRunner.MetricColumn column : runner.columns()) {
             headers.add(column.header());
         }
-        headers.addAll(List.of("p50 ms", "p95 ms", "cold ms", "평균 output tokens", "실패 코드"));
+        headers.addAll(List.of("p50 ms", "p95 ms", "max ms", "지연 표본 수", "cold ms", "평균 output tokens", "실패 코드"));
         List<List<String>> rows = new ArrayList<>();
         for (String candidateId : candidateIds) {
             List<CallResult> mine = results.stream()
@@ -47,54 +55,66 @@ final class ReportWriter {
                 rows.add(row(runner, candidateId, mine));
             }
         }
+        if (!runner.baselineMetrics().isEmpty()) {
+            rows.add(baselineRow(runner));
+        }
         return table(headers, rows);
+    }
+
+    private static List<String> baselineRow(FeatureRunner runner) {
+        List<Map<String, Double>> metrics = runner.baselineMetrics();
+        List<String> row = new ArrayList<>(List.of(BASELINE_ID, String.valueOf(metrics.size()), "100.0%"));
+        for (FeatureRunner.MetricColumn column : runner.columns()) {
+            row.add(metric(metrics, column));
+        }
+        row.addAll(List.of("-", "-", "-", "-", "-", "-", "-"));
+        return row;
     }
 
     private static List<String> row(FeatureRunner runner, String candidateId, List<CallResult> mine) {
         List<CallResult> ok = mine.stream().filter(CallResult::ok).toList();
         List<String> row = new ArrayList<>(
                 List.of(candidateId, String.valueOf(mine.size()), percent((double) ok.size() / mine.size())));
+        List<Map<String, Double>> metrics = ok.stream().map(CallResult::metrics).toList();
         for (FeatureRunner.MetricColumn column : runner.columns()) {
-            row.add(metric(ok, column));
+            row.add(metric(metrics, column));
         }
         List<Long> warm =
                 ok.stream().filter(r -> !r.cold()).map(CallResult::latencyMs).toList();
         row.add(ms(Stats.percentile(warm, 0.5)));
-        row.add(ms(Stats.percentile(warm, 0.95)));
+        row.add(warm.size() >= MIN_SAMPLES_FOR_P95 ? ms(Stats.percentile(warm, 0.95)) : "-");
+        row.add(ms(Stats.percentile(warm, 1.0)));
+        row.add(String.valueOf(warm.size()));
         row.add(mine.stream()
                 .filter(CallResult::cold)
                 .findFirst()
                 .map(r -> String.valueOf(r.latencyMs()))
                 .orElse("-"));
-        row.add(tokens(ok));
+        row.add(average(
+                ok.stream()
+                        .map(CallResult::outputTokens)
+                        .filter(Objects::nonNull)
+                        .mapToDouble(Integer::doubleValue),
+                false,
+                "%.0f"));
         row.add(failures(mine));
         return row;
     }
 
-    private static String metric(List<CallResult> ok, FeatureRunner.MetricColumn column) {
-        List<Double> values = new ArrayList<>();
-        for (CallResult result : ok) {
-            Double value = result.metrics().get(column.key());
-            if (value != null) {
-                values.add(value);
-            }
-        }
-        double mean = Stats.mean(values);
-        if (Double.isNaN(mean)) {
-            return "-";
-        }
-        return column.percent() ? percent(mean) : "%.2f".formatted(mean);
+    private static String metric(List<Map<String, Double>> metrics, FeatureRunner.MetricColumn column) {
+        DoubleStream values = metrics.stream()
+                .map(m -> m.get(column.key()))
+                .filter(Objects::nonNull)
+                .mapToDouble(Double::doubleValue);
+        return average(values, column.percent(), "%.2f");
     }
 
-    private static String tokens(List<CallResult> ok) {
-        List<Double> values = new ArrayList<>();
-        for (CallResult result : ok) {
-            if (result.outputTokens() != null) {
-                values.add(result.outputTokens().doubleValue());
-            }
+    private static String average(DoubleStream values, boolean percent, String format) {
+        OptionalDouble mean = values.average();
+        if (mean.isEmpty()) {
+            return "-";
         }
-        double mean = Stats.mean(values);
-        return Double.isNaN(mean) ? "-" : "%.0f".formatted(mean);
+        return percent ? percent(mean.getAsDouble()) : format.formatted(mean.getAsDouble());
     }
 
     private static String failures(List<CallResult> mine) {

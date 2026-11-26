@@ -9,8 +9,7 @@ final class CallExecutor {
 
     private CallExecutor() {}
 
-    static CallResult execute(Candidate candidate, FeatureRunner runner, int caseIndex, int attempt) {
-        boolean cold = candidate.coldPending().getAndSet(false);
+    static CallResult execute(Candidate candidate, FeatureRunner runner, int caseIndex, int attempt, boolean cold) {
         String caseId = runner.caseIds().get(caseIndex);
         MeteredLlmProvider.reset();
         long startedAt = System.nanoTime();

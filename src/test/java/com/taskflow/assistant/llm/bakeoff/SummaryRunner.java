@@ -14,10 +14,8 @@ final class SummaryRunner implements FeatureRunner {
 
     private static final String LOCAL_EMPTY_MODEL = "local-empty-state";
     private static final List<MetricColumn> COLUMNS = List.of(
-            new MetricColumn("bothParsed", "두 섹션 파싱", true),
-            new MetricColumn("koreanRatio", "한글 비율", true),
-            new MetricColumn("groundedness", "근거 문장 비율", true),
-            new MetricColumn("emptyStateOk", "빈 섹션 로컬 문구", true));
+            new MetricColumn("koreanRatio", "한글 비율(로컬 빈 섹션 문구 제외)", true),
+            new MetricColumn("groundedness", "제목 어휘 겹침", true));
 
     private final List<SummaryCase> cases;
 
@@ -48,9 +46,9 @@ final class SummaryRunner implements FeatureRunner {
                 .generate(
                         input.project(),
                         input.synced(),
-                        input.synced().size(),
+                        input.syncedTotal(),
                         input.unsynced(),
-                        input.unsynced().size(),
+                        input.unsyncedTotal(),
                         input.weekStart(),
                         input.weekEnd());
         Map<String, Object> output = new LinkedHashMap<>();
@@ -60,27 +58,22 @@ final class SummaryRunner implements FeatureRunner {
     }
 
     private Map<String, Double> score(SummaryCase input, WeeklySummarySectionsResult result) {
-        List<WeeklySummaryResult> sections = List.of(result.getSynced(), result.getUnsynced());
         Map<String, Double> metrics = new LinkedHashMap<>();
-        boolean parsed = sections.stream()
-                .allMatch(s -> s.getSummary() != null && !s.getSummary().isBlank());
-        metrics.put("bothParsed", parsed ? 1.0 : 0.0);
-        List<String> allText = new ArrayList<>();
+        List<String> modelText = new ArrayList<>();
         List<String> claims = new ArrayList<>();
-        for (WeeklySummaryResult section : sections) {
-            allText.add(section.getSummary());
-            allText.addAll(claimsOf(section));
-            if (!LOCAL_EMPTY_MODEL.equals(section.getModel())) {
-                claims.addAll(claimsOf(section));
+        for (WeeklySummaryResult section : List.of(result.getSynced(), result.getUnsynced())) {
+            if (LOCAL_EMPTY_MODEL.equals(section.getModel())) {
+                continue;
             }
+            modelText.add(section.getSummary());
+            modelText.addAll(claimsOf(section));
+            claims.addAll(claimsOf(section));
         }
-        metrics.put("koreanRatio", TextMetrics.koreanRatio(allText));
+        if (!modelText.isEmpty()) {
+            metrics.put("koreanRatio", TextMetrics.koreanRatio(modelText));
+        }
         if (!claims.isEmpty()) {
             metrics.put("groundedness", groundedness(input, claims));
-        }
-        Double emptyState = emptyState(input, result);
-        if (emptyState != null) {
-            metrics.put("emptyStateOk", emptyState);
         }
         return metrics;
     }
@@ -108,20 +101,6 @@ final class SummaryRunner implements FeatureRunner {
             }
         }
         return (double) grounded / claims.size();
-    }
-
-    private static Double emptyState(SummaryCase input, WeeklySummarySectionsResult result) {
-        List<Boolean> checks = new ArrayList<>();
-        if (input.synced().isEmpty()) {
-            checks.add(LOCAL_EMPTY_MODEL.equals(result.getSynced().getModel()));
-        }
-        if (input.unsynced().isEmpty()) {
-            checks.add(LOCAL_EMPTY_MODEL.equals(result.getUnsynced().getModel()));
-        }
-        if (checks.isEmpty()) {
-            return null;
-        }
-        return checks.stream().allMatch(Boolean::booleanValue) ? 1.0 : 0.0;
     }
 
     private static Map<String, Object> section(WeeklySummaryResult section) {

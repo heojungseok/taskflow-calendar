@@ -20,10 +20,19 @@
     {"title": "부가세 신고 자료 제출", "description": "세무사에게 매출 증빙을 보낸다. 기한이 지났다.", "status": "IN_PROGRESS", "dueAt": "2026-11-24T18:00"},
     {"title": "법인카드 사용 내역 소명", "description": "미소명 건 4개가 남았다.", "status": "REQUESTED", "dueAt": "2026-11-27T12:00"},
     {"title": "매출 채권 연체 확인", "description": "연체 고객 3곳에 연락한다.", "status": "REQUESTED", "dueAt": "2026-11-29T12:00"},
-    {"title": "영수증 스캔 정리", "description": "종이 영수증을 스캔해 폴더별로 정리한다.", "status": "DONE", "dueAt": "2026-11-25T12:00"}
+    {"title": "영수증 스캔 정리", "description": "종이 영수증을 스캔해 폴더별로 정리한다.", "status": "DONE", "dueAt": "2026-11-25T12:00"},
+    {"title": "거래처 정산서 대조", "description": "거래처 두 곳의 정산서가 장부와 다르다. 차액 원인을 확인한다.", "status": "IN_PROGRESS", "dueAt": "2026-11-28T18:00"},
+    {"title": "임직원 경비 정산", "description": "11월 경비 청구서를 취합해 지급한다.", "status": "REQUESTED", "dueAt": "2026-11-30T12:00"},
+    {"title": "감가상각표 갱신", "description": "신규 자산을 등록한다.", "status": "REQUESTED", "dueAt": "2026-12-03T12:00"},
+    {"title": "결산 일정표 공유", "description": "팀 전체에 이번 달 결산 일정을 공유한다.", "status": "REQUESTED", "dueAt": "2026-12-01T12:00"},
+    {"title": "지난달 마감 메모 보관", "description": "완료된 보관 작업.", "status": "DONE", "dueAt": "2026-11-20T12:00"}
    ],
    "unsynced": [
-    {"title": "결산 보고서 서식 변경", "description": "새 서식 적용 여부를 검토한다.", "status": "REQUESTED", "dueAt": "2026-12-10T12:00"}
+    {"title": "결산 보고서 서식 변경", "description": "새 서식 적용 여부를 검토한다.", "status": "REQUESTED", "dueAt": "2026-12-10T12:00"},
+    {"title": "회계 프로그램 라이선스 갱신", "description": "연간 라이선스가 다음 달에 만료된다.", "status": "REQUESTED", "dueAt": "2026-12-15T12:00"},
+    {"title": "사무실 복합기 토너 주문", "description": "토너가 거의 떨어졌다.", "status": "REQUESTED", "dueAt": "2026-11-29T12:00"},
+    {"title": "결산 파일 보관함 정리", "description": "공유 폴더의 오래된 파일을 정리한다.", "status": "REQUESTED", "dueAt": "2026-12-20T12:00"},
+    {"title": "팀 회식 장소 예약", "description": "연말 회식 장소를 정한다.", "status": "REQUESTED", "dueAt": "2026-12-12T12:00"}
    ]},
   {"id": "m04", "project": "개인 건강 관리", "weekStart": "2026-11-23", "weekEnd": "2026-11-29",
    "synced": [],

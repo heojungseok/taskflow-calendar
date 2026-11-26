@@ -1,17 +1,25 @@
-[
-  {"id": "s01", "query": "오늘 마감인 일", "targetType": "task", "timeIntent": "today", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["마감"]},
-  {"id": "s02", "query": "이번 주까지 제출해야 하는 세금 서류", "targetType": "task", "timeIntent": "this_week", "priorityIntent": "must_do", "mainAction": "submit", "statusIntents": [], "expectedTopicKeywords": ["세금", "서류"]},
-  {"id": "s03", "query": "지난주에 끝냈어야 하는 보고서", "targetType": "task", "timeIntent": "overdue", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["보고서"]},
-  {"id": "s04", "query": "급한 배포 작업", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "urgent", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["배포"]},
-  {"id": "s05", "query": "막혀 있는 API 연동 작업", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": ["BLOCKED"], "expectedTopicKeywords": ["API", "연동"]},
-  {"id": "s06", "query": "진행 중인 디자인 시안", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": ["IN_PROGRESS"], "expectedTopicKeywords": ["디자인", "시안"]},
-  {"id": "s07", "query": "완료한 이사 준비 항목", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "prepare", "statusIntents": ["DONE"], "expectedTopicKeywords": ["이사"]},
-  {"id": "s08", "query": "이번 주 안에 부모님 선물 사기", "targetType": "task", "timeIntent": "this_week", "priorityIntent": "none", "mainAction": "buy", "statusIntents": [], "expectedTopicKeywords": ["부모님", "선물"]},
-  {"id": "s09", "query": "치과 방문 일정", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "visit", "statusIntents": [], "expectedTopicKeywords": ["치과"]},
-  {"id": "s10", "query": "에어컨 수리 맡기기", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "fix", "statusIntents": [], "expectedTopicKeywords": ["에어컨"]},
-  {"id": "s11", "query": "이번 달 가계부 정리", "targetType": "task", "timeIntent": "this_month", "priorityIntent": "none", "mainAction": "organize", "statusIntents": [], "expectedTopicKeywords": ["가계부"]},
-  {"id": "s12", "query": "서버 로그 확인해야 하는 것", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "check", "statusIntents": [], "expectedTopicKeywords": ["서버", "로그"]},
-  {"id": "s13", "query": "꼭 해야 하는 계약서 검토", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "must_do", "mainAction": "check", "statusIntents": [], "expectedTopicKeywords": ["계약서"]},
-  {"id": "s14", "query": "마케팅 프로젝트 목록", "targetType": "project", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["마케팅"]},
-  {"id": "s15", "query": "뭐 해야 하더라", "targetType": "mixed", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": []}
-]
+{
+  "labelRule": "라벨 규칙: priorityIntent는 '꼭·반드시·급한' 같은 명시 표현이 있을 때만 must_do·urgent이고 '~해야 하는'만으로는 none이다. timeIntent는 질의에 시간 표현이 있을 때만 정하고, 정답이 둘로 갈리면 값을 배열로 허용한다. expectedTopicKeywords는 시간·상태 단어가 아닌 명사만 쓴다.",
+  "cases": [
+    {"id": "s01", "query": "오늘 마감인 일", "targetType": "task", "timeIntent": "today", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": []},
+    {"id": "s02", "query": "이번 주까지 제출해야 하는 세금 서류", "targetType": "task", "timeIntent": "this_week", "priorityIntent": "none", "mainAction": "submit", "statusIntents": [], "expectedTopicKeywords": ["세금", "서류"]},
+    {"id": "s03", "query": "지난주에 끝냈어야 하는 보고서", "targetType": "task", "timeIntent": "overdue", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["보고서"]},
+    {"id": "s04", "query": "급한 배포 작업", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "urgent", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["배포"]},
+    {"id": "s05", "query": "막혀 있는 API 연동 작업", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": ["BLOCKED"], "expectedTopicKeywords": ["API", "연동"]},
+    {"id": "s06", "query": "진행 중인 디자인 시안", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": ["IN_PROGRESS"], "expectedTopicKeywords": ["디자인", "시안"]},
+    {"id": "s07", "query": "완료한 이사 준비 항목", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": ["prepare", "unknown"], "statusIntents": ["DONE"], "expectedTopicKeywords": ["이사"]},
+    {"id": "s08", "query": "이번 주 안에 부모님 선물 사기", "targetType": "task", "timeIntent": "this_week", "priorityIntent": "none", "mainAction": "buy", "statusIntents": [], "expectedTopicKeywords": ["부모님", "선물"]},
+    {"id": "s09", "query": "치과 방문 일정", "targetType": "task", "timeIntent": ["unspecified", "upcoming"], "priorityIntent": "none", "mainAction": "visit", "statusIntents": [], "expectedTopicKeywords": ["치과"]},
+    {"id": "s10", "query": "에어컨 수리 맡기기", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "fix", "statusIntents": [], "expectedTopicKeywords": ["에어컨"]},
+    {"id": "s11", "query": "이번 달 가계부 정리", "targetType": "task", "timeIntent": "this_month", "priorityIntent": "none", "mainAction": "organize", "statusIntents": [], "expectedTopicKeywords": ["가계부"]},
+    {"id": "s12", "query": "서버 로그 확인해야 하는 것", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "check", "statusIntents": [], "expectedTopicKeywords": ["서버", "로그"]},
+    {"id": "s13", "query": "꼭 해야 하는 계약서 검토", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "must_do", "mainAction": "check", "statusIntents": [], "expectedTopicKeywords": ["계약서"]},
+    {"id": "s14", "query": "마케팅 프로젝트 목록", "targetType": "project", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["마케팅"]},
+    {"id": "s15", "query": "뭐 해야 하더라", "targetType": "mixed", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": []},
+    {"id": "s16", "query": "마감이 지난 계약 갱신 서류 제출", "targetType": "task", "timeIntent": "overdue", "priorityIntent": "none", "mainAction": "submit", "statusIntents": [], "expectedTopicKeywords": ["계약", "서류"]},
+    {"id": "s17", "query": "오늘 안에 꼭 끝내야 하는 배포 점검", "targetType": "task", "timeIntent": "today", "priorityIntent": "must_do", "mainAction": "check", "statusIntents": [], "expectedTopicKeywords": ["배포"]},
+    {"id": "s18", "query": "막혀서 못 하는 급한 결제 연동", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "urgent", "mainAction": "unknown", "statusIntents": ["BLOCKED"], "expectedTopicKeywords": ["결제"]},
+    {"id": "s19", "query": "이번 주에 사야 하는 노트북 거치대", "targetType": "task", "timeIntent": "this_week", "priorityIntent": "none", "mainAction": "buy", "statusIntents": [], "expectedTopicKeywords": ["노트북", "거치대"]},
+    {"id": "s20", "query": "고장 난 프린터 오늘 수리 맡기기", "targetType": "task", "timeIntent": "today", "priorityIntent": "none", "mainAction": "fix", "statusIntents": [], "expectedTopicKeywords": ["프린터"]}
+  ]
+}

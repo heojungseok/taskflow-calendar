@@ -22,15 +22,14 @@ import java.time.Instant;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import tools.jackson.databind.ObjectMapper;
 
 final class CandidateFactory {
 
     private static final Instant NOW = Instant.parse("2026-11-27T00:00:00Z");
-    private static final int OLLAMA_TIMEOUT_SECONDS = 120;
-    private static final int OLLAMA_NUM_CTX = 8192;
-    private static final String OLLAMA_KEEP_ALIVE = "10m";
+    static final int OLLAMA_TIMEOUT_SECONDS = new OllamaLlmProperties().getTimeoutSeconds();
+    static final int OLLAMA_NUM_CTX = 8192;
+    static final String OLLAMA_KEEP_ALIVE = "10m";
 
     private final ObjectMapper objectMapper;
 
@@ -47,7 +46,7 @@ final class CandidateFactory {
         properties.setTimeoutSeconds(OLLAMA_TIMEOUT_SECONDS);
         LlmProvider provider = new OllamaLlmProvider(properties, objectMapper);
         Generators generators = generators(provider, new FeatureProperties(null, null));
-        return new Candidate("ollama:" + model, "ollama", model, generators, new AtomicBoolean(true));
+        return new Candidate("ollama:" + model, "ollama", model, generators);
     }
 
     Candidate gemini(BakeoffConfig config) {
@@ -58,11 +57,7 @@ final class CandidateFactory {
         settings.put(LlmFeature.SEARCH_INTENT, properties.search());
         LlmProvider provider = new GeminiLlmProvider(settings, objectMapper);
         return new Candidate(
-                "gemini:" + config.geminiModel(),
-                "gemini",
-                config.geminiModel(),
-                generators(provider, properties),
-                new AtomicBoolean(false));
+                "gemini:" + config.geminiModel(), "gemini", config.geminiModel(), generators(provider, properties));
     }
 
     private Generators generators(LlmProvider provider, FeatureProperties properties) {

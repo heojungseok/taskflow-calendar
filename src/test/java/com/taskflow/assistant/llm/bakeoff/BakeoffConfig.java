@@ -28,6 +28,19 @@ record BakeoffConfig(
                 Math.max(0, Integer.parseInt(env("LLM_BAKEOFF_CONCURRENCY", "3"))));
     }
 
+    @Override
+    public String toString() {
+        return "BakeoffConfig[ollamaModels=%s, ollamaBaseUrl=%s, geminiApiKey=%s, geminiModel=%s, features=%s, repeat=%d, concurrency=%d]"
+                .formatted(
+                        ollamaModels,
+                        ollamaBaseUrl,
+                        geminiEnabled() ? "****" : "(none)",
+                        geminiModel,
+                        features,
+                        repeat,
+                        concurrency);
+    }
+
     boolean geminiEnabled() {
         return !geminiApiKey.isBlank();
     }

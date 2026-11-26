@@ -3,6 +3,7 @@ package com.taskflow.assistant.llm.bakeoff;
 import com.taskflow.assistant.llm.bakeoff.BakeoffFixtures.RecommendationCase;
 import com.taskflow.assistant.llm.bakeoff.BakeoffFixtures.SearchCase;
 import com.taskflow.assistant.llm.bakeoff.BakeoffFixtures.SummaryCase;
+import com.taskflow.assistant.summary.BakeoffSummarySelection;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.task.Task;
@@ -30,14 +31,14 @@ final class FixtureLoader {
 
     List<SearchCase> searchCases() {
         List<SearchCase> cases = new ArrayList<>();
-        for (JsonNode node : read("search.json")) {
+        for (JsonNode node : read("search.json").path("cases")) {
             cases.add(new SearchCase(
                     text(node, "id"),
                     text(node, "query"),
-                    text(node, "targetType"),
-                    text(node, "timeIntent"),
-                    text(node, "priorityIntent"),
-                    text(node, "mainAction"),
+                    allowed(node.path("targetType")),
+                    allowed(node.path("timeIntent")),
+                    allowed(node.path("priorityIntent")),
+                    allowed(node.path("mainAction")),
                     strings(node.path("statusIntents")),
                     strings(node.path("expectedTopicKeywords"))));
         }
@@ -48,9 +49,9 @@ final class FixtureLoader {
         List<RecommendationCase> cases = new ArrayList<>();
         for (JsonNode node : read("recommendation.json")) {
             Project project = project(text(node, "project"));
-            List<TaskSyncSnapshot> candidates = new ArrayList<>();
+            List<TaskSyncSnapshot> all = new ArrayList<>();
             for (JsonNode taskNode : node.path("tasks")) {
-                candidates.add(snapshot(
+                all.add(snapshot(
                         project,
                         taskNode,
                         TaskSyncState.SYNCED,
@@ -59,10 +60,10 @@ final class FixtureLoader {
             cases.add(new RecommendationCase(
                     text(node, "id"),
                     project,
-                    node.path("count").asInt(2),
+                    RecommendationCandidates.count(all),
                     longs(node.path("mustIncludeIds")),
                     longs(node.path("mustExcludeIds")),
-                    candidates));
+                    RecommendationCandidates.select(all, BakeoffFixtures.TODAY)));
         }
         return cases;
     }
@@ -72,13 +73,18 @@ final class FixtureLoader {
         for (JsonNode node : read("summary.json")) {
             Project project = project(text(node, "project"));
             long[] nextId = {1};
+            List<TaskSyncSnapshot> synced = snapshots(project, node.path("synced"), TaskSyncState.SYNCED, nextId);
+            List<TaskSyncSnapshot> unsynced =
+                    snapshots(project, node.path("unsynced"), TaskSyncState.SYNC_DISABLED, nextId);
             cases.add(new SummaryCase(
                     text(node, "id"),
                     project,
                     LocalDate.parse(text(node, "weekStart")),
                     LocalDate.parse(text(node, "weekEnd")),
-                    snapshots(project, node.path("synced"), TaskSyncState.SYNCED, nextId),
-                    snapshots(project, node.path("unsynced"), TaskSyncState.SYNC_DISABLED, nextId)));
+                    BakeoffSummarySelection.selectIncluded(synced, true, BakeoffFixtures.TODAY),
+                    synced.size(),
+                    BakeoffSummarySelection.selectIncluded(unsynced, false, BakeoffFixtures.TODAY),
+                    unsynced.size()));
         }
         return cases;
     }
@@ -129,6 +135,10 @@ final class FixtureLoader {
 
     private static String text(JsonNode node, String field, String defaultValue) {
         return node.path(field).asString(defaultValue);
+    }
+
+    private static List<String> allowed(JsonNode node) {
+        return node.isArray() ? strings(node) : List.of(node.asString(""));
     }
 
     private static List<String> strings(JsonNode array) {

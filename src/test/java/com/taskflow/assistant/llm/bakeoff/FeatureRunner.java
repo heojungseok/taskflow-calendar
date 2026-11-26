@@ -13,6 +13,10 @@ interface FeatureRunner {
 
     Outcome run(int caseIndex, Generators generators);
 
+    default List<Map<String, Double>> baselineMetrics() {
+        return List.of();
+    }
+
     record Outcome(Map<String, Object> output, Map<String, Double> metrics) {}
 
     record MetricColumn(String key, String header, boolean percent) {}

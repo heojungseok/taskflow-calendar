@@ -12,7 +12,7 @@ final class ConcurrencyProbe {
     private ConcurrencyProbe() {}
 
     static ConcurrencyResult run(Candidate candidate, SearchRunner searchRunner, int requests) throws Exception {
-        CallExecutor.execute(candidate, searchRunner, 0, 0);
+        CallExecutor.execute(candidate, searchRunner, 0, 0, false);
         ExecutorService pool = Executors.newFixedThreadPool(requests);
         CountDownLatch start = new CountDownLatch(1);
         try {
@@ -21,7 +21,7 @@ final class ConcurrencyProbe {
                 int caseIndex = i % searchRunner.caseIds().size();
                 futures.add(pool.submit(() -> {
                     start.await();
-                    return CallExecutor.execute(candidate, searchRunner, caseIndex, 0);
+                    return CallExecutor.execute(candidate, searchRunner, caseIndex, 0, false);
                 }));
             }
             long startedAt = System.nanoTime();

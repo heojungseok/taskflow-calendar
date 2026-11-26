@@ -7,17 +7,23 @@ final class BakeoffRunner {
 
     private BakeoffRunner() {}
 
-    static List<CallResult> runAll(List<Candidate> candidates, List<FeatureRunner> runners, int repeat) {
+    static List<CallResult> runAll(
+            List<Candidate> candidates, List<FeatureRunner> runners, int repeat, OllamaControl ollama) {
         List<CallResult> results = new ArrayList<>();
         for (Candidate candidate : candidates) {
+            boolean firstCall = candidate.isOllama();
             for (FeatureRunner runner : runners) {
                 for (int attempt = 1; attempt <= repeat; attempt++) {
                     for (int caseIndex = 0; caseIndex < runner.caseIds().size(); caseIndex++) {
-                        CallResult result = CallExecutor.execute(candidate, runner, caseIndex, attempt);
+                        CallResult result = CallExecutor.execute(candidate, runner, caseIndex, attempt, firstCall);
+                        firstCall = false;
                         results.add(result);
                         System.out.println(describe(result));
                     }
                 }
+            }
+            if (candidate.isOllama()) {
+                ollama.unload(candidate.model());
             }
         }
         return results;

@@ -14,10 +14,10 @@ final class BakeoffFixtures {
     record SearchCase(
             String id,
             String query,
-            String targetType,
-            String timeIntent,
-            String priorityIntent,
-            String mainAction,
+            List<String> targetType,
+            List<String> timeIntent,
+            List<String> priorityIntent,
+            List<String> mainAction,
             List<String> statusIntents,
             List<String> expectedTopicKeywords) {}
 
@@ -35,5 +35,7 @@ final class BakeoffFixtures {
             LocalDate weekStart,
             LocalDate weekEnd,
             List<TaskSyncSnapshot> synced,
-            List<TaskSyncSnapshot> unsynced) {}
+            int syncedTotal,
+            List<TaskSyncSnapshot> unsynced,
+            int unsyncedTotal) {}
 }
