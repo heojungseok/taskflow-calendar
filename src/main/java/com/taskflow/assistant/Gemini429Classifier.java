@@ -15,15 +15,15 @@ import tools.jackson.databind.ObjectMapper;
  *
  * <p>Retry-After 헤더 → QuotaFailure의 quotaId(PerDay/PerMinute) → 본문 status·reason → 메시지 순으로 본다.
  */
-final class Gemini429Classifier {
+public final class Gemini429Classifier {
 
     private final ObjectMapper objectMapper;
 
-    Gemini429Classifier(ObjectMapper objectMapper) {
+    public Gemini429Classifier(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
-    Classified429 classify(String retryAfter, String body) {
+    public Classified429 classify(String retryAfter, String body) {
         if (retryAfter != null && !retryAfter.isBlank()) {
             return new Classified429(
                     ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
@@ -176,10 +176,10 @@ final class Gemini429Classifier {
                         .trim();
     }
 
-    private record ParsedUpstream(
+    record ParsedUpstream(
             String message, String upstreamStatus, List<String> hints, List<String> quotaIds, String retryDelay) {}
 
-    record Classified429(
+    public record Classified429(
             ErrorCode errorCode,
             String message,
             String source,

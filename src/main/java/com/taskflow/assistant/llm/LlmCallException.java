@@ -1,11 +1,11 @@
-package com.taskflow.assistant;
+package com.taskflow.assistant.llm;
 
 import com.taskflow.common.ErrorCode;
 import com.taskflow.common.exception.BusinessException;
 import java.util.List;
 
 /** Gemini 호출 실패. statusCode가 0이면 응답을 받기 전에 실패했다(타임아웃, 연결 실패, 인터럽트). */
-public class GeminiCallException extends BusinessException {
+public class LlmCallException extends BusinessException {
 
     private final int statusCode;
     private final long latencyMs;
@@ -14,7 +14,7 @@ public class GeminiCallException extends BusinessException {
     private final String upstreamStatus;
     private final List<String> reasonHints;
 
-    public GeminiCallException(
+    public LlmCallException(
             ErrorCode errorCode,
             String message,
             int statusCode,

@@ -1,7 +1,7 @@
 package com.taskflow.assistant.summary.generator;
 
-import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
@@ -101,7 +101,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
         try {
             responseBody = geminiClient.post(
                     properties, properties.getModel() + ":generateContent", preparedRequest.getRequestBody());
-        } catch (GeminiCallException e) {
+        } catch (LlmCallException e) {
             throw upstreamFailure(project, weekStart, weekEnd, e, preparedRequest.getMetrics());
         }
         long latencyMs = System.currentTimeMillis() - startedAt;
@@ -132,7 +132,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
     }
 
     private WeeklySummaryGenerationException upstreamFailure(
-            Project project, LocalDate weekStart, LocalDate weekEnd, GeminiCallException e, PromptMetrics metrics) {
+            Project project, LocalDate weekStart, LocalDate weekEnd, LlmCallException e, PromptMetrics metrics) {
         log.warn(
                 "Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}, message={}",
                 project.getId(),

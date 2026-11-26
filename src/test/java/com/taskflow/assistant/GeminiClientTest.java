@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 import com.sun.net.httpserver.HttpServer;
+import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.common.ErrorCode;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -67,7 +68,7 @@ class GeminiClientTest {
     void retryAfterHeaderMeansTemporaryRateLimit() {
         respond(429, Map.of("Retry-After", "120"), "{\"error\":{\"message\":\"Too many requests\"}}");
 
-        GeminiCallException e = fail();
+        LlmCallException e = fail();
 
         assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LLM_RATE_LIMITED_TEMPORARY);
         assertThat(e.getClassificationSource()).isEqualTo("HEADER");
@@ -83,7 +84,7 @@ class GeminiClientTest {
                 "{\"error\":{\"status\":\"RESOURCE_EXHAUSTED\",\"message\":\"Daily limit reached\","
                         + "\"details\":[{\"reason\":\"dailyLimitExceeded\"}]}}");
 
-        GeminiCallException e = fail();
+        LlmCallException e = fail();
 
         assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LLM_QUOTA_EXHAUSTED);
         assertThat(e.getClassificationSource()).isEqualTo("BODY");
@@ -96,7 +97,7 @@ class GeminiClientTest {
         // 실제 Gemini 분당 제한 응답. status와 메시지는 일일 한도와 똑같이 RESOURCE_EXHAUSTED·"current quota"다.
         respond(429, Map.of(), geminiQuotaError("GenerateRequestsPerMinutePerProjectPerModel-FreeTier", "37s"));
 
-        GeminiCallException e = fail();
+        LlmCallException e = fail();
 
         assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LLM_RATE_LIMITED_TEMPORARY);
         assertThat(e.getClassificationSource()).isEqualTo("QUOTA_ID");
@@ -109,7 +110,7 @@ class GeminiClientTest {
         // 일일 한도도 retryDelay를 1s처럼 짧게 준다. 기다려도 풀리지 않는다.
         respond(429, Map.of(), geminiQuotaError("GenerateRequestsPerDayPerProjectPerModel-FreeTier", "1s"));
 
-        GeminiCallException e = fail();
+        LlmCallException e = fail();
 
         assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LLM_QUOTA_EXHAUSTED);
         assertThat(e.getClassificationSource()).isEqualTo("QUOTA_ID");
@@ -133,7 +134,7 @@ class GeminiClientTest {
         // 예전 추천·검색 분류는 본문에 "rate"만 있으면 일시 제한으로 봤다. "generateContent"에도 들어 있다.
         respond(429, Map.of(), "{\"error\":{\"message\":\"models/gemini-2.5-flash:generateContent rejected\"}}");
 
-        GeminiCallException e = fail();
+        LlmCallException e = fail();
 
         assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LLM_429_UNKNOWN);
         assertThat(e.getClassificationSource()).isEqualTo("UNKNOWN");
@@ -142,12 +143,12 @@ class GeminiClientTest {
     @Test
     void serverErrorIsTemporaryButAuthErrorIsConfiguration() {
         respond(503, Map.of(), "");
-        GeminiCallException unavailable = fail();
+        LlmCallException unavailable = fail();
         assertThat(unavailable.getErrorCode()).isEqualTo(ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE);
         assertThat(unavailable.isTemporary()).isTrue();
 
         respond(403, Map.of(), "");
-        GeminiCallException forbidden = fail();
+        LlmCallException forbidden = fail();
         assertThat(forbidden.getErrorCode()).isEqualTo(ErrorCode.LLM_CONFIG_INVALID);
         assertThat(forbidden.isTemporary()).isFalse();
     }
@@ -156,16 +157,16 @@ class GeminiClientTest {
     void connectionFailureIsTemporaryWithoutStatus() {
         server.stop(0);
 
-        GeminiCallException e = fail();
+        LlmCallException e = fail();
 
         assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE);
         assertThat(e.getStatusCode()).isZero();
         assertThat(e.isTemporary()).isTrue();
     }
 
-    private GeminiCallException fail() {
+    private LlmCallException fail() {
         return catchThrowableOfType(
-                GeminiCallException.class, () -> client.post(properties, "gemini-2.5-flash:generateContent", "{}"));
+                LlmCallException.class, () -> client.post(properties, "gemini-2.5-flash:generateContent", "{}"));
     }
 
     private void respond(int status, Map<String, String> headers, String body) {

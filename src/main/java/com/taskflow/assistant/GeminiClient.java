@@ -1,5 +1,6 @@
 package com.taskflow.assistant;
 
+import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.common.ErrorCode;
 import java.io.IOException;
 import java.net.URI;
@@ -13,7 +14,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
-/** Gemini REST 호출. 키·모델·타임아웃은 기능별 properties로 받고, 실패는 GeminiCallException으로 분류해 던진다. */
+/** Gemini REST 호출. 키·모델·타임아웃은 기능별 properties로 받고, 실패는 LlmCallException으로 분류해 던진다. */
 @Component
 public class GeminiClient {
 
@@ -32,7 +33,7 @@ public class GeminiClient {
      *
      * @param modelMethod {@code gemini-3.5-flash-lite:generateContent}처럼 모델과 메서드
      * @return 응답 본문
-     * @throws GeminiCallException 4xx·5xx 응답이나 응답 전 실패
+     * @throws LlmCallException 4xx·5xx 응답이나 응답 전 실패
      */
     public String post(GeminiProperties properties, String modelMethod, String requestBody) {
         String endpoint = properties.getBaseUrl().replaceAll("/$", "") + "/models/" + modelMethod;
@@ -63,8 +64,8 @@ public class GeminiClient {
         }
     }
 
-    private GeminiCallException beforeResponse(String message, long startedAt) {
-        return new GeminiCallException(
+    private LlmCallException beforeResponse(String message, long startedAt) {
+        return new LlmCallException(
                 ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
                 message,
                 0,
@@ -75,12 +76,11 @@ public class GeminiClient {
                 List.of());
     }
 
-    private GeminiCallException classify(
-            int statusCode, Map<String, List<String>> headers, String body, long latencyMs) {
+    private LlmCallException classify(int statusCode, Map<String, List<String>> headers, String body, long latencyMs) {
         String retryAfter = firstHeaderValue(headers, "Retry-After");
         if (statusCode == 429) {
             Gemini429Classifier.Classified429 c = classifier429.classify(retryAfter, body);
-            return new GeminiCallException(
+            return new LlmCallException(
                     c.errorCode(),
                     c.message(),
                     statusCode,
@@ -102,7 +102,7 @@ public class GeminiClient {
             errorCode = ErrorCode.LLM_CONFIG_INVALID;
             message = "Gemini request failed";
         }
-        return new GeminiCallException(errorCode, message, statusCode, latencyMs, null, retryAfter, null, List.of());
+        return new LlmCallException(errorCode, message, statusCode, latencyMs, null, retryAfter, null, List.of());
     }
 
     private static String firstHeaderValue(Map<String, List<String>> headers, String name) {

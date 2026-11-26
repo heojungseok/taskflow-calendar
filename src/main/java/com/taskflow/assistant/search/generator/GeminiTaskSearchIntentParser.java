@@ -1,8 +1,8 @@
 package com.taskflow.assistant.search.generator;
 
-import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.GeminiPayloadReader;
+import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.assistant.search.*;
 import com.taskflow.assistant.search.GeminiSearchProperties;
 import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
@@ -42,7 +42,7 @@ public class GeminiTaskSearchIntentParser implements TaskSearchIntentParser {
         String responseBody;
         try {
             responseBody = geminiClient.post(properties, properties.getModel() + ":generateContent", requestBody);
-        } catch (GeminiCallException e) {
+        } catch (LlmCallException e) {
             log.warn(
                     "Gemini search intent request failed. statusCode={}, errorCode={}, latencyMs={}",
                     e.getStatusCode(),

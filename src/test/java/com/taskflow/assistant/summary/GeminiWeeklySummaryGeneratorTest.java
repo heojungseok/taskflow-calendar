@@ -8,8 +8,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.assistant.summary.generator.GeminiWeeklySummaryGenerator;
@@ -412,7 +412,7 @@ class GeminiWeeklySummaryGeneratorTest {
     @DisplayName("Gemini 호출이 실패하면 분류 결과를 요약 예외로 넘기고 실패 로그에 관측 metrics를 남긴다")
     void upstreamFailure_carriesClassificationAndLogsMetrics(CapturedOutput output) {
         when(geminiClient.post(any(), any(), any()))
-                .thenThrow(new GeminiCallException(
+                .thenThrow(new LlmCallException(
                         ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
                         "Gemini rate limit is temporary",
                         429,

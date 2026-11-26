@@ -1,8 +1,8 @@
 package com.taskflow.assistant.recommendation.generator;
 
-import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.GeminiPayloadReader;
+import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
 import com.taskflow.assistant.recommendation.exception.TaskRecommendationGenerationException;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
@@ -51,7 +51,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
         try {
             responseBody = geminiClient.post(
                     properties, properties.getModel() + ":generateContent", preparedRequest.requestBody);
-        } catch (GeminiCallException e) {
+        } catch (LlmCallException e) {
             log.warn(
                     "Gemini task recommendation request failed. statusCode={}, errorCode={}, latencyMs={}",
                     e.getStatusCode(),

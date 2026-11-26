@@ -1,7 +1,7 @@
 package com.taskflow.assistant.search;
 
-import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.identity.user.Provider;
@@ -175,7 +175,7 @@ public class TaskSearchEmbeddingService {
                     properties.getEmbeddingModel() + ":batchEmbedContents",
                     objectMapper.writeValueAsString(requestBody));
             return parseEmbeddings(objectMapper.readTree(responseBody), documents.size());
-        } catch (GeminiCallException e) {
+        } catch (LlmCallException e) {
             throw new TaskSearchGenerationException(
                     e.getErrorCode(), "Gemini embedding request failed: " + e.getMessage());
         } catch (JacksonException e) {
