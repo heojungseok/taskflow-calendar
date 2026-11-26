@@ -268,6 +268,14 @@ container_stats_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$alloy_sha" "$alloy_sha"
 assert_plan full "$container_stats_sha" "$container_stats_sha" false true "$container_stats_sha"
 
+printf '%s\n' '#!/bin/sh' >"$repo/deploy/container-stats/collect-test.sh"
+git -C "$repo" add deploy/container-stats/collect-test.sh
+git -C "$repo" commit -qm 'container stats collector test'
+container_stats_test_sha=$(git -C "$repo" rev-parse HEAD)
+
+write_env "$container_stats_sha" "$container_stats_sha"
+assert_plan none "$container_stats_sha" "$container_stats_sha" false false "$container_stats_test_sha"
+
 printf '%s\n' 'backend-v3' >"$repo/src/main/java/App.java"
 printf '%s\n' 'frontend-v3' >"$repo/frontend/src/App.tsx"
 git -C "$repo" commit -qam 'backend and frontend'
