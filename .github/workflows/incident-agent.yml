@@ -1,0 +1,32 @@
+name: incident-agent
+
+on:
+  pull_request:
+    paths:
+      - "incident-agent/**"
+      - ".github/workflows/incident-agent.yml"
+  push:
+    branches: [main]
+    paths:
+      - "incident-agent/**"
+      - ".github/workflows/incident-agent.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: incident-agent-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: incident-agent
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - run: cargo fmt --all --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked

@@ -49,6 +49,7 @@ has_unknown_changes() {
   has_changes "$from_sha" . \
     ':(exclude).gitignore' ':(exclude).env.example' ':(exclude)README.md' ':(exclude)LICENSE*' \
     ':(exclude)docs/**' ':(exclude).github/workflows/ci.yml' \
+    ':(exclude).github/workflows/incident-agent.yml' ':(exclude)incident-agent/**' \
     ':(exclude)Dockerfile' ':(exclude).dockerignore' ':(exclude)build.gradle' \
     ':(exclude)settings.gradle' ':(exclude)gradle/**' ':(exclude)gradle.lockfile' \
     ':(exclude)gradlew' ':(exclude)gradlew.bat' ':(exclude)src/main/**' ':(exclude)src/test/**' \
@@ -61,12 +62,19 @@ has_unknown_changes() {
     ':(exclude)frontend/tsconfig.json' ':(exclude)frontend/tsconfig.*.json' \
     ':(exclude)compose.production.yml' ':(exclude).env.production.example' \
     ':(exclude)deploy/db/migration/**' ':(exclude)deploy/grafana/**' \
-    ':(exclude)deploy/loki/**' ':(exclude)deploy/alloy/**' \
+    ':(exclude)deploy/loki/**' ':(exclude)deploy/alloy/**' ':(exclude)deploy/container-stats/**' \
     ':(exclude)deploy/postgres/init-roles.sh' ':(exclude)deploy/prometheus/prometheus.yml' \
     ':(exclude)deploy/resolve-deployment-scope.sh' ':(exclude)deploy/resolve-deployment-scope-test.sh' \
     ':(exclude)deploy/verify-compose-boundary.sh' ':(exclude)deploy/verify-public-boundary.sh' \
     ':(exclude)deploy/verify-public-boundary-test.sh' ':(exclude)deploy/verify-redis-resilience.sh' \
     ':(exclude)deploy/verify-runtime-privileges.sh' ':(exclude)deploy/verify-session-version-migration.sh'
+}
+
+read_optional_sha() {
+  key=$1
+  if grep -q "^$key=" "$env_file"; then
+    read_sha "$key"
+  fi
 }
 
 [ -f "$env_file" ] || fail "Production env not found: $env_file"
@@ -76,15 +84,28 @@ frontend_sha=$(read_sha FRONTEND_GIT_SHA)
 
 validate_sha BACKEND_GIT_SHA "$backend_sha"
 validate_sha FRONTEND_GIT_SHA "$frontend_sha"
+agent_sha=$(read_optional_sha AGENT_GIT_SHA)
+agent_tracked=false
+if [ -n "$agent_sha" ]; then
+  agent_tracked=true
+  validate_sha AGENT_GIT_SHA "$agent_sha"
+else
+  agent_sha=$backend_sha
+fi
 validate_sha target_sha "$target_sha"
 
 git -C "$project_root" merge-base --is-ancestor "$backend_sha" "$target_sha" || \
   fail "BACKEND_GIT_SHA is not an ancestor of target_sha"
 git -C "$project_root" merge-base --is-ancestor "$frontend_sha" "$target_sha" || \
   fail "FRONTEND_GIT_SHA is not an ancestor of target_sha"
+if [ "$agent_tracked" = true ]; then
+  git -C "$project_root" merge-base --is-ancestor "$agent_sha" "$target_sha" || \
+    fail "AGENT_GIT_SHA is not an ancestor of target_sha"
+fi
 
 backend_changed=false
 frontend_changed=false
+agent_changed=false
 full_changed=false
 migration_changed=false
 unknown_changed=false
@@ -108,12 +129,16 @@ if has_changes "$frontend_sha" \
   frontend_changed=true
 fi
 
+if [ "$agent_tracked" = true ] && has_changes "$agent_sha" incident-agent; then
+  agent_changed=true
+fi
+
 if has_changes "$backend_sha" \
       compose.production.yml .env.production.example deploy/grafana deploy/postgres/init-roles.sh \
-      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy || \
+      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy deploy/container-stats ':(exclude)deploy/container-stats/*-test.sh' || \
     has_changes "$frontend_sha" \
       compose.production.yml .env.production.example deploy/grafana deploy/postgres/init-roles.sh \
-      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy; then
+      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy deploy/container-stats ':(exclude)deploy/container-stats/*-test.sh'; then
   full_changed=true
 fi
 
@@ -124,6 +149,7 @@ fi
 scope=none
 next_backend_sha=$backend_sha
 next_frontend_sha=$frontend_sha
+next_agent_sha=$agent_sha
 requires_approval=false
 
 if [ "$unknown_changed" = true ]; then
@@ -133,12 +159,16 @@ elif [ "$full_changed" = true ] || \
   scope=full
   next_backend_sha=$target_sha
   next_frontend_sha=$target_sha
+  next_agent_sha=$target_sha
 elif [ "$backend_changed" = true ]; then
   scope=backend
   next_backend_sha=$target_sha
 elif [ "$frontend_changed" = true ]; then
   scope=frontend
   next_frontend_sha=$target_sha
+elif [ "$agent_changed" = true ]; then
+  scope=agent
+  next_agent_sha=$target_sha
 fi
 
 if [ "$scope" = full ] || \
@@ -149,5 +179,6 @@ fi
 printf 'DEPLOY_SCOPE=%s\n' "$scope"
 printf 'NEXT_BACKEND_GIT_SHA=%s\n' "$next_backend_sha"
 printf 'NEXT_FRONTEND_GIT_SHA=%s\n' "$next_frontend_sha"
+printf 'NEXT_AGENT_GIT_SHA=%s\n' "$next_agent_sha"
 printf 'MIGRATION_CHANGED=%s\n' "$migration_changed"
 printf 'REQUIRES_APPROVAL=%s\n' "$requires_approval"

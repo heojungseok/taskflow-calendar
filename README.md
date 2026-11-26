@@ -187,8 +187,10 @@ Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림�
 
 2026-08-27에는 알림 규칙 8종을 구성하고 그중 backend 중단 알림의 Discord 발생·복구 전달을 검증했습니다. demo usage와 traffic spike 알림은 메트릭이 없을 때 0으로 평가해 No data 오탐을 방지합니다.
 
+2026-11-25에는 로그 수집 끊김과 Backend ERROR 로그 알림을 더했습니다. 공개 데모는 요청이 하루 몇 건뿐이라 Loki에 로그가 없을 때 조용한 것인지 수집이 끊긴 것인지 구분할 수 없어, Backend가 5분마다 남기는 heartbeat로 수집 경로를 확인합니다.
+
 <details>
-<summary>알림 8종의 조건</summary>
+<summary>알림 10종의 조건</summary>
 
 | 알림 | 조건 | severity |
 |---|---|---|
@@ -200,6 +202,8 @@ Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림�
 | demo traffic spike | 10분간 데모 세션 20건 또는 `SKIPPED` Outbox 50건 | warning |
 | gemini quota exhausted | 5분간 `LLM_QUOTA_EXHAUSTED` 발생 (기능별) | warning |
 | gemini repeated failures | 10분간 Gemini 실패 3건 초과 (기능별) | warning |
+| backend log pipeline silent | 15분간 Loki에 Backend heartbeat 0건 (데이터가 없어도 발생) | warning |
+| backend error logs | 5분간 Backend ERROR 로그 1건 이상 | warning |
 
 </details>
 
@@ -214,7 +218,7 @@ alt="TaskFlow Grafana 대시보드 하단 — Gemini와 캐시, Backend runtime"
 
 </details>
 
-알림을 받는 사람이 바로 움직일 수 있도록, Discord 메시지에 **영향 / 발생 시각 / 대상 서비스 / 권장 조치 / 1차 가용성 확인 URL**을 함께 보냅니다. 복구되면 `[복구]` 메시지로 종료를 알립니다. 임계값만 던지는 알림은 결국 무시된다고 보고, 알림 본문 자체를 짧은 런북으로 만들었습니다.
+알림을 받는 사람이 바로 움직일 수 있도록, Discord 메시지에 **영향 / 발생 시각 / 대상 서비스 / 권장 조치 / 1차 가용성 확인 URL**을 함께 보냅니다. 복구되면 `[복구]` 메시지로 종료를 알립니다. 임계값만 던지는 알림은 결국 무시된다고 보고, 알림 본문 자체를 짧은 런북으로 만들었습니다. 알림이 3건 이상 한꺼번에 오면 Discord 메시지 한도(2000자)를 넘지 않도록 알림마다 한 줄로 요약하고 Grafana 알림 목록 링크를 붙입니다.
 
 **당시 중단·복구 확인** — 2026-08-27 소스 `0deceea0c9cf433bc8487e5f5f0007c075fd7c85` 배포 후 backend를 12:20:07 KST에 중단하고 12:24:07에 healthy로 복구했습니다. 알림은 12:23 발생·12:25 정상으로 전환됐고 `Backend UP`은 `1 → 0 → 1`로 돌아왔습니다. 공개 API가 약 4분 중단된 검증이며 무중단 복구나 알림 8종 전체의 장애 재현을 뜻하지 않습니다. [알림 설정](deploy/grafana/provisioning/alerting/taskflow.yml) · [대시보드 정의](deploy/grafana/dashboards/taskflow.json)
 

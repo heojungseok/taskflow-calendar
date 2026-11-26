@@ -228,6 +228,30 @@ class GeminiWeeklySummaryGeneratorTest {
     }
 
     @Test
+    @DisplayName("prepareRequest_Gemini3계열이받는thinkingLevel minimal을보내고thinkingBudget은보내지않는다")
+    void prepareRequest_requestsMinimalThinkingLevel() throws Exception {
+        Object prepared = invokePrivate(
+                ReflectionTestUtils.getField(generator, "promptBuilder"),
+                "prepareRequest",
+                new Class[] {
+                    Project.class, List.class, int.class, List.class, int.class, LocalDate.class, LocalDate.class
+                },
+                project,
+                List.of(snapshot(
+                        task("주말 장보기 일정", "토요일 오전에 장을 보고 예산을 확인한다.", TaskStatus.IN_PROGRESS), TaskSyncState.SYNCED)),
+                1,
+                List.of(),
+                0,
+                LocalDate.of(2026, 3, 23),
+                LocalDate.of(2026, 3, 29));
+
+        JsonNode thinkingConfig =
+                preparedRequestBody(prepared).path("generationConfig").path("thinkingConfig");
+        assertEquals("minimal", thinkingConfig.path("thinkingLevel").asText());
+        assertTrue(thinkingConfig.path("thinkingBudget").isMissingNode());
+    }
+
+    @Test
     @DisplayName("prepareRequest_topK와topP가유효하지않으면generationConfig에서생략한다")
     void prepareRequest_omitsTopKAndTopPWhenInvalid() throws Exception {
         generatorProperties().setTopK(0);

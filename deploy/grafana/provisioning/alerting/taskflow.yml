@@ -11,6 +11,17 @@ contactPoints:
           title: '{{ template "taskflow.discord.title" . }}'
           message: '{{ template "taskflow.discord.message" . }}'
         disableResolveMessage: false
+  - orgId: 1
+    name: incident-agent
+    receivers:
+      - uid: incident-agent-webhook
+        type: webhook
+        settings:
+          url: http://incident-agent:8080/grafana
+          httpMethod: POST
+          authorization_scheme: Bearer
+          authorization_credentials: ${AGENT_WEBHOOK_TOKEN}
+        disableResolveMessage: false
 
 templates:
   - orgId: 1
@@ -22,6 +33,21 @@ templates:
       {{- if gt (len .Alerts.Firing) 0 -}}[장애][{{ $severity }}] TaskFlow {{ .GroupLabels.environment }} · {{ len .Alerts }}건{{- else -}}[복구][{{ $severity }}] TaskFlow {{ .GroupLabels.environment }} · {{ len .Alerts }}건{{- end -}}
       {{ end }}
       {{ define "taskflow.discord.message" }}
+      {{- if le (len .Alerts) 2 }}{{ template "taskflow.discord.detail" . }}{{ else }}{{ template "taskflow.discord.summary" . }}{{ end }}
+      {{- end }}
+      {{ define "taskflow.discord.summary" }}
+      {{- $externalURL := .ExternalURL }}
+      **현재 상태** 발생 {{ len .Alerts.Firing }}건 / 복구 {{ len .Alerts.Resolved }}건 (3건 이상이라 요약)
+      {{- range .Alerts.Firing }}
+      - [발생] {{ .Annotations.summary }} · {{ .Labels.service }} · {{ .StartsAt | tz "Asia/Seoul" | date "15:04" }}
+      {{- end }}
+      {{- range .Alerts.Resolved }}
+      - [복구] {{ .Annotations.summary }} · {{ .Labels.service }} · {{ .EndsAt | tz "Asia/Seoul" | date "15:04" }}
+      {{- end }}
+
+      **Grafana** [알림 목록]({{ $externalURL }}alerting/list) · [대시보드]({{ $externalURL }}d/taskflow/taskflow)
+      {{- end }}
+      {{ define "taskflow.discord.detail" }}
       {{- $externalURL := .ExternalURL -}}
       {{- if gt (len .Alerts.Firing) 0 }}
       **현재 상태** 발생 {{ len .Alerts.Firing }}건{{ if gt (len .Alerts.Resolved) 0 }} / 복구 {{ len .Alerts.Resolved }}건{{ end }}
@@ -40,6 +66,15 @@ templates:
       {{- else }}
       **Grafana** [대시보드 열기]({{ $externalURL }}d/taskflow/taskflow)
       {{- end }}
+      **일시정지** [이 알림 끄기]({{ $externalURL }}alerting/silence/new?alertmanager=grafana&matcher=alertname%3D{{ .Labels.alertname | urlquery }})
+      {{- end }}
+      {{- $backendLogs := false }}{{ $nginxLogs := false }}
+      {{- range .Alerts.Firing }}{{ if eq .Labels.service "backend" }}{{ $backendLogs = true }}{{ end }}{{ if eq .Labels.service "nginx" }}{{ $nginxLogs = true }}{{ end }}{{ end }}
+      {{- if $backendLogs }}
+      **로그** [backend 최근 로그 보기]({{ $externalURL }}explore?schemaVersion=1&orgId=1&panes={{ `{"a":{"datasource":"loki","queries":[{"refId":"A","expr":"{service=\"backend\"}"}]}}` | urlquery }})
+      {{- end }}
+      {{- if $nginxLogs }}
+      **로그** [nginx 최근 로그 보기]({{ $externalURL }}explore?schemaVersion=1&orgId=1&panes={{ `{"a":{"datasource":"loki","queries":[{"refId":"A","expr":"{service=\"nginx\"}"}]}}` | urlquery }})
       {{- end }}
       {{- else }}
       **현재 상태** 복구 {{ len .Alerts.Resolved }}건
@@ -68,11 +103,17 @@ policies:
     group_wait: 30s
     repeat_interval: 4h
     routes:
+      # 모든 알림을 분석기에도 보낸다. continue라서 아래 Discord 경로도 이어서 평가한다.
+      - receiver: incident-agent
+        continue: true
+        group_by: [alertname, service]
       # 보안 알림(security.yml)은 IP마다 따로 보내고 종료 메시지를 끈 연락처를 쓴다.
       - receiver: Discord security
         object_matchers:
           - [service, =, security]
         group_by: [alertname, ip]
+      # 위 경로가 continue로 매칭되면 root receiver로 떨어지지 않으므로 나머지는 Discord로 명시한다.
+      - receiver: Discord
 
 groups:
   - orgId: 1
@@ -193,6 +234,151 @@ groups:
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: lt, params: [1]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
 
+      - uid: taskflow-database-metrics-down
+        title: database metrics collection down
+        condition: C
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: postgres
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "44"
+          summary: DB 메트릭 수집 중단
+          impact: Prometheus가 PostgreSQL 지표를 5분 이상 받지 못해 DB 연결 고갈이나 크기 증가를 알아챌 수 없습니다.
+          action: postgres-exporter 컨테이너 상태와 로그를 먼저 보고, taskflow_monitor 계정 접속(비밀번호·연결 한도)과 Prometheus target 상태를 순서대로 확인하세요.
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'min(pg_up) * min(up{job="postgres"}) * min(pg_scrape_collector_success{collector=~"stat_activity|settings|database"})', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: lt, params: [1]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-database-connections-high
+        title: database connections near limit
+        condition: C
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: postgres
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "45"
+          summary: DB 연결 수 한도 근접
+          impact: PostgreSQL 연결이 최대 연결 수의 80%를 5분 넘게 넘어, 곧 새 요청이 DB 연결을 얻지 못할 수 있습니다.
+          action: DB 연결 수 패널에서 상태별(idle·active) 연결을 확인하고, Backend Hikari 대기 수와 오래 걸리는 쿼리를 함께 확인하세요.
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'sum(pg_stat_activity_count) / max(pg_settings_max_connections)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0.8]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-container-memory-high
+        title: docker memory pressure
+        condition: C
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: containers
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "48"
+          summary: Docker 메모리 압박
+          impact: 컨테이너 전체 메모리가 Docker가 쓸 수 있는 메모리의 90%를 10분 넘게 넘어, 곧 컨테이너가 OOM으로 재시작되거나 서비스 전체가 느려질 수 있습니다.
+          action: 컨테이너 메모리 패널에서 가장 많이 쓰는 서비스를 확인하고, Backend라면 JVM heap 패널과 최근 오류 로그를 함께 확인하세요.
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'sum(taskflow_container_memory_bytes) / scalar(max(taskflow_docker_memory_total_bytes))', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0.9]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-container-cpu-high
+        title: container cpu high
+        condition: C
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: containers
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "47"
+          summary: 컨테이너 CPU 과다
+          impact: 한 서비스가 5분 평균으로 CPU 코어 한 개 분량의 90% 이상을 15분 넘게 쓰고 있어, 같은 호스트의 다른 서비스 응답이 늦어질 수 있습니다.
+          action: 컨테이너 CPU 패널에서 서비스를 확인하고, 같은 시간대의 요청량·Worker 적체·DEMO 트래픽을 함께 확인하세요.
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'max by (service) (avg_over_time(taskflow_container_cpu_ratio[5m]))', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0.9]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-container-stats-stale
+        title: container stats collection stale
+        condition: C
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: containers
+          severity: warning
+        annotations:
+          __dashboardUid__: taskflow
+          __panelId__: "49"
+          summary: 컨테이너 자원 수집 중단
+          impact: 운영 호스트의 컨테이너 자원 수집이 3분 넘게 갱신되지 않아 메모리·CPU 과다를 알아챌 수 없습니다.
+          action: 운영 호스트의 수집 작업 상태와 수집 폴더의 파일 시각을 먼저 보세요. 파일이 최신인데도 알림이 계속되면 수집 폴더가 다시 만들어진 것이니 container-stats-exporter를 재시작하세요.
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'time() - max(node_textfile_mtime_seconds{file="/textfile/containers.prom"})', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [180]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
       - uid: taskflow-cleanup-failure
         title: cleanup failure
         condition: C
@@ -309,3 +495,57 @@ groups:
           - refId: C
             datasourceUid: __expr__
             model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [2]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-log-pipeline-silent
+        title: backend log pipeline silent
+        condition: C
+        noDataState: Alerting
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: backend
+          severity: warning
+        annotations:
+          summary: Backend 로그 수집 끊김
+          impact: Backend가 5분마다 남기는 heartbeat가 15분 동안 Loki에 들어오지 않아, 장애가 나도 로그로 원인을 확인할 수 없습니다.
+          action: Backend 컨테이너가 살아 있으면 Alloy 컨테이너와 수신 포트(UDP 5140), Loki 순서로 확인하세요. Backend 스케줄러가 다른 작업에 오래 묶여 heartbeat가 밀린 경우일 수도 있습니다.
+          check_url: /api/auth/session
+        data:
+          - refId: A
+            datasourceUid: loki
+            relativeTimeRange: {from: 900, to: 0}
+            model: {refId: A, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ `^INFO +\S*LogPipelineHeartbeat : log pipeline heartbeat$` [15m])) or vector(0)'}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: lt, params: [1]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: taskflow-backend-error-logs
+        title: backend error logs
+        condition: C
+        noDataState: OK
+        execErrState: OK
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: backend
+          severity: warning
+        annotations:
+          summary: Backend ERROR 로그 발생
+          impact: 최근 5분 동안 Backend가 ERROR 로그를 남겼습니다. 사용자 요청이나 Worker가 실패하고 있을 수 있습니다.
+          action: 'Grafana Explore에서 {service="backend"} |~ "^ERROR " 로 메시지를 확인하고, 요청 중 오류면 메시지 뒤 traceId= 값으로 {service="backend"} |= "traceId=<값>" 을 검색해 같은 요청의 로그를 보세요. 예외 원인은 같은 줄의 " | " 뒤에 있습니다. Loki 장애는 로그 수집 끊김 알림이 알립니다.'
+          check_url: /api/auth/session
+        data:
+          - refId: A
+            datasourceUid: loki
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ "^ERROR " [5m])) or vector(0)'}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}

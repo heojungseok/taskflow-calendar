@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.http.HttpTimeoutException;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -85,7 +86,7 @@ class GoogleOAuthServiceTest {
         // then
         verify(tokenRepository)
                 .save(argThat(t -> t.getAccessToken().equals("new-access-token")
-                        && t.getExpiryAt().isAfter(LocalDateTime.now())));
+                        && t.getExpiryAt().isAfter(LocalDateTime.now(ZoneOffset.UTC))));
     }
 
     // =========================================================
