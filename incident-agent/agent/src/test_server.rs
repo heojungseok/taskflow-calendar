@@ -5,9 +5,7 @@ use std::thread;
 use std::time::Duration;
 
 pub(crate) struct Request {
-    pub(crate) method: String,
     pub(crate) target: String,
-    pub(crate) body: String,
 }
 
 pub(crate) struct Reply {
@@ -79,12 +77,8 @@ fn read_request(stream: &mut TcpStream) -> Option<Request> {
         let read = stream.read(&mut chunk).ok().filter(|n| *n > 0)?;
         raw.extend_from_slice(&chunk[..read]);
     }
-    let mut first = head.lines().next()?.split(' ');
-    Some(Request {
-        method: first.next()?.to_owned(),
-        target: first.next()?.to_owned(),
-        body: String::from_utf8_lossy(&raw[head_end..head_end + length]).into_owned(),
-    })
+    let target = head.lines().next()?.split(' ').nth(1)?.to_owned();
+    Some(Request { target })
 }
 
 fn answer(mut stream: TcpStream, handler: &dyn Fn(&Request) -> Reply, seen: &Mutex<Vec<Request>>) {

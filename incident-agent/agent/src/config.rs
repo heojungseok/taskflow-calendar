@@ -9,6 +9,7 @@ pub(crate) struct Config {
     pub(crate) loki_url: String,
     pub(crate) prometheus_url: String,
     pub(crate) model_url: String,
+    pub(crate) model_name: String,
     pub(crate) db_path: PathBuf,
     pub(crate) knowledge_dir: PathBuf,
     pub(crate) drafts_dir: PathBuf,
@@ -82,6 +83,7 @@ pub(crate) fn load(lookup: impl Fn(&str) -> Option<String>) -> Result<Config, Co
         loki_url: reader.text("AGENT_LOKI_URL"),
         prometheus_url: reader.text("AGENT_PROMETHEUS_URL"),
         model_url: reader.text("AGENT_MODEL_URL"),
+        model_name: reader.text("AGENT_MODEL_NAME"),
         db_path: reader.path("AGENT_DB_PATH"),
         knowledge_dir: reader.path("AGENT_KNOWLEDGE_DIR"),
         drafts_dir: reader.path("AGENT_DRAFTS_DIR"),
@@ -120,12 +122,13 @@ mod tests {
 
     use super::*;
 
-    const KEYS: [&str; 14] = [
+    const KEYS: [&str; 15] = [
         "AGENT_LISTEN_ADDR",
         "AGENT_WEBHOOK_TOKEN",
         "AGENT_LOKI_URL",
         "AGENT_PROMETHEUS_URL",
         "AGENT_MODEL_URL",
+        "AGENT_MODEL_NAME",
         "AGENT_DB_PATH",
         "AGENT_KNOWLEDGE_DIR",
         "AGENT_DRAFTS_DIR",
@@ -160,16 +163,22 @@ mod tests {
         assert_eq!(config.discord_channel_id, 1_234_567_890);
         assert_eq!(config.owner.as_str(), "1234567890");
         assert_eq!(config.github_repo, None);
+        assert_eq!(config.model_name, "secret-value-of-AGENT_MODEL_NAME");
     }
 
     #[test]
     fn t42_필수_키가_빠지면_키_이름만_든_오류를_낸다() {
-        let message = load_from(&env_without(&["AGENT_WEBHOOK_TOKEN", "AGENT_LOKI_URL"]))
-            .err()
-            .unwrap()
-            .to_string();
+        let message = load_from(&env_without(&[
+            "AGENT_WEBHOOK_TOKEN",
+            "AGENT_LOKI_URL",
+            "AGENT_MODEL_NAME",
+        ]))
+        .err()
+        .unwrap()
+        .to_string();
         assert!(message.contains("AGENT_WEBHOOK_TOKEN"));
         assert!(message.contains("AGENT_LOKI_URL"));
+        assert!(message.contains("AGENT_MODEL_NAME"));
         assert!(!message.contains("secret-value"));
     }
 

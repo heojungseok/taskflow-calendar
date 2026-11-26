@@ -12,6 +12,7 @@ analyzer = { path = "../analyzer" }
 axum = "0.8.9"
 contract = { path = "../contract" }
 incident = { path = "../incident" }
+ollama = { path = "../ollama" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 serenity = { version = "0.12.5", default-features = false, features = ["gateway", "model", "client", "builder", "rustls_backend"] }

@@ -16,6 +16,7 @@ dependencies = [
  "axum",
  "contract",
  "incident",
+ "ollama",
  "serde",
  "serde_json",
  "serenity",
