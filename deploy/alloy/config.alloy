@@ -1,5 +1,5 @@
-// nginx·backend가 syslog(UDP, RFC3164)로 보낸 로그를 받아 Loki로 보낸다.
-// Docker API에는 접근하지 않는다. syslog 태그(nginx, backend)를 service 라벨로 쓴다.
+// nginx·backend·incident-agent가 syslog(UDP, RFC3164)로 보낸 로그를 받아 Loki로 보낸다.
+// Docker API에는 접근하지 않는다. syslog 태그(nginx, backend, incident-agent)를 service 라벨로 쓴다.
 
 loki.source.syslog "taskflow" {
   listener {
@@ -17,7 +17,7 @@ loki.relabel "taskflow" {
 
   rule {
     source_labels = ["__syslog_message_app_name"]
-    regex         = "nginx|backend"
+    regex         = "nginx|backend|incident-agent"
     action        = "keep"
   }
 

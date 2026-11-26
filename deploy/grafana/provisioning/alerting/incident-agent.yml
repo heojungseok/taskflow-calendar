@@ -1,0 +1,95 @@
+apiVersion: 1
+
+# 분석기 자신의 알림. taskflow.yml 정책이 service=incident-agent를 분석기로 보내지 않고 Discord로만 보낸다.
+groups:
+  - orgId: 1
+    name: TaskFlow incident agent
+    folder: TaskFlow
+    interval: 1m
+    rules:
+      - uid: incident-agent-down
+        title: incident agent down
+        condition: C
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: incident-agent
+          severity: warning
+        annotations:
+          __dashboardUid__: incident-agent
+          summary: 장애 분석기 수집 중단
+          impact: Prometheus가 분석기 지표를 5분 넘게 가져가지 못했습니다. 이 사이 들어온 알림은 원인 분석 없이 Discord 알림만 갑니다.
+          action: 'Grafana Explore의 Loki에서 {service="incident-agent"} 로 마지막 로그를 보고, incident-agent 컨테이너 상태와 재시작 횟수를 확인하세요.'
+          check_url: /healthz
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 300, to: 0}
+            model: {refId: A, expr: 'max(up{job="incident-agent"}) or vector(0)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: lt, params: [1]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: incident-agent-model-failures
+        title: incident agent model failures
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: incident-agent
+          severity: warning
+        annotations:
+          __dashboardUid__: incident-agent
+          summary: 장애 분석기 모델 호출 실패 반복
+          impact: 최근 1시간 동안 로컬 모델 호출이 3번 이상 시간 초과되거나 닿지 않았습니다. 분석이 "모델 분석 건너뜀"으로만 나갑니다.
+          action: 'Mac mini에서 Ollama 서비스가 켜져 있는지, 모델이 받아져 있는지 확인하세요. 분석기 로그에서 model failed 줄의 이유를 보세요.'
+          check_url: /healthz
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 3600, to: 0}
+            model: {refId: A, expr: 'sum(increase(incident_agent_model_calls_total{result!="ok"}[1h])) or vector(0)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [2]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}
+
+      - uid: incident-agent-discord-failures
+        title: incident agent discord failures
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        labels:
+          environment: public-demo
+          service: incident-agent
+          severity: warning
+        annotations:
+          __dashboardUid__: incident-agent
+          summary: 장애 분석기 Discord 전송 실패
+          impact: 최근 30분 동안 분석 결과를 Discord에 올리지 못한 적이 있습니다. 분석은 저장됐지만 알림으로 보이지 않습니다.
+          action: '분석기 로그에서 discord post failed 줄의 이유를 보고 봇 토큰과 채널 권한을 확인하세요.'
+          check_url: /healthz
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 1800, to: 0}
+            model: {refId: A, expr: 'sum(increase(incident_agent_discord_failures_total[30m])) or vector(0)', instant: true}
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}, operator: {type: and}, query: {params: [C]}, reducer: {type: last, params: []}, type: query}]}

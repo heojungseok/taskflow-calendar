@@ -15,3 +15,7 @@ scrape_configs:
   - job_name: containers
     static_configs:
       - targets: [container-stats-exporter:9100]
+
+  - job_name: incident-agent
+    static_configs:
+      - targets: [incident-agent:8080]

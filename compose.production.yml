@@ -227,6 +227,9 @@ services:
       AGENT_DISCORD_CHANNEL_ID: ${AGENT_DISCORD_CHANNEL_ID:?required}
       AGENT_OWNER_ID: ${AGENT_OWNER_ID:?required}
       AGENT_GITHUB_REPO: ${AGENT_GITHUB_REPO:-}
+      # logging 네트워크로 Alloy에 보낸다. 분석기는 보낼 때마다 이름을 다시 찾아 Alloy가 없을 때도 시작한다.
+      AGENT_SYSLOG_ADDR: alloy:5140
+      AGENT_GRAFANA_URL: ${TASKFLOW_GRAFANA_ROOT_URL:-}
     volumes:
       - incident-agent-data:/data
       - { type: bind, source: "${TASKFLOW_INCIDENT_DIR:?required}/requests", target: /incident/requests, bind: { create_host_path: false } }

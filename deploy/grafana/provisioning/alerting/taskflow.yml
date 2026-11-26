@@ -103,9 +103,12 @@ policies:
     group_wait: 30s
     repeat_interval: 4h
     routes:
-      # 모든 알림을 분석기에도 보낸다. continue라서 아래 Discord 경로도 이어서 평가한다.
+      # 알림을 분석기에도 보낸다. continue라서 아래 Discord 경로도 이어서 평가한다.
+      # 분석기 자신의 알림은 분석기로 보내지 않는다.
       - receiver: incident-agent
         continue: true
+        object_matchers:
+          - [service, "!=", incident-agent]
         group_by: [alertname, service]
       # 보안 알림(security.yml)은 IP마다 따로 보내고 종료 메시지를 끈 연락처를 쓴다.
       - receiver: Discord security
