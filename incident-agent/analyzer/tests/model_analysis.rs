@@ -430,3 +430,14 @@ fn answer_citing_only_a_changed_metric_while_new_errors_exist_is_unknown() {
 
     assert_eq!(report.analysis, Analysis::Unknown);
 }
+
+#[test]
+fn prompt_names_the_alert_and_asks_for_low_when_the_lines_cannot_explain_it() {
+    let prompt = prompt_of(evidence());
+
+    assert!(prompt.contains("울린 알림: backend error logs"), "{prompt}");
+    assert!(
+        prompt.contains("알림의 원인임을 설명할 수 없으면"),
+        "{prompt}"
+    );
+}

@@ -1,6 +1,6 @@
 use crate::fingerprint::fingerprint_any_level;
-use crate::logline::parse_log;
 use crate::logline::Level;
+use crate::logline::parse_log;
 use crate::mask::{clean, mask_log, mask_message};
 use crate::metric::changed_points;
 use crate::model::{Evidence, Suspect};
