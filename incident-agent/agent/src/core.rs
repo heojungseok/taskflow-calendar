@@ -35,8 +35,13 @@ impl<C: Chat, K: Clock> Core<C, K> {
         while let Some(event) = queue.pop_front() {
             let now = self.clock.now_unix();
             self.telemetry.observe_event(&event);
+            let verdict = match &event {
+                Event::VerdictGiven { verdict, .. } => Some(verdict.clone()),
+                _ => None,
+            };
             match self.incidents.handle(event, now) {
                 Ok(commands) => {
+                    self.telemetry.observe_verdict(verdict.as_ref(), &commands);
                     for command in commands {
                         queue.extend(self.execute(command, now));
                     }

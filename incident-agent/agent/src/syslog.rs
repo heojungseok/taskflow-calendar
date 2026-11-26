@@ -11,13 +11,13 @@ const MAX_MESSAGE_CHARS: usize = 2000;
 
 static SINK: OnceLock<Syslog> = OnceLock::new();
 
-pub(crate) struct Syslog {
+struct Syslog {
     socket: UdpSocket,
     target: SocketAddr,
 }
 
 impl Syslog {
-    pub(crate) fn connect(addr: &str) -> std::io::Result<Self> {
+    fn connect(addr: &str) -> std::io::Result<Self> {
         let target = addr.to_socket_addrs()?.next().ok_or_else(|| {
             std::io::Error::new(std::io::ErrorKind::NotFound, "syslog address not found")
         })?;
@@ -32,14 +32,14 @@ impl Syslog {
         })
     }
 
-    pub(crate) fn send(&self, unix: u64, message: &str) {
+    fn send(&self, unix: u64, message: &str) {
         let _ = self
             .socket
             .send_to(format_line(unix, message).as_bytes(), self.target);
     }
 }
 
-pub(crate) fn format_line(unix: u64, message: &str) -> String {
+fn format_line(unix: u64, message: &str) -> String {
     let (month, day) = month_day(unix / 86_400);
     let seconds = unix % 86_400;
     let message: String = message

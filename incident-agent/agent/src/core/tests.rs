@@ -208,6 +208,26 @@ fn t41_한_사건이_오류여도_다음_이벤트를_계속_처리한다() {
 }
 
 #[test]
+fn t43_받아들여진_승인만_실행_요청으로_센다() {
+    let mut rig = rig();
+    let incident = rig.open_proposal();
+    rig.clock.0.store(T0 + 960 + 601, Ordering::SeqCst);
+    rig.core.process(restart_approval(incident));
+    let text = rig.core.telemetry.render();
+    assert!(
+        text.contains("incident_agent_action_requests_total 0"),
+        "{text}"
+    );
+    rig.clock.0.store(T0 + 970, Ordering::SeqCst);
+    rig.core.process(restart_approval(incident));
+    let text = rig.core.telemetry.render();
+    assert!(
+        text.contains("incident_agent_action_requests_total 1"),
+        "{text}"
+    );
+}
+
+#[test]
 fn t41_분석이_느려도_승인은_바로_처리되어_요청_파일이_써진다() {
     let mut rig = rig();
     let incident = rig.open_proposal();

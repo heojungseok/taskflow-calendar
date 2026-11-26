@@ -157,7 +157,9 @@ fn t39_grafana_주소가_있으면_그_구간의_loki_explore_링크를_붙인�
         with_trail(NINE_KST, NINE_KST + 900, 9),
         Some("https://grafana.example/"),
     );
-    let panes = &links(&text)[0];
+    let found = links(&text);
+    assert_eq!(found.len(), 1, "{text}");
+    let panes = &found[0];
     assert_eq!(panes["a"]["datasource"], "loki");
     assert_eq!(
         panes["a"]["queries"][0]["expr"],

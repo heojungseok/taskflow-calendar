@@ -66,7 +66,8 @@ fn sources(config: &Config) -> Sources {
 
 fn start_core(
     config: &Config,
-    (chat, telemetry): (DiscordChat, Arc<Telemetry>),
+    chat: DiscordChat,
+    telemetry: Arc<Telemetry>,
     (event_tx, event_rx): (mpsc::Sender<Event>, mpsc::Receiver<Event>),
 ) -> Result<(), String> {
     let (knowledge, issues) = load_knowledge(&config.knowledge_dir);
@@ -119,7 +120,8 @@ async fn serve(config: Config) -> Result<(), String> {
     let telemetry = Arc::new(Telemetry::default());
     start_core(
         &config,
-        (chat, Arc::clone(&telemetry)),
+        chat,
+        Arc::clone(&telemetry),
         (event_tx.clone(), event_rx),
     )?;
     results::spawn(config.results_dir.clone(), event_tx.clone(), TICK_INTERVAL);
@@ -151,7 +153,7 @@ fn run() -> Result<(), String> {
     if let Some(addr) = &config.syslog_addr
         && let Err(error) = syslog::init(addr)
     {
-        syslog::line(&format!("syslog disabled: {:?}", error.kind()));
+        syslog::line(&format!("syslog disabled for {addr}: {:?}", error.kind()));
     }
     let runtime = tokio::runtime::Runtime::new().map_err(|error| error.kind().to_string())?;
     runtime.block_on(serve(config))

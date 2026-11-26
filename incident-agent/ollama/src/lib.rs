@@ -9,7 +9,6 @@ const SYSTEM_INSTRUCTION: &str =
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 const MAX_ANSWER_TOKENS: u32 = 512;
 const CONTEXT_TOKENS: u32 = 4096;
-const MAX_LOG_CHARS: usize = 300;
 const NANOS_PER_MILLI: u64 = 1_000_000;
 const MAX_RESPONSE_BYTES: u64 = 1024 * 1024;
 
@@ -139,9 +138,7 @@ impl Ollama {
 
 impl Model for Ollama {
     fn explain(&self, prompt: &str) -> Result<String, ModelError> {
-        self.chat(prompt)
-            .inspect_err(|error| eprintln!("model {} failed: {}", self.model, log_text(error)))
-            .map(|reply| reply.content)
+        self.chat(prompt).map(|reply| reply.content)
     }
 }
 
@@ -150,13 +147,4 @@ fn model_error(error: ureq::Error) -> ModelError {
         ureq::Error::Timeout(_) => ModelError::Timeout,
         other => ModelError::Unavailable(other.to_string()),
     }
-}
-
-fn log_text(error: &ModelError) -> String {
-    error
-        .to_string()
-        .chars()
-        .take(MAX_LOG_CHARS)
-        .map(|c| if c.is_control() { ' ' } else { c })
-        .collect()
 }

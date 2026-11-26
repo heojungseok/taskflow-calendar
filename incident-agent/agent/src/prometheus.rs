@@ -10,6 +10,7 @@ pub(crate) struct MetricSpec {
     pub(crate) name: &'static str,
     pub(crate) query: &'static str,
     pub(crate) floor: f64,
+    pub(crate) rises_only: bool,
 }
 
 #[derive(Deserialize)]
@@ -59,9 +60,18 @@ pub(crate) fn parse_series(
     if points.is_empty() || baseline.is_empty() {
         return Ok(None);
     }
+    let baseline = median(&baseline);
+    let points = if spec.rises_only {
+        points
+            .into_iter()
+            .map(|(at, value)| (at, value.max(baseline)))
+            .collect()
+    } else {
+        points
+    };
     Ok(Some(MetricSeries {
         name: spec.name.to_owned(),
-        baseline: median(&baseline),
+        baseline,
         floor: spec.floor,
         points,
     }))
@@ -102,6 +112,7 @@ mod tests {
         name: "pg_connection_ratio",
         query: "q",
         floor: 0.1,
+        rises_only: false,
     };
 
     fn matrix(values: &[(u64, &str)]) -> String {
@@ -124,6 +135,18 @@ mod tests {
         assert_eq!(series.floor, 0.1);
         assert_eq!(series.baseline, 0.3);
         assert_eq!(series.points, vec![(100, 0.5), (130, 0.9)]);
+    }
+
+    #[test]
+    fn t33_오를_때만_의미_있는_지표는_평소보다_낮은_값을_평소_값으로_본다() {
+        let spec = MetricSpec {
+            rises_only: true,
+            ..SPEC
+        };
+        let window = matrix(&[(100, "0.1"), (130, "0.9")]);
+        let baseline = matrix(&[(10, "0.4"), (40, "0.4")]);
+        let series = parse_series(&spec, &window, &baseline).unwrap().unwrap();
+        assert_eq!(series.points, vec![(100, 0.4), (130, 0.9)]);
     }
 
     #[test]

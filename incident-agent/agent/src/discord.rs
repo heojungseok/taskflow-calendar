@@ -152,13 +152,14 @@ impl EventHandler for Handler {
 async fn post_notices(
     http: Arc<Http>,
     channel: ChannelId,
-    (grafana_url, telemetry): (Option<String>, Arc<Telemetry>),
+    grafana_url: Option<String>,
+    telemetry: Arc<Telemetry>,
     mut notices: UnboundedReceiver<Notice>,
 ) {
     while let Some(notice) = notices.recv().await {
         let rendered = render(&notice, grafana_url.as_deref());
         if let Err(error) = channel.send_message(&http, message(&rendered)).await {
-            telemetry.add("incident_agent_discord_failures_total", &[], 1.0);
+            telemetry.discord_failed();
             crate::syslog::line(&format!("discord post failed: {error}"));
         }
     }
@@ -188,7 +189,8 @@ pub(crate) async fn run(
     tokio::spawn(post_notices(
         Arc::clone(&client.http),
         ChannelId::new(link.channel_id),
-        (link.grafana_url, link.telemetry),
+        link.grafana_url,
+        link.telemetry,
         notices,
     ));
     client

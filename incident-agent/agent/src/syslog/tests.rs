@@ -43,3 +43,10 @@ fn t44_찾을_수_없는_주소는_연결_오류다() {
     assert!(Syslog::connect("no-such-host.invalid:5140").is_err());
     assert!(Syslog::connect("missing-port").is_err());
 }
+
+#[test]
+fn t44_긴_메시지는_2000자에서_자른다() {
+    let line = format_line(NOV_26_063842, &"가".repeat(2_500));
+    let message = line.split_once("incident-agent: ").unwrap().1;
+    assert_eq!(message.chars().count(), 2_000);
+}
