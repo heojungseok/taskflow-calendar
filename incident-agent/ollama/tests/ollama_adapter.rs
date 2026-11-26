@@ -2,7 +2,7 @@ mod common;
 
 use std::time::Duration;
 
-use analyzer::{ANSWER_SCHEMA, Model};
+use analyzer::{ANSWER_SCHEMA, Model, ModelError};
 use common::{OK_BODY, serve};
 use ollama::Ollama;
 
@@ -39,4 +39,15 @@ fn reply_carries_the_answer_and_timings_in_milliseconds() {
     assert_eq!(reply.prompt_eval_ms, 3);
     assert_eq!(reply.eval_count, 5);
     assert_eq!(reply.eval_ms, 4);
+}
+
+#[test]
+fn no_answer_within_the_timeout_is_a_model_timeout() {
+    let server = serve(200, OK_BODY, Duration::from_secs(2));
+
+    let result = Ollama::new(&server.url, "qwen")
+        .timeout(Duration::from_millis(200))
+        .explain("p");
+
+    assert_eq!(result, Err(ModelError::Timeout));
 }
