@@ -15,6 +15,16 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     era * 146_097 + day_of_era - 719_468
 }
 
+fn days_in_month(year: i64, month: i64) -> i64 {
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    match month {
+        2 if leap => 29,
+        2 => 28,
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
+    }
+}
+
 fn offset_secs(zone: &str) -> Option<i64> {
     if zone == "Z" {
         return Some(0);
@@ -36,7 +46,7 @@ pub(crate) fn parse_unix(text: &str) -> Option<u64> {
     let mut date_parts = date.split('-');
     let year = number(date_parts.next()?, 1970..=9999)?;
     let month = number(date_parts.next()?, 1..=12)?;
-    let day = number(date_parts.next()?, 1..=31)?;
+    let day = number(date_parts.next()?, 1..=days_in_month(year, month))?;
     let mut clock_parts = clock.split(':');
     let hour = number(clock_parts.next()?, 0..=23)?;
     let minute = number(clock_parts.next()?, 0..=59)?;
@@ -73,5 +83,14 @@ mod tests {
         assert_eq!(parse_unix("2025-13-26T00:00:00Z"), None);
         assert_eq!(parse_unix("garbage"), None);
         assert_eq!(parse_unix("1969-12-31T23:59:59Z"), None);
+    }
+
+    #[test]
+    fn 없는_날짜는_거절하고_윤년은_받는다() {
+        assert_eq!(parse_unix("2025-02-29T00:00:00Z"), None);
+        assert_eq!(parse_unix("2025-04-31T00:00:00Z"), None);
+        assert_eq!(parse_unix("2100-02-29T00:00:00Z"), None);
+        assert!(parse_unix("2024-02-29T00:00:00Z").is_some());
+        assert!(parse_unix("2000-02-29T00:00:00Z").is_some());
     }
 }

@@ -1,9 +1,12 @@
+use std::collections::BTreeSet;
+
 use analyzer::{LogLine, Service};
 use serde::Deserialize;
 
-use crate::http::Http;
+use crate::http::{Failure, Http};
 
 const MAX_LINES: u32 = 5000;
+const GATEWAY: &str = "gateway";
 
 #[derive(Deserialize)]
 struct Response {
@@ -21,9 +24,14 @@ struct Stream {
     values: Vec<(String, String)>,
 }
 
-pub(crate) fn parse_streams(body: &str) -> Result<Vec<LogLine>, String> {
-    let response: Response =
-        serde_json::from_str(body).map_err(|_| "invalid loki response".to_owned())?;
+#[derive(Clone, Copy)]
+pub(crate) enum Direction {
+    Forward,
+    Backward,
+}
+
+pub(crate) fn parse_streams(body: &str) -> Option<Vec<LogLine>> {
+    let response: Response = serde_json::from_str(body).ok()?;
     let mut lines = Vec::new();
     for stream in response.data.result {
         let service = stream
@@ -31,39 +39,33 @@ pub(crate) fn parse_streams(body: &str) -> Result<Vec<LogLine>, String> {
             .get("service")
             .map_or("unknown", String::as_str);
         for (nanos, text) in stream.values {
-            let nanos: u128 = nanos
-                .parse()
-                .map_err(|_| "invalid loki timestamp".to_owned())?;
-            let at_unix = u64::try_from(nanos / 1_000_000_000)
-                .map_err(|_| "invalid loki timestamp".to_owned())?;
+            let nanos: u128 = nanos.parse().ok()?;
             lines.push(LogLine {
                 service: Service::new(service),
-                at_unix,
+                at_unix: u64::try_from(nanos / 1_000_000_000).ok()?,
                 text,
             });
         }
     }
     lines.sort_by_key(|line| line.at_unix);
-    Ok(lines)
+    Some(lines)
+}
+
+fn loki_service(alert_service: &Service) -> &'static str {
+    if alert_service.as_str() == GATEWAY {
+        "nginx"
+    } else {
+        "backend"
+    }
 }
 
 fn selector(services: &[Service]) -> String {
-    let names: Vec<&str> = services
-        .iter()
-        .map(Service::as_str)
-        .filter(|name| {
-            !name.is_empty()
-                && name
-                    .bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
-        })
-        .collect();
-    let pattern = if names.is_empty() {
-        ".+".to_owned()
-    } else {
-        names.join("|")
-    };
-    format!("{{service=~\"{pattern}\"}} |~ \"ERROR|WARN\"")
+    let mut names: BTreeSet<&str> = services.iter().map(loki_service).collect();
+    if names.is_empty() {
+        names.extend(["backend", "nginx"]);
+    }
+    let pattern: Vec<&str> = names.into_iter().collect();
+    format!("{{service=~\"{}\"}} |~ \"ERROR|WARN\"", pattern.join("|"))
 }
 
 pub(crate) fn fetch(
@@ -71,19 +73,22 @@ pub(crate) fn fetch(
     base: &str,
     services: &[Service],
     (from_unix, to_unix): (u64, u64),
-) -> Result<Vec<LogLine>, String> {
+    direction: Direction,
+) -> Result<Vec<LogLine>, Failure> {
     let nanos = |secs: u64| (u128::from(secs) * 1_000_000_000).to_string();
+    let direction = match direction {
+        Direction::Forward => "forward",
+        Direction::Backward => "backward",
+    };
     let query = [
         ("query", selector(services)),
         ("start", nanos(from_unix)),
         ("end", nanos(to_unix)),
         ("limit", MAX_LINES.to_string()),
-        ("direction", "forward".to_owned()),
+        ("direction", direction.to_owned()),
     ];
-    let body = http
-        .get(&format!("{base}/loki/api/v1/query_range"), &query)
-        .map_err(|error| format!("loki: {error:?}"))?;
-    parse_streams(&body)
+    let body = http.get(&format!("{base}/loki/api/v1/query_range"), &query)?;
+    parse_streams(&body).ok_or(Failure::Format)
 }
 
 #[cfg(test)]
@@ -122,8 +127,8 @@ mod tests {
 
     #[test]
     fn t31_형식이_틀리면_오류다() {
-        assert!(parse_streams("nope").is_err());
+        assert!(parse_streams("nope").is_none());
         let bad_time = r#"{"data":{"result":[{"stream":{},"values":[["abc","x"]]}]}}"#;
-        assert!(parse_streams(bad_time).is_err());
+        assert!(parse_streams(bad_time).is_none());
     }
 }

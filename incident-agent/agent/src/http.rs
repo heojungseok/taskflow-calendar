@@ -1,23 +1,35 @@
+use std::fmt;
 use std::time::Duration;
 
 const MAX_RESPONSE_BYTES: u64 = 32 * 1024 * 1024;
 
-#[derive(Debug, PartialEq, Eq)]
-pub(crate) enum HttpError {
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum Failure {
     Timeout,
-    Failed(String),
+    Request,
+    Format,
 }
 
-impl From<ureq::Error> for HttpError {
+impl fmt::Display for Failure {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Timeout => "timeout",
+            Self::Request => "request",
+            Self::Format => "format",
+        })
+    }
+}
+
+impl From<ureq::Error> for Failure {
     fn from(error: ureq::Error) -> Self {
         match error {
             ureq::Error::Timeout(_) => Self::Timeout,
-            ureq::Error::StatusCode(code) => Self::Failed(format!("status {code}")),
-            other => Self::Failed(other.to_string()),
+            _ => Self::Request,
         }
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct Http {
     agent: ureq::Agent,
 }
@@ -31,7 +43,7 @@ impl Http {
         Self { agent }
     }
 
-    pub(crate) fn get(&self, url: &str, query: &[(&str, String)]) -> Result<String, HttpError> {
+    pub(crate) fn get(&self, url: &str, query: &[(&str, String)]) -> Result<String, Failure> {
         let mut request = self.agent.get(url).header("User-Agent", "incident-agent");
         for (key, value) in query {
             request = request.query(key, value);
@@ -39,11 +51,7 @@ impl Http {
         Ok(read(request.call()?)?)
     }
 
-    pub(crate) fn post_json(
-        &self,
-        url: &str,
-        body: &serde_json::Value,
-    ) -> Result<String, HttpError> {
+    pub(crate) fn post_json(&self, url: &str, body: &serde_json::Value) -> Result<String, Failure> {
         let response = self.agent.post(url).send_json(body)?;
         Ok(read(response)?)
     }

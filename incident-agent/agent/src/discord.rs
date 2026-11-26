@@ -7,7 +7,7 @@ use serenity::all::{
     ActionRowComponent, ButtonStyle, ChannelId, ComponentInteraction, Context, CreateActionRow,
     CreateAllowedMentions, CreateButton, CreateInputText, CreateInteractionResponse,
     CreateInteractionResponseMessage, CreateMessage, CreateModal, EventHandler, GatewayIntents,
-    Http, InputTextStyle, Interaction as GatewayInteraction, ModalInteraction,
+    Http, InputTextStyle, Interaction as GatewayInteraction, MessageFlags, ModalInteraction,
 };
 use serenity::async_trait;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -54,6 +54,7 @@ fn button(button: &Button) -> CreateButton {
 fn message(message: &Message) -> CreateMessage {
     let created = CreateMessage::new()
         .content(&message.text)
+        .flags(MessageFlags::SUPPRESS_EMBEDS)
         .allowed_mentions(CreateAllowedMentions::new());
     if message.buttons.is_empty() {
         return created;
@@ -63,8 +64,7 @@ fn message(message: &Message) -> CreateMessage {
     )])
 }
 
-fn modal(id: &CustomId, title: &str, label: &str) -> CreateInteractionResponse {
-    let input = CreateInputText::new(InputTextStyle::Short, label, "value");
+fn modal(id: &CustomId, title: &str, input: CreateInputText) -> CreateInteractionResponse {
     CreateInteractionResponse::Modal(
         CreateModal::new(id.to_string(), title).components(vec![CreateActionRow::InputText(input)]),
     )
@@ -72,8 +72,17 @@ fn modal(id: &CustomId, title: &str, label: &str) -> CreateInteractionResponse {
 
 fn response(reply: Reply) -> CreateInteractionResponse {
     match reply {
-        Reply::AskCode(id) => modal(&id, "조치 승인", "TOTP 6자리"),
-        Reply::AskActualCause(id) => modal(&id, "실제 원인", "실제 원인"),
+        Reply::AskCode(id) => {
+            let input = CreateInputText::new(InputTextStyle::Short, "TOTP 6자리", "value")
+                .min_length(6)
+                .max_length(6);
+            modal(&id, "조치 승인", input)
+        }
+        Reply::AskActualCause(id) => {
+            let input = CreateInputText::new(InputTextStyle::Paragraph, "실제 원인", "value")
+                .max_length(500);
+            modal(&id, "실제 원인", input)
+        }
         Reply::Reject(text) | Reply::Accepted(text) => CreateInteractionResponse::Message(
             CreateInteractionResponseMessage::new()
                 .content(text)

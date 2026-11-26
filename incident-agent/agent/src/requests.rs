@@ -7,7 +7,7 @@ use crate::atomic;
 
 pub(crate) fn write(dir: &Path, request: &ActionRequest) -> io::Result<()> {
     let body = serde_json::to_vec(request).map_err(io::Error::other)?;
-    atomic::write(
+    atomic::create(
         dir,
         &format!("{}.json", request.request_id().as_str()),
         &body,
@@ -56,5 +56,17 @@ mod tests {
         let nested = dir.path().join("a/b");
         write(&nested, &request()).unwrap();
         assert!(nested.join("req-1.json").exists());
+    }
+
+    #[test]
+    fn t36_같은_id_파일이_이미_있으면_덮어쓰지_않고_오류다() {
+        let dir = tempfile::tempdir().unwrap();
+        write(dir.path(), &request()).unwrap();
+        let path = dir.path().join("req-1.json");
+        fs::write(&path, b"{}").unwrap();
+        let error = write(dir.path(), &request()).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::AlreadyExists);
+        assert_eq!(fs::read(&path).unwrap(), b"{}");
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
     }
 }

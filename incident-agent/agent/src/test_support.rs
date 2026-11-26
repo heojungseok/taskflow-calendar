@@ -38,6 +38,11 @@ pub(crate) fn alert(service: &str, at: u64) -> Alert {
 }
 
 pub(crate) fn report(alerts: &[Alert], grounded: bool) -> Report {
+    let grounded_answer = r#"{"cause":"검색 null 처리 누락","evidence":"NPE 반복","confidence":"high","cited_lines":[1]}"#;
+    report_answering(alerts, grounded.then_some(grounded_answer))
+}
+
+pub(crate) fn report_answering(alerts: &[Alert], answer: Option<&'static str>) -> Report {
     let logs = alerts
         .iter()
         .map(|a| LogLine {
@@ -46,13 +51,9 @@ pub(crate) fn report(alerts: &[Alert], grounded: bool) -> Report {
             text: "ERROR c.t.p.TaskSearchService : NullPointerException".to_owned(),
         })
         .collect();
-    let answer = if grounded {
-        Answer(
-            r#"{"cause":"검색 null 처리 누락","evidence":"NPE 반복","confidence":"high","cited_lines":[1]}"#,
-        )
-    } else {
-        Answer(r#"{"cause":"","evidence":"","confidence":"low","cited_lines":[]}"#)
-    };
+    let answer = Answer(
+        answer.unwrap_or(r#"{"cause":"","evidence":"","confidence":"low","cited_lines":[]}"#),
+    );
     let now = alerts.iter().map(|a| a.starts_at_unix).max().unwrap_or(T0) + 60;
     let evidence = Fixed(Evidence {
         logs,

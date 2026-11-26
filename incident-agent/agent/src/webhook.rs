@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
 use axum::Router;
@@ -12,6 +11,7 @@ use crate::grafana;
 
 const MAX_BODY_BYTES: usize = 64 * 1024;
 
+#[derive(Clone)]
 struct Shared {
     token: String,
     events: Sender<Event>,
@@ -22,7 +22,7 @@ pub(crate) fn router(token: String, events: Sender<Event>) -> Router {
         .route("/grafana", post(receive))
         .route("/healthz", get(|| async { "ok" }))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
-        .with_state(Arc::new(Shared { token, events }))
+        .with_state(Shared { token, events })
 }
 
 fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
@@ -44,7 +44,7 @@ fn authorized(headers: &HeaderMap, token: &str) -> bool {
     constant_time_eq(presented.as_bytes(), token.as_bytes()) && !token.is_empty()
 }
 
-async fn receive(State(shared): State<Arc<Shared>>, headers: HeaderMap, body: Bytes) -> StatusCode {
+async fn receive(State(shared): State<Shared>, headers: HeaderMap, body: Bytes) -> StatusCode {
     if !authorized(&headers, &shared.token) {
         return StatusCode::UNAUTHORIZED;
     }

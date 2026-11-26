@@ -1,3 +1,4 @@
+mod analysis;
 mod atomic;
 mod clock;
 mod config;
@@ -6,6 +7,7 @@ mod custom_id;
 mod discord;
 mod discord_interact;
 mod discord_render;
+mod discord_text;
 mod drafts;
 mod evidence;
 mod github;
@@ -30,9 +32,12 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use analyzer::load_knowledge;
-use incident::Incidents;
+use tokio::signal::unix::{SignalKind, signal};
 
+use analyzer::load_knowledge;
+use incident::{Event, Incidents};
+
+use crate::analysis::Analyst;
 use crate::clock::SystemClock;
 use crate::config::Config;
 use crate::core::{Core, Paths};
@@ -45,22 +50,21 @@ const MODEL_TIMEOUT: Duration = Duration::from_secs(90);
 const GITHUB_API: &str = "https://api.github.com";
 
 fn sources(config: &Config) -> Sources {
-    let mut sources = Sources::new(
-        config.loki_url.clone(),
-        config.prometheus_url.clone(),
-        config.deploy_journal.clone(),
-    );
-    sources.github = config.github_repo.clone().map(|repo| Github {
+    let github = config.github_repo.clone().map(|repo| Github {
         api_base: GITHUB_API.to_owned(),
         repo,
     });
-    sources
+    Sources::new(
+        config.loki_url.clone(),
+        config.prometheus_url.clone(),
+        github,
+    )
 }
 
 fn start_core(
     config: &Config,
     chat: DiscordChat,
-    events: mpsc::Receiver<incident::Event>,
+    (event_tx, event_rx): (mpsc::Sender<Event>, mpsc::Receiver<Event>),
 ) -> Result<(), String> {
     let (knowledge, issues) = load_knowledge(&config.knowledge_dir);
     for issue in issues {
@@ -68,27 +72,44 @@ fn start_core(
     }
     let incidents = Incidents::open(&config.db_path, config::settings(config.owner.clone()))
         .map_err(|error| format!("incident store: {error}"))?;
+    let (job_tx, job_rx) = mpsc::channel();
+    let sources = sources(config);
+    let analyst = Analyst {
+        knowledge,
+        evidence_for: move |deploy| sources.for_batch(deploy),
+        model: Llama::new(config.model_url.clone(), MODEL_TIMEOUT),
+        clock: SystemClock,
+        deploy_journal: config.deploy_journal.clone(),
+    };
+    thread::spawn(move || analysis::run(&analyst, job_rx, event_tx));
     let core = Core {
         incidents,
-        knowledge,
-        evidence: sources(config),
-        model: Llama::new(config.model_url.clone(), MODEL_TIMEOUT),
         chat,
         clock: SystemClock,
         paths: Paths {
             drafts_dir: config.drafts_dir.clone(),
             requests_dir: config.requests_dir.clone(),
-            deploy_journal: config.deploy_journal.clone(),
         },
+        analysis: job_tx,
     };
-    thread::spawn(move || core::run(core, events));
+    thread::spawn(move || core::run(core, event_rx));
     Ok(())
+}
+
+async fn terminated() {
+    match signal(SignalKind::terminate()) {
+        Ok(mut stream) => {
+            stream.recv().await;
+        }
+        Err(_) => std::future::pending().await,
+    }
 }
 
 async fn serve(config: Config) -> Result<(), String> {
     let (event_tx, event_rx) = mpsc::channel();
     let (notice_tx, notice_rx) = tokio::sync::mpsc::unbounded_channel();
-    start_core(&config, DiscordChat::new(notice_tx), event_rx)?;
+    let chat = DiscordChat::new(notice_tx);
+    start_core(&config, chat, (event_tx.clone(), event_rx))?;
     results::spawn(config.results_dir.clone(), event_tx.clone(), TICK_INTERVAL);
     let listener = tokio::net::TcpListener::bind(&config.listen_addr)
         .await
@@ -103,6 +124,7 @@ async fn serve(config: Config) -> Result<(), String> {
         served = axum::serve(listener, app) => served.map_err(|error| format!("webhook: {}", error.kind())),
         chat = discord::run(link, event_tx, notice_rx) => chat,
         _ = tokio::signal::ctrl_c() => Ok(()),
+        () = terminated() => Ok(()),
     }
 }
 

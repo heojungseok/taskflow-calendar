@@ -57,14 +57,18 @@ pub(crate) fn load(lookup: impl Fn(&str) -> Option<String>) -> Result<Config, Co
         problems: Vec::new(),
     };
     let channel = reader.text("AGENT_DISCORD_CHANNEL_ID");
-    let channel_id = channel.parse::<u64>().unwrap_or_else(|_| {
-        if !channel.is_empty() {
-            reader
-                .problems
-                .push("AGENT_DISCORD_CHANNEL_ID is invalid".to_owned());
-        }
-        0
-    });
+    let channel_id = channel
+        .parse::<u64>()
+        .ok()
+        .filter(|id| *id != 0)
+        .unwrap_or_else(|| {
+            if !channel.is_empty() {
+                reader
+                    .problems
+                    .push("AGENT_DISCORD_CHANNEL_ID is invalid".to_owned());
+            }
+            0
+        });
     let owner = reader.text("AGENT_OWNER_ID");
     let owner = DiscordUserId::try_from(owner.clone()).unwrap_or_else(|_| {
         if !owner.is_empty() {
@@ -179,5 +183,13 @@ mod tests {
         let message = load_from(&env).err().unwrap().to_string();
         assert!(message.contains("AGENT_OWNER_ID"));
         assert!(!message.contains("not-a-number-secret"));
+    }
+
+    #[test]
+    fn t42_채널_id_0은_거절한다() {
+        let mut env = env_without(&[]);
+        env.insert("AGENT_DISCORD_CHANNEL_ID".to_owned(), "0".to_owned());
+        let message = load_from(&env).err().unwrap().to_string();
+        assert!(message.contains("AGENT_DISCORD_CHANNEL_ID"));
     }
 }
