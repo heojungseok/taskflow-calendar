@@ -60,16 +60,13 @@ fn interpret(answer: &str, lines: &[EvidenceLine]) -> Analysis {
             cited.push(n);
         }
     }
-    let cited_lines_of =
-        |pred: fn(&EvidenceLine) -> bool| cited.iter().any(|n| pred(&lines[n - 1]));
-    if !cited_lines_of(|line| line.picked) {
+    let cites_picked_log = cited.iter().any(|n| {
+        let line = &lines[n - 1];
+        line.picked && line.is_log
+    });
+    if !cites_picked_log {
         return Analysis::Unknown;
     }
-    let confidence = if cited_lines_of(|line| line.is_log) {
-        confidence
-    } else {
-        Confidence::Medium
-    };
     Analysis::Guess(Guess::new(cause, evidence, confidence, cited))
 }
 

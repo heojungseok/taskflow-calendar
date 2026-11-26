@@ -52,7 +52,7 @@ pub(crate) fn collect(evidence: &Evidence, suspects: &[Suspect]) -> Vec<Evidence
         (
             6,
             EvidenceLine {
-                text: truncate(&mask_message(&text), MAX_LINE_CHARS),
+                text: truncate(&clean(&text), MAX_LINE_CHARS),
                 picked: false,
                 is_log: false,
             },
@@ -137,17 +137,18 @@ fn metric_lines(evidence: &Evidence) -> Vec<(u8, EvidenceLine)> {
             } else {
                 changed
                     .iter()
-                    .map(|(at, v)| format!("{at}={v}"))
+                    .map(|(at, v)| format!("{v}(시각 {at})"))
                     .collect::<Vec<_>>()
                     .join(", ")
             };
             let text = format!(
                 "지표 {}: baseline {}, 변화 {shown}",
-                series.name, series.baseline
+                mask_message(&series.name),
+                series.baseline
             );
             let picked = !changed.is_empty();
             let line = EvidenceLine {
-                text: truncate(&mask_message(&text), MAX_LINE_CHARS),
+                text: truncate(&text, MAX_LINE_CHARS),
                 picked,
                 is_log: false,
             };
