@@ -1,14 +1,19 @@
 use std::env;
 use std::fs;
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{self, ExitCode};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use contract::Outcome;
 use executor::{Clock, Command, CommandRunner, Setup, execute};
 
 const TOTP_SECRET_KEY: &str = "EXECUTOR_TOTP_SECRET";
 const MAX_REQUESTS_PER_RUN: usize = 10;
+const RESTART_TIMEOUT: Duration = Duration::from_secs(120);
+const ROLLBACK_TIMEOUT: Duration = Duration::from_secs(900);
+const POLL_INTERVAL: Duration = Duration::from_millis(200);
 
 struct SystemClock;
 
@@ -28,23 +33,51 @@ struct SystemCommandRunner {
 
 impl CommandRunner for SystemCommandRunner {
     fn run(&self, command: &Command) -> Result<(), String> {
-        let (program, args) = match command {
-            Command::RestartBackend { .. } => {
-                (&self.docker, ["restart", self.backend_container.as_str()])
-            }
+        match command {
+            Command::RestartBackend { .. } => run_with_timeout(
+                &self.docker,
+                &["restart", self.backend_container.as_str()],
+                RESTART_TIMEOUT,
+            ),
             Command::RollbackBackend {
                 observed, target, ..
-            } => (&self.rollback_program, [observed.as_str(), target.as_str()]),
-        };
-        let status = process::Command::new(program)
-            .args(args)
-            .env_remove(TOTP_SECRET_KEY)
-            .status()
-            .map_err(|error| format!("could not start command: {}", error.kind()))?;
-        if status.success() {
-            return Ok(());
+            } => run_with_timeout(
+                &self.rollback_program,
+                &[observed.as_str(), target.as_str()],
+                ROLLBACK_TIMEOUT,
+            ),
         }
-        Err(format!("command exited with {status}"))
+    }
+}
+
+fn run_with_timeout(program: &Path, args: &[&str], timeout: Duration) -> Result<(), String> {
+    let mut child = process::Command::new(program)
+        .args(args)
+        .env_remove(TOTP_SECRET_KEY)
+        .process_group(0)
+        .spawn()
+        .map_err(|error| format!("could not start command: {}", error.kind()))?;
+    let deadline = Instant::now() + timeout;
+    loop {
+        let waited = child
+            .try_wait()
+            .map_err(|error| format!("could not wait for command: {}", error.kind()))?;
+        if let Some(status) = waited {
+            return if status.success() {
+                Ok(())
+            } else {
+                Err(format!("command exited with {status}"))
+            };
+        }
+        if Instant::now() >= deadline {
+            let group = format!("-{}", child.id());
+            let _ = process::Command::new("/bin/kill")
+                .args(["-KILL", "--", &group])
+                .status();
+            let _ = child.wait();
+            return Err(format!("command timed out after {}s", timeout.as_secs()));
+        }
+        thread::sleep(POLL_INTERVAL);
     }
 }
 
@@ -142,5 +175,57 @@ fn main() -> ExitCode {
             eprintln!("{error}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+    use std::time::{Duration, Instant};
+
+    use super::run_with_timeout;
+
+    fn alive(pid: &str) -> bool {
+        std::process::Command::new("/bin/kill")
+            .args(["-0", pid])
+            .status()
+            .is_ok_and(|status| status.success())
+    }
+
+    #[test]
+    fn command_that_outlives_its_timeout_is_stopped_with_its_children() {
+        let dir = tempfile::tempdir().unwrap();
+        let pid_file = dir.path().join("child.pid");
+        let script = format!("sleep 30 & echo $! > {}; wait", pid_file.display());
+        let started = Instant::now();
+
+        let result = run_with_timeout(
+            Path::new("/bin/sh"),
+            &["-c", &script],
+            Duration::from_secs(1),
+        );
+
+        assert!(result.unwrap_err().contains("timed out"));
+        assert!(started.elapsed() < Duration::from_secs(5));
+        let child = std::fs::read_to_string(&pid_file).unwrap();
+        std::thread::sleep(Duration::from_millis(300));
+        assert!(!alive(child.trim()));
+    }
+
+    #[test]
+    fn command_that_finishes_in_time_reports_its_exit_status() {
+        let ok = run_with_timeout(
+            Path::new("/bin/sh"),
+            &["-c", "exit 0"],
+            Duration::from_secs(5),
+        );
+        let failed = run_with_timeout(
+            Path::new("/bin/sh"),
+            &["-c", "exit 3"],
+            Duration::from_secs(5),
+        );
+
+        assert_eq!(ok, Ok(()));
+        assert!(failed.unwrap_err().contains("exit"));
     }
 }
