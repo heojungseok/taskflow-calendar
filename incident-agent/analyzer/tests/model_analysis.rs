@@ -366,3 +366,43 @@ fn answer_schema_is_exported_for_the_model_adapter() {
 
     assert!(schema["properties"]["cited_lines"].is_object());
 }
+
+#[test]
+fn metric_line_keeps_its_own_korean_labels() {
+    let evidence = Evidence {
+        metrics: vec![MetricSeries {
+            name: "process_cpu_usage".to_owned(),
+            baseline: 0.1,
+            floor: 0.5,
+            points: vec![(1_000, 0.95)],
+        }],
+        ..Evidence::default()
+    };
+
+    let prompt = prompt_of(evidence);
+
+    assert!(prompt.contains("지표 process_cpu_usage"), "{prompt}");
+    assert!(!prompt.contains("[한글"), "{prompt}");
+    assert!(prompt.contains("변화 0.95(시각 1000)"), "{prompt}");
+}
+
+#[test]
+fn commit_line_shows_its_label_sha_and_files() {
+    let sha = "4f1c2a9d0b7e6f5a4c3b2a1908f7e6d5c4b3a291";
+    let evidence = Evidence {
+        commits: vec![analyzer::Commit {
+            sha: sha.to_owned(),
+            files: vec!["src/main/java/com/taskflow/TaskSearchService.java".to_owned()],
+        }],
+        ..evidence()
+    };
+
+    let prompt = prompt_of(evidence);
+
+    assert!(
+        prompt.contains(&format!(
+            "커밋 {sha}: src/main/java/com/taskflow/TaskSearchService.java"
+        )),
+        "{prompt}"
+    );
+}
