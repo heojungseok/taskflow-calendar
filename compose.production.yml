@@ -215,7 +215,7 @@ services:
       AGENT_LOKI_URL: http://loki:3100
       AGENT_PROMETHEUS_URL: http://prometheus:9090
       AGENT_MODEL_URL: ${AGENT_MODEL_URL:-http://host.docker.internal:11434}
-      AGENT_MODEL_NAME: ${AGENT_MODEL_NAME:-}
+      AGENT_MODEL_NAME: ${AGENT_MODEL_NAME:?required}
       AGENT_DB_PATH: /data/agent.sqlite3
       AGENT_KNOWLEDGE_DIR: /knowledge
       AGENT_DRAFTS_DIR: /incident/drafts
@@ -229,11 +229,11 @@ services:
       AGENT_GITHUB_REPO: ${AGENT_GITHUB_REPO:-}
     volumes:
       - incident-agent-data:/data
-      - ${TASKFLOW_INCIDENT_DIR:?required}/requests:/incident/requests
-      - ${TASKFLOW_INCIDENT_DIR:?required}/results:/incident/results
-      - ${TASKFLOW_INCIDENT_DIR:?required}/drafts:/incident/drafts
-      - ${TASKFLOW_DEPLOY_STATE_DIR:?required}/journal.tsv:/deploy-state/journal.tsv:ro
-    extra_hosts: ["host.docker.internal:host-gateway"]
+      - { type: bind, source: "${TASKFLOW_INCIDENT_DIR:?required}/requests", target: /incident/requests, bind: { create_host_path: false } }
+      - { type: bind, source: "${TASKFLOW_INCIDENT_DIR:?required}/results", target: /incident/results, bind: { create_host_path: false } }
+      - { type: bind, source: "${TASKFLOW_INCIDENT_DIR:?required}/drafts", target: /incident/drafts, bind: { create_host_path: false } }
+      - { type: bind, source: "${TASKFLOW_DEPLOY_STATE_DIR:?required}/journal.tsv", target: /deploy-state/journal.tsv, read_only: true, bind: { create_host_path: false } }
+    tmpfs: ["/tmp:size=16m,mode=1777"]
     networks: [monitoring, logging, agent-egress]
     restart: unless-stopped
     logging: *logging

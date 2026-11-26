@@ -10,6 +10,12 @@ config=$(mktemp)
 trap 'rm -f "$config"' EXIT
 cat > "$config"
 
+# Grafana provisioning의 object_matchers는 연산자를 따옴표로 감싸야 한다. 그대로 쓰면 YAML 태그로 읽혀 Grafana가 시작하지 못한다.
+if grep -En '\[[^],]+, *(!=|=~|!~)[],]' deploy/grafana/provisioning/alerting/*.yml; then
+  echo "Quote matcher operators in Grafana alerting provisioning" >&2
+  exit 1
+fi
+
 jq -e '
   .name == "taskflow-public"
   and (.services | all(.container_name == null))
@@ -41,12 +47,18 @@ jq -e '
   and ((.services.grafana.networks | keys | sort) == ["grafana-egress", "logging", "monitoring"])
   and ((.services["incident-agent"].networks | keys | sort) == ["agent-egress", "logging", "monitoring"])
   and (.networks["agent-egress"].internal != true)
-  and (.services["incident-agent"].image | test("^taskflow-incident-agent:[0-9a-zA-Z._-]+$"))
+  and .services["incident-agent"].image == "taskflow-incident-agent:replace-with-exact-agent-git-sha"
   and (.services["incident-agent"].ports == null)
   and (.services["incident-agent"].read_only == true)
   and (.services["incident-agent"].cap_drop == ["ALL"])
-  and (.services["incident-agent"].security_opt | index("no-new-privileges:true") != null)
-  and (.services["incident-agent"].user | test("^[1-9][0-9]*(:[0-9]+)?$"))
+  and (.services["incident-agent"].security_opt == ["no-new-privileges:true"])
+  and (.services["incident-agent"].cap_add == null)
+  and (.services["incident-agent"].privileged == null)
+  and (.services["incident-agent"].network_mode == null)
+  and (.services["incident-agent"].pid == null)
+  and (.services["incident-agent"].user | test("^[1-9][0-9]*:[1-9][0-9]*$"))
+  and ([.services["incident-agent"].volumes[] | .target] | sort == ["/data", "/deploy-state/journal.tsv", "/incident/drafts", "/incident/requests", "/incident/results"])
+  and ([.services["incident-agent"].volumes[] | select(.type == "bind") | .bind.create_host_path] == [false, false, false, false])
   and ([.services["incident-agent"].volumes[] | select(.target == "/deploy-state/journal.tsv") | .read_only] == [true])
   and ([.services | to_entries[] | select((.value.networks // {}) | has("agent-egress")) | .key] == ["incident-agent"])
   and (.networks.logging.internal and .networks["log-ingest"].internal)

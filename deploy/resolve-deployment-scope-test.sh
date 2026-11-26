@@ -95,11 +95,11 @@ printf '%s\n' 'name: incident-agent' >"$repo/.github/workflows/incident-agent.ym
 git -C "$repo" add incident-agent .github/workflows/incident-agent.yml
 git -C "$repo" commit -qm 'incident agent'
 incident_agent_sha=$(git -C "$repo" rev-parse HEAD)
-assert_plan agent "$full_sha" "$full_sha" false false "$incident_agent_sha" "$incident_agent_sha"
+assert_plan none "$full_sha" "$full_sha" false false "$incident_agent_sha" "$full_sha"
 printf '%s\n' 'backend-with-incident-agent' >"$repo/src/main/java/App.java"
 git -C "$repo" commit -qam 'incident agent and backend'
 incident_backend_sha=$(git -C "$repo" rev-parse HEAD)
-assert_plan full "$incident_backend_sha" "$incident_backend_sha" false true "$incident_backend_sha" "$incident_backend_sha"
+assert_plan backend "$incident_backend_sha" "$full_sha" false false "$incident_backend_sha" "$full_sha"
 git -C "$repo" reset -q --hard "$docs_sha"
 
 printf '%s\n' 'unknown production contract' >"$repo/deploy/new-production-contract.yml"
@@ -304,42 +304,96 @@ agent_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$sentinel_base" "$sentinel_base" "$sentinel_base"
 assert_plan agent "$sentinel_base" "$sentinel_base" false false "$agent_sha" "$agent_sha"
 
-# AGENT_GIT_SHA가 아직 env에 없으면 BACKEND_GIT_SHA를 기준으로 판별한다.
+# AGENT_GIT_SHA가 없거나 비어 있으면 분석기는 추적하지 않는다(NEXT_AGENT_GIT_SHA만 backend 기준 값).
 write_env "$sentinel_base" "$sentinel_base"
-assert_plan agent "$sentinel_base" "$sentinel_base" false false "$agent_sha" "$agent_sha"
+assert_plan none "$sentinel_base" "$sentinel_base" false false "$agent_sha" "$sentinel_base"
+write_env "$sentinel_base" "$sentinel_base" ""
+assert_plan none "$sentinel_base" "$sentinel_base" false false "$agent_sha" "$sentinel_base"
 
-# 이미 배포된 agent 위에서는 다른 범위만 바뀐 것으로 본다(agent sha는 그대로).
+# 이미 배포된 agent 위에서 docs만 바뀌면 none, agent sha는 그대로.
 write_env "$sentinel_base" "$sentinel_base" "$agent_sha"
-assert_plan none "$sentinel_base" "$sentinel_base" false false "$agent_sha" "$agent_sha"
+printf '%s\n' 'docs after agent' >>"$repo/README.md"
+git -C "$repo" commit -qam 'docs after agent'
+docs_agent_sha=$(git -C "$repo" rev-parse HEAD)
+assert_plan none "$sentinel_base" "$sentinel_base" false false "$docs_agent_sha" "$agent_sha"
 
-# agent와 backend가 함께 바뀌면 full(승인), agent와 frontend도 마찬가지.
+# backend만 바뀌면 agent sha는 그대로.
 printf '%s\n' 'backend-v4' >"$repo/src/main/java/App.java"
 git -C "$repo" commit -qam 'backend after agent'
 agent_backend_sha=$(git -C "$repo" rev-parse HEAD)
-write_env "$agent_sha" "$agent_sha" "$sentinel_base"
-assert_plan full "$agent_backend_sha" "$agent_backend_sha" false true "$agent_backend_sha" "$agent_backend_sha"
+write_env "$sentinel_base" "$sentinel_base" "$agent_sha"
+assert_plan backend "$agent_backend_sha" "$sentinel_base" false false "$agent_backend_sha" "$agent_sha"
+
+# 분석기와 backend가 함께 바뀌어도 backend 범위다. agent sha는 그대로 둔다.
+write_env "$sentinel_base" "$sentinel_base" "$sentinel_base"
+assert_plan backend "$agent_backend_sha" "$sentinel_base" false false "$agent_backend_sha" "$sentinel_base"
+write_env "$sentinel_base" "$sentinel_base"
+assert_plan backend "$agent_backend_sha" "$sentinel_base" false false "$agent_backend_sha" "$sentinel_base"
 
 printf '%s\n' 'frontend-v4' >"$repo/frontend/src/App.tsx"
 git -C "$repo" commit -qam 'frontend after agent'
 agent_frontend_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$agent_backend_sha" "$sentinel_base" "$sentinel_base"
-assert_plan full "$agent_frontend_sha" "$agent_frontend_sha" false true "$agent_frontend_sha" "$agent_frontend_sha"
+assert_plan frontend "$agent_backend_sha" "$agent_frontend_sha" false false "$agent_frontend_sha" "$sentinel_base"
+write_env "$agent_backend_sha" "$sentinel_base"
+assert_plan frontend "$agent_backend_sha" "$agent_frontend_sha" false false "$agent_frontend_sha" "$agent_backend_sha"
+write_env "$agent_backend_sha" "$sentinel_base" ""
+assert_plan frontend "$agent_backend_sha" "$agent_frontend_sha" false false "$agent_frontend_sha" "$agent_backend_sha"
 
-# agent와 migration이 함께 바뀌면 full(승인)이고 migration 표시는 유지된다.
+# 분석기와 migration이 함께 바뀌면 backend 범위(승인)이고 agent sha는 그대로다.
 printf '%s\n' 'select 2;' >"$repo/deploy/db/migration/V3__agent.sql"
 printf '%s\n' 'fn main() { }' >"$repo/incident-agent/agent/main.rs"
 git -C "$repo" add deploy/db/migration incident-agent
 git -C "$repo" commit -qm 'agent and migration'
 agent_migration_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$agent_frontend_sha" "$agent_frontend_sha" "$agent_frontend_sha"
-assert_plan full "$agent_migration_sha" "$agent_migration_sha" true true "$agent_migration_sha" "$agent_migration_sha"
+assert_plan backend "$agent_migration_sha" "$agent_frontend_sha" true true "$agent_migration_sha" "$agent_frontend_sha"
 
-# agent와 compose가 함께 바뀌면 full.
+# 분석기와 compose가 함께 바뀌면 full.
 printf '%s\n' 'services: { agent: {} }' >"$repo/compose.production.yml"
 git -C "$repo" commit -qam 'compose after agent'
 agent_compose_sha=$(git -C "$repo" rev-parse HEAD)
 write_env "$agent_migration_sha" "$agent_migration_sha" "$agent_migration_sha"
 assert_plan full "$agent_compose_sha" "$agent_compose_sha" false true "$agent_compose_sha" "$agent_compose_sha"
+
+# unknown 경로가 있으면 분석기가 같이 바뀌어도 unknown.
+printf '%s\n' 'x' >"$repo/deploy/unknown-agent-contract.yml"
+git -C "$repo" add deploy/unknown-agent-contract.yml
+git -C "$repo" commit -qm 'unknown with agent'
+agent_unknown_sha=$(git -C "$repo" rev-parse HEAD)
+write_env "$agent_compose_sha" "$agent_compose_sha" "$sentinel_base"
+assert_plan unknown "$agent_compose_sha" "$agent_compose_sha" false false "$agent_unknown_sha"
+
+# AGENT_GIT_SHA가 잘못되면 거부한다: 형식 오류, 커밋이 아님, 중복, 조상이 아님.
+write_env "$agent_compose_sha" "$agent_compose_sha" short
+if sh "$repo/deploy/resolve-deployment-scope.sh" "$repo/production.env" "$agent_compose_sha" >/dev/null 2>&1; then
+  echo "Short AGENT_GIT_SHA was accepted" >&2
+  exit 1
+fi
+agent_blob_sha=$(printf '%s' 'agent not a commit' | git -C "$repo" hash-object -w --stdin)
+write_env "$agent_compose_sha" "$agent_compose_sha" "$agent_blob_sha"
+if sh "$repo/deploy/resolve-deployment-scope.sh" "$repo/production.env" "$agent_compose_sha" >/dev/null 2>&1; then
+  echo "Non-commit AGENT_GIT_SHA was accepted" >&2
+  exit 1
+fi
+write_env "$agent_compose_sha" "$agent_compose_sha" "$sentinel_base"
+printf 'AGENT_GIT_SHA=%s\n' "$sentinel_base" >>"$repo/production.env"
+if sh "$repo/deploy/resolve-deployment-scope.sh" "$repo/production.env" "$agent_compose_sha" >/dev/null 2>&1; then
+  echo "Duplicate AGENT_GIT_SHA was accepted" >&2
+  exit 1
+fi
+git -C "$repo" checkout -q -b agent-side "$sentinel_base"
+mkdir -p "$repo/incident-agent"
+printf '%s\n' 'side' >"$repo/incident-agent/side.txt"
+git -C "$repo" add incident-agent/side.txt
+git -C "$repo" commit -qm 'agent side branch'
+agent_side_sha=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" checkout -q -
+write_env "$agent_compose_sha" "$agent_compose_sha" "$agent_side_sha"
+if sh "$repo/deploy/resolve-deployment-scope.sh" "$repo/production.env" "$agent_compose_sha" >/dev/null 2>&1; then
+  echo "Non-ancestor AGENT_GIT_SHA was accepted" >&2
+  exit 1
+fi
 
 write_env "$base_sha" "$frontend_sha"
 sentinel="$tmp_dir/sourced-secret"

@@ -85,16 +85,23 @@ frontend_sha=$(read_sha FRONTEND_GIT_SHA)
 validate_sha BACKEND_GIT_SHA "$backend_sha"
 validate_sha FRONTEND_GIT_SHA "$frontend_sha"
 agent_sha=$(read_optional_sha AGENT_GIT_SHA)
-[ -n "$agent_sha" ] || agent_sha=$backend_sha
-validate_sha AGENT_GIT_SHA "$agent_sha"
+agent_tracked=false
+if [ -n "$agent_sha" ]; then
+  agent_tracked=true
+  validate_sha AGENT_GIT_SHA "$agent_sha"
+else
+  agent_sha=$backend_sha
+fi
 validate_sha target_sha "$target_sha"
 
 git -C "$project_root" merge-base --is-ancestor "$backend_sha" "$target_sha" || \
   fail "BACKEND_GIT_SHA is not an ancestor of target_sha"
 git -C "$project_root" merge-base --is-ancestor "$frontend_sha" "$target_sha" || \
   fail "FRONTEND_GIT_SHA is not an ancestor of target_sha"
-git -C "$project_root" merge-base --is-ancestor "$agent_sha" "$target_sha" || \
-  fail "AGENT_GIT_SHA is not an ancestor of target_sha"
+if [ "$agent_tracked" = true ]; then
+  git -C "$project_root" merge-base --is-ancestor "$agent_sha" "$target_sha" || \
+    fail "AGENT_GIT_SHA is not an ancestor of target_sha"
+fi
 
 backend_changed=false
 frontend_changed=false
@@ -122,7 +129,7 @@ if has_changes "$frontend_sha" \
   frontend_changed=true
 fi
 
-if has_changes "$agent_sha" incident-agent; then
+if [ "$agent_tracked" = true ] && has_changes "$agent_sha" incident-agent; then
   agent_changed=true
 fi
 
@@ -148,8 +155,7 @@ requires_approval=false
 if [ "$unknown_changed" = true ]; then
   scope=unknown
 elif [ "$full_changed" = true ] || \
-     { [ "$backend_changed" = true ] && [ "$frontend_changed" = true ]; } || \
-     { [ "$agent_changed" = true ] && { [ "$backend_changed" = true ] || [ "$frontend_changed" = true ]; }; }; then
+     { [ "$backend_changed" = true ] && [ "$frontend_changed" = true ]; }; then
   scope=full
   next_backend_sha=$target_sha
   next_frontend_sha=$target_sha
