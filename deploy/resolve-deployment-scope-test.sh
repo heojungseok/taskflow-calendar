@@ -39,6 +39,9 @@ docs_sha=$(git -C "$repo" rev-parse HEAD)
 
 write_env() {
   printf 'BACKEND_GIT_SHA=%s\nFRONTEND_GIT_SHA=%s\n' "$1" "$2" >"$repo/production.env"
+  if [ "$#" -ge 3 ]; then
+    printf 'AGENT_GIT_SHA=%s\n' "$3" >>"$repo/production.env"
+  fi
 }
 
 assert_plan() {
@@ -48,11 +51,15 @@ assert_plan() {
   expected_migration=$4
   expected_approval=$5
   target=$6
+  expected_agent=${7:-}
 
   output=$(sh "$repo/deploy/resolve-deployment-scope.sh" "$repo/production.env" "$target")
   printf '%s\n' "$output" | grep -Fx "DEPLOY_SCOPE=$expected_scope" >/dev/null
   printf '%s\n' "$output" | grep -Fx "NEXT_BACKEND_GIT_SHA=$expected_backend" >/dev/null
   printf '%s\n' "$output" | grep -Fx "NEXT_FRONTEND_GIT_SHA=$expected_frontend" >/dev/null
+  if [ -n "$expected_agent" ]; then
+    printf '%s\n' "$output" | grep -Fx "NEXT_AGENT_GIT_SHA=$expected_agent" >/dev/null
+  fi
   printf '%s\n' "$output" | grep -Fx "MIGRATION_CHANGED=$expected_migration" >/dev/null
   printf '%s\n' "$output" | grep -Fx "REQUIRES_APPROVAL=$expected_approval" >/dev/null
 }
@@ -86,13 +93,13 @@ mkdir -p "$repo/incident-agent" "$repo/.github/workflows"
 printf '%s\n' '[workspace]' >"$repo/incident-agent/Cargo.toml"
 printf '%s\n' 'name: incident-agent' >"$repo/.github/workflows/incident-agent.yml"
 git -C "$repo" add incident-agent .github/workflows/incident-agent.yml
-git -C "$repo" commit -qm 'incident agent without deployment'
+git -C "$repo" commit -qm 'incident agent'
 incident_agent_sha=$(git -C "$repo" rev-parse HEAD)
-assert_plan none "$full_sha" "$full_sha" false false "$incident_agent_sha"
+assert_plan agent "$full_sha" "$full_sha" false false "$incident_agent_sha" "$incident_agent_sha"
 printf '%s\n' 'backend-with-incident-agent' >"$repo/src/main/java/App.java"
 git -C "$repo" commit -qam 'incident agent and backend'
 incident_backend_sha=$(git -C "$repo" rev-parse HEAD)
-assert_plan backend "$incident_backend_sha" "$full_sha" false false "$incident_backend_sha"
+assert_plan full "$incident_backend_sha" "$incident_backend_sha" false true "$incident_backend_sha" "$incident_backend_sha"
 git -C "$repo" reset -q --hard "$docs_sha"
 
 printf '%s\n' 'unknown production contract' >"$repo/deploy/new-production-contract.yml"
@@ -279,6 +286,62 @@ assert_plan full "$both_sha" "$both_sha" false true "$both_sha"
 write_env "$base_sha" "$frontend_sha"
 assert_plan backend "$frontend_sha" "$frontend_sha" false false "$frontend_sha"
 
+# 분석기(incident-agent/**)만 바뀌면 agent 범위, 승인 없이 자동. 워크플로 파일만 바뀌면 none.
+sentinel_base=$(git -C "$repo" rev-parse HEAD)
+mkdir -p "$repo/.github/workflows"
+printf '%s\n' 'name: incident-agent' >"$repo/.github/workflows/incident-agent.yml"
+git -C "$repo" add .github/workflows/incident-agent.yml
+git -C "$repo" commit -qm 'agent workflow'
+agent_workflow_sha=$(git -C "$repo" rev-parse HEAD)
+write_env "$sentinel_base" "$sentinel_base" "$sentinel_base"
+assert_plan none "$sentinel_base" "$sentinel_base" false false "$agent_workflow_sha" "$sentinel_base"
+
+mkdir -p "$repo/incident-agent/agent"
+printf '%s\n' 'fn main() {}' >"$repo/incident-agent/agent/main.rs"
+git -C "$repo" add incident-agent
+git -C "$repo" commit -qm 'agent code'
+agent_sha=$(git -C "$repo" rev-parse HEAD)
+write_env "$sentinel_base" "$sentinel_base" "$sentinel_base"
+assert_plan agent "$sentinel_base" "$sentinel_base" false false "$agent_sha" "$agent_sha"
+
+# AGENT_GIT_SHA가 아직 env에 없으면 BACKEND_GIT_SHA를 기준으로 판별한다.
+write_env "$sentinel_base" "$sentinel_base"
+assert_plan agent "$sentinel_base" "$sentinel_base" false false "$agent_sha" "$agent_sha"
+
+# 이미 배포된 agent 위에서는 다른 범위만 바뀐 것으로 본다(agent sha는 그대로).
+write_env "$sentinel_base" "$sentinel_base" "$agent_sha"
+assert_plan none "$sentinel_base" "$sentinel_base" false false "$agent_sha" "$agent_sha"
+
+# agent와 backend가 함께 바뀌면 full(승인), agent와 frontend도 마찬가지.
+printf '%s\n' 'backend-v4' >"$repo/src/main/java/App.java"
+git -C "$repo" commit -qam 'backend after agent'
+agent_backend_sha=$(git -C "$repo" rev-parse HEAD)
+write_env "$agent_sha" "$agent_sha" "$sentinel_base"
+assert_plan full "$agent_backend_sha" "$agent_backend_sha" false true "$agent_backend_sha" "$agent_backend_sha"
+
+printf '%s\n' 'frontend-v4' >"$repo/frontend/src/App.tsx"
+git -C "$repo" commit -qam 'frontend after agent'
+agent_frontend_sha=$(git -C "$repo" rev-parse HEAD)
+write_env "$agent_backend_sha" "$sentinel_base" "$sentinel_base"
+assert_plan full "$agent_frontend_sha" "$agent_frontend_sha" false true "$agent_frontend_sha" "$agent_frontend_sha"
+
+# agent와 migration이 함께 바뀌면 full(승인)이고 migration 표시는 유지된다.
+printf '%s\n' 'select 2;' >"$repo/deploy/db/migration/V3__agent.sql"
+printf '%s\n' 'fn main() { }' >"$repo/incident-agent/agent/main.rs"
+git -C "$repo" add deploy/db/migration incident-agent
+git -C "$repo" commit -qm 'agent and migration'
+agent_migration_sha=$(git -C "$repo" rev-parse HEAD)
+write_env "$agent_frontend_sha" "$agent_frontend_sha" "$agent_frontend_sha"
+assert_plan full "$agent_migration_sha" "$agent_migration_sha" true true "$agent_migration_sha" "$agent_migration_sha"
+
+# agent와 compose가 함께 바뀌면 full.
+printf '%s\n' 'services: { agent: {} }' >"$repo/compose.production.yml"
+git -C "$repo" commit -qam 'compose after agent'
+agent_compose_sha=$(git -C "$repo" rev-parse HEAD)
+write_env "$agent_migration_sha" "$agent_migration_sha" "$agent_migration_sha"
+assert_plan full "$agent_compose_sha" "$agent_compose_sha" false true "$agent_compose_sha" "$agent_compose_sha"
+
+write_env "$base_sha" "$frontend_sha"
 sentinel="$tmp_dir/sourced-secret"
 printf 'UNRELATED_SECRET=$(touch %s)\n' "$sentinel" >>"$repo/production.env"
 sh "$repo/deploy/resolve-deployment-scope.sh" "$repo/production.env" "$frontend_sha" >/dev/null

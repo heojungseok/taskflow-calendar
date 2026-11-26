@@ -143,6 +143,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?required}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:?required}
+      AGENT_WEBHOOK_TOKEN: ${AGENT_WEBHOOK_TOKEN:?required}
       GF_SERVER_ROOT_URL: "${TASKFLOW_GRAFANA_ROOT_URL:-http://localhost:${TASKFLOW_GRAFANA_PORT:-3001}/}"
       GF_USERS_DEFAULT_LANGUAGE: ko-KR
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana-dashboards/taskflow.json
@@ -201,6 +202,42 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Grafana 알림을 받아 증거를 모으는 분석기. 운영 폴더(요청·결과·초안)와 배포 기록만 마운트하고 Docker 소켓·포트는 없다.
+  incident-agent:
+    image: taskflow-incident-agent:${AGENT_GIT_SHA:?required}
+    build: { context: incident-agent, dockerfile: Dockerfile }
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      AGENT_LISTEN_ADDR: 0.0.0.0:8080
+      AGENT_LOKI_URL: http://loki:3100
+      AGENT_PROMETHEUS_URL: http://prometheus:9090
+      AGENT_MODEL_URL: ${AGENT_MODEL_URL:-http://host.docker.internal:11434}
+      AGENT_MODEL_NAME: ${AGENT_MODEL_NAME:-}
+      AGENT_DB_PATH: /data/agent.sqlite3
+      AGENT_KNOWLEDGE_DIR: /knowledge
+      AGENT_DRAFTS_DIR: /incident/drafts
+      AGENT_REQUESTS_DIR: /incident/requests
+      AGENT_RESULTS_DIR: /incident/results
+      AGENT_DEPLOY_JOURNAL: /deploy-state/journal.tsv
+      AGENT_WEBHOOK_TOKEN: ${AGENT_WEBHOOK_TOKEN:?required}
+      AGENT_DISCORD_TOKEN: ${AGENT_DISCORD_TOKEN:?required}
+      AGENT_DISCORD_CHANNEL_ID: ${AGENT_DISCORD_CHANNEL_ID:?required}
+      AGENT_OWNER_ID: ${AGENT_OWNER_ID:?required}
+      AGENT_GITHUB_REPO: ${AGENT_GITHUB_REPO:-}
+    volumes:
+      - incident-agent-data:/data
+      - ${TASKFLOW_INCIDENT_DIR:?required}/requests:/incident/requests
+      - ${TASKFLOW_INCIDENT_DIR:?required}/results:/incident/results
+      - ${TASKFLOW_INCIDENT_DIR:?required}/drafts:/incident/drafts
+      - ${TASKFLOW_DEPLOY_STATE_DIR:?required}/journal.tsv:/deploy-state/journal.tsv:ro
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    networks: [monitoring, logging, agent-egress]
+    restart: unless-stopped
+    logging: *logging
+
   db-verify:
     profiles: [verify]
     image: pgvector/pgvector:0.8.6-pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
@@ -226,6 +263,8 @@ networks:
   cache: { internal: true }
   monitoring: { internal: true }
   grafana-egress: {}
+  # Discord·GitHub·호스트의 모델 서버로 나가는 길. 분석기만 붙는다.
+  agent-egress: {}
   logging: { internal: true }
   # 로그를 보내는 쪽(nginx·backend)과 Alloy만 붙는다. Loki는 여기에 두지 않아 backend가 Loki를 읽거나 지울 수 없다.
   log-ingest:
@@ -237,3 +276,4 @@ volumes:
   postgres-data: { name: taskflow-public-postgres-data }
   prometheus-data: { name: taskflow-public-prometheus-data }
   loki-data: { name: taskflow-public-loki-data }
+  incident-agent-data: { name: taskflow-public-incident-agent-data }
