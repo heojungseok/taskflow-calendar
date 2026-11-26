@@ -118,6 +118,7 @@ async fn serve(config: Config) -> Result<(), String> {
         token: config.discord_token.clone(),
         channel_id: config.discord_channel_id,
         owner: config.owner.clone(),
+        grafana_url: config.grafana_url.clone(),
     };
     tokio::select! {
         served = axum::serve(listener, app) => served.map_err(|error| format!("webhook: {}", error.kind())),

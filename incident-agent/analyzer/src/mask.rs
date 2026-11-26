@@ -1,4 +1,4 @@
-use crate::logline::{parse_log, replace_quoted};
+use crate::logline::{is_trace_id, parse_log, replace_quoted};
 
 const SECRET_MIN_LEN: usize = 20;
 const SECRET_MIN_DIGITS: usize = 3;
@@ -104,7 +104,8 @@ fn is_secret_char(c: char) -> bool {
 }
 
 fn is_secret(run: &str) -> bool {
-    run.chars().count() >= SECRET_MIN_LEN
+    !run.strip_prefix("traceId=").is_some_and(is_trace_id)
+        && run.chars().count() >= SECRET_MIN_LEN
         && run.chars().any(|c| c.is_ascii_alphabetic())
         && run.chars().filter(char::is_ascii_digit).count() >= SECRET_MIN_DIGITS
 }

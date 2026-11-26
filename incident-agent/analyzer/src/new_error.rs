@@ -1,11 +1,14 @@
 use std::cmp::Reverse;
 
 use crate::fingerprint::fingerprint;
+use crate::logline::request_trace_id;
 use crate::model::{ErrorGroup, Evidence, LogLine, Suspect};
+
+const MAX_TRACE_IDS: usize = 3;
 
 pub(crate) fn new_error_suspect(evidence: &Evidence) -> Option<Suspect> {
     let baseline: Vec<String> = fingerprints(&evidence.baseline_logs)
-        .map(|(text, _, _)| text)
+        .map(|(text, ..)| text)
         .collect();
     let groups = group_new(&evidence.logs, &baseline);
     let first = groups
@@ -23,7 +26,7 @@ pub(crate) fn new_error_suspect(evidence: &Evidence) -> Option<Suspect> {
 
 fn group_new(logs: &[LogLine], baseline: &[String]) -> Vec<ErrorGroup> {
     let mut groups: Vec<ErrorGroup> = Vec::new();
-    for (text, logger, at_unix) in fingerprints(logs) {
+    for (text, logger, at_unix, trace_id) in fingerprints(logs) {
         if baseline.contains(&text) {
             continue;
         }
@@ -31,21 +34,43 @@ fn group_new(logs: &[LogLine], baseline: &[String]) -> Vec<ErrorGroup> {
             Some(group) => {
                 group.count += 1;
                 group.first_seen_unix = group.first_seen_unix.min(at_unix);
+                keep_trace_id(group, trace_id);
             }
-            None => groups.push(ErrorGroup {
-                fingerprint: text,
-                logger,
-                first_seen_unix: at_unix,
-                count: 1,
-            }),
+            None => {
+                let mut group = ErrorGroup {
+                    fingerprint: text,
+                    logger,
+                    first_seen_unix: at_unix,
+                    count: 1,
+                    trace_ids: Vec::new(),
+                };
+                keep_trace_id(&mut group, trace_id);
+                groups.push(group);
+            }
         }
     }
     groups
 }
 
-fn fingerprints(lines: &[LogLine]) -> impl Iterator<Item = (String, String, u64)> + '_ {
+fn fingerprints(
+    lines: &[LogLine],
+) -> impl Iterator<Item = (String, String, u64, Option<String>)> + '_ {
     lines.iter().filter_map(|line| {
         let f = fingerprint(&line.text)?;
-        Some((f.text, f.logger, line.at_unix))
+        Some((
+            f.text,
+            f.logger,
+            line.at_unix,
+            request_trace_id(&line.text).map(str::to_owned),
+        ))
     })
+}
+
+fn keep_trace_id(group: &mut ErrorGroup, trace_id: Option<String>) {
+    if let Some(id) = trace_id
+        && group.trace_ids.len() < MAX_TRACE_IDS
+        && !group.trace_ids.contains(&id)
+    {
+        group.trace_ids.push(id);
+    }
 }

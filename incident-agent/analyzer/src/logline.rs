@@ -96,3 +96,17 @@ fn is_inner_apostrophe(chars: &[char], j: usize) -> bool {
         && chars[j - 1].is_alphanumeric()
         && chars.get(j + 1).is_some_and(|c| c.is_alphanumeric())
 }
+
+const TRACE_ID_LEN: usize = 16;
+const TRACE_ID_MARK: &str = " traceId=";
+
+pub(crate) fn is_trace_id(id: &str) -> bool {
+    id.len() == TRACE_ID_LEN && id.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+}
+
+pub(crate) fn request_trace_id(text: &str) -> Option<&str> {
+    let (_, after) = text.rsplit_once(TRACE_ID_MARK)?;
+    let id = after.get(..TRACE_ID_LEN)?;
+    let rest = &after[TRACE_ID_LEN..];
+    (is_trace_id(id) && (rest.is_empty() || rest.starts_with(" |"))).then_some(id)
+}

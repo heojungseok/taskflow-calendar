@@ -48,9 +48,17 @@ impl Knowledge {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Trail {
+    pub window: Window,
+    pub log_lines: usize,
+    pub sent_lines: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
     pub alerts: Vec<Alert>,
+    pub trail: Trail,
     pub known_incident: Option<KnownMatch>,
     pub suspects: Vec<Suspect>,
     pub missing: Vec<Missing>,
@@ -133,6 +141,7 @@ pub struct ErrorGroup {
     pub logger: String,
     pub first_seen_unix: u64,
     pub count: usize,
+    pub trace_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

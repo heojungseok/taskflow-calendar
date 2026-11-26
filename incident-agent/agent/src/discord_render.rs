@@ -3,7 +3,7 @@ use contract::Outcome;
 use incident::{Notice, ProposedAction};
 
 use crate::custom_id::CustomId;
-use crate::discord_text::{analysis_text, missing_text, safe, suspect_text};
+use crate::discord_text::{analysis_text, loki_link, missing_text, safe, suspect_text, trail_text};
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Button {
@@ -34,25 +34,32 @@ fn plain(text: String) -> Message {
     }
 }
 
-fn render_incident(incident: u64, report: &Report) -> Message {
+fn render_incident(incident: u64, report: &Report, grafana_url: Option<&str>) -> Message {
     let names: Vec<String> = report
         .alerts
         .iter()
         .map(|alert| safe(&alert.name))
         .collect();
-    let mut text = format!(
-        "**장애 #{incident}** {}\n{}",
-        names.join(", "),
-        analysis_text(&report.analysis)
-    );
+    let mut lines = vec![
+        format!("**장애 #{incident}** {}", names.join(", ")),
+        analysis_text(&report.analysis),
+        trail_text(&report.trail),
+    ];
+    lines.extend(missing_text(&report.missing));
+    if let Some(base) = grafana_url {
+        lines.push(format!(
+            "로그 보기: [Loki에서 이 구간 보기](<{}>)",
+            loki_link(base, &report.trail.window)
+        ));
+    }
     if let Some(known) = &report.known_incident {
-        text.push_str(&format!("\n알려진 장애: {}", safe(&known.source)));
+        lines.push(format!("알려진 장애: {}", safe(&known.source)));
     }
-    let suspects = report.suspects.iter().take(MAX_SUSPECTS).map(suspect_text);
-    for line in missing_text(&report.missing).into_iter().chain(suspects) {
-        text.push('\n');
-        text.push_str(&line);
+    if !report.suspects.is_empty() {
+        lines.push("코드가 고른 의심".to_owned());
+        lines.extend(report.suspects.iter().take(MAX_SUSPECTS).map(suspect_text));
     }
+    let text = lines.join("\n");
     let buttons = if matches!(report.analysis, Analysis::Guess(_)) {
         vec![
             Button {
@@ -105,9 +112,9 @@ fn outcome_text(outcome: &Outcome) -> String {
     }
 }
 
-pub(crate) fn render(notice: &Notice) -> Message {
+pub(crate) fn render(notice: &Notice, grafana_url: Option<&str>) -> Message {
     match notice {
-        Notice::Incident { incident, report } => render_incident(*incident, report),
+        Notice::Incident { incident, report } => render_incident(*incident, report, grafana_url),
         Notice::Proposal {
             incident,
             action,
@@ -129,3 +136,5 @@ pub(crate) fn render(notice: &Notice) -> Message {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod trail_tests;
