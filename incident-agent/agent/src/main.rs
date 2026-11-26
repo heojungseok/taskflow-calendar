@@ -14,7 +14,6 @@ mod github;
 mod grafana;
 mod http;
 mod journal;
-mod llama;
 mod loki;
 mod metrics;
 mod prometheus;
@@ -36,6 +35,7 @@ use tokio::signal::unix::{SignalKind, signal};
 
 use analyzer::load_knowledge;
 use incident::{Event, Incidents};
+use ollama::Ollama;
 
 use crate::analysis::Analyst;
 use crate::clock::SystemClock;
@@ -43,7 +43,6 @@ use crate::config::Config;
 use crate::core::{Core, Paths};
 use crate::discord::{DiscordChat, Link};
 use crate::evidence::{Github, Sources};
-use crate::llama::Llama;
 
 const TICK_INTERVAL: Duration = Duration::from_secs(60);
 const MODEL_TIMEOUT: Duration = Duration::from_secs(90);
@@ -77,7 +76,7 @@ fn start_core(
     let analyst = Analyst {
         knowledge,
         evidence_for: move |deploy| sources.for_batch(deploy),
-        model: Llama::new(config.model_url.clone(), MODEL_TIMEOUT),
+        model: Ollama::new(&config.model_url, &config.model_name).timeout(MODEL_TIMEOUT),
         clock: SystemClock,
         deploy_journal: config.deploy_journal.clone(),
     };

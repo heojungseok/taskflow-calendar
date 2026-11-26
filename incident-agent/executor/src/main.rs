@@ -26,19 +26,16 @@ impl Clock for SystemClock {
 }
 
 struct SystemCommandRunner {
-    docker: PathBuf,
-    backend_container: String,
+    restart_program: PathBuf,
     rollback_program: PathBuf,
 }
 
 impl CommandRunner for SystemCommandRunner {
     fn run(&self, command: &Command) -> Result<(), String> {
         match command {
-            Command::RestartBackend { .. } => run_with_timeout(
-                &self.docker,
-                &["restart", self.backend_container.as_str()],
-                RESTART_TIMEOUT,
-            ),
+            Command::RestartBackend { .. } => {
+                run_with_timeout(&self.restart_program, &[], RESTART_TIMEOUT)
+            }
             Command::RollbackBackend {
                 observed, target, ..
             } => run_with_timeout(
@@ -72,6 +69,7 @@ fn run_with_timeout(program: &Path, args: &[&str], timeout: Duration) -> Result<
         if Instant::now() >= deadline {
             let group = format!("-{}", child.id());
             let _ = process::Command::new("/bin/kill")
+                .env_clear()
                 .args(["-KILL", "--", &group])
                 .status();
             let _ = child.wait();
@@ -155,8 +153,7 @@ fn run() -> Result<bool, String> {
         &required(TOTP_SECRET_KEY)?,
     )?;
     let runner = SystemCommandRunner {
-        docker: PathBuf::from(required("EXECUTOR_DOCKER")?),
-        backend_container: required("EXECUTOR_BACKEND_CONTAINER")?,
+        restart_program: PathBuf::from(required("EXECUTOR_RESTART_PROGRAM")?),
         rollback_program: PathBuf::from(required("EXECUTOR_ROLLBACK_PROGRAM")?),
     };
     let quarantine = state_dir.join("unhandled");

@@ -50,11 +50,6 @@ impl Http {
         }
         Ok(read(request.call()?)?)
     }
-
-    pub(crate) fn post_json(&self, url: &str, body: &serde_json::Value) -> Result<String, Failure> {
-        let response = self.agent.post(url).send_json(body)?;
-        Ok(read(response)?)
-    }
 }
 
 fn read(mut response: ureq::http::Response<ureq::Body>) -> Result<String, ureq::Error> {

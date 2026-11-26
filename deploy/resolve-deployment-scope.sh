@@ -135,10 +135,10 @@ fi
 
 if has_changes "$backend_sha" \
       compose.production.yml .env.production.example deploy/grafana deploy/postgres/init-roles.sh \
-      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy deploy/container-stats || \
+      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy deploy/container-stats ':(exclude)deploy/container-stats/*-test.sh' || \
     has_changes "$frontend_sha" \
       compose.production.yml .env.production.example deploy/grafana deploy/postgres/init-roles.sh \
-      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy deploy/container-stats; then
+      deploy/prometheus/prometheus.yml deploy/loki deploy/alloy deploy/container-stats ':(exclude)deploy/container-stats/*-test.sh'; then
   full_changed=true
 fi
 
