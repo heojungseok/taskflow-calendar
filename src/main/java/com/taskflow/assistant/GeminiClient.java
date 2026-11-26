@@ -1,6 +1,5 @@
 package com.taskflow.assistant;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.common.ErrorCode;
 import java.io.IOException;
 import java.net.URI;
@@ -12,6 +11,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 /** Gemini REST 호출. 키·모델·타임아웃은 기능별 properties로 받고, 실패는 GeminiCallException으로 분류해 던진다. */
 @Component

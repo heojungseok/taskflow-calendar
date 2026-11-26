@@ -1,16 +1,14 @@
 package com.taskflow.assistant.recommendation.generator;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiCallException;
 import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.GeminiPayloadReader;
 import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
 import com.taskflow.assistant.recommendation.exception.TaskRecommendationGenerationException;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,6 +19,9 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
@@ -79,7 +80,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
                     candidateTokens,
                     totalTokens);
             return parseResponse(root, candidates, recommendationCount);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new TaskRecommendationGenerationException(
                     ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
                     "Gemini recommendation response was not readable: " + e.getMessage());
@@ -108,7 +109,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
             requestBody.put("generationConfig", generationConfig);
 
             return new PreparedRequest(objectMapper.writeValueAsString(requestBody));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to build Gemini recommendation request body", e);
         }
     }
@@ -125,8 +126,7 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
                """;
     }
 
-    private String userPrompt(List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today)
-            throws IOException {
+    private String userPrompt(List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today) {
         List<Map<String, Object>> candidatePayload = new ArrayList<>();
         for (int i = 0; i < candidates.size(); i++) {
             candidatePayload.add(promptTaskSupport.toPromptTaskPayload(candidates.get(i), i + 1));
@@ -181,17 +181,17 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
     }
 
     private TaskRecommendationGenerationResult parseResponse(
-            JsonNode root, List<TaskSyncSnapshot> candidates, int recommendationCount) throws IOException {
+            JsonNode root, List<TaskSyncSnapshot> candidates, int recommendationCount) {
         JsonNode textNode = root.at("/candidates/0/content/parts/0/text");
-        if (textNode.isMissingNode() || textNode.asText().isBlank()) {
+        if (textNode.isMissingNode() || textNode.asString("").isBlank()) {
             throw new TaskRecommendationGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE, "Gemini recommendation response did not contain text");
         }
 
         JsonNode payload;
         try {
-            payload = objectMapper.readTree(textNode.asText());
-        } catch (IOException e) {
+            payload = new GeminiPayloadReader(objectMapper).read(textNode.asString(""));
+        } catch (JacksonException e) {
             throw new TaskRecommendationGenerationException(
                     ErrorCode.LLM_INVALID_RESPONSE, "Gemini recommendation payload was not valid JSON");
         }
@@ -211,11 +211,11 @@ public class GeminiTaskRecommendationGenerator implements TaskRecommendationGene
         Set<Long> seenTaskIds = new LinkedHashSet<>();
         for (JsonNode itemNode : itemsNode) {
             long taskId = itemNode.path("taskId").asLong(-1);
-            String primaryTag = itemNode.path("primaryTag").asText("").trim();
+            String primaryTag = itemNode.path("primaryTag").asString("").trim();
             String secondaryTag = itemNode.path("secondaryTag").isNull()
                     ? null
-                    : itemNode.path("secondaryTag").asText("").trim();
-            String reason = itemNode.path("reason").asText("").trim();
+                    : itemNode.path("secondaryTag").asString("").trim();
+            String reason = itemNode.path("reason").asString("").trim();
 
             if (taskId <= 0 || !allowedTaskIds.contains(taskId) || !seenTaskIds.add(taskId)) {
                 continue;

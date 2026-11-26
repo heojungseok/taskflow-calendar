@@ -14,6 +14,8 @@ import com.taskflow.observability.TaskFlowMetrics;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -372,13 +374,15 @@ class CalendarOutboxWorkerTest {
 
         @Test
         @DisplayName("enabled=true면 Worker 전용 스레드에서 폴링한다")
-        void startPolling_enabled_전용스레드에서_수행() {
+        void startPolling_enabled_전용스레드에서_수행() throws InterruptedException {
             // given
             ReflectionTestUtils.setField(worker, "schedulingEnabled", true);
             ReflectionTestUtils.setField(worker, "fixedDelayMillis", 60_000L);
             AtomicReference<String> pollingThread = new AtomicReference<>();
+            CountDownLatch polled = new CountDownLatch(1);
             when(outboxRepository.findProcessable(any(), any(), anyInt())).thenAnswer(invocation -> {
                 pollingThread.set(Thread.currentThread().getName());
+                polled.countDown();
                 return List.of();
             });
 
@@ -387,7 +391,7 @@ class CalendarOutboxWorkerTest {
 
             // then: 다른 @Scheduled 작업과 스레드를 나눠 쓰지 않는다
             try {
-                verify(outboxRepository, timeout(2_000)).findProcessable(any(), any(), anyInt());
+                assertThat(polled.await(2, TimeUnit.SECONDS)).isTrue();
                 assertThat(pollingThread.get()).isEqualTo("outbox-worker");
             } finally {
                 worker.stopPolling();

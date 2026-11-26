@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.planning.project.Project;
 import com.taskflow.planning.project.dto.ProjectResponse;
 import java.time.Instant;
@@ -12,6 +11,7 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
+import tools.jackson.databind.ObjectMapper;
 
 @JsonTest
 class TimeZonesTest {

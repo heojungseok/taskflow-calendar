@@ -1,10 +1,7 @@
 package com.taskflow.identity.security;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
@@ -12,6 +9,9 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class JwtTokenProvider {
@@ -104,7 +104,7 @@ public class JwtTokenProvider {
             String[] parts = token.split("\\.", -1);
             JsonNode payload = JSON.readTree(Base64.getUrlDecoder().decode(parts[1]));
             return payload != null && payload.has("sv");
-        } catch (IOException | IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+        } catch (JacksonException | IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
             throw new MalformedJwtException("Invalid JWT payload", e);
         }
     }

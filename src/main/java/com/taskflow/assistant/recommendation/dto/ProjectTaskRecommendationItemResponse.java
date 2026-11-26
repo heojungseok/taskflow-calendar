@@ -1,5 +1,6 @@
 package com.taskflow.assistant.recommendation.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.taskflow.planning.task.TaskStatus;
 import com.taskflow.planning.task.TaskSyncState;
@@ -23,6 +24,7 @@ public class ProjectTaskRecommendationItemResponse {
     private final String secondaryTag;
     private final String reason;
 
+    @JsonCreator
     private ProjectTaskRecommendationItemResponse(
             Long taskId,
             int rank,

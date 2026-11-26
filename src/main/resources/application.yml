@@ -4,7 +4,7 @@ spring:
 
   autoconfigure:
     # JWT 전용이라 인메모리 기본 사용자가 필요 없다. 두면 기동 로그에 임시 비밀번호가 찍힌다.
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
 
   datasource:
     # 기본값은 docker-compose.yml의 로컬 컨테이너와 같다. 배포에서는 환경변수로 덮는다.

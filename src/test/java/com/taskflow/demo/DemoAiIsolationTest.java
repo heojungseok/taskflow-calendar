@@ -8,7 +8,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.GeminiClient;
 import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
 import com.taskflow.assistant.recommendation.ProjectTaskRecommendationService;
@@ -45,6 +44,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import tools.jackson.databind.ObjectMapper;
 
 class DemoAiIsolationTest {
 

@@ -1,6 +1,5 @@
 package com.taskflow.calendarsync.integration.googlecalendar;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendarsync.outbox.CalendarOutbox;
 import com.taskflow.calendarsync.outbox.OutboxOpType;
 import com.taskflow.common.exception.NonRetryableIntegrationException;
@@ -14,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Worker가 Outbox를 처리할 때 호출하는 Google Calendar 연동

@@ -3,14 +3,14 @@ package com.taskflow.assistant.search;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class TaskSearchEmbeddingResponseTest {
 

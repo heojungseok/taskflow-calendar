@@ -3,11 +3,11 @@ package com.taskflow.assistant.search.generator;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.search.GeminiSearchProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class SearchIntentRequestTest {
 
@@ -20,7 +20,7 @@ class SearchIntentRequestTest {
 
         JsonNode thinkingConfig =
                 objectMapper.readTree(body).path("generationConfig").path("thinkingConfig");
-        assertEquals("minimal", thinkingConfig.path("thinkingLevel").asText());
+        assertEquals("minimal", thinkingConfig.path("thinkingLevel").asString());
         assertTrue(thinkingConfig.path("thinkingBudget").isMissingNode());
     }
 }

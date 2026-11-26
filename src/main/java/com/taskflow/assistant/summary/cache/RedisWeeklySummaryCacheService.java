@@ -1,7 +1,5 @@
 package com.taskflow.assistant.summary.cache;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.assistant.summary.dto.WeeklySummaryCacheHealthResponse;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResponse;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -11,6 +9,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import tools.jackson.databind.ObjectMapper;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +31,7 @@ public class RedisWeeklySummaryCacheService implements WeeklySummaryCacheService
             WeeklySummaryResponse response = objectMapper.readValue(json, WeeklySummaryResponse.class);
             record("hit");
             return Optional.of(response);
-        } catch (RuntimeException | JsonProcessingException e) {
+        } catch (RuntimeException e) {
             record("error");
             log.warn(
                     "Weekly summary cache read failed; continuing without cache. errorType={}",
@@ -49,7 +48,7 @@ public class RedisWeeklySummaryCacheService implements WeeklySummaryCacheService
             redisTemplate.opsForValue().set(key, json, ttl);
             redisTemplate.opsForValue().set(latestKey, json, ttl);
             record("write");
-        } catch (RuntimeException | JsonProcessingException e) {
+        } catch (RuntimeException e) {
             record("error");
             log.warn(
                     "Weekly summary cache write failed; continuing without cache. errorType={}",

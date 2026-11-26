@@ -1,7 +1,5 @@
 package com.taskflow.calendarsync.outbox;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.identity.security.SecurityContextHelper;
 import com.taskflow.planning.task.Task;
 import com.taskflow.planning.task.TaskStatus;
@@ -17,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -203,7 +203,7 @@ public class CalendarOutboxService {
 
         try {
             return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Payload 생성 실패", e);
         }
     }
@@ -226,7 +226,7 @@ public class CalendarOutboxService {
 
         try {
             return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Payload 생성 실패", e);
         }
     }

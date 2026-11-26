@@ -7,7 +7,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.calendarsync.outbox.CalendarOutbox;
 import com.taskflow.calendarsync.outbox.OutboxOpType;
 import com.taskflow.calendarsync.outbox.OutboxStatus;
@@ -26,6 +25,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 class GoogleCalendarServiceTest {
