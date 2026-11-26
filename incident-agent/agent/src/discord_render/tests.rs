@@ -2,7 +2,7 @@ use contract::GitSha;
 
 use super::*;
 use crate::test_support::{T0, alert, report, report_answering};
-use analyzer::{Analysis, ErrorGroup, Missing, Suspect, Trail, Window};
+use analyzer::{Analysis, ErrorGroup, Missing, Suspect};
 
 const SHA: &str = "e48a8e1a0ec361934fd097afaa9ddd0e48cb0c69";
 
@@ -208,79 +208,4 @@ fn t39_의심_항목을_짧게_보인다() {
     assert!(text.contains("pg\\_connection\\_ratio") || text.contains("pg_connection_ratio"));
     assert!(text.contains(&SHA[..7]));
     assert!(!text.contains(SHA));
-}
-
-fn incident_text(report: analyzer::Report, grafana_url: Option<&str>) -> String {
-    render(
-        &Notice::Incident {
-            incident: 3,
-            report,
-        },
-        grafana_url,
-    )
-    .text
-}
-
-#[test]
-fn t39_모델_추정과_코드가_고른_의심을_나눠_보인다() {
-    let text = incident_text(report(&[alert("backend", T0)], true), None);
-    assert!(text.contains("모델 추정(확인 필요)"), "{text}");
-    assert!(text.contains("원인: 검색 null 처리 누락"), "{text}");
-    assert!(text.contains("코드가 고른 의심"), "{text}");
-}
-
-#[test]
-fn t39_새_오류_의심에_traceid를_붙인다() {
-    let mut report = bare_report();
-    report.suspects = vec![Suspect::NewError {
-        first: ErrorGroup {
-            fingerprint: "f".to_owned(),
-            logger: "c.t.TaskSearchService".to_owned(),
-            first_seen_unix: T0,
-            count: 3,
-            trace_ids: vec!["9f1a2b3c4d5e6f70".to_owned(), "0a1b2c3d4e5f6071".to_owned()],
-        },
-        most_frequent: None,
-    }];
-    let text = incident_text(report, None);
-    assert!(
-        text.contains("traceId 9f1a2b3c4d5e6f70, 0a1b2c3d4e5f6071"),
-        "{text}"
-    );
-}
-
-fn report_with_trail() -> analyzer::Report {
-    let mut report = bare_report();
-    report.trail = Trail {
-        window: Window {
-            from_unix: 1_764_115_200,
-            to_unix: 1_764_116_100,
-        },
-        log_lines: 914,
-        sent_lines: 9,
-    };
-    report
-}
-
-#[test]
-fn t39_읽은_구간과_모델에_보낸_줄_수를_보인다() {
-    let text = incident_text(report_with_trail(), None);
-    assert!(
-        text.contains("증거: 로그 914줄 중 9줄을 모델에 보냄 · 09:00~09:15 KST"),
-        "{text}"
-    );
-    assert!(!text.contains("로그 보기"), "{text}");
-}
-
-#[test]
-fn t39_grafana_주소가_있으면_그_구간의_loki_링크를_붙인다() {
-    let text = incident_text(report_with_trail(), Some("https://grafana.example/"));
-    assert!(
-        text.contains("(<https://grafana.example/explore?schemaVersion=1&orgId=1&panes="),
-        "{text}"
-    );
-    assert!(
-        text.contains("1764115200000") && text.contains("1764116100000"),
-        "{text}"
-    );
 }

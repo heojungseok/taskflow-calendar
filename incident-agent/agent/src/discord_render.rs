@@ -45,6 +45,7 @@ fn render_incident(incident: u64, report: &Report, grafana_url: Option<&str>) ->
         analysis_text(&report.analysis),
         trail_text(&report.trail),
     ];
+    lines.extend(missing_text(&report.missing));
     if let Some(base) = grafana_url {
         lines.push(format!(
             "로그 보기: [Loki에서 이 구간 보기](<{}>)",
@@ -58,7 +59,6 @@ fn render_incident(incident: u64, report: &Report, grafana_url: Option<&str>) ->
         lines.push("코드가 고른 의심".to_owned());
         lines.extend(report.suspects.iter().take(MAX_SUSPECTS).map(suspect_text));
     }
-    lines.extend(missing_text(&report.missing));
     let text = lines.join("\n");
     let buttons = if matches!(report.analysis, Analysis::Guess(_)) {
         vec![
@@ -136,3 +136,5 @@ pub(crate) fn render(notice: &Notice, grafana_url: Option<&str>) -> Message {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod trail_tests;

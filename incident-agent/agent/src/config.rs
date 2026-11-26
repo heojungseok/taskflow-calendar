@@ -78,6 +78,12 @@ pub(crate) fn load(lookup: impl Fn(&str) -> Option<String>) -> Result<Config, Co
         }
         placeholder_owner()
     });
+    let grafana_url = (reader.lookup)("AGENT_GRAFANA_URL").filter(|value| !value.is_empty());
+    if grafana_url.as_deref().is_some_and(|url| !is_link_base(url)) {
+        reader
+            .problems
+            .push("AGENT_GRAFANA_URL is invalid".to_owned());
+    }
     let config = Config {
         listen_addr: reader.text("AGENT_LISTEN_ADDR"),
         webhook_token: reader.text("AGENT_WEBHOOK_TOKEN"),
@@ -95,12 +101,19 @@ pub(crate) fn load(lookup: impl Fn(&str) -> Option<String>) -> Result<Config, Co
         discord_channel_id: channel_id,
         owner,
         github_repo: (reader.lookup)("AGENT_GITHUB_REPO").filter(|value| !value.is_empty()),
-        grafana_url: (reader.lookup)("AGENT_GRAFANA_URL").filter(|value| !value.is_empty()),
+        grafana_url,
     };
     if reader.problems.is_empty() {
         return Ok(config);
     }
     Err(ConfigError(reader.problems.join("; ")))
+}
+
+fn is_link_base(url: &str) -> bool {
+    (url.starts_with("https://") || url.starts_with("http://"))
+        && !url
+            .chars()
+            .any(|c| c.is_whitespace() || matches!(c, '<' | '>'))
 }
 
 fn placeholder_owner() -> DiscordUserId {
@@ -195,6 +208,23 @@ mod tests {
         let message = load_from(&env).err().unwrap().to_string();
         assert!(message.contains("AGENT_OWNER_ID"));
         assert!(!message.contains("not-a-number-secret"));
+    }
+
+    #[test]
+    fn t42_grafana_주소는_http_링크여야_한다() {
+        for bad in ["grafana.example", "https://g.example/> x"] {
+            let mut env = env_without(&[]);
+            env.insert("AGENT_GRAFANA_URL".to_owned(), bad.to_owned());
+            let message = load_from(&env).err().unwrap().to_string();
+            assert!(message.contains("AGENT_GRAFANA_URL"));
+            assert!(!message.contains("g.example"));
+        }
+        let mut env = env_without(&[]);
+        env.insert(
+            "AGENT_GRAFANA_URL".to_owned(),
+            "https://grafana.example/".to_owned(),
+        );
+        assert!(load_from(&env).is_ok());
     }
 
     #[test]
