@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
 
 use analyzer::Clock;
@@ -7,6 +8,7 @@ use contract::{ActionResult, Outcome};
 use incident::{Command, Event, Incidents, Notice};
 
 use crate::analysis::Job;
+use crate::telemetry::Telemetry;
 use crate::{drafts, requests};
 
 pub(crate) trait Chat {
@@ -24,6 +26,7 @@ pub(crate) struct Core<C, K> {
     pub(crate) clock: K,
     pub(crate) paths: Paths,
     pub(crate) analysis: Sender<Job>,
+    pub(crate) telemetry: Arc<Telemetry>,
 }
 
 impl<C: Chat, K: Clock> Core<C, K> {
@@ -31,6 +34,7 @@ impl<C: Chat, K: Clock> Core<C, K> {
         let mut queue = VecDeque::from([event]);
         while let Some(event) = queue.pop_front() {
             let now = self.clock.now_unix();
+            self.telemetry.observe_event(&event);
             match self.incidents.handle(event, now) {
                 Ok(commands) => {
                     for command in commands {
@@ -43,6 +47,7 @@ impl<C: Chat, K: Clock> Core<C, K> {
     }
 
     fn execute(&self, command: Command, now: u64) -> Option<Event> {
+        self.telemetry.observe_command(&command);
         match command {
             Command::Analyze { batch, alerts } => {
                 if self.analysis.send((batch, alerts)).is_err() {

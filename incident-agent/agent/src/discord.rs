@@ -16,6 +16,7 @@ use crate::core::Chat;
 use crate::custom_id::CustomId;
 use crate::discord_interact::{Decision, Interaction, Reply, decide};
 use crate::discord_render::{Button, Message, render};
+use crate::telemetry::Telemetry;
 
 pub(crate) struct DiscordChat {
     notices: UnboundedSender<Notice>,
@@ -151,12 +152,13 @@ impl EventHandler for Handler {
 async fn post_notices(
     http: Arc<Http>,
     channel: ChannelId,
-    grafana_url: Option<String>,
+    (grafana_url, telemetry): (Option<String>, Arc<Telemetry>),
     mut notices: UnboundedReceiver<Notice>,
 ) {
     while let Some(notice) = notices.recv().await {
         let rendered = render(&notice, grafana_url.as_deref());
         if let Err(error) = channel.send_message(&http, message(&rendered)).await {
+            telemetry.add("incident_agent_discord_failures_total", &[], 1.0);
             eprintln!("discord post failed: {error}");
         }
     }
@@ -167,6 +169,7 @@ pub(crate) struct Link {
     pub(crate) channel_id: u64,
     pub(crate) owner: DiscordUserId,
     pub(crate) grafana_url: Option<String>,
+    pub(crate) telemetry: Arc<Telemetry>,
 }
 
 pub(crate) async fn run(
@@ -185,7 +188,7 @@ pub(crate) async fn run(
     tokio::spawn(post_notices(
         Arc::clone(&client.http),
         ChannelId::new(link.channel_id),
-        link.grafana_url,
+        (link.grafana_url, link.telemetry),
         notices,
     ));
     client

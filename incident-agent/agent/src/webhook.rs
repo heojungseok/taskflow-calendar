@@ -1,13 +1,15 @@
+use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
 use axum::Router;
 use axum::body::Bytes;
 use axum::extract::{DefaultBodyLimit, State};
-use axum::http::{HeaderMap, StatusCode, header::AUTHORIZATION};
+use axum::http::{HeaderMap, StatusCode, header::AUTHORIZATION, header::CONTENT_TYPE};
 use axum::routing::{get, post};
 use incident::Event;
 
 use crate::grafana;
+use crate::telemetry::Telemetry;
 
 const MAX_BODY_BYTES: usize = 64 * 1024;
 
@@ -15,14 +17,29 @@ const MAX_BODY_BYTES: usize = 64 * 1024;
 struct Shared {
     token: String,
     events: Sender<Event>,
+    telemetry: Arc<Telemetry>,
 }
 
-pub(crate) fn router(token: String, events: Sender<Event>) -> Router {
+pub(crate) fn router(token: String, events: Sender<Event>, telemetry: Arc<Telemetry>) -> Router {
     Router::new()
         .route("/grafana", post(receive))
         .route("/healthz", get(|| async { "ok" }))
+        .route("/metrics", get(metrics))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
-        .with_state(Shared { token, events })
+        .with_state(Shared {
+            token,
+            events,
+            telemetry,
+        })
+}
+
+async fn metrics(
+    State(shared): State<Shared>,
+) -> ([(axum::http::HeaderName, &'static str); 1], String) {
+    (
+        [(CONTENT_TYPE, "text/plain; version=0.0.4")],
+        shared.telemetry.render(),
+    )
 }
 
 fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
@@ -69,6 +86,7 @@ async fn receive(State(shared): State<Shared>, headers: HeaderMap, body: Bytes) 
 #[cfg(test)]
 mod tests {
     use std::net::SocketAddr;
+    use std::sync::Arc;
     use std::sync::mpsc::{self, Receiver};
     use std::time::Duration;
 
@@ -80,7 +98,11 @@ mod tests {
         let (sender, receiver) = mpsc::channel();
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
-        let app = router(token.to_owned(), sender);
+        let app = router(
+            token.to_owned(),
+            sender,
+            Arc::new(crate::telemetry::Telemetry::default()),
+        );
         tokio::spawn(async move { axum::serve(listener, app).await });
         (addr, receiver)
     }
@@ -166,6 +188,39 @@ mod tests {
             400
         );
         assert!(events.try_recv().is_err());
+    }
+
+    #[tokio::test]
+    async fn t43_metrics는_prometheus_text를_돌려준다() {
+        let (sender, _events) = mpsc::channel();
+        let telemetry = Arc::new(crate::telemetry::Telemetry::default());
+        telemetry.add("incident_agent_alerts_received_total", &[], 3.0);
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let app = router("t".to_owned(), sender, telemetry);
+        tokio::spawn(async move { axum::serve(listener, app).await });
+        let (status, kind, body) = tokio::task::spawn_blocking(move || {
+            let mut response = ureq::get(format!("http://{addr}/metrics")).call().unwrap();
+            let kind = response
+                .headers()
+                .get("content-type")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("")
+                .to_owned();
+            (
+                response.status().as_u16(),
+                kind,
+                response.body_mut().read_to_string().unwrap(),
+            )
+        })
+        .await
+        .unwrap();
+        assert_eq!(status, 200);
+        assert!(kind.starts_with("text/plain"), "{kind}");
+        assert!(
+            body.contains("incident_agent_alerts_received_total 3"),
+            "{body}"
+        );
     }
 
     #[tokio::test]

@@ -116,6 +116,7 @@ fn rig() -> Rig {
             requests_dir: dir.path().join("requests"),
         },
         analysis: job_tx,
+        telemetry: Arc::new(crate::telemetry::Telemetry::default()),
     };
     Rig {
         core,
@@ -164,6 +165,23 @@ fn restart_approval(incident: u64) -> Event {
         code: TotpCode::try_from("042137".to_owned()).unwrap(),
         button_issued_at_unix: T0 + 960,
     })
+}
+
+#[test]
+fn t43_사건_처리를_거친_알림과_분석_결과가_지표에_남는다() {
+    let mut rig = rig();
+    rig.core
+        .process(Event::AlertsReceived(vec![alert("backend", T0)]));
+    rig.settle(1);
+    let text = rig.core.telemetry.render();
+    assert!(
+        text.contains("incident_agent_alerts_received_total 1"),
+        "{text}"
+    );
+    assert!(
+        text.contains("incident_agent_analyses_total{result=\"guess\"} 1"),
+        "{text}"
+    );
 }
 
 #[test]

@@ -20,6 +20,7 @@ mod prometheus;
 mod requests;
 mod results;
 mod rfc3339;
+mod telemetry;
 #[cfg(test)]
 mod test_server;
 #[cfg(test)]
@@ -27,6 +28,7 @@ mod test_support;
 mod webhook;
 
 use std::process::ExitCode;
+use std::sync::Arc;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -43,6 +45,7 @@ use crate::config::Config;
 use crate::core::{Core, Paths};
 use crate::discord::{DiscordChat, Link};
 use crate::evidence::{Github, Sources};
+use crate::telemetry::{Telemetry, Timed};
 
 const TICK_INTERVAL: Duration = Duration::from_secs(60);
 const MODEL_TIMEOUT: Duration = Duration::from_secs(90);
@@ -62,7 +65,7 @@ fn sources(config: &Config) -> Sources {
 
 fn start_core(
     config: &Config,
-    chat: DiscordChat,
+    (chat, telemetry): (DiscordChat, Arc<Telemetry>),
     (event_tx, event_rx): (mpsc::Sender<Event>, mpsc::Receiver<Event>),
 ) -> Result<(), String> {
     let (knowledge, issues) = load_knowledge(&config.knowledge_dir);
@@ -76,7 +79,10 @@ fn start_core(
     let analyst = Analyst {
         knowledge,
         evidence_for: move |deploy| sources.for_batch(deploy),
-        model: Ollama::new(&config.model_url, &config.model_name).timeout(MODEL_TIMEOUT),
+        model: Timed::new(
+            Ollama::new(&config.model_url, &config.model_name).timeout(MODEL_TIMEOUT),
+            Arc::clone(&telemetry),
+        ),
         clock: SystemClock,
         deploy_journal: config.deploy_journal.clone(),
     };
@@ -90,6 +96,7 @@ fn start_core(
             requests_dir: config.requests_dir.clone(),
         },
         analysis: job_tx,
+        telemetry,
     };
     thread::spawn(move || core::run(core, event_rx));
     Ok(())
@@ -108,17 +115,27 @@ async fn serve(config: Config) -> Result<(), String> {
     let (event_tx, event_rx) = mpsc::channel();
     let (notice_tx, notice_rx) = tokio::sync::mpsc::unbounded_channel();
     let chat = DiscordChat::new(notice_tx);
-    start_core(&config, chat, (event_tx.clone(), event_rx))?;
+    let telemetry = Arc::new(Telemetry::default());
+    start_core(
+        &config,
+        (chat, Arc::clone(&telemetry)),
+        (event_tx.clone(), event_rx),
+    )?;
     results::spawn(config.results_dir.clone(), event_tx.clone(), TICK_INTERVAL);
     let listener = tokio::net::TcpListener::bind(&config.listen_addr)
         .await
         .map_err(|error| format!("listen: {}", error.kind()))?;
-    let app = webhook::router(config.webhook_token.clone(), event_tx.clone());
+    let app = webhook::router(
+        config.webhook_token.clone(),
+        event_tx.clone(),
+        Arc::clone(&telemetry),
+    );
     let link = Link {
         token: config.discord_token.clone(),
         channel_id: config.discord_channel_id,
         owner: config.owner.clone(),
         grafana_url: config.grafana_url.clone(),
+        telemetry,
     };
     tokio::select! {
         served = axum::serve(listener, app) => served.map_err(|error| format!("webhook: {}", error.kind())),
