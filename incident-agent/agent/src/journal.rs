@@ -193,6 +193,19 @@ mod tests {
     }
 
     #[test]
+    fn t35_backend_관찰과_성공_사이에_낀_분석기_배포_행도_건너뛴다() {
+        let mut release = backend_release(B, 1);
+        release.insert(2, row("2025-11-26T01:10:00Z", C, "success", "agent"));
+        let rows = after(
+            vec![row("2025-11-26T00:00:00Z", A, "success", "backend")],
+            release,
+        );
+        let deploy = deploy_from(&rows).unwrap();
+        assert_eq!(deploy.previous_sha.as_str(), A);
+        assert_eq!(deploy.scope, DeployScope::Backend);
+    }
+
+    #[test]
     fn t35_앞이_migration이거나_성공이_아니면_되돌릴_수_없는_범위로_낸다() {
         for before in [
             row("2025-11-26T00:00:00Z", A, "success", "migration"),
