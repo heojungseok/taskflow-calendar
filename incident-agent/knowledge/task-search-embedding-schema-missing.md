@@ -4,7 +4,7 @@
 - 로거: `com.taskflow.assistant.search.TaskSearchEmbeddingStore`
 - 관련 알림: backend error logs
 - 방문자 유발: 불가
-- 확정: 대기
+- 확정: 2026-11-26 허정석
 
 ## 증상
 backend 기동 직후 한 번 찍히고, 자연어 검색(의미 검색)이 꺼진 채로 동작한다. 다른 기능은 정상이다.
