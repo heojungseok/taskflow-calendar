@@ -4,7 +4,7 @@
 - 로거: `com.taskflow.demo.DemoCleanupScheduler`
 - 관련 알림: cleanup failure, cleanup overdue
 - 방문자 유발: 불가
-- 확정: 대기
+- 확정: 2026-11-26 허정석
 
 ## 증상
 만료된 데모 사용자(가입 24시간 경과)를 지우는 스케줄러가 사용자 한 명의 정리에서 예외를 낸다. `demo_cleanup_failures_total`이 늘고, 실패가 이어지면 `demo_oldest_expired_age_seconds`가 커져 정리 지연 알림도 울린다.

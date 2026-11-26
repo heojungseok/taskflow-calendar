@@ -4,7 +4,7 @@
 - 로거: `com.taskflow.calendarsync.worker.CalendarOutboxWorker`
 - 관련 알림: backend error logs
 - 방문자 유발: 가능
-- 확정: 대기
+- 확정: 2026-11-26 허정석
 
 ## 증상
 Google Calendar 동기화가 401을 받아 토큰 갱신을 시도했고, 갱신이 실패해 그 Outbox가 영구 FAILED가 된다. 해당 일정 변경은 캘린더에 반영되지 않는다. FAILED는 처리 대기에서 빠지므로 worker backlog 알림은 울리지 않는다.
