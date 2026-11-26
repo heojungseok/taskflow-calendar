@@ -67,8 +67,12 @@ pub fn knowledge_doc(signature: &str, logger: &str, visitor: &str, confirmed: &s
 }
 
 pub fn knowledge_dir(name: &str, docs: &[(&str, String)]) -> std::path::PathBuf {
-    let dir =
-        std::env::temp_dir().join(format!("analyzer-knowledge-{}-{name}", std::process::id()));
+    static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let unique = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let dir = std::env::temp_dir().join(format!(
+        "analyzer-knowledge-{}-{unique}-{name}",
+        std::process::id()
+    ));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     for (file, text) in docs {
