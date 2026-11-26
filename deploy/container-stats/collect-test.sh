@@ -66,14 +66,15 @@ run
 expect 'taskflow_container_memory_bytes{service="backend"} 1649267441664'
 
 journal=$work/journal.tsv
-printf '2026-11-26T06:43:09Z\tsha1\tdeployment-running\tagent\n2026-11-26T06:43:26Z\tsha1\tsuccess\tagent\n2026-11-26T06:55:58Z\tsha2\tapproval-failed\tfull\n' >"$journal"
-backups=$work/backups
-mkdir -p "$backups/20261120T010203Z-abc1234" "$backups/20261124T235959Z-def5678" "$backups/.tmp-20261125T000000Z-aaa0000.x1" "$backups/not-a-backup"
-TASKFLOW_DEPLOY_JOURNAL=$journal TASKFLOW_BACKUP_ROOT=$backups run
+printf '2026-11-26T06:43:09Z\tsha1\tdeployment-running\tagent\n2026-11-26T06:43:26Z\tsha1\tsuccess\tagent\n2026-11-26T06:55:58Z\tsha2\tapproval-running\tfull\n2026-11-26T06:56:30Z\tsha2\tapproval-failed\tfull\n' >"$journal"
+stamp=$work/last-backup-epoch
+printf '1795564799\n' >"$stamp"
+TASKFLOW_DEPLOY_JOURNAL=$journal TASKFLOW_BACKUP_STAMP=$stamp run
+expect 'taskflow_deploy_last_started_timestamp_seconds 1795676158'
 expect 'taskflow_deploy_last_success_timestamp_seconds 1795675406'
 expect 'taskflow_db_backup_last_success_timestamp_seconds 1795564799'
 
-TASKFLOW_DEPLOY_JOURNAL=$work/missing.tsv TASKFLOW_BACKUP_ROOT=$work/missing run
+TASKFLOW_DEPLOY_JOURNAL=$work/missing.tsv TASKFLOW_BACKUP_STAMP=$work/missing run
 if grep -q 'deploy_last\|db_backup' "$metrics"; then echo "missing deploy or backup source was exported" >&2; exit 1; fi
 expect 'taskflow_docker_cpus 4'
 
