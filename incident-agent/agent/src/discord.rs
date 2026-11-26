@@ -148,9 +148,14 @@ impl EventHandler for Handler {
     }
 }
 
-async fn post_notices(http: Arc<Http>, channel: ChannelId, mut notices: UnboundedReceiver<Notice>) {
+async fn post_notices(
+    http: Arc<Http>,
+    channel: ChannelId,
+    grafana_url: Option<String>,
+    mut notices: UnboundedReceiver<Notice>,
+) {
     while let Some(notice) = notices.recv().await {
-        let rendered = render(&notice);
+        let rendered = render(&notice, grafana_url.as_deref());
         if let Err(error) = channel.send_message(&http, message(&rendered)).await {
             eprintln!("discord post failed: {error}");
         }
@@ -161,6 +166,7 @@ pub(crate) struct Link {
     pub(crate) token: String,
     pub(crate) channel_id: u64,
     pub(crate) owner: DiscordUserId,
+    pub(crate) grafana_url: Option<String>,
 }
 
 pub(crate) async fn run(
@@ -179,6 +185,7 @@ pub(crate) async fn run(
     tokio::spawn(post_notices(
         Arc::clone(&client.http),
         ChannelId::new(link.channel_id),
+        link.grafana_url,
         notices,
     ));
     client

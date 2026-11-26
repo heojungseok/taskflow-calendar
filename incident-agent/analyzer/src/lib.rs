@@ -19,7 +19,8 @@ pub use analysis::ANSWER_SCHEMA;
 pub use knowledge_file::{IssueKind, KnowledgeIssue, load_knowledge};
 pub use model::{
     Alert, Analysis, Commit, Confidence, ErrorGroup, Evidence, Guess, Knowledge, KnownIncident,
-    KnownMatch, LogLine, MetricSeries, Missing, Report, Service, SkipReason, Suspect, Window,
+    KnownMatch, LogLine, MetricSeries, Missing, Report, Service, SkipReason, Suspect, Trail,
+    Window,
 };
 pub use ports::{Clock, EvidenceError, EvidenceSource, Model, ModelError};
 pub use triage::triage;
