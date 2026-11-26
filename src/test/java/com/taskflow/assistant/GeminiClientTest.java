@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 import com.sun.net.httpserver.HttpServer;
+import com.taskflow.assistant.llm.GeminiProperties;
 import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.common.ErrorCode;
 import java.io.IOException;

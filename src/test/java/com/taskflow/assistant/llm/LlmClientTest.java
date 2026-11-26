@@ -42,14 +42,25 @@ class LlmClientTest {
     }
 
     @Test
-    @DisplayName("기능이 지금 쓰는 제공자와 모델을 캐시 키용 이름으로 알려 준다")
+    @DisplayName("기능이 지금 쓰는 제공자와 모델을 캐시 키용 이름으로 알려 준다(gemini는 모델 이름만)")
     void modelIdFollowsRoute() {
         LlmClient client = new LlmClient(
                 List.of(new RecordingProvider("gemini"), new RecordingProvider("ollama")),
                 new LlmRoutingProperties(Map.of(LlmFeature.WEEKLY_SUMMARY, "ollama")));
 
         assertThat(client.modelId(LlmFeature.WEEKLY_SUMMARY)).isEqualTo("ollama:ollama-model");
-        assertThat(client.modelId(LlmFeature.RECOMMENDATION)).isEqualTo("gemini:gemini-model");
+        assertThat(client.modelId(LlmFeature.RECOMMENDATION)).isEqualTo("gemini-model");
+    }
+
+    @Test
+    @DisplayName("기능이 지금 쓰는 제공자 이름을 알려 준다")
+    void providerNameFollowsRoute() {
+        LlmClient client = new LlmClient(
+                List.of(new RecordingProvider("gemini"), new RecordingProvider("ollama")),
+                new LlmRoutingProperties(Map.of(LlmFeature.WEEKLY_SUMMARY, "ollama")));
+
+        assertThat(client.providerName(LlmFeature.WEEKLY_SUMMARY)).isEqualTo("ollama");
+        assertThat(client.providerName(LlmFeature.RECOMMENDATION)).isEqualTo("gemini");
     }
 
     @Test

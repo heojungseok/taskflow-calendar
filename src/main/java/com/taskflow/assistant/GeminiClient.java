@@ -1,5 +1,7 @@
 package com.taskflow.assistant;
 
+import com.taskflow.assistant.llm.GeminiErrorClassifier;
+import com.taskflow.assistant.llm.GeminiProperties;
 import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.common.ErrorCode;
 import java.io.IOException;
@@ -19,10 +21,10 @@ import tools.jackson.databind.ObjectMapper;
 public class GeminiClient {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final Gemini429Classifier classifier429;
+    private final GeminiErrorClassifier errorClassifier;
 
     public GeminiClient(ObjectMapper objectMapper) {
-        this.classifier429 = new Gemini429Classifier(objectMapper);
+        this.errorClassifier = new GeminiErrorClassifier(objectMapper);
     }
 
     /**
@@ -62,59 +64,21 @@ public class GeminiClient {
     }
 
     private LlmCallException beforeResponse(String message, long startedAt) {
-        return new LlmCallException(
-                ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                message,
-                0,
-                System.currentTimeMillis() - startedAt,
-                null,
-                null,
-                null,
-                List.of());
+        return LlmCallException.of(
+                ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, message, 0, System.currentTimeMillis() - startedAt);
     }
 
     private LlmCallException classify(int statusCode, Map<String, List<String>> headers, String body, long latencyMs) {
-        String retryAfter = firstHeaderValue(headers, "Retry-After");
-        if (statusCode == 429) {
-            Gemini429Classifier.Classified429 c = classifier429.classify(retryAfter, body);
-            return new LlmCallException(
-                    c.errorCode(),
-                    c.message(),
-                    statusCode,
-                    latencyMs,
-                    c.source(),
-                    retryAfter != null ? retryAfter : c.retryDelay(),
-                    c.upstreamStatus(),
-                    c.hints());
-        }
-        ErrorCode errorCode;
-        String message;
-        if (statusCode == 400 || statusCode == 404) {
-            errorCode = ErrorCode.LLM_CONFIG_INVALID;
-            message = "Gemini configuration is invalid";
-        } else if (statusCode >= 500) {
-            errorCode = ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE;
-            message = "Gemini temporary failure";
-        } else {
-            errorCode = ErrorCode.LLM_CONFIG_INVALID;
-            message = "Gemini request failed";
-        }
-        return new LlmCallException(errorCode, message, statusCode, latencyMs, null, retryAfter, null, List.of());
+        return errorClassifier.classify(statusCode, firstHeaderValue(headers, "Retry-After"), body, latencyMs);
     }
 
     private static String firstHeaderValue(Map<String, List<String>> headers, String name) {
         for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
             if (name.equalsIgnoreCase(entry.getKey())) {
-                return firstNonBlank(entry.getValue().toArray(String[]::new));
-            }
-        }
-        return null;
-    }
-
-    static String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value;
+                return entry.getValue().stream()
+                        .filter(value -> !value.isBlank())
+                        .findFirst()
+                        .orElse(null);
             }
         }
         return null;

@@ -145,7 +145,7 @@ public class TaskSearchEmbeddingService {
         }
 
         try {
-            return metrics.observeGeminiCall("embedding", () -> requestEmbeddings(documents));
+            return metrics.observeGeminiCall("embedding", "gemini", () -> requestEmbeddings(documents));
         } catch (TaskSearchGenerationException e) {
             log.warn(
                     "Task search embedding request failed. errorCode={}",

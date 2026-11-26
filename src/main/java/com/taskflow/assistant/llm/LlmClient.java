@@ -1,22 +1,24 @@
 package com.taskflow.assistant.llm;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
 public class LlmClient {
 
-    private final Map<String, LlmProvider> providers = new HashMap<>();
+    private static final String GEMINI = "gemini";
+
+    private final Map<String, LlmProvider> providers;
     private final LlmRoutingProperties routing;
 
     public LlmClient(List<LlmProvider> providers, LlmRoutingProperties routing) {
-        for (LlmProvider provider : providers) {
-            this.providers.put(provider.name(), provider);
-        }
+        this.providers = providers.stream().collect(Collectors.toMap(LlmProvider::name, Function.identity()));
         this.routing = routing;
-        for (String name : routing.provider().values()) {
+        for (LlmFeature feature : LlmFeature.values()) {
+            String name = routing.providerFor(feature);
             if (!this.providers.containsKey(name)) {
                 throw new IllegalStateException("Unknown LLM provider: " + name);
             }
@@ -29,15 +31,16 @@ public class LlmClient {
 
     public String modelId(LlmFeature feature) {
         LlmProvider provider = providerFor(feature);
-        return provider.name() + ":" + provider.model(feature);
+        return GEMINI.equals(provider.name())
+                ? provider.model(feature)
+                : provider.name() + ":" + provider.model(feature);
+    }
+
+    public String providerName(LlmFeature feature) {
+        return providerFor(feature).name();
     }
 
     private LlmProvider providerFor(LlmFeature feature) {
-        String name = routing.providerFor(feature);
-        LlmProvider provider = providers.get(name);
-        if (provider == null) {
-            throw new IllegalStateException("Unknown LLM provider: " + name);
-        }
-        return provider;
+        return providers.get(routing.providerFor(feature));
     }
 }

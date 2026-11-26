@@ -1,4 +1,4 @@
-package com.taskflow.assistant;
+package com.taskflow.assistant.llm;
 
 import com.taskflow.common.ErrorCode;
 import java.util.LinkedHashSet;
@@ -15,15 +15,15 @@ import tools.jackson.databind.ObjectMapper;
  *
  * <p>Retry-After 헤더 → QuotaFailure의 quotaId(PerDay/PerMinute) → 본문 status·reason → 메시지 순으로 본다.
  */
-public final class Gemini429Classifier {
+final class Gemini429Classifier {
 
     private final ObjectMapper objectMapper;
 
-    public Gemini429Classifier(ObjectMapper objectMapper) {
+    Gemini429Classifier(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
-    public Classified429 classify(String retryAfter, String body) {
+    Classified429 classify(String retryAfter, String body) {
         if (retryAfter != null && !retryAfter.isBlank()) {
             return new Classified429(
                     ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
@@ -72,9 +72,9 @@ public final class Gemini429Classifier {
         try {
             JsonNode root = objectMapper.readTree(body);
             JsonNode error = root.path("error");
-            String message = GeminiClient.firstNonBlank(
+            String message = firstNonBlank(
                     error.path("message").asString(null), root.path("message").asString(null), body);
-            String status = GeminiClient.firstNonBlank(
+            String status = firstNonBlank(
                     error.path("status").asString(null), root.path("status").asString(null));
             JsonNode retryDelay = error.findValue("retryDelay");
             return new ParsedUpstream(
@@ -167,6 +167,15 @@ public final class Gemini429Classifier {
         return false;
     }
 
+    static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     private static String normalize(String value) {
         return value == null
                 ? ""
@@ -176,10 +185,10 @@ public final class Gemini429Classifier {
                         .trim();
     }
 
-    record ParsedUpstream(
+    private record ParsedUpstream(
             String message, String upstreamStatus, List<String> hints, List<String> quotaIds, String retryDelay) {}
 
-    public record Classified429(
+    record Classified429(
             ErrorCode errorCode,
             String message,
             String source,
@@ -187,7 +196,7 @@ public final class Gemini429Classifier {
             List<String> hints,
             String retryDelay) {
 
-        static Classified429 quota(String source, ParsedUpstream parsed) {
+        private static Classified429 quota(String source, ParsedUpstream parsed) {
             return new Classified429(
                     ErrorCode.LLM_QUOTA_EXHAUSTED,
                     "Gemini quota exhausted",
@@ -197,7 +206,7 @@ public final class Gemini429Classifier {
                     parsed.retryDelay());
         }
 
-        static Classified429 rateLimit(String source, ParsedUpstream parsed) {
+        private static Classified429 rateLimit(String source, ParsedUpstream parsed) {
             return new Classified429(
                     ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
                     "Gemini rate limit is temporary",

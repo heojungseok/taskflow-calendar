@@ -2,6 +2,7 @@ package com.taskflow.assistant.search.generator;
 
 import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.assistant.llm.LlmClient;
+import com.taskflow.assistant.llm.LlmFeature;
 import com.taskflow.assistant.llm.LlmJsonReader;
 import com.taskflow.assistant.llm.LlmRequest;
 import com.taskflow.assistant.llm.LlmResponse;
@@ -32,7 +33,8 @@ public class LlmTaskSearchIntentParser implements TaskSearchIntentParser {
 
     @Override
     public SearchIntent parse(String query) {
-        return metrics.observeGeminiCall("search_intent", () -> parseUnobserved(query));
+        return metrics.observeGeminiCall(
+                "search_intent", llmClient.providerName(LlmFeature.SEARCH_INTENT), () -> parseUnobserved(query));
     }
 
     private SearchIntent parseUnobserved(String query) {

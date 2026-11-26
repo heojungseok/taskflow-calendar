@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
+import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
@@ -20,13 +21,14 @@ final class SpringAiChat {
                 options);
         ChatResponse response = model.call(prompt);
         Generation generation = response.getResult();
+        Usage usage = response.getMetadata().getUsage();
         return new LlmResponse(
                 text(generation),
                 response.getMetadata().getModel(),
                 finishReason(generation),
-                tokens(response.getMetadata().getUsage().getPromptTokens()),
-                tokens(response.getMetadata().getUsage().getCompletionTokens()),
-                tokens(response.getMetadata().getUsage().getTotalTokens()));
+                tokens(usage.getPromptTokens()),
+                tokens(usage.getCompletionTokens()),
+                tokens(usage.getTotalTokens()));
     }
 
     private static String text(Generation generation) {

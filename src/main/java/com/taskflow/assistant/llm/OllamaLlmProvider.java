@@ -3,11 +3,11 @@ package com.taskflow.assistant.llm;
 import com.taskflow.common.ErrorCode;
 import java.net.http.HttpClient;
 import java.time.Duration;
-import java.util.List;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.ObjectMapper;
@@ -18,11 +18,12 @@ public class OllamaLlmProvider implements LlmProvider {
 
     private final OllamaLlmProperties properties;
     private final ObjectMapper objectMapper;
-    private volatile OllamaChatModel chatModel;
+    private final OllamaChatModel chatModel;
 
     public OllamaLlmProvider(OllamaLlmProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
         this.objectMapper = objectMapper;
+        this.chatModel = createModel();
     }
 
     @Override
@@ -39,7 +40,7 @@ public class OllamaLlmProvider implements LlmProvider {
     public LlmResponse generate(LlmRequest request) {
         long startedAt = System.currentTimeMillis();
         try {
-            return SpringAiChat.call(model(), request, options(request));
+            return SpringAiChat.call(chatModel, request, options(request));
         } catch (RuntimeException e) {
             throw classify(e, System.currentTimeMillis() - startedAt);
         }
@@ -70,51 +71,16 @@ public class OllamaLlmProvider implements LlmProvider {
                 return fromStatus(response.getStatusCode().value(), latencyMs);
             }
         }
-        return new LlmCallException(
-                ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                "Ollama request failed: " + error.getMessage(),
-                0,
-                latencyMs,
-                null,
-                null,
-                null,
-                List.of());
+        return LlmCallException.of(
+                ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Ollama request failed: " + error.getMessage(), 0, latencyMs);
     }
 
     private LlmCallException fromStatus(int status, long latencyMs) {
         if (status >= 500) {
-            return new LlmCallException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Ollama temporary failure",
-                    status,
-                    latencyMs,
-                    null,
-                    null,
-                    null,
-                    List.of());
+            return LlmCallException.of(
+                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Ollama temporary failure", status, latencyMs);
         }
-        return new LlmCallException(
-                ErrorCode.LLM_CONFIG_INVALID,
-                "Ollama configuration is invalid",
-                status,
-                latencyMs,
-                null,
-                null,
-                null,
-                List.of());
-    }
-
-    private OllamaChatModel model() {
-        OllamaChatModel current = chatModel;
-        if (current == null) {
-            synchronized (this) {
-                if (chatModel == null) {
-                    chatModel = createModel();
-                }
-                current = chatModel;
-            }
-        }
-        return current;
+        return LlmCallException.of(ErrorCode.LLM_CONFIG_INVALID, "Ollama configuration is invalid", status, latencyMs);
     }
 
     private OllamaChatModel createModel() {
@@ -125,6 +91,7 @@ public class OllamaLlmProvider implements LlmProvider {
         OllamaApi api = OllamaApi.builder()
                 .baseUrl(properties.getBaseUrl())
                 .restClientBuilder(RestClient.builder().requestFactory(requestFactory))
+                .responseErrorHandler(new DefaultResponseErrorHandler())
                 .build();
         return OllamaChatModel.builder()
                 .ollamaApi(api)

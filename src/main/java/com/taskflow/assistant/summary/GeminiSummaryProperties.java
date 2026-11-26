@@ -1,6 +1,6 @@
 package com.taskflow.assistant.summary;
 
-import com.taskflow.assistant.GeminiProperties;
+import com.taskflow.assistant.llm.GeminiProperties;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;

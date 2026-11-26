@@ -44,7 +44,7 @@ class ManagementEndpointSecurityTest {
 
     @Test
     void configuredTimersExposeHistogramBuckets() throws Exception {
-        metrics.observeGeminiCall("weekly_summary", () -> "ok");
+        metrics.observeGeminiCall("weekly_summary", "gemini", () -> "ok");
         assertEquals(200, get(serverPort, "/api/auth/session"));
 
         String prometheus = getBody("/actuator/prometheus");

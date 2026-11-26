@@ -160,6 +160,7 @@ final class SearchIntentPayloadNormalizer {
         if (!node.isObject()) {
             return confidence;
         }
+        // Spring AI의 Gemini 스키마 변환이 additionalProperties:false를 버려 모델이 허용 목록 밖 키를 보낼 수 있다.
         for (String field : node.propertyNames()) {
             if (FIELD_CONFIDENCE_KEYS.contains(field)) {
                 confidence.put(field, clampConfidence(node.path(field).asDouble(0.0d)));

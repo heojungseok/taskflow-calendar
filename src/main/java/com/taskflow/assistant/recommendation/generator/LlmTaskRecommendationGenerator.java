@@ -42,7 +42,9 @@ public class LlmTaskRecommendationGenerator implements TaskRecommendationGenerat
     public TaskRecommendationGenerationResult generate(
             Project project, List<TaskSyncSnapshot> candidates, int recommendationCount, LocalDate today) {
         return metrics.observeGeminiCall(
-                "recommendation", () -> generateUnobserved(project, candidates, recommendationCount, today));
+                "recommendation",
+                llmClient.providerName(LlmFeature.RECOMMENDATION),
+                () -> generateUnobserved(project, candidates, recommendationCount, today));
     }
 
     private TaskRecommendationGenerationResult generateUnobserved(

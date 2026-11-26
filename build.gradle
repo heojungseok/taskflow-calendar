@@ -30,7 +30,6 @@ dependencies {
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     testImplementation 'io.micrometer:micrometer-registry-prometheus'
 
-    // LLM: 기능마다 제공자·모델을 설정으로 고른다
     implementation platform('org.springframework.ai:spring-ai-bom:2.1.0')
     implementation 'org.springframework.ai:spring-ai-google-genai'
     implementation 'org.springframework.ai:spring-ai-ollama'

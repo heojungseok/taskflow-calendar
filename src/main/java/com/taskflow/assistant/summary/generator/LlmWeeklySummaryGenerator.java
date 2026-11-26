@@ -71,6 +71,7 @@ public class LlmWeeklySummaryGenerator implements WeeklySummaryGenerator {
             LocalDate weekEnd) {
         return metrics.observeGeminiCall(
                 "weekly_summary",
+                llmClient.providerName(LlmFeature.WEEKLY_SUMMARY),
                 () -> generateUnobserved(
                         project,
                         syncedTasks,

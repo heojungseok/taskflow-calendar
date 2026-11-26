@@ -32,7 +32,7 @@ class LlmTaskSearchIntentParserTest {
 
         assertThat(intent.getTargetType()).isEqualTo(SearchTargetType.TASK);
         assertThat(registry.get("gemini_calls_total")
-                        .tag("feature", "search_intent")
+                        .tags("feature", "search_intent", "provider", "gemini")
                         .tag("outcome", "success")
                         .counter()
                         .count())
