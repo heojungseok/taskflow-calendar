@@ -4,6 +4,7 @@ import com.taskflow.calendarsync.outbox.CalendarOutboxRepository;
 import com.taskflow.calendarsync.outbox.OutboxPolicy;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -21,15 +22,17 @@ import org.springframework.stereotype.Component;
 public class OutboxBacklogGauge {
 
     private final CalendarOutboxRepository outboxRepository;
+    private final Clock clock;
 
-    public OutboxBacklogGauge(CalendarOutboxRepository outboxRepository, MeterRegistry registry) {
+    public OutboxBacklogGauge(CalendarOutboxRepository outboxRepository, MeterRegistry registry, Clock clock) {
         this.outboxRepository = outboxRepository;
+        this.clock = clock;
         Gauge.builder("outbox_oldest_processable_age_seconds", this, OutboxBacklogGauge::oldestProcessableAgeSeconds)
                 .register(registry);
     }
 
     double oldestProcessableAgeSeconds() {
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
         int leaseMinutes = OutboxPolicy.LEASE_TIMEOUT_MINUTES.value();
         try {
             LocalDateTime since = outboxRepository.findOldestProcessableSince(

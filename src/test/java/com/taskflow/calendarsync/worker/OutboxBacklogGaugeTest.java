@@ -8,8 +8,11 @@ import static org.mockito.Mockito.when;
 
 import com.taskflow.calendarsync.outbox.CalendarOutbox;
 import com.taskflow.calendarsync.outbox.CalendarOutboxRepository;
+import com.taskflow.common.TimeZones;
 import com.taskflow.config.JpaAuditingConfig;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +29,9 @@ import org.springframework.dao.DataAccessResourceFailureException;
 @Import(JpaAuditingConfig.class)
 class OutboxBacklogGaugeTest {
 
+    private static final Instant NOW = Instant.parse("2026-11-26T09:00:00Z");
+    private static final Clock FIXED = Clock.fixed(NOW, TimeZones.SERVICE_ZONE);
+
     @Autowired
     CalendarOutboxRepository repository;
 
@@ -39,7 +45,7 @@ class OutboxBacklogGaugeTest {
         // 최솟값을 보는 지표라 다른 테스트가 남긴 행이 끼면 안 된다. 테스트 트랜잭션이 끝나면 되돌아간다.
         em.getEntityManager().createNativeQuery("DELETE FROM calendar_outbox").executeUpdate();
         registry = new SimpleMeterRegistry();
-        new OutboxBacklogGauge(repository, registry);
+        new OutboxBacklogGauge(repository, registry, FIXED);
     }
 
     @Test
@@ -57,7 +63,7 @@ class OutboxBacklogGaugeTest {
         CalendarOutbox pending = em.persistAndFlush(CalendarOutbox.forUpsert(940002L, "{}"));
         setTimes(pending, utcNow().minusMinutes(4), utcNow().minusMinutes(4));
 
-        assertThat(gaugeValue()).isBetween(235.0, 250.0);
+        assertThat(gaugeValue()).isEqualTo(240.0);
     }
 
     @Test
@@ -69,7 +75,7 @@ class OutboxBacklogGaugeTest {
         setTimes(retry, utcNow().minusMinutes(30), utcNow().minusMinutes(2));
 
         // 30분 전에 만든 건이지만 재시도 차례가 된 지는 1분이다
-        assertThat(gaugeValue()).isBetween(55.0, 70.0);
+        assertThat(gaugeValue()).isEqualTo(60.0);
     }
 
     @Test
@@ -80,7 +86,7 @@ class OutboxBacklogGaugeTest {
         setTimes(stuck, utcNow().minusMinutes(20), utcNow().minusMinutes(7));
 
         // lease 5분이 끝난 지 2분
-        assertThat(gaugeValue()).isBetween(115.0, 130.0);
+        assertThat(gaugeValue()).isEqualTo(120.0);
     }
 
     @Test
@@ -89,7 +95,7 @@ class OutboxBacklogGaugeTest {
         when(failing.findOldestProcessableSince(any(), any(), anyInt(), anyInt()))
                 .thenThrow(new DataAccessResourceFailureException("db down"));
 
-        assertThat(new OutboxBacklogGauge(failing, new SimpleMeterRegistry()).oldestProcessableAgeSeconds())
+        assertThat(new OutboxBacklogGauge(failing, new SimpleMeterRegistry(), FIXED).oldestProcessableAgeSeconds())
                 .isNaN();
     }
 
@@ -108,6 +114,6 @@ class OutboxBacklogGaugeTest {
     }
 
     private static LocalDateTime utcNow() {
-        return LocalDateTime.now(ZoneOffset.UTC);
+        return LocalDateTime.ofInstant(NOW, ZoneOffset.UTC);
     }
 }
