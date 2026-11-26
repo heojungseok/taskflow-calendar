@@ -3,6 +3,7 @@
 - 식별 패턴: `ERROR c.taskflow.demo.DemoCleanupScheduler : Demo cleanup failed. errorType=`
 - 로거: `com.taskflow.demo.DemoCleanupScheduler`
 - 관련 알림: cleanup failure
+- 방문자 유발: 불가
 - 확정: 2026-11-26 정석님
 
 ## 증상

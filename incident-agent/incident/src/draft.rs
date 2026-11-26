@@ -21,7 +21,7 @@ fn suspect_line(suspect: &Suspect) -> String {
 pub(crate) fn summarize(report: &Report) -> String {
     let mut lines = Vec::new();
     if let Some(known) = &report.known_incident {
-        lines.push(format!("- 알려진 장애: {known}"));
+        lines.push(format!("- 알려진 장애: {}", known.source));
     }
     lines.extend(report.suspects.iter().map(suspect_line));
     lines.join("\n")

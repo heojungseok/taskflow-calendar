@@ -3,6 +3,7 @@ mod commit;
 mod evidence_lines;
 mod fingerprint;
 mod grouping;
+mod knowledge_doc;
 mod knowledge_file;
 mod known;
 mod logline;
@@ -15,10 +16,10 @@ mod prompt;
 mod triage;
 
 pub use analysis::ANSWER_SCHEMA;
-pub use knowledge_file::{KnowledgeIssue, load_knowledge};
+pub use knowledge_file::{IssueKind, KnowledgeIssue, load_knowledge};
 pub use model::{
     Alert, Analysis, Commit, Confidence, ErrorGroup, Evidence, Guess, Knowledge, KnownIncident,
-    LogLine, MetricSeries, Missing, Report, Service, SkipReason, Suspect, Window,
+    KnownMatch, LogLine, MetricSeries, Missing, Report, Service, SkipReason, Suspect, Window,
 };
 pub use ports::{Clock, EvidenceError, EvidenceSource, Model, ModelError};
 pub use triage::triage;

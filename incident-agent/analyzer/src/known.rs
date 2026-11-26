@@ -1,7 +1,7 @@
 use crate::fingerprint::fingerprint;
-use crate::model::{Evidence, Knowledge};
+use crate::model::{Evidence, Knowledge, KnownMatch};
 
-pub(crate) fn match_known(knowledge: &Knowledge, evidence: &Evidence) -> Option<String> {
+pub(crate) fn match_known(knowledge: &Knowledge, evidence: &Evidence) -> Option<KnownMatch> {
     let fingerprints: Vec<String> = evidence
         .logs
         .iter()
@@ -9,12 +9,15 @@ pub(crate) fn match_known(knowledge: &Knowledge, evidence: &Evidence) -> Option<
         .map(|f| f.text)
         .collect();
     knowledge
-        .incidents
+        .incidents()
         .iter()
         .find(|known| {
             fingerprints
                 .iter()
-                .any(|text| text.starts_with(&known.signature))
+                .any(|text| text.starts_with(known.signature()))
         })
-        .map(|known| known.source.clone())
+        .map(|known| KnownMatch {
+            source: known.source().to_owned(),
+            visitor_triggerable: known.visitor_triggerable(),
+        })
 }

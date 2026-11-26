@@ -59,3 +59,26 @@ impl Model for ScriptedModel {
         self.answer.clone()
     }
 }
+
+pub fn knowledge_doc(signature: &str, logger: &str, visitor: &str, confirmed: &str) -> String {
+    format!(
+        "# 문서\n\n- 식별 패턴: `{signature}`\n- 로거: `{logger}`\n- 관련 알림: backend error logs\n- 방문자 유발: {visitor}\n- 확정: {confirmed}\n\n## 증상\nx\n\n## 원인\nx\n\n## 확인할 것\nx\n\n## 조치\nx\n"
+    )
+}
+
+pub fn knowledge_dir(name: &str, docs: &[(&str, String)]) -> std::path::PathBuf {
+    let dir =
+        std::env::temp_dir().join(format!("analyzer-knowledge-{}-{name}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    for (file, text) in docs {
+        std::fs::write(dir.join(file), text).unwrap();
+    }
+    dir
+}
+
+pub fn knowledge_from(name: &str, docs: &[(&str, String)]) -> analyzer::Knowledge {
+    let (knowledge, issues) = analyzer::load_knowledge(&knowledge_dir(name, docs));
+    assert!(issues.is_empty(), "{issues:?}");
+    knowledge
+}
