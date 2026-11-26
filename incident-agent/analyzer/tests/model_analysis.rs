@@ -2,7 +2,7 @@ mod common;
 
 use analyzer::{
     ANSWER_SCHEMA, Analysis, Confidence, Evidence, Knowledge, LogLine, MetricSeries, Missing,
-    ModelError, Report, Service, SkipReason, Suspect, triage,
+    ModelError, Report, Service, SkipReason, Suspect, Trail, Window, triage,
 };
 use common::{FixedClock, FixedEvidence, ScriptedModel, alert, knowledge_doc, knowledge_from};
 
@@ -398,4 +398,31 @@ fn trace_id_stays_readable_for_finding_the_request_in_loki() {
     let prompt = prompt_of(evidence_with(vec![log(1_010, line)]));
 
     assert!(prompt.contains("traceId=9f1a2b3c4d5e6f70"), "{prompt}");
+}
+
+#[test]
+fn report_says_which_window_was_read_and_how_much_reached_the_model() {
+    let model = ScriptedModel::unknown();
+    let lines = vec![
+        log(1_010, NEW_ERROR),
+        log(1_011, NEW_ERROR),
+        log(
+            1_012,
+            "WARN c.t.s.SchedulerService : Outbox poll took 1200ms",
+        ),
+    ];
+
+    let report = run(evidence_with(lines), &model);
+
+    assert_eq!(
+        report.trail,
+        Trail {
+            window: Window {
+                from_unix: 100,
+                to_unix: 1_200,
+            },
+            log_lines: 3,
+            sent_lines: 2,
+        }
+    );
 }

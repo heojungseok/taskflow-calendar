@@ -6,7 +6,8 @@ use crate::grouping::group_alerts;
 use crate::known::match_known;
 use crate::metric::first_changed_metric;
 use crate::model::{
-    Alert, Analysis, Evidence, Knowledge, Missing, Report, Service, SkipReason, Suspect, Window,
+    Alert, Analysis, Evidence, Knowledge, Missing, Report, Service, SkipReason, Suspect, Trail,
+    Window,
 };
 use crate::new_error::new_error_suspect;
 use crate::ports::{Clock, EvidenceSource, Model};
@@ -37,19 +38,24 @@ fn report_for(
     clock: &impl Clock,
     (model, calls): (&impl Model, &mut usize),
 ) -> Report {
-    let collected = collect_evidence(&alerts, source, clock);
+    let (collected, window) = collect_evidence(&alerts, source, clock);
     let known_incident = match_known(knowledge, &collected);
     let suspects = suspects_for(&collected);
-    let analysis = if known_incident
+    let (analysis, sent_lines) = if known_incident
         .as_ref()
         .is_some_and(|known| !known.visitor_triggerable)
     {
-        Analysis::Skipped(SkipReason::KnownIncident)
+        (Analysis::Skipped(SkipReason::KnownIncident), 0)
     } else {
         let prompt = prompt::build(&alerts, &collected, &suspects);
-        analysis_for(model, &prompt, calls)
+        (analysis_for(model, &prompt, calls), prompt.lines.len())
     };
     Report {
+        trail: Trail {
+            window,
+            log_lines: collected.logs.len(),
+            sent_lines,
+        },
         analysis,
         known_incident,
         suspects,
@@ -73,7 +79,7 @@ fn collect_evidence(
     alerts: &[Alert],
     source: &impl EvidenceSource,
     clock: &impl Clock,
-) -> Evidence {
+) -> (Evidence, Window) {
     let first = alerts.first().map_or(0, |alert| alert.starts_at_unix);
     let last = alerts.last().map_or(0, |alert| alert.starts_at_unix);
     let window = Window {
@@ -86,12 +92,13 @@ fn collect_evidence(
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
-    source
+    let evidence = source
         .collect(&window, &services)
         .unwrap_or_else(|_| Evidence {
             missing: vec![Missing::Evidence],
             ..Evidence::default()
-        })
+        });
+    (evidence, window)
 }
 
 fn suspects_for(evidence: &Evidence) -> Vec<Suspect> {
