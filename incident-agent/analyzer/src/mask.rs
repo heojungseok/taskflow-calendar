@@ -2,6 +2,7 @@ use crate::logline::{parse_log, replace_quoted};
 
 const SECRET_MIN_LEN: usize = 20;
 const SECRET_MIN_DIGITS: usize = 3;
+const TRACE_ID_LEN: usize = 16;
 const IDENT_MAX_LEN: usize = 64;
 const PLACEHOLDERS: [&str; 4] = ["[본문 ", "[이메일]", "[토큰]", "[한글 "];
 
@@ -103,8 +104,15 @@ fn is_secret_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || matches!(c, '_' | '+' | '/' | '=' | '-')
 }
 
+fn is_trace_id(run: &str) -> bool {
+    run.strip_prefix("traceId=").is_some_and(|id| {
+        id.len() == TRACE_ID_LEN && id.chars().all(|c| matches!(c, '0'..='9' | 'a'..='f'))
+    })
+}
+
 fn is_secret(run: &str) -> bool {
-    run.chars().count() >= SECRET_MIN_LEN
+    !is_trace_id(run)
+        && run.chars().count() >= SECRET_MIN_LEN
         && run.chars().any(|c| c.is_ascii_alphabetic())
         && run.chars().filter(char::is_ascii_digit).count() >= SECRET_MIN_DIGITS
 }

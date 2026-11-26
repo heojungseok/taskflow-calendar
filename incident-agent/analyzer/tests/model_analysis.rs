@@ -390,3 +390,12 @@ fn answer_citing_only_a_changed_metric_while_new_errors_exist_is_unknown() {
 
     assert_eq!(report.analysis, Analysis::Unknown);
 }
+
+#[test]
+fn trace_id_stays_readable_for_finding_the_request_in_loki() {
+    let line = "ERROR c.t.p.TaskSearchService : search failed traceId=9f1a2b3c4d5e6f70";
+
+    let prompt = prompt_of(evidence_with(vec![log(1_010, line)]));
+
+    assert!(prompt.contains("traceId=9f1a2b3c4d5e6f70"), "{prompt}");
+}
