@@ -1,0 +1,86 @@
+[
+  {"id": "r01", "project": "웹 서비스 출시", "count": 3, "mustIncludeIds": [101, 102], "mustExcludeIds": [105],
+   "tasks": [
+    {"id": 101, "title": "운영 DB 백업 검증", "description": "배포 전 백업 복원이 되는지 확인해야 한다. 어제까지였으나 미완료이며 배포 승인이 이 작업에 묶여 있다.", "status": "IN_PROGRESS", "dueAt": "2026-11-26T18:00", "syncState": "SYNCED"},
+    {"id": 102, "title": "배포 승인 요청", "description": "오늘 오후 6시까지 승인권자에게 요청서를 보내야 한다. 이후 모든 배포 작업이 이 승인에 달려 있다.", "status": "REQUESTED", "dueAt": "2026-11-27T18:00", "syncState": "SYNCED"},
+    {"id": 103, "title": "릴리즈 노트 초안", "description": "변경사항을 정리해 팀에 공유한다.", "status": "REQUESTED", "dueAt": "2026-11-30T12:00", "syncState": "SYNCED"},
+    {"id": 104, "title": "모니터링 대시보드 색상 정리", "description": "Grafana 패널 색상을 통일한다. 급하지 않다.", "status": "REQUESTED", "dueAt": "2026-12-20T12:00", "syncState": "PENDING_SYNC"},
+    {"id": 105, "title": "README 오타 수정", "description": "이미 반영된 오타 수정 작업이다.", "status": "DONE", "dueAt": "2026-11-20T12:00", "syncState": "SYNCED"}
+   ]},
+  {"id": "r02", "project": "이사 준비", "count": 2, "mustIncludeIds": [201], "mustExcludeIds": [204],
+   "tasks": [
+    {"id": 201, "title": "전입신고", "description": "이사 후 14일 이내에 해야 하며 오늘이 마지막 날이다. 주민센터 방문 필요.", "status": "REQUESTED", "dueAt": "2026-11-27T17:00", "syncState": "SYNCED"},
+    {"id": 202, "title": "인터넷 이전 설치 예약", "description": "설치 기사 일정이 이번 주 금요일까지 확정되지 않았다.", "status": "BLOCKED", "dueAt": "2026-11-28T12:00", "syncState": "SYNCED"},
+    {"id": 203, "title": "이삿짐센터 잔금 지급", "description": "견적서 기준 잔금을 이체한다.", "status": "REQUESTED", "dueAt": "2026-12-01T12:00", "syncState": "SYNCED"},
+    {"id": 204, "title": "화분 새 집으로 옮기기", "description": "여유 있을 때 천천히 옮긴다.", "status": "REQUESTED", "dueAt": "2026-12-31T12:00", "syncState": "SYNC_DISABLED"}
+   ]},
+  {"id": "r03", "project": "분기 결산", "count": 3, "mustIncludeIds": [301, 302], "mustExcludeIds": [307],
+   "tasks": [
+    {"id": 301, "title": "부가세 신고 자료 제출", "description": "세무사에게 매출 증빙을 넘겨야 하며 기한이 3일 지났다. 가산세 위험이 있다.", "status": "IN_PROGRESS", "dueAt": "2026-11-24T18:00", "syncState": "SYNCED"},
+    {"id": 302, "title": "법인카드 사용 내역 소명", "description": "미소명 건이 남아 있고 오늘 마감이다.", "status": "REQUESTED", "dueAt": "2026-11-27T12:00", "syncState": "SYNCED"},
+    {"id": 303, "title": "매출 채권 연체 확인", "description": "연체 고객 3곳에 연락한다.", "status": "REQUESTED", "dueAt": "2026-11-29T12:00", "syncState": "SYNCED"},
+    {"id": 304, "title": "결산 보고서 서식 변경", "description": "새 서식으로 바꿀지 검토 중이다.", "status": "REQUESTED", "dueAt": "2026-12-10T12:00", "syncState": "PENDING_SYNC"},
+    {"id": 305, "title": "회계 프로그램 업데이트", "description": "다음 분기 전에 업데이트한다.", "status": "REQUESTED", "dueAt": "2026-12-15T12:00", "syncState": "SYNCED"},
+    {"id": 306, "title": "영수증 스캔 정리", "description": "종이 영수증을 스캔해 폴더별로 정리한다.", "status": "IN_PROGRESS", "dueAt": "2026-12-05T12:00", "syncState": "SYNCED"},
+    {"id": 307, "title": "지난달 결산 메모 보관", "description": "완료된 보관 작업.", "status": "DONE", "dueAt": "2026-11-15T12:00", "syncState": "SYNCED"}
+   ]},
+  {"id": "r04", "project": "개인 건강 관리", "count": 2, "mustIncludeIds": [401], "mustExcludeIds": [405],
+   "tasks": [
+    {"id": 401, "title": "건강검진 결과 상담 예약", "description": "예약 가능 기간이 오늘 끝나며 놓치면 다음 달로 넘어간다.", "status": "REQUESTED", "dueAt": "2026-11-27T20:00", "syncState": "SYNCED"},
+    {"id": 402, "title": "치과 스케일링", "description": "6개월마다 받는 정기 방문.", "status": "REQUESTED", "dueAt": "2026-12-08T10:00", "syncState": "SYNCED"},
+    {"id": 403, "title": "러닝 기록 앱 정리", "description": "기록을 한 곳으로 모은다.", "status": "REQUESTED", "dueAt": "2026-12-25T10:00", "syncState": "SYNC_DISABLED"},
+    {"id": 404, "title": "영양제 재주문", "description": "재고가 이틀치 남았다.", "status": "REQUESTED", "dueAt": "2026-11-29T10:00", "syncState": "SYNCED"},
+    {"id": 405, "title": "운동화 구매", "description": "이미 구매 완료.", "status": "DONE", "dueAt": "2026-11-22T10:00", "syncState": "SYNCED"}
+   ]},
+  {"id": "r05", "project": "모바일 앱 리뉴얼", "count": 3, "mustIncludeIds": [501, 503], "mustExcludeIds": [],
+   "tasks": [
+    {"id": 501, "title": "결제 모듈 오류 수정", "description": "결제 실패가 간헐적으로 발생해 고객 문의가 늘고 있다. 오늘 핫픽스 배포 목표.", "status": "IN_PROGRESS", "dueAt": "2026-11-27T15:00", "syncState": "SYNCED"},
+    {"id": 502, "title": "온보딩 화면 문구 검수", "description": "카피 검수 후 적용한다.", "status": "REQUESTED", "dueAt": "2026-12-03T12:00", "syncState": "SYNCED"},
+    {"id": 503, "title": "스토어 심사 제출", "description": "심사에 3일이 걸리므로 오늘 제출해야 다음 주 출시가 가능하다. 결제 오류 수정에 의존한다.", "status": "BLOCKED", "dueAt": "2026-11-27T23:00", "syncState": "SYNCED"},
+    {"id": 504, "title": "다크 모드 아이콘 교체", "description": "아이콘 세트를 새로 받아 교체한다.", "status": "REQUESTED", "dueAt": "2026-12-12T12:00", "syncState": "PENDING_SYNC"},
+    {"id": 505, "title": "푸시 알림 문구 A/B 테스트", "description": "다음 스프린트에서 진행한다.", "status": "REQUESTED", "dueAt": "2026-12-18T12:00", "syncState": "SYNCED"},
+    {"id": 506, "title": "접근성 라벨 점검", "description": "VoiceOver 라벨 누락 확인.", "status": "REQUESTED", "dueAt": "2026-12-09T12:00", "syncState": "SYNCED"}
+   ]},
+  {"id": "r06", "project": "블로그 운영", "count": 2, "mustIncludeIds": [601], "mustExcludeIds": [604],
+   "tasks": [
+    {"id": 601, "title": "제휴 광고 원고 마감", "description": "광고주와 약속한 게시일이 내일이라 오늘 안에 최종 원고를 보내야 한다.", "status": "IN_PROGRESS", "dueAt": "2026-11-27T21:00", "syncState": "SYNCED"},
+    {"id": 602, "title": "독자 댓글 답변", "description": "댓글 10개가 답변을 기다린다.", "status": "REQUESTED", "dueAt": "2026-11-30T12:00", "syncState": "SYNCED"},
+    {"id": 603, "title": "썸네일 템플릿 정리", "description": "자주 쓰는 템플릿을 폴더로 모은다.", "status": "REQUESTED", "dueAt": "2026-12-20T12:00", "syncState": "SYNC_DISABLED"},
+    {"id": 604, "title": "작년 글 태그 정리", "description": "완료됨.", "status": "DONE", "dueAt": "2026-11-10T12:00", "syncState": "SYNCED"}
+   ]},
+  {"id": "r07", "project": "서버 인프라 개선", "count": 3, "mustIncludeIds": [701, 702], "mustExcludeIds": [708],
+   "tasks": [
+    {"id": 701, "title": "인증서 갱신", "description": "TLS 인증서가 모레 만료된다. 갱신 실패 시 서비스 접속이 막힌다.", "status": "REQUESTED", "dueAt": "2026-11-28T12:00", "syncState": "SYNCED"},
+    {"id": 702, "title": "디스크 사용량 경보 조치", "description": "데이터 디스크가 92%라 오늘 안에 로그 정리나 증설이 필요하다.", "status": "IN_PROGRESS", "dueAt": "2026-11-27T18:00", "syncState": "SYNCED"},
+    {"id": 703, "title": "백업 보존 기간 조정", "description": "보존 기간을 14일에서 30일로 바꾸는 안을 검토한다.", "status": "REQUESTED", "dueAt": "2026-12-04T12:00", "syncState": "SYNCED"},
+    {"id": 704, "title": "Grafana 대시보드 정리", "description": "패널 이름을 통일한다.", "status": "REQUESTED", "dueAt": "2026-12-15T12:00", "syncState": "PENDING_SYNC"},
+    {"id": 705, "title": "운영 문서 갱신", "description": "구성 변경 내용을 문서에 반영한다.", "status": "REQUESTED", "dueAt": "2026-12-10T12:00", "syncState": "SYNCED"},
+    {"id": 706, "title": "알림 채널 테스트", "description": "Discord 알림이 도착하는지 확인한다.", "status": "REQUESTED", "dueAt": "2026-12-02T12:00", "syncState": "SYNCED"},
+    {"id": 707, "title": "컨테이너 이미지 태그 정책", "description": "latest 태그 사용을 줄이는 방안.", "status": "BLOCKED", "dueAt": "2026-12-22T12:00", "syncState": "SYNCED"},
+    {"id": 708, "title": "서버 팬 소음 점검", "description": "점검 완료.", "status": "DONE", "dueAt": "2026-11-18T12:00", "syncState": "SYNCED"}
+   ]},
+  {"id": "r08", "project": "스터디 모임", "count": 2, "mustIncludeIds": [801], "mustExcludeIds": [],
+   "tasks": [
+    {"id": 801, "title": "발표 자료 최종본 공유", "description": "내일 아침 스터디에서 발표하므로 오늘 밤까지 멤버에게 자료를 공유해야 한다.", "status": "IN_PROGRESS", "dueAt": "2026-11-27T22:00", "syncState": "SYNCED"},
+    {"id": 802, "title": "다음 달 모임 장소 예약", "description": "스터디 카페 두 곳을 비교한다.", "status": "REQUESTED", "dueAt": "2026-12-05T12:00", "syncState": "SYNCED"},
+    {"id": 803, "title": "참고 도서 목록 정리", "description": "읽은 책을 표로 정리한다.", "status": "REQUESTED", "dueAt": "2026-12-28T12:00", "syncState": "SYNC_DISABLED"},
+    {"id": 804, "title": "회비 정산", "description": "이번 달 회비를 걷어 정산한다.", "status": "REQUESTED", "dueAt": "2026-12-01T12:00", "syncState": "SYNCED"}
+   ]},
+  {"id": "r09", "project": "가족 여행 준비", "count": 3, "mustIncludeIds": [901, 902], "mustExcludeIds": [906],
+   "tasks": [
+    {"id": 901, "title": "항공권 예약 마감", "description": "얼리버드 요금이 오늘 자정에 끝난다. 아직 결제하지 않았다.", "status": "REQUESTED", "dueAt": "2026-11-27T23:59", "syncState": "SYNCED"},
+    {"id": 902, "title": "여권 유효기간 확인", "description": "만료가 6개월 이내이면 재발급이 필요하고 처리에 일주일이 걸린다. 항공권 예약 전에 확인해야 한다.", "status": "REQUESTED", "dueAt": "2026-11-27T12:00", "syncState": "SYNCED"},
+    {"id": 903, "title": "숙소 후보 비교", "description": "후보 세 곳의 후기를 비교한다.", "status": "IN_PROGRESS", "dueAt": "2026-12-03T12:00", "syncState": "SYNCED"},
+    {"id": 904, "title": "여행자 보험 알아보기", "description": "출발 전까지 가입한다.", "status": "REQUESTED", "dueAt": "2026-12-20T12:00", "syncState": "SYNCED"},
+    {"id": 905, "title": "현지 맛집 목록", "description": "가고 싶은 식당을 모은다.", "status": "REQUESTED", "dueAt": "2027-01-05T12:00", "syncState": "SYNC_DISABLED"},
+    {"id": 906, "title": "캐리어 점검", "description": "점검 끝남.", "status": "DONE", "dueAt": "2026-11-21T12:00", "syncState": "SYNCED"}
+   ]},
+  {"id": "r10", "project": "고객 지원 개선", "count": 2, "mustIncludeIds": [1001], "mustExcludeIds": [1005],
+   "tasks": [
+    {"id": 1001, "title": "VIP 고객 환불 건 처리", "description": "VIP 고객이 이틀째 환불 답변을 기다리고 있고 오늘 응답이 없으면 계약 해지를 언급했다.", "status": "REQUESTED", "dueAt": "2026-11-27T14:00", "syncState": "SYNCED"},
+    {"id": 1002, "title": "FAQ 문서 갱신", "description": "결제 관련 질문 5개를 추가한다.", "status": "REQUESTED", "dueAt": "2026-12-07T12:00", "syncState": "SYNCED"},
+    {"id": 1003, "title": "챗봇 응답 템플릿 검수", "description": "어색한 문장을 고친다.", "status": "IN_PROGRESS", "dueAt": "2026-12-02T12:00", "syncState": "PENDING_SYNC"},
+    {"id": 1004, "title": "상담 만족도 설문 설계", "description": "문항 초안을 만든다.", "status": "REQUESTED", "dueAt": "2026-12-19T12:00", "syncState": "SYNC_DISABLED"},
+    {"id": 1005, "title": "지난 분기 상담 통계 보고", "description": "보고 완료.", "status": "DONE", "dueAt": "2026-11-12T12:00", "syncState": "SYNCED"}
+   ]}
+]
