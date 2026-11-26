@@ -1,5 +1,6 @@
 package com.taskflow.assistant.recommendation.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.taskflow.planning.project.Project;
 import java.time.Instant;
 import java.util.List;
@@ -15,6 +16,7 @@ public class ProjectTaskRecommendationResponse {
     private final int recommendedCount;
     private final List<ProjectTaskRecommendationItemResponse> items;
 
+    @JsonCreator
     private ProjectTaskRecommendationResponse(
             Long projectId,
             String projectName,
