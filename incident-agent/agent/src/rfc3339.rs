@@ -15,6 +15,17 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     era * 146_097 + day_of_era - 719_468
 }
 
+pub(crate) fn month_day(days_since_epoch: u64) -> (u64, u64) {
+    let z = days_since_epoch + 719_468;
+    let doe = z % 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    (month, day)
+}
+
 fn days_in_month(year: i64, month: i64) -> i64 {
     let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
     match month {

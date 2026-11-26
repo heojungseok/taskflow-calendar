@@ -21,6 +21,7 @@ pub(crate) struct Config {
     pub(crate) owner: DiscordUserId,
     pub(crate) github_repo: Option<String>,
     pub(crate) grafana_url: Option<String>,
+    pub(crate) syslog_addr: Option<String>,
 }
 
 #[derive(Debug)]
@@ -102,6 +103,7 @@ pub(crate) fn load(lookup: impl Fn(&str) -> Option<String>) -> Result<Config, Co
         owner,
         github_repo: (reader.lookup)("AGENT_GITHUB_REPO").filter(|value| !value.is_empty()),
         grafana_url,
+        syslog_addr: (reader.lookup)("AGENT_SYSLOG_ADDR").filter(|value| !value.is_empty()),
     };
     if reader.problems.is_empty() {
         return Ok(config);
@@ -179,6 +181,7 @@ mod tests {
         assert_eq!(config.owner.as_str(), "1234567890");
         assert_eq!(config.github_repo, None);
         assert_eq!(config.grafana_url, None);
+        assert_eq!(config.syslog_addr, None);
         assert_eq!(config.model_name, "secret-value-of-AGENT_MODEL_NAME");
     }
 

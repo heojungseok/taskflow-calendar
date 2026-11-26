@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
 
 use analyzer::Clock;
@@ -7,6 +8,7 @@ use contract::{ActionResult, Outcome};
 use incident::{Command, Event, Incidents, Notice};
 
 use crate::analysis::Job;
+use crate::telemetry::Telemetry;
 use crate::{drafts, requests};
 
 pub(crate) trait Chat {
@@ -24,6 +26,7 @@ pub(crate) struct Core<C, K> {
     pub(crate) clock: K,
     pub(crate) paths: Paths,
     pub(crate) analysis: Sender<Job>,
+    pub(crate) telemetry: Arc<Telemetry>,
 }
 
 impl<C: Chat, K: Clock> Core<C, K> {
@@ -31,22 +34,29 @@ impl<C: Chat, K: Clock> Core<C, K> {
         let mut queue = VecDeque::from([event]);
         while let Some(event) = queue.pop_front() {
             let now = self.clock.now_unix();
+            self.telemetry.observe_event(&event);
+            let verdict = match &event {
+                Event::VerdictGiven { verdict, .. } => Some(verdict.clone()),
+                _ => None,
+            };
             match self.incidents.handle(event, now) {
                 Ok(commands) => {
+                    self.telemetry.observe_verdict(verdict.as_ref(), &commands);
                     for command in commands {
                         queue.extend(self.execute(command, now));
                     }
                 }
-                Err(error) => eprintln!("event not handled: {error}"),
+                Err(error) => crate::syslog::line(&format!("event not handled: {error}")),
             }
         }
     }
 
     fn execute(&self, command: Command, now: u64) -> Option<Event> {
+        self.telemetry.observe_command(&command);
         match command {
             Command::Analyze { batch, alerts } => {
                 if self.analysis.send((batch, alerts)).is_err() {
-                    eprintln!("analysis stopped, batch {batch} dropped");
+                    crate::syslog::line(&format!("analysis stopped, batch {batch} dropped"));
                 }
                 None
             }
@@ -59,7 +69,7 @@ impl<C: Chat, K: Clock> Core<C, K> {
                 let Err(error) = written else {
                     return None;
                 };
-                eprintln!("request not written: {:?}", error.kind());
+                crate::syslog::line(&format!("request not written: {:?}", error.kind()));
                 let failed = Outcome::Failed {
                     reason: "request not written".to_owned(),
                 };
@@ -68,7 +78,7 @@ impl<C: Chat, K: Clock> Core<C, K> {
             }
             Command::SaveDraft { incident, markdown } => {
                 if let Err(error) = drafts::save(&self.paths.drafts_dir, incident, &markdown) {
-                    eprintln!("draft not saved: {:?}", error.kind());
+                    crate::syslog::line(&format!("draft not saved: {:?}", error.kind()));
                 }
                 None
             }

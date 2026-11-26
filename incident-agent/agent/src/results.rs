@@ -60,7 +60,10 @@ fn move_to(path: &Path, folder: &str) -> bool {
     let target = parent.join(folder);
     let moved = fs::create_dir_all(&target).and_then(|()| fs::rename(path, target.join(name)));
     if let Err(error) = &moved {
-        eprintln!("result file not moved to {folder}: {:?}", error.kind());
+        crate::syslog::line(&format!(
+            "result file not moved to {folder}: {:?}",
+            error.kind()
+        ));
     }
     moved.is_ok()
 }
@@ -73,7 +76,7 @@ fn handle(path: &Path) -> Option<ActionResult> {
             None
         }
         Read::Unreadable => {
-            eprintln!("result file unreadable, will retry");
+            crate::syslog::line("result file unreadable, will retry");
             None
         }
     }

@@ -117,20 +117,53 @@ fn t39_구간_누락_증거_링크를_의심_목록보다_앞에_둔다() {
     assert!(position(&text, "로그 보기") < suspects);
 }
 
+fn links(text: &str) -> Vec<serde_json::Value> {
+    let prefix = "(<https://grafana.example/explore?schemaVersion=1&orgId=1&panes=";
+    text.match_indices(prefix)
+        .map(|(at, _)| {
+            let start = at + prefix.len();
+            let end = start + text[start..].find(">)").unwrap();
+            serde_json::from_str(&decode(&text[start..end])).unwrap()
+        })
+        .collect()
+}
+
+#[test]
+fn t39_새_오류에_traceid가_있으면_첫_요청만_보는_링크를_붙인다() {
+    let mut report = with_trail(NINE_KST, NINE_KST + 900, 9);
+    report.suspects = vec![Suspect::NewError {
+        first: ErrorGroup {
+            fingerprint: "f".to_owned(),
+            logger: "c.t.TaskSearchService".to_owned(),
+            first_seen_unix: T0,
+            count: 3,
+            trace_ids: vec!["9f1a2b3c4d5e6f70".to_owned(), "0a1b2c3d4e5f6071".to_owned()],
+        },
+        most_frequent: None,
+    }];
+    let text = text_of(report, Some("https://grafana.example/"));
+    let found = links(&text);
+    assert_eq!(found.len(), 2, "{text}");
+    assert_eq!(
+        found[1]["a"]["queries"][0]["expr"],
+        "{service=\"backend\"} |= \"traceId=9f1a2b3c4d5e6f70\""
+    );
+    assert!(position(&text, "로그 보기") < position(&text, "코드가 고른 의심"));
+}
+
 #[test]
 fn t39_grafana_주소가_있으면_그_구간의_loki_explore_링크를_붙인다() {
     let text = text_of(
         with_trail(NINE_KST, NINE_KST + 900, 9),
         Some("https://grafana.example/"),
     );
-    let prefix = "(<https://grafana.example/explore?schemaVersion=1&orgId=1&panes=";
-    let start = position(&text, prefix) + prefix.len();
-    let end = start + text[start..].find(">)").unwrap();
-    let panes: serde_json::Value = serde_json::from_str(&decode(&text[start..end])).unwrap();
+    let found = links(&text);
+    assert_eq!(found.len(), 1, "{text}");
+    let panes = &found[0];
     assert_eq!(panes["a"]["datasource"], "loki");
     assert_eq!(
         panes["a"]["queries"][0]["expr"],
-        "{service=~\"backend|nginx\"}"
+        "{service=\"backend\"} |~ \"^(ERROR|WARN) \""
     );
     assert_eq!(panes["a"]["range"]["from"], "1764115200000");
     assert_eq!(panes["a"]["range"]["to"], "1764116100000");

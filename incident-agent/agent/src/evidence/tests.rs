@@ -51,6 +51,21 @@ fn collect(loki: &TestServer, prom: &TestServer) -> Result<Evidence, EvidenceErr
 }
 
 #[test]
+fn t32_http_오류와_지연_db_대기_heap_backend_메모리도_지표로_읽는다() {
+    let evidence = collect(&loki(true, true), &prometheus(true)).unwrap();
+    let names: Vec<&str> = evidence.metrics.iter().map(|m| m.name.as_str()).collect();
+    for wanted in [
+        "http_5xx_per_second",
+        "http_p95_seconds",
+        "hikari_pending",
+        "jvm_heap_ratio",
+        "backend_memory_bytes",
+    ] {
+        assert!(names.contains(&wanted), "{wanted} not in {names:?}");
+    }
+}
+
+#[test]
 fn t32_모두_성공하면_증거가_채워진다() {
     let evidence = collect(&loki(true, true), &prometheus(true)).unwrap();
     assert_eq!(evidence.logs.len(), 1);

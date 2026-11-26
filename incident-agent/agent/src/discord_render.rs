@@ -1,9 +1,9 @@
-use analyzer::{Analysis, Report};
+use analyzer::{Analysis, Report, Suspect};
 use contract::Outcome;
 use incident::{Notice, ProposedAction};
 
 use crate::custom_id::CustomId;
-use crate::discord_text::{analysis_text, loki_link, missing_text, safe, suspect_text, trail_text};
+use crate::discord_text::{analysis_text, log_links, missing_text, safe, suspect_text, trail_text};
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Button {
@@ -34,6 +34,13 @@ fn plain(text: String) -> Message {
     }
 }
 
+fn first_trace_id(report: &Report) -> Option<&str> {
+    report.suspects.iter().find_map(|suspect| match suspect {
+        Suspect::NewError { first, .. } => first.trace_ids.first().map(String::as_str),
+        _ => None,
+    })
+}
+
 fn render_incident(incident: u64, report: &Report, grafana_url: Option<&str>) -> Message {
     let names: Vec<String> = report
         .alerts
@@ -47,9 +54,10 @@ fn render_incident(incident: u64, report: &Report, grafana_url: Option<&str>) ->
     ];
     lines.extend(missing_text(&report.missing));
     if let Some(base) = grafana_url {
-        lines.push(format!(
-            "로그 보기: [Loki에서 이 구간 보기](<{}>)",
-            loki_link(base, &report.trail.window)
+        lines.push(log_links(
+            base,
+            &report.trail.window,
+            first_trace_id(report),
         ));
     }
     if let Some(known) = &report.known_incident {

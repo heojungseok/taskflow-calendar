@@ -16,6 +16,7 @@ use crate::core::Chat;
 use crate::custom_id::CustomId;
 use crate::discord_interact::{Decision, Interaction, Reply, decide};
 use crate::discord_render::{Button, Message, render};
+use crate::telemetry::Telemetry;
 
 pub(crate) struct DiscordChat {
     notices: UnboundedSender<Notice>,
@@ -30,7 +31,7 @@ impl DiscordChat {
 impl Chat for DiscordChat {
     fn post(&self, notice: &Notice) {
         if self.notices.send(notice.clone()).is_err() {
-            eprintln!("discord notice dropped: channel closed");
+            crate::syslog::line("discord notice dropped: channel closed");
         }
     }
 }
@@ -97,7 +98,7 @@ impl Handler {
         if let Some(event) = event
             && self.events.send(event).is_err()
         {
-            eprintln!("discord event dropped: core stopped");
+            crate::syslog::line("discord event dropped: core stopped");
         }
         response(reply)
     }
@@ -110,7 +111,7 @@ impl Handler {
         };
         let reply = self.dispatch(&interaction);
         if component.create_response(&ctx.http, reply).await.is_err() {
-            eprintln!("discord response failed");
+            crate::syslog::line("discord response failed");
         }
     }
 
@@ -132,7 +133,7 @@ impl Handler {
         };
         let reply = self.dispatch(&interaction);
         if modal.create_response(&ctx.http, reply).await.is_err() {
-            eprintln!("discord response failed");
+            crate::syslog::line("discord response failed");
         }
     }
 }
@@ -152,12 +153,14 @@ async fn post_notices(
     http: Arc<Http>,
     channel: ChannelId,
     grafana_url: Option<String>,
+    telemetry: Arc<Telemetry>,
     mut notices: UnboundedReceiver<Notice>,
 ) {
     while let Some(notice) = notices.recv().await {
         let rendered = render(&notice, grafana_url.as_deref());
         if let Err(error) = channel.send_message(&http, message(&rendered)).await {
-            eprintln!("discord post failed: {error}");
+            telemetry.discord_failed();
+            crate::syslog::line(&format!("discord post failed: {error}"));
         }
     }
 }
@@ -167,6 +170,7 @@ pub(crate) struct Link {
     pub(crate) channel_id: u64,
     pub(crate) owner: DiscordUserId,
     pub(crate) grafana_url: Option<String>,
+    pub(crate) telemetry: Arc<Telemetry>,
 }
 
 pub(crate) async fn run(
@@ -186,6 +190,7 @@ pub(crate) async fn run(
         Arc::clone(&client.http),
         ChannelId::new(link.channel_id),
         link.grafana_url,
+        link.telemetry,
         notices,
     ));
     client
