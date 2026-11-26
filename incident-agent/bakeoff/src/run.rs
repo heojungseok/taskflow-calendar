@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::process::Command;
 use std::time::{Duration, Instant};
 
 use analyzer::{
@@ -6,7 +7,6 @@ use analyzer::{
     Service, Window, triage,
 };
 use ollama::{Ollama, Reply};
-use serde::Deserialize;
 use serde_json::json;
 
 use crate::scenarios::{NOW, Scenario};
@@ -68,7 +68,7 @@ pub(crate) fn run_model(url: &str, name: &str, think: bool, scenarios: &[Scenari
         .iter()
         .map(|scenario| run_one(&model, scenario))
         .collect();
-    let memory_bytes = loaded_size(url, name);
+    let memory_bytes = runner_rss_bytes();
     unload(url, name);
     ModelRun {
         model: name.to_owned(),
@@ -111,29 +111,17 @@ fn run_one(model: &Ollama, scenario: &Scenario) -> Row {
     }
 }
 
-#[derive(Deserialize)]
-struct Running {
-    models: Vec<RunningModel>,
-}
-
-#[derive(Deserialize)]
-struct RunningModel {
-    name: String,
-    size: u64,
-}
-
-fn loaded_size(url: &str, name: &str) -> Option<u64> {
-    let running: Running = ureq::get(format!("{url}/api/ps"))
-        .call()
-        .ok()?
-        .body_mut()
-        .read_json()
+fn runner_rss_bytes() -> Option<u64> {
+    let output = Command::new("ps")
+        .args(["-A", "-o", "rss=,command="])
+        .output()
         .ok()?;
-    running
-        .models
-        .into_iter()
-        .find(|model| model.name == name)
-        .map(|model| model.size)
+    let kilobytes: u64 = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| line.contains("ollama") && line.contains("llama-server"))
+        .filter_map(|line| line.split_whitespace().next()?.parse::<u64>().ok())
+        .sum();
+    (kilobytes > 0).then_some(kilobytes * 1024)
 }
 
 fn unload(url: &str, name: &str) {

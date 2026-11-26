@@ -117,7 +117,6 @@ version = "0.1.0"
 dependencies = [
  "analyzer",
  "ollama",
- "serde",
  "serde_json",
  "ureq",
 ]

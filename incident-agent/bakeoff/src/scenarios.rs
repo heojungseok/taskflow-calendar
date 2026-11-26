@@ -151,6 +151,8 @@ fn gemini_quota() -> Scenario {
                 "한도",
                 "resource_exhausted",
                 "할당량",
+                "사용량",
+                "제한",
             ],
         ),
     }
