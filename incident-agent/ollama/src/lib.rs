@@ -17,7 +17,7 @@ pub struct Ollama {
     timeout: Duration,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct Reply {
     pub content: String,
     pub load_ms: u64,
