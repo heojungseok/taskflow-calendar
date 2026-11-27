@@ -1,0 +1,25 @@
+name: taskflow-eval
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  redis:
+    image: redis:8.2-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+    environment:
+      DATA_SOURCE_URI: host.docker.internal:5432/taskflow?sslmode=disable
+      DATA_SOURCE_USER: taskflow
+      DATA_SOURCE_PASS: taskflow123
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

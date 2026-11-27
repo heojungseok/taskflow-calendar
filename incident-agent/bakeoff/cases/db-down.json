@@ -1,0 +1,1143 @@
+{
+  "name": "db-down",
+  "origin": "재현: DB 컨테이너가 60초 내려갔다(재시작·OOM 상황)",
+  "alert": {
+    "name": "backend error logs",
+    "service": "backend",
+    "starts_at_unix": 1795746095
+  },
+  "now_unix": 1795746125,
+  "logs": [
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@43120a77 (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@5c9151a2 (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@506fdd47 (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@73d6da84 (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@601b6175 (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@36d12095 (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@18fa46ed (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@5d3dad8c (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@66167f97 (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746036,
+      "text": "WARN  com.zaxxer.hikari.pool.PoolBase : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@597c2e48 (이 연결은 닫혔습니다.). Possibly consider using a shorter maxLifetime value."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30002ms (total=0, active=0, idle=0, waiting=2)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30002ms (total=0, active=0, idle=0, waiting=2)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001 traceId=2ede3ce388d34b20"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30001ms (total=0, active=0, idle=0, waiting=2) traceId=2ede3ce388d34b20"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001 traceId=2ede3ce388d34b20"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30001ms (total=0, active=0, idle=0, waiting=2) traceId=2ede3ce388d34b20"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746066,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.net.ConnectException: Connection refused | at java.base/sun.nio.ch.Net.pollConnect(Native Method) | at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:682) | at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:549) | at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592) | at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) | at java.base/java.net.Socket.connect(Socket.java:751) | at org.postgresql.core.PGStream.createSocket(PGStream.java:270) | at org.postgresql.core.PGStream.<init>(PGStream.java:131) | at org.postgresql.core.v3.ConnectionFactoryImpl.tryConnect(ConnectionFactoryImpl.java:221) | at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:367) | at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:52) | at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:295) | Wrapped by: org.postgresql.util.PSQLException: localhost:5432 에 대한 연결이 거부되었습니다. 호스트 이름과 포트가 올바른지, 그리고 postmaster가 TCP/IP 연결을 수락하고 있는지 확인하십시오. | at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:427) | at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:52) | at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:295) | at org.postgresql.Driver.makeConnection(Driver.java:437) | at org.postgresql.Driver.connect(Driver.java:305) | at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:144) | at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:373) | at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:210) | at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:488) | at com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:752) | at com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:731) | at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) | Wrapped by: java.sql.SQLTrans"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746081,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746081,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30001ms (total=0, active=0, idle=0, waiting=2)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746081,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746081,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30001ms (total=0, active=0, idle=0, waiting=2)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746081,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30002ms (total=0, active=0, idle=0, waiting=3)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30002ms (total=0, active=0, idle=0, waiting=3)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001 traceId=931d609eca3cc832"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30002ms (total=0, active=0, idle=0, waiting=2) traceId=931d609eca3cc832"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HHH000247: ErrorCode: 0, SQLState: 08001 traceId=931d609eca3cc832"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "WARN  org.hibernate.orm.jdbc.error : HikariPool-1 - Connection is not available, request timed out after 30002ms (total=0, active=0, idle=0, waiting=2) traceId=931d609eca3cc832"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746096,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.net.ConnectException: Connection refused | at java.base/sun.nio.ch.Net.pollConnect(Native Method) | at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:682) | at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:549) | at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592) | at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) | at java.base/java.net.Socket.connect(Socket.java:751) | at org.postgresql.core.PGStream.createSocket(PGStream.java:270) | at org.postgresql.core.PGStream.<init>(PGStream.java:131) | at org.postgresql.core.v3.ConnectionFactoryImpl.tryConnect(ConnectionFactoryImpl.java:221) | at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:367) | at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:52) | at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:295) | Wrapped by: org.postgresql.util.PSQLException: localhost:5432 에 대한 연결이 거부되었습니다. 호스트 이름과 포트가 올바른지, 그리고 postmaster가 TCP/IP 연결을 수락하고 있는지 확인하십시오. | at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:427) | at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:52) | at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:295) | at org.postgresql.Driver.makeConnection(Driver.java:437) | at org.postgresql.Driver.connect(Driver.java:305) | at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:144) | at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:373) | at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:210) | at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:488) | at com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:752) | at com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:731) | at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) | Wrapped by: java.sql.SQLTrans"
+    }
+  ],
+  "baseline_logs": [
+    {
+      "service": "backend",
+      "at_unix": 1795744953,
+      "text": "WARN  org.hibernate.orm.deprecation : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795744954,
+      "text": "WARN  o.s.b.j.a.JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795744955,
+      "text": "WARN  i.n.r.d.DnsServerAddressStreamProviders : Can not find io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider in the classpath, fallback to system defaults. This may result in incorrect DNS resolutions on MacOS. Check whether you have a dependency on 'io.netty:netty-resolver-dns-native-macos'"
+    }
+  ],
+  "commits": [],
+  "metrics": [
+    {
+      "name": "backend_up",
+      "baseline": 1,
+      "floor": 1.0,
+      "points": [
+        [
+          1795745195,
+          1
+        ],
+        [
+          1795745225,
+          1
+        ],
+        [
+          1795745255,
+          1
+        ],
+        [
+          1795745285,
+          1
+        ],
+        [
+          1795745315,
+          1
+        ],
+        [
+          1795745345,
+          1
+        ],
+        [
+          1795745375,
+          1
+        ],
+        [
+          1795745405,
+          1
+        ],
+        [
+          1795745435,
+          1
+        ],
+        [
+          1795745465,
+          1
+        ],
+        [
+          1795745495,
+          1
+        ],
+        [
+          1795745525,
+          1
+        ],
+        [
+          1795745555,
+          1
+        ],
+        [
+          1795745585,
+          1
+        ],
+        [
+          1795745615,
+          1
+        ],
+        [
+          1795745645,
+          1
+        ],
+        [
+          1795745675,
+          1
+        ],
+        [
+          1795745705,
+          1
+        ],
+        [
+          1795745735,
+          1
+        ],
+        [
+          1795745765,
+          1
+        ],
+        [
+          1795745795,
+          1
+        ],
+        [
+          1795745825,
+          1
+        ],
+        [
+          1795745855,
+          1
+        ],
+        [
+          1795745885,
+          1
+        ],
+        [
+          1795745915,
+          1
+        ],
+        [
+          1795745945,
+          1
+        ],
+        [
+          1795745975,
+          1
+        ],
+        [
+          1795746005,
+          1
+        ],
+        [
+          1795746035,
+          1
+        ],
+        [
+          1795746065,
+          0
+        ],
+        [
+          1795746095,
+          0
+        ],
+        [
+          1795746125,
+          1
+        ]
+      ]
+    },
+    {
+      "name": "outbox_oldest_age_seconds",
+      "baseline": 0,
+      "floor": 60.0,
+      "points": [
+        [
+          1795745195,
+          0
+        ],
+        [
+          1795745225,
+          0
+        ],
+        [
+          1795745255,
+          0
+        ],
+        [
+          1795745285,
+          0
+        ],
+        [
+          1795745315,
+          0
+        ],
+        [
+          1795745345,
+          0
+        ],
+        [
+          1795745375,
+          0
+        ],
+        [
+          1795745405,
+          0
+        ],
+        [
+          1795745435,
+          0
+        ],
+        [
+          1795745465,
+          0
+        ],
+        [
+          1795745495,
+          0
+        ],
+        [
+          1795745525,
+          0
+        ],
+        [
+          1795745555,
+          0
+        ],
+        [
+          1795745585,
+          0
+        ],
+        [
+          1795745615,
+          0
+        ],
+        [
+          1795745645,
+          0
+        ],
+        [
+          1795745675,
+          0
+        ],
+        [
+          1795745705,
+          0
+        ],
+        [
+          1795745735,
+          0
+        ],
+        [
+          1795745765,
+          0
+        ],
+        [
+          1795745795,
+          0
+        ],
+        [
+          1795745825,
+          0
+        ],
+        [
+          1795745855,
+          0
+        ],
+        [
+          1795745885,
+          0
+        ],
+        [
+          1795745915,
+          0
+        ],
+        [
+          1795745945,
+          0
+        ],
+        [
+          1795745975,
+          0
+        ],
+        [
+          1795746005,
+          0
+        ],
+        [
+          1795746035,
+          0
+        ],
+        [
+          1795746125,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "pg_connection_ratio",
+      "baseline": 0.11,
+      "floor": 0.1,
+      "points": [
+        [
+          1795745195,
+          0.11
+        ],
+        [
+          1795745225,
+          0.11
+        ],
+        [
+          1795745255,
+          0.11
+        ],
+        [
+          1795745285,
+          0.11
+        ],
+        [
+          1795745315,
+          0.11
+        ],
+        [
+          1795745345,
+          0.11
+        ],
+        [
+          1795745375,
+          0.11
+        ],
+        [
+          1795745405,
+          0.11
+        ],
+        [
+          1795745435,
+          0.11
+        ],
+        [
+          1795745465,
+          0.11
+        ],
+        [
+          1795745495,
+          0.11
+        ],
+        [
+          1795745525,
+          0.11
+        ],
+        [
+          1795745555,
+          0.11
+        ],
+        [
+          1795745585,
+          0.11
+        ],
+        [
+          1795745615,
+          0.11
+        ],
+        [
+          1795745645,
+          0.11
+        ],
+        [
+          1795745675,
+          0.11
+        ],
+        [
+          1795745705,
+          0.11
+        ],
+        [
+          1795745735,
+          0.11
+        ],
+        [
+          1795745765,
+          0.11
+        ],
+        [
+          1795745795,
+          0.11
+        ],
+        [
+          1795745825,
+          0.11
+        ],
+        [
+          1795745855,
+          0.11
+        ],
+        [
+          1795745885,
+          0.11
+        ],
+        [
+          1795745915,
+          0.11
+        ],
+        [
+          1795745945,
+          0.11
+        ],
+        [
+          1795745975,
+          0.11
+        ],
+        [
+          1795746005,
+          0.11
+        ],
+        [
+          1795746035,
+          0.11
+        ],
+        [
+          1795746125,
+          0.11
+        ]
+      ]
+    },
+    {
+      "name": "demo_cleanup_failures_15m",
+      "baseline": 0,
+      "floor": 1.0,
+      "points": [
+        [
+          1795745195,
+          0
+        ],
+        [
+          1795745225,
+          0
+        ],
+        [
+          1795745255,
+          0
+        ],
+        [
+          1795745285,
+          0
+        ],
+        [
+          1795745315,
+          0
+        ],
+        [
+          1795745345,
+          0
+        ],
+        [
+          1795745375,
+          0
+        ],
+        [
+          1795745405,
+          0
+        ],
+        [
+          1795745435,
+          0
+        ],
+        [
+          1795745465,
+          0
+        ],
+        [
+          1795745495,
+          0
+        ],
+        [
+          1795745525,
+          0
+        ],
+        [
+          1795745555,
+          0
+        ],
+        [
+          1795745585,
+          0
+        ],
+        [
+          1795745615,
+          0
+        ],
+        [
+          1795745645,
+          0
+        ],
+        [
+          1795745675,
+          0
+        ],
+        [
+          1795745705,
+          0
+        ],
+        [
+          1795745735,
+          0
+        ],
+        [
+          1795745765,
+          0
+        ],
+        [
+          1795745795,
+          0
+        ],
+        [
+          1795745825,
+          0
+        ],
+        [
+          1795745855,
+          0
+        ],
+        [
+          1795745885,
+          0
+        ],
+        [
+          1795745915,
+          0
+        ],
+        [
+          1795745945,
+          0
+        ],
+        [
+          1795745975,
+          0
+        ],
+        [
+          1795746005,
+          0
+        ],
+        [
+          1795746035,
+          0
+        ],
+        [
+          1795746065,
+          0
+        ],
+        [
+          1795746095,
+          0
+        ],
+        [
+          1795746125,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "http_p95_seconds",
+      "baseline": 0.016632860998511828,
+      "floor": 1.0,
+      "points": [
+        [
+          1795745195,
+          0.016632860998511828
+        ],
+        [
+          1795745225,
+          0.016632860998511828
+        ],
+        [
+          1795745255,
+          0.016632860998511828
+        ],
+        [
+          1795745285,
+          0.016632860998511828
+        ],
+        [
+          1795745315,
+          0.016632860998511828
+        ],
+        [
+          1795745345,
+          0.016632860998511828
+        ],
+        [
+          1795745375,
+          0.016632860998511828
+        ],
+        [
+          1795745405,
+          0.016632860998511828
+        ],
+        [
+          1795745435,
+          0.016632860998511828
+        ],
+        [
+          1795745465,
+          0.016632860998511828
+        ],
+        [
+          1795745495,
+          0.016632860998511828
+        ],
+        [
+          1795745525,
+          0.016632860998511828
+        ],
+        [
+          1795745555,
+          0.016632860998511828
+        ],
+        [
+          1795745585,
+          0.016632860998511828
+        ],
+        [
+          1795745615,
+          0.016632860998511828
+        ],
+        [
+          1795745645,
+          0.016632860998511828
+        ],
+        [
+          1795745675,
+          0.016632860998511828
+        ],
+        [
+          1795745705,
+          0.016632860998511828
+        ],
+        [
+          1795745735,
+          0.016632860998511828
+        ],
+        [
+          1795745765,
+          0.016632860998511828
+        ],
+        [
+          1795745795,
+          0.016632860998511828
+        ],
+        [
+          1795745825,
+          0.016632860998511828
+        ],
+        [
+          1795745855,
+          0.016632860998511828
+        ],
+        [
+          1795745885,
+          0.016632860998511828
+        ],
+        [
+          1795745915,
+          0.016632860998511828
+        ],
+        [
+          1795745945,
+          0.016632860998511828
+        ],
+        [
+          1795745975,
+          0.016632860998511828
+        ],
+        [
+          1795746005,
+          0.016632860998511828
+        ],
+        [
+          1795746035,
+          0.016632860998511828
+        ],
+        [
+          1795746065,
+          0.016632860998511828
+        ],
+        [
+          1795746095,
+          0.016632860998511828
+        ],
+        [
+          1795746125,
+          0.016632860998511828
+        ]
+      ]
+    },
+    {
+      "name": "hikari_pending",
+      "baseline": 0,
+      "floor": 1.0,
+      "points": [
+        [
+          1795745195,
+          0
+        ],
+        [
+          1795745225,
+          0
+        ],
+        [
+          1795745255,
+          0
+        ],
+        [
+          1795745285,
+          0
+        ],
+        [
+          1795745315,
+          0
+        ],
+        [
+          1795745345,
+          0
+        ],
+        [
+          1795745375,
+          0
+        ],
+        [
+          1795745405,
+          0
+        ],
+        [
+          1795745435,
+          0
+        ],
+        [
+          1795745465,
+          0
+        ],
+        [
+          1795745495,
+          0
+        ],
+        [
+          1795745525,
+          0
+        ],
+        [
+          1795745555,
+          0
+        ],
+        [
+          1795745585,
+          0
+        ],
+        [
+          1795745615,
+          0
+        ],
+        [
+          1795745645,
+          0
+        ],
+        [
+          1795745675,
+          0
+        ],
+        [
+          1795745705,
+          0
+        ],
+        [
+          1795745735,
+          0
+        ],
+        [
+          1795745765,
+          0
+        ],
+        [
+          1795745795,
+          0
+        ],
+        [
+          1795745825,
+          0
+        ],
+        [
+          1795745855,
+          0
+        ],
+        [
+          1795745885,
+          0
+        ],
+        [
+          1795745915,
+          0
+        ],
+        [
+          1795745945,
+          0
+        ],
+        [
+          1795745975,
+          0
+        ],
+        [
+          1795746005,
+          0
+        ],
+        [
+          1795746035,
+          0
+        ],
+        [
+          1795746125,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "jvm_heap_ratio",
+      "baseline": 0.020990245985328334,
+      "floor": 0.8,
+      "points": [
+        [
+          1795745195,
+          0.028158692656158793
+        ],
+        [
+          1795745225,
+          0.03206494265797778
+        ],
+        [
+          1795745255,
+          0.020990245985328334
+        ],
+        [
+          1795745285,
+          0.02430484072505722
+        ],
+        [
+          1795745315,
+          0.02821109072687621
+        ],
+        [
+          1795745345,
+          0.032117340728695196
+        ],
+        [
+          1795745375,
+          0.020990245985328334
+        ],
+        [
+          1795745405,
+          0.020990245985328334
+        ],
+        [
+          1795745435,
+          0.02448651009448176
+        ],
+        [
+          1795745465,
+          0.028392760096300748
+        ],
+        [
+          1795745495,
+          0.03229901009811974
+        ],
+        [
+          1795745525,
+          0.020990245985328334
+        ],
+        [
+          1795745555,
+          0.020990245985328334
+        ],
+        [
+          1795745585,
+          0.02384052240468586
+        ],
+        [
+          1795745615,
+          0.02774677240650485
+        ],
+        [
+          1795745645,
+          0.031653022408323836
+        ],
+        [
+          1795745675,
+          0.020990245985328334
+        ],
+        [
+          1795745705,
+          0.020990245985328334
+        ],
+        [
+          1795745735,
+          0.02334677056565265
+        ],
+        [
+          1795745765,
+          0.02725302056747164
+        ],
+        [
+          1795745795,
+          0.030670989319063254
+        ],
+        [
+          1795745825,
+          0.020990245985328334
+        ],
+        [
+          1795745855,
+          0.020990245985328334
+        ],
+        [
+          1795745885,
+          0.02236828767804815
+        ],
+        [
+          1795745915,
+          0.02627453767986714
+        ],
+        [
+          1795745945,
+          0.03018078768168613
+        ],
+        [
+          1795745975,
+          0.020990245985328334
+        ],
+        [
+          1795746005,
+          0.020990245985328334
+        ],
+        [
+          1795746035,
+          0.02167042532082201
+        ],
+        [
+          1795746125,
+          0.02801808157377787
+        ]
+      ]
+    }
+  ],
+  "answer": {
+    "suspect": {
+      "new_error": {
+        "logger": "org.hibernate.orm.jdbc.error",
+        "contains": "Connection is not available"
+      }
+    },
+    "line": "Connection is not available",
+    "keywords": [
+      "db",
+      "데이터베이스",
+      "postgres",
+      "postgresql",
+      "연결",
+      "접속",
+      "중단",
+      "다운",
+      "hikari",
+      "pool",
+      "풀"
+    ],
+    "known_gap": "Spring Boot 4.1·Hibernate 7부터 JDBC 오류를 org.hibernate.orm.jdbc.error가 WARN으로 남겨 새 오류 의심(ERROR만 본다)에 들어가지 않는다. ERROR로 남는 것은 dispatcherServlet의 일반 문구뿐이다"
+  }
+}
