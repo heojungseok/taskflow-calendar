@@ -1,0 +1,1451 @@
+{
+  "name": "deploy-sort-npe",
+  "origin": "재현: '작업 목록을 마감일 순으로 정렬한다' 커밋을 배포했다. 마감일이 없는 작업에서 Comparator가 NPE를 던져 목록 API가 500을 낸다",
+  "alert": {
+    "name": "backend error logs",
+    "service": "backend",
+    "starts_at_unix": 1795747298
+  },
+  "now_unix": 1795747328,
+  "logs": [
+    {
+      "service": "backend",
+      "at_unix": 1795747236,
+      "text": "WARN  org.hibernate.orm.deprecation : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747237,
+      "text": "WARN  o.s.b.j.a.JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747238,
+      "text": "WARN  i.n.r.d.DnsServerAddressStreamProviders : Can not find io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider in the classpath, fallback to system defaults. This may result in incorrect DNS resolutions on MacOS. Check whether you have a dependency on 'io.netty:netty-resolver-dns-native-macos'"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747239,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=267f3275ab000e95 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747240,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=89fe78c4eb7a5859 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747241,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=8a27f486e3f96e01 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747242,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=8e0d8fa03f940270 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747243,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=d163c4d006bdbc24 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747244,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=9a0c1f78da768ed0 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747245,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=e405740c178be8a8 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747246,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=201aac02f4648595 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747247,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=79ae885e7bdde395 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747248,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=fc6c7ae7210a69d5 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747249,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=71bf9596c5881ac2 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747250,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=9b83c7f1d3b95087 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747251,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=80312d7dbf09623b | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747252,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=6538a74778fed2b3 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747253,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=8d664d254048eab0 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747254,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=aed7bc521d14a620 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747255,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=42c15013d0f7be04 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747256,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=fddf40275b7204ac | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747257,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=926187aa197463cf | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747258,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=57338c31ef936452 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747259,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=335572800b29d57a | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747260,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=c75f6011ad0f0894 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747261,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=be16225e54a2d5c8 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747262,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=bfd53e6bbe43063e | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747264,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=725fb7c2f481ac50 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747265,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=810a77d7a5bf6bdf | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747266,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=7a7c6bfcd4dc1cee | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747267,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=a4d3c369f55c6d02 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747268,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=f7c3b8d10c456315 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747269,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=59b981344dd9783c | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747270,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=d6309c1778c3be6d | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747271,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=3531e591b1eff82d | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747272,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=7a470848f8d0a46b | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747273,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=ca5c6ca59f2b289b | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747274,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=e63e8200cb751b19 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747275,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=1d7890612c569be9 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747276,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=ac5edccab02d5bdf | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747277,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=f9d028abb949976b | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747278,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=866a8aa3f4e1d1ad | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747279,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=06740fe28b760987 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747280,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=eda49f6da03c0b32 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747281,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=c707e6376a3146ff | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747282,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=1247e0b39e7acac0 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747283,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=e7641ff520f0ef4d | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747284,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=c52517b96c86016f | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747285,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=f2f6183e550a2f1c | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747286,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=e0d42348ab7aac65 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747287,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=0888e7814fe31934 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747288,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=dabd4f5a73648a98 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747289,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=a5667ddda70843e0 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747290,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=ef33df17ec6205f2 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747291,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=1f5bc63bae344df7 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747292,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=9155eacd22f95a75 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747293,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=5447cb1e924c7ba7 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747294,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=b6715a4fbb286086 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747295,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=91acf2c7ef657f0e | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747296,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=a68a64642c850aa6 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747297,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=660733f330a53d4d | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747298,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=bbbbb2739e1f53a9 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747300,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=01d760c7cc3e4b48 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747301,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=8c7a9cbd27cd2dec | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747302,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=ff46a22363bf269e | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747303,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=66a667212b454bf2 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747304,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=2886e0f3edfc4fef | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747305,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=2f28d3db73ae56ff | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747306,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=66a4173a6a7ef681 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747307,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=72ea3872933f5d6d | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747308,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=13b11f43fd3be13f | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747309,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=60ea0d6ab48864e0 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747310,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=0cd448a3066085aa | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747311,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=a93cac577f5b5a2d | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747312,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=fb57cc61ea76928a | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747313,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=395b94452a9507c9 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747314,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=7f3b227c66aff081 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747315,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=5f0e65a5b3783323 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747316,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=fc2931494236eb08 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747317,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=2c78f31aabf5e789 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747318,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=a9a493085b8d5f51 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747319,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=ff2f20f12708fdd5 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747320,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=bb1c2af1ac54d00b | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747321,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=9f0dc10d02d46970 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747322,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=ff4b81cd1b2a9aa8 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747323,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=9ee4564929dc5020 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747324,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=f1da6906205a8ee8 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747325,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=9e4cba07b5e9426d | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747326,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=1e7ed419156b61a4 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795747327,
+      "text": "ERROR c.t.common.GlobalExceptionHandler : Unexpected error traceId=f20f338d631a0334 | java.lang.NullPointerException: Cannot invoke \"java.lang.Comparable.compareTo(Object)\" because the return value of \"java.util.function.Function.apply(Object)\" is null | at java.base/java.util.Comparator.lambda$comparing$77a9974f$1(Comparator.java:473) | at java.base/java.util.TimSort.countRunAndMakeAscending(TimSort.java:356) | at java.base/java.util.TimSort.sort(TimSort.java:220) | at java.base/java.util.Arrays.sort(Arrays.java:1308) | at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:353) | at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) | at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) | at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921) | at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) | at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682) | at com.taskflow.planning.task.TaskService.listTasks(TaskService.java:230) | at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)"
+    }
+  ],
+  "baseline_logs": [
+    {
+      "service": "backend",
+      "at_unix": 1795746152,
+      "text": "WARN  org.hibernate.orm.deprecation : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746153,
+      "text": "WARN  o.s.b.j.a.JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795746153,
+      "text": "WARN  i.n.r.d.DnsServerAddressStreamProviders : Can not find io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider in the classpath, fallback to system defaults. This may result in incorrect DNS resolutions on MacOS. Check whether you have a dependency on 'io.netty:netty-resolver-dns-native-macos'"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "f03362b1022d91d9946df5d8dd6b37f220b29ec2",
+      "files": [
+        "src/main/java/com/taskflow/planning/task/TaskService.java"
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "backend_up",
+      "baseline": 1,
+      "floor": 1.0,
+      "points": [
+        [
+          1795746398,
+          1
+        ],
+        [
+          1795746428,
+          1
+        ],
+        [
+          1795746458,
+          1
+        ],
+        [
+          1795746488,
+          1
+        ],
+        [
+          1795746518,
+          1
+        ],
+        [
+          1795746548,
+          1
+        ],
+        [
+          1795746578,
+          1
+        ],
+        [
+          1795746608,
+          1
+        ],
+        [
+          1795746638,
+          1
+        ],
+        [
+          1795746668,
+          1
+        ],
+        [
+          1795746698,
+          1
+        ],
+        [
+          1795746728,
+          1
+        ],
+        [
+          1795746758,
+          1
+        ],
+        [
+          1795746788,
+          1
+        ],
+        [
+          1795746818,
+          1
+        ],
+        [
+          1795746848,
+          1
+        ],
+        [
+          1795746878,
+          1
+        ],
+        [
+          1795746908,
+          1
+        ],
+        [
+          1795746938,
+          1
+        ],
+        [
+          1795746968,
+          1
+        ],
+        [
+          1795746998,
+          1
+        ],
+        [
+          1795747028,
+          1
+        ],
+        [
+          1795747058,
+          1
+        ],
+        [
+          1795747088,
+          1
+        ],
+        [
+          1795747118,
+          1
+        ],
+        [
+          1795747148,
+          1
+        ],
+        [
+          1795747178,
+          1
+        ],
+        [
+          1795747208,
+          1
+        ],
+        [
+          1795747238,
+          1
+        ],
+        [
+          1795747268,
+          1
+        ],
+        [
+          1795747298,
+          1
+        ],
+        [
+          1795747328,
+          1
+        ]
+      ]
+    },
+    {
+      "name": "outbox_oldest_age_seconds",
+      "baseline": 0,
+      "floor": 60.0,
+      "points": [
+        [
+          1795746398,
+          0
+        ],
+        [
+          1795746428,
+          0
+        ],
+        [
+          1795746458,
+          0
+        ],
+        [
+          1795746488,
+          0
+        ],
+        [
+          1795746518,
+          0
+        ],
+        [
+          1795746548,
+          0
+        ],
+        [
+          1795746578,
+          0
+        ],
+        [
+          1795746608,
+          0
+        ],
+        [
+          1795746638,
+          0
+        ],
+        [
+          1795746668,
+          0
+        ],
+        [
+          1795746698,
+          0
+        ],
+        [
+          1795746728,
+          0
+        ],
+        [
+          1795746758,
+          0
+        ],
+        [
+          1795746788,
+          0
+        ],
+        [
+          1795746818,
+          0
+        ],
+        [
+          1795746848,
+          0
+        ],
+        [
+          1795746878,
+          0
+        ],
+        [
+          1795746908,
+          0
+        ],
+        [
+          1795746938,
+          0
+        ],
+        [
+          1795746968,
+          0
+        ],
+        [
+          1795746998,
+          0
+        ],
+        [
+          1795747028,
+          0
+        ],
+        [
+          1795747058,
+          0
+        ],
+        [
+          1795747088,
+          0
+        ],
+        [
+          1795747118,
+          0
+        ],
+        [
+          1795747148,
+          0
+        ],
+        [
+          1795747178,
+          0
+        ],
+        [
+          1795747208,
+          0
+        ],
+        [
+          1795747238,
+          0
+        ],
+        [
+          1795747268,
+          0
+        ],
+        [
+          1795747298,
+          0
+        ],
+        [
+          1795747328,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "pg_connection_ratio",
+      "baseline": 0.11,
+      "floor": 0.1,
+      "points": [
+        [
+          1795746398,
+          0.11
+        ],
+        [
+          1795746428,
+          0.11
+        ],
+        [
+          1795746458,
+          0.11
+        ],
+        [
+          1795746488,
+          0.11
+        ],
+        [
+          1795746518,
+          0.11
+        ],
+        [
+          1795746548,
+          0.11
+        ],
+        [
+          1795746578,
+          0.11
+        ],
+        [
+          1795746608,
+          0.11
+        ],
+        [
+          1795746638,
+          0.11
+        ],
+        [
+          1795746668,
+          0.11
+        ],
+        [
+          1795746698,
+          0.11
+        ],
+        [
+          1795746728,
+          0.11
+        ],
+        [
+          1795746758,
+          0.11
+        ],
+        [
+          1795746788,
+          0.11
+        ],
+        [
+          1795746818,
+          0.11
+        ],
+        [
+          1795746848,
+          0.11
+        ],
+        [
+          1795746878,
+          0.11
+        ],
+        [
+          1795746908,
+          0.11
+        ],
+        [
+          1795746938,
+          0.11
+        ],
+        [
+          1795746968,
+          0.11
+        ],
+        [
+          1795746998,
+          0.11
+        ],
+        [
+          1795747028,
+          0.11
+        ],
+        [
+          1795747058,
+          0.11
+        ],
+        [
+          1795747088,
+          0.11
+        ],
+        [
+          1795747118,
+          0.11
+        ],
+        [
+          1795747148,
+          0.11
+        ],
+        [
+          1795747178,
+          0.11
+        ],
+        [
+          1795747208,
+          0.11
+        ],
+        [
+          1795747238,
+          0.11
+        ],
+        [
+          1795747268,
+          0.11
+        ],
+        [
+          1795747298,
+          0.11
+        ],
+        [
+          1795747328,
+          0.11
+        ]
+      ]
+    },
+    {
+      "name": "demo_cleanup_failures_15m",
+      "baseline": 0,
+      "floor": 1.0,
+      "points": [
+        [
+          1795746398,
+          0
+        ],
+        [
+          1795746428,
+          0
+        ],
+        [
+          1795746458,
+          0
+        ],
+        [
+          1795746488,
+          0
+        ],
+        [
+          1795746518,
+          0
+        ],
+        [
+          1795746548,
+          0
+        ],
+        [
+          1795746578,
+          0
+        ],
+        [
+          1795746608,
+          0
+        ],
+        [
+          1795746638,
+          0
+        ],
+        [
+          1795746668,
+          0
+        ],
+        [
+          1795746698,
+          0
+        ],
+        [
+          1795746728,
+          0
+        ],
+        [
+          1795746758,
+          0
+        ],
+        [
+          1795746788,
+          0
+        ],
+        [
+          1795746818,
+          0
+        ],
+        [
+          1795746848,
+          0
+        ],
+        [
+          1795746878,
+          0
+        ],
+        [
+          1795746908,
+          0
+        ],
+        [
+          1795746938,
+          0
+        ],
+        [
+          1795746968,
+          0
+        ],
+        [
+          1795746998,
+          0
+        ],
+        [
+          1795747028,
+          0
+        ],
+        [
+          1795747058,
+          0
+        ],
+        [
+          1795747088,
+          0
+        ],
+        [
+          1795747118,
+          0
+        ],
+        [
+          1795747148,
+          0
+        ],
+        [
+          1795747178,
+          0
+        ],
+        [
+          1795747208,
+          0
+        ],
+        [
+          1795747238,
+          0
+        ],
+        [
+          1795747268,
+          0
+        ],
+        [
+          1795747298,
+          0
+        ],
+        [
+          1795747328,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "http_p95_seconds",
+      "baseline": 0.016341075872926936,
+      "floor": 1.0,
+      "points": [
+        [
+          1795746398,
+          0.016341075872926936
+        ],
+        [
+          1795746428,
+          0.016341075872926936
+        ],
+        [
+          1795746458,
+          0.016341075872926936
+        ],
+        [
+          1795746488,
+          0.016341075872926936
+        ],
+        [
+          1795746518,
+          0.016341075872926936
+        ],
+        [
+          1795746548,
+          0.016341075872926936
+        ],
+        [
+          1795746578,
+          0.016341075872926936
+        ],
+        [
+          1795746608,
+          0.016341075872926936
+        ],
+        [
+          1795746638,
+          0.016341075872926936
+        ],
+        [
+          1795746668,
+          0.016341075872926936
+        ],
+        [
+          1795746698,
+          0.016341075872926936
+        ],
+        [
+          1795746728,
+          0.016341075872926936
+        ],
+        [
+          1795746758,
+          0.016341075872926936
+        ],
+        [
+          1795746788,
+          0.016341075872926936
+        ],
+        [
+          1795746818,
+          0.016341075872926936
+        ],
+        [
+          1795746848,
+          0.016341075872926936
+        ],
+        [
+          1795746878,
+          0.016341075872926936
+        ],
+        [
+          1795746908,
+          0.016341075872926936
+        ],
+        [
+          1795746938,
+          0.016341075872926936
+        ],
+        [
+          1795746968,
+          0.016341075872926936
+        ],
+        [
+          1795746998,
+          0.016341075872926936
+        ],
+        [
+          1795747028,
+          0.016341075872926936
+        ],
+        [
+          1795747058,
+          0.016341075872926936
+        ],
+        [
+          1795747088,
+          0.016341075872926936
+        ],
+        [
+          1795747118,
+          0.016341075872926936
+        ],
+        [
+          1795747148,
+          0.016341075872926936
+        ],
+        [
+          1795747178,
+          0.016341075872926936
+        ],
+        [
+          1795747208,
+          0.016341075872926936
+        ],
+        [
+          1795747238,
+          0.016341075872926936
+        ],
+        [
+          1795747268,
+          0.016341075872926936
+        ],
+        [
+          1795747298,
+          0.016341075872926936
+        ],
+        [
+          1795747328,
+          0.016341075872926936
+        ]
+      ]
+    },
+    {
+      "name": "hikari_pending",
+      "baseline": 0,
+      "floor": 1.0,
+      "points": [
+        [
+          1795746398,
+          0
+        ],
+        [
+          1795746428,
+          0
+        ],
+        [
+          1795746458,
+          0
+        ],
+        [
+          1795746488,
+          0
+        ],
+        [
+          1795746518,
+          0
+        ],
+        [
+          1795746548,
+          0
+        ],
+        [
+          1795746578,
+          0
+        ],
+        [
+          1795746608,
+          0
+        ],
+        [
+          1795746638,
+          0
+        ],
+        [
+          1795746668,
+          0
+        ],
+        [
+          1795746698,
+          0
+        ],
+        [
+          1795746728,
+          0
+        ],
+        [
+          1795746758,
+          0
+        ],
+        [
+          1795746788,
+          0
+        ],
+        [
+          1795746818,
+          0
+        ],
+        [
+          1795746848,
+          0
+        ],
+        [
+          1795746878,
+          0
+        ],
+        [
+          1795746908,
+          0
+        ],
+        [
+          1795746938,
+          0
+        ],
+        [
+          1795746968,
+          0
+        ],
+        [
+          1795746998,
+          0
+        ],
+        [
+          1795747028,
+          0
+        ],
+        [
+          1795747058,
+          0
+        ],
+        [
+          1795747088,
+          0
+        ],
+        [
+          1795747118,
+          0
+        ],
+        [
+          1795747148,
+          0
+        ],
+        [
+          1795747178,
+          0
+        ],
+        [
+          1795747208,
+          0
+        ],
+        [
+          1795747238,
+          0
+        ],
+        [
+          1795747268,
+          0
+        ],
+        [
+          1795747298,
+          0
+        ],
+        [
+          1795747328,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "jvm_heap_ratio",
+      "baseline": 0.029134671217358986,
+      "floor": 0.8,
+      "points": [
+        [
+          1795746398,
+          0.037744119780950304
+        ],
+        [
+          1795746428,
+          0.04116208853254192
+        ],
+        [
+          1795746458,
+          0.04555661978458828
+        ],
+        [
+          1795746488,
+          0.049951151036634646
+        ],
+        [
+          1795746518,
+          0.029134671217358986
+        ],
+        [
+          1795746548,
+          0.029134671217358986
+        ],
+        [
+          1795746578,
+          0.029134671217358986
+        ],
+        [
+          1795746608,
+          0.03181168997278981
+        ],
+        [
+          1795746638,
+          0.03522965872438143
+        ],
+        [
+          1795746668,
+          0.039135908726200416
+        ],
+        [
+          1795746698,
+          0.043042158728019406
+        ],
+        [
+          1795746728,
+          0.046948408729838395
+        ],
+        [
+          1795746758,
+          0.050854658731657384
+        ],
+        [
+          1795746788,
+          0.029134671217358986
+        ],
+        [
+          1795746818,
+          0.029134671217358986
+        ],
+        [
+          1795746848,
+          0.029134671217358986
+        ],
+        [
+          1795746878,
+          0.030884539722876875
+        ],
+        [
+          1795746908,
+          0.03479078972469586
+        ],
+        [
+          1795746938,
+          0.03869703972651485
+        ],
+        [
+          1795746968,
+          0.04260328972833384
+        ],
+        [
+          1795746998,
+          0.046021258479925456
+        ],
+        [
+          1795747028,
+          0.049927508481744445
+        ],
+        [
+          1795747058,
+          0.029134671217358986
+        ],
+        [
+          1795747088,
+          0.029134671217358986
+        ],
+        [
+          1795747118,
+          0.029134671217358986
+        ],
+        [
+          1795747148,
+          0.029134671217358986
+        ],
+        [
+          1795747178,
+          0.030743565424691685
+        ],
+        [
+          1795747208,
+          0.0341615341762833
+        ],
+        [
+          1795747238,
+          0.03806778417810229
+        ],
+        [
+          1795747268,
+          0.029134671217358986
+        ],
+        [
+          1795747298,
+          0.029134671217358986
+        ],
+        [
+          1795747328,
+          0.029134671217358986
+        ]
+      ]
+    }
+  ],
+  "answer": {
+    "suspect": {
+      "commit": "f03362b1022d91d9946df5d8dd6b37f220b29ec2"
+    },
+    "line": "NullPointerException",
+    "keywords": [
+      "커밋",
+      "배포",
+      "정렬",
+      "sort",
+      "마감",
+      "duedate",
+      "null",
+      "npe"
+    ],
+    "known_gap": "새 오류는 GlobalExceptionHandler가 남겨 logger 클래스와 커밋 파일(TaskService.java)이 달라 관련 커밋을 잇지 못한다. 지문이 \" | \" 앞에서 잘려 예외 종류(NullPointerException)와 원인 클래스(스택 프레임의 TaskService)가 모두 빠진다"
+  }
+}
