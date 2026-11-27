@@ -8,8 +8,8 @@ import tools.jackson.databind.ObjectMapper;
 
 record EmbeddingFixture(List<FixtureTask> tasks, List<FixtureQuery> queries) {
 
-    static final List<String> CATEGORIES =
-            List.of("synonym", "mixed_language", "hypernym", "keyword", "sentence", "typo_spacing", "paraphrase");
+    static final List<String> CATEGORIES = List.of(
+            "synonym", "mixed_language", "hypernym", "keyword", "sentence", "typo_spacing", "broad", "paraphrase");
 
     record FixtureTask(String id, String project, String title, String description) {
 
@@ -31,6 +31,10 @@ record EmbeddingFixture(List<FixtureTask> tasks, List<FixtureQuery> queries) {
             List<String> partial,
             List<String> hardNegatives,
             String family) {
+
+        boolean broad() {
+            return "broad".equals(category);
+        }
 
         boolean inFamily() {
             return family != null;

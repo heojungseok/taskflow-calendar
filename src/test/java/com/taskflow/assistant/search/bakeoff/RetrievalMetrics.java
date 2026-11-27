@@ -11,7 +11,12 @@ final class RetrievalMetrics {
     private RetrievalMetrics() {}
 
     record QueryScore(
-            FixtureQuery query, int firstRelevantRank, double recallAt5, double recallAt10, boolean hardNegativeFirst) {
+            FixtureQuery query,
+            int firstRelevantRank,
+            double recallAt5,
+            double recallAt10,
+            double precisionAt5,
+            boolean hardNegativeFirst) {
 
         double reciprocalRank() {
             return firstRelevantRank == 0 ? 0 : 1.0 / firstRelevantRank;
@@ -22,7 +27,14 @@ final class RetrievalMetrics {
         }
     }
 
-    record Summary(int count, double recallAt5, double recallAt10, double mrr, double hardNegativeFirstRate) {}
+    record Summary(
+            int count,
+            double recallAt5,
+            double recallAt10,
+            double precisionAt5,
+            double hitAt1,
+            double mrr,
+            double hardNegativeFirstRate) {}
 
     static List<String> rank(float[] query, Map<String, float[]> documents) {
         List<Map.Entry<String, Double>> scored = new ArrayList<>();
@@ -50,25 +62,34 @@ final class RetrievalMetrics {
         }
         boolean hardNegativeFirst = firstHardNegative > 0 && (firstRelevant == 0 || firstHardNegative < firstRelevant);
         return new QueryScore(
-                query, firstRelevant, recallAt(query, ranking, 5), recallAt(query, ranking, 10), hardNegativeFirst);
+                query,
+                firstRelevant,
+                recallAt(query, ranking, 5),
+                recallAt(query, ranking, 10),
+                precisionAt5(query, ranking),
+                hardNegativeFirst);
     }
 
     static Summary summarize(List<QueryScore> scores) {
         if (scores.isEmpty()) {
-            return new Summary(0, 0, 0, 0, 0);
+            return new Summary(0, 0, 0, 0, 0, 0, 0);
         }
         double r5 = 0;
         double r10 = 0;
+        double p5 = 0;
+        double hit1 = 0;
         double mrr = 0;
         double hardNegative = 0;
         for (QueryScore score : scores) {
             r5 += score.recallAt5();
             r10 += score.recallAt10();
+            p5 += score.precisionAt5();
+            hit1 += score.hitAt(1) ? 1 : 0;
             mrr += score.reciprocalRank();
             hardNegative += score.hardNegativeFirst() ? 1 : 0;
         }
         int n = scores.size();
-        return new Summary(n, r5 / n, r10 / n, mrr / n, hardNegative / n);
+        return new Summary(n, r5 / n, r10 / n, p5 / n, hit1 / n, mrr / n, hardNegative / n);
     }
 
     static float[] truncate(float[] vector, int dimensions) {
@@ -101,6 +122,13 @@ final class RetrievalMetrics {
             return 0;
         }
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+
+    /** 정답이 5개보다 적으면 정답 수로 나눠, 정답이 하나뿐인 검색어가 최대 0.2에 묶이지 않게 한다. */
+    private static double precisionAt5(FixtureQuery query, List<String> ranking) {
+        List<String> top = ranking.subList(0, Math.min(5, ranking.size()));
+        long found = top.stream().filter(query.relevant()::contains).count();
+        return (double) found / Math.min(5, query.relevant().size());
     }
 
     private static double recallAt(FixtureQuery query, List<String> ranking, int k) {

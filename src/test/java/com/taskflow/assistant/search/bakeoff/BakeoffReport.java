@@ -42,11 +42,13 @@ final class BakeoffReport {
         out.append("Task %d개, 독립 검색어 %d개, 변형 묶음 %d개\n\n"
                 .formatted(
                         fixture.tasks().size(),
-                        independent(rows.isEmpty() ? List.of() : rows.get(0).production())
-                                .size(),
+                        fixture.queries().stream()
+                                .filter(query -> !query.inFamily())
+                                .count(),
                         families()));
         overall(out);
         categories(out);
+        broad(out);
         familyConsistency(out);
         paired(out);
         if (!skipped.isEmpty()) {
@@ -58,8 +60,8 @@ final class BakeoffReport {
 
     private void overall(StringBuilder out) {
         out.append(
-                "## 전체(독립 검색어)\n\n| 후보 | 질의 형식 | recall@5 | recall@10 | MRR | 오답 선두 | 문서 ms/건 | 질의 p50 ms | 질의 max ms |\n");
-        out.append("|---|---|---|---|---|---|---|---|---|\n");
+                "## 전체(독립 검색어, 넓은 검색어 제외)\n\n| 후보 | 질의 형식 | recall@5 | recall@10 | precision@5 | hit@1 | MRR | 오답 선두 | 문서 ms/건 | 질의 p50 ms | 질의 max ms |\n");
+        out.append("|---|---|---|---|---|---|---|---|---|---|---|\n");
         for (Row row : rows) {
             line(out, row, "원문", RetrievalMetrics.summarize(independent(row.raw())));
             line(out, row, "운영(topic)", RetrievalMetrics.summarize(independent(row.production())));
@@ -75,12 +77,14 @@ final class BakeoffReport {
                 : "%.0f"
                         .formatted((double) row.timed().documentMillis()
                                 / fixture.tasks().size());
-        out.append("| %s | %s | %.3f | %.3f | %.3f | %.3f | %s | %s | %s |\n"
+        out.append("| %s | %s | %.3f | %.3f | %.3f | %.3f | %.3f | %.3f | %s | %s | %s |\n"
                 .formatted(
                         row.candidate().name(),
                         mode,
                         s.recallAt5(),
                         s.recallAt10(),
+                        s.precisionAt5(),
+                        s.hitAt1(),
                         s.mrr(),
                         s.hardNegativeFirstRate(),
                         perDoc,
@@ -89,7 +93,7 @@ final class BakeoffReport {
     }
 
     private void categories(StringBuilder out) {
-        out.append("\n## 유형별 recall@5 (운영 질의 형식)\n\n| 후보 |");
+        out.append("\n## 유형별 recall@5 / precision@5 (운영 질의 형식)\n\n| 후보 |");
         List<String> categories = EmbeddingFixture.CATEGORIES.stream()
                 .filter(c -> !c.equals("paraphrase"))
                 .toList();
@@ -98,13 +102,25 @@ final class BakeoffReport {
         for (Row row : rows) {
             out.append("| ").append(row.candidate().name()).append(" |");
             for (String category : categories) {
-                List<QueryScore> scores = independent(row.production()).stream()
+                List<QueryScore> scores = row.production().stream()
+                        .filter(score -> !score.query().inFamily())
                         .filter(score -> score.query().category().equals(category))
                         .toList();
-                out.append(
-                        " %.3f |".formatted(RetrievalMetrics.summarize(scores).recallAt5()));
+                Summary summary = RetrievalMetrics.summarize(scores);
+                out.append(" %.2f / %.2f |".formatted(summary.recallAt5(), summary.precisionAt5()));
             }
             out.append('\n');
+        }
+    }
+
+    private void broad(StringBuilder out) {
+        out.append("\n## 넓은 검색어 (정답 5~25개, 운영 질의 형식)\n\n| 후보 | precision@5 | hit@1 | 오답 선두 |\n|---|---|---|---|\n");
+        for (Row row : rows) {
+            Summary s = RetrievalMetrics.summarize(row.production().stream()
+                    .filter(score -> score.query().broad())
+                    .toList());
+            out.append("| %s | %.3f | %.3f | %.3f |\n"
+                    .formatted(row.candidate().name(), s.precisionAt5(), s.hitAt1(), s.hardNegativeFirstRate()));
         }
     }
 
@@ -158,6 +174,8 @@ final class BakeoffReport {
     }
 
     private static List<QueryScore> independent(List<QueryScore> scores) {
-        return scores.stream().filter(score -> !score.query().inFamily()).toList();
+        return scores.stream()
+                .filter(score -> !score.query().inFamily() && !score.query().broad())
+                .toList();
     }
 }

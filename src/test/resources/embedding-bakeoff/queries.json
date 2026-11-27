@@ -743,14 +743,17 @@
       "relevant": [
         "t149",
         "t158",
-        "t157"
+        "t157",
+        "t152"
       ],
       "partial": [
-        "t152"
+        "t159",
+        "t156"
       ],
       "hardNegatives": [
         "t162",
-        "t151"
+        "t151",
+        "t155"
       ],
       "family": null
     },
@@ -763,7 +766,8 @@
       "category": "hypernym",
       "relevant": [
         "t225",
-        "t213"
+        "t213",
+        "t223"
       ],
       "partial": [
         "t229",
@@ -787,7 +791,8 @@
         "t128"
       ],
       "partial": [
-        "t181"
+        "t181",
+        "t116"
       ],
       "hardNegatives": [
         "t106",
@@ -807,6 +812,7 @@
         "t132"
       ],
       "partial": [
+        "t129",
         "t139"
       ],
       "hardNegatives": [
@@ -826,13 +832,14 @@
       "relevant": [
         "t183",
         "t190",
-        "t185"
+        "t185",
+        "t191"
       ],
       "partial": [
-        "t205"
+        "t205",
+        "t194"
       ],
       "hardNegatives": [
-        "t194",
         "t184"
       ],
       "family": null
@@ -847,36 +854,45 @@
       "relevant": [
         "t093",
         "t098",
-        "t095"
-      ],
-      "partial": [
+        "t095",
         "t119"
       ],
-      "hardNegatives": [
+      "partial": [
         "t091",
-        "t099"
+        "t099",
+        "t110",
+        "t092",
+        "t094"
+      ],
+      "hardNegatives": [
+        "t029",
+        "t050"
       ],
       "family": null
     },
     {
       "id": "q045",
-      "query": "모니터링",
+      "query": "서버 모니터링",
       "topicTerms": [
+        "서버",
         "모니터링"
       ],
       "category": "hypernym",
       "relevant": [
         "t026",
         "t035",
-        "t036"
+        "t036",
+        "t027",
+        "t039"
       ],
       "partial": [
         "t028",
-        "t027"
+        "t042"
       ],
       "hardNegatives": [
-        "t137",
-        "t138"
+        "t198",
+        "t138",
+        "t137"
       ],
       "family": null
     },
@@ -891,16 +907,18 @@
       "relevant": [
         "t167",
         "t171",
-        "t174"
+        "t174",
+        "t168",
+        "t166",
+        "t182"
       ],
       "partial": [
-        "t168",
-        "t166"
+        "t175",
+        "t177"
       ],
       "hardNegatives": [
         "t169",
-        "t170",
-        "t175"
+        "t170"
       ],
       "family": null
     },
@@ -915,10 +933,13 @@
       "relevant": [
         "t115",
         "t126",
-        "t127"
+        "t127",
+        "t123",
+        "t116"
       ],
       "partial": [
-        "t123"
+        "t117",
+        "t128"
       ],
       "hardNegatives": [
         "t113",
@@ -936,11 +957,10 @@
       "relevant": [
         "t175",
         "t141",
-        "t216"
-      ],
-      "partial": [
+        "t216",
         "t146"
       ],
+      "partial": [],
       "hardNegatives": [
         "t079",
         "t173"
@@ -979,12 +999,11 @@
         "t214",
         "t224"
       ],
-      "partial": [
-        "t223"
-      ],
+      "partial": [],
       "hardNegatives": [
         "t124",
-        "t085"
+        "t085",
+        "t223"
       ],
       "family": null
     },
@@ -998,14 +1017,18 @@
       "relevant": [
         "t106",
         "t109",
-        "t097"
+        "t097",
+        "t108",
+        "t207"
       ],
       "partial": [
-        "t108"
+        "t211",
+        "t153",
+        "t099"
       ],
       "hardNegatives": [
-        "t211",
-        "t207"
+        "t041",
+        "t016"
       ],
       "family": null
     },
@@ -1019,15 +1042,18 @@
       "relevant": [
         "t007",
         "t008",
-        "t030"
+        "t030",
+        "t031",
+        "t042",
+        "t025"
       ],
       "partial": [
-        "t031",
-        "t042"
+        "t057",
+        "t052"
       ],
       "hardNegatives": [
-        "t057",
-        "t080"
+        "t080",
+        "t050"
       ],
       "family": null
     },
@@ -1043,9 +1069,7 @@
         "t136",
         "t161"
       ],
-      "partial": [
-        "t163"
-      ],
+      "partial": [],
       "hardNegatives": [
         "t101",
         "t203"
@@ -1063,7 +1087,9 @@
         "t186",
         "t190"
       ],
-      "partial": [],
+      "partial": [
+        "t191"
+      ],
       "hardNegatives": [
         "t194",
         "t187"
@@ -1081,14 +1107,18 @@
       "relevant": [
         "t087",
         "t077",
-        "t075"
+        "t075",
+        "t071",
+        "t070"
       ],
       "partial": [
-        "t071"
+        "t069",
+        "t068",
+        "t086"
       ],
       "hardNegatives": [
         "t065",
-        "t086"
+        "t049"
       ],
       "family": null
     },
@@ -1106,6 +1136,7 @@
         "t034"
       ],
       "partial": [
+        "t019",
         "t040"
       ],
       "hardNegatives": [
@@ -1124,13 +1155,13 @@
       "relevant": [
         "t206",
         "t198",
-        "t207"
-      ],
-      "partial": [
+        "t207",
         "t197"
       ],
+      "partial": [
+        "t211"
+      ],
       "hardNegatives": [
-        "t211",
         "t200"
       ],
       "family": null
@@ -1281,15 +1312,16 @@
       ],
       "category": "keyword",
       "relevant": [
-        "t165"
-      ],
-      "partial": [
+        "t165",
         "t179",
         "t180"
       ],
-      "hardNegatives": [
+      "partial": [
         "t172",
         "t173"
+      ],
+      "hardNegatives": [
+        "t181"
       ],
       "family": null
     },
@@ -1349,9 +1381,9 @@
     },
     {
       "id": "q069",
-      "query": "담그기 일손",
+      "query": "김장 일손",
       "topicTerms": [
-        "담그기",
+        "김장",
         "일손"
       ],
       "category": "keyword",
@@ -2772,15 +2804,16 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t165"
-      ],
-      "partial": [
+        "t165",
         "t179",
         "t180"
       ],
-      "hardNegatives": [
+      "partial": [
         "t172",
         "t173"
+      ],
+      "hardNegatives": [
+        "t181"
       ],
       "family": "f07"
     },
@@ -2793,15 +2826,16 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t165"
-      ],
-      "partial": [
+        "t165",
         "t179",
         "t180"
       ],
-      "hardNegatives": [
+      "partial": [
         "t172",
         "t173"
+      ],
+      "hardNegatives": [
+        "t181"
       ],
       "family": "f07"
     },
@@ -2814,15 +2848,16 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t165"
-      ],
-      "partial": [
+        "t165",
         "t179",
         "t180"
       ],
-      "hardNegatives": [
+      "partial": [
         "t172",
         "t173"
+      ],
+      "hardNegatives": [
+        "t181"
       ],
       "family": "f07"
     },
@@ -2834,15 +2869,16 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t165"
-      ],
-      "partial": [
+        "t165",
         "t179",
         "t180"
       ],
-      "hardNegatives": [
+      "partial": [
         "t172",
         "t173"
+      ],
+      "hardNegatives": [
+        "t181"
       ],
       "family": "f07"
     },
@@ -3463,6 +3499,464 @@
         "t063"
       ],
       "family": "f15"
+    },
+    {
+      "id": "q177",
+      "query": "집안일",
+      "topicTerms": [
+        "집안일"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t091",
+        "t092",
+        "t093",
+        "t094",
+        "t095",
+        "t096",
+        "t097",
+        "t098",
+        "t099",
+        "t100",
+        "t101",
+        "t102",
+        "t103",
+        "t104",
+        "t105",
+        "t106",
+        "t107",
+        "t108",
+        "t109",
+        "t110"
+      ],
+      "partial": [],
+      "hardNegatives": [],
+      "family": null
+    },
+    {
+      "id": "q178",
+      "query": "건강 관리",
+      "topicTerms": [
+        "건강"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t129",
+        "t130",
+        "t131",
+        "t132",
+        "t133",
+        "t134",
+        "t135",
+        "t136",
+        "t137",
+        "t138",
+        "t139",
+        "t140",
+        "t142",
+        "t143"
+      ],
+      "partial": [
+        "t141",
+        "t146",
+        "t160"
+      ],
+      "hardNegatives": [
+        "t144"
+      ],
+      "family": null
+    },
+    {
+      "id": "q179",
+      "query": "회사 일",
+      "topicTerms": [
+        "회사"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t068",
+        "t069",
+        "t070",
+        "t071",
+        "t072",
+        "t073",
+        "t074",
+        "t075",
+        "t076",
+        "t077",
+        "t078",
+        "t079",
+        "t080",
+        "t081",
+        "t082",
+        "t083",
+        "t084",
+        "t085",
+        "t086",
+        "t087",
+        "t088",
+        "t089",
+        "t090"
+      ],
+      "partial": [],
+      "hardNegatives": [],
+      "family": null
+    },
+    {
+      "id": "q180",
+      "query": "돈 관련된 일",
+      "topicTerms": [
+        "돈"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t165",
+        "t166",
+        "t167",
+        "t168",
+        "t169",
+        "t170",
+        "t171",
+        "t172",
+        "t173",
+        "t174",
+        "t175",
+        "t176",
+        "t177",
+        "t178",
+        "t179",
+        "t180",
+        "t181",
+        "t182",
+        "t102",
+        "t074",
+        "t128"
+      ],
+      "partial": [
+        "t112",
+        "t120",
+        "t219"
+      ],
+      "hardNegatives": [],
+      "family": null
+    },
+    {
+      "id": "q181",
+      "query": "개발 공부",
+      "topicTerms": [
+        "개발",
+        "공부"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t051",
+        "t052",
+        "t053",
+        "t054",
+        "t057",
+        "t058",
+        "t059",
+        "t060",
+        "t061",
+        "t064"
+      ],
+      "partial": [
+        "t062",
+        "t065",
+        "t009"
+      ],
+      "hardNegatives": [
+        "t055",
+        "t056"
+      ],
+      "family": null
+    },
+    {
+      "id": "q182",
+      "query": "여행 준비",
+      "topicTerms": [
+        "여행"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t213",
+        "t214",
+        "t215",
+        "t216",
+        "t217",
+        "t218",
+        "t219",
+        "t220",
+        "t221",
+        "t222",
+        "t223",
+        "t224",
+        "t225",
+        "t228",
+        "t229"
+      ],
+      "partial": [
+        "t226",
+        "t230",
+        "t227"
+      ],
+      "hardNegatives": [
+        "t082"
+      ],
+      "family": null
+    },
+    {
+      "id": "q183",
+      "query": "이사 준비",
+      "topicTerms": [
+        "이사"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t111",
+        "t112",
+        "t113",
+        "t114",
+        "t115",
+        "t116",
+        "t117",
+        "t118",
+        "t119",
+        "t120",
+        "t121",
+        "t122",
+        "t123",
+        "t124",
+        "t125",
+        "t126",
+        "t127",
+        "t128"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t195"
+      ],
+      "family": null
+    },
+    {
+      "id": "q184",
+      "query": "운동",
+      "topicTerms": [
+        "운동"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t147",
+        "t148",
+        "t149",
+        "t150",
+        "t151",
+        "t152",
+        "t153",
+        "t154",
+        "t155",
+        "t156",
+        "t157",
+        "t158",
+        "t159",
+        "t160",
+        "t161",
+        "t162",
+        "t163"
+      ],
+      "partial": [
+        "t164"
+      ],
+      "hardNegatives": [
+        "t070"
+      ],
+      "family": null
+    },
+    {
+      "id": "q185",
+      "query": "서버 운영",
+      "topicTerms": [
+        "서버",
+        "운영"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t026",
+        "t027",
+        "t028",
+        "t029",
+        "t030",
+        "t031",
+        "t032",
+        "t033",
+        "t034",
+        "t035",
+        "t036",
+        "t037",
+        "t038",
+        "t039",
+        "t040",
+        "t041",
+        "t042",
+        "t043",
+        "t044",
+        "t045"
+      ],
+      "partial": [
+        "t021",
+        "t024",
+        "t019"
+      ],
+      "hardNegatives": [
+        "t076"
+      ],
+      "family": null
+    },
+    {
+      "id": "q186",
+      "query": "가족 챙기기",
+      "topicTerms": [
+        "가족"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t183",
+        "t184",
+        "t185",
+        "t186",
+        "t187",
+        "t188",
+        "t189",
+        "t190",
+        "t191",
+        "t192",
+        "t193",
+        "t194",
+        "t195",
+        "t196"
+      ],
+      "partial": [],
+      "hardNegatives": [],
+      "family": null
+    },
+    {
+      "id": "q187",
+      "query": "앱 출시",
+      "topicTerms": [
+        "앱",
+        "출시"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t001",
+        "t002",
+        "t003",
+        "t004",
+        "t016",
+        "t017"
+      ],
+      "partial": [
+        "t010",
+        "t012",
+        "t011"
+      ],
+      "hardNegatives": [
+        "t089"
+      ],
+      "family": null
+    },
+    {
+      "id": "q188",
+      "query": "사야 할 것들",
+      "topicTerms": [
+        "구매"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t136",
+        "t153",
+        "t161",
+        "t163",
+        "t185",
+        "t191",
+        "t197",
+        "t207",
+        "t208",
+        "t210",
+        "t211",
+        "t122",
+        "t108",
+        "t217",
+        "t066"
+      ],
+      "partial": [
+        "t198",
+        "t199",
+        "t200",
+        "t206",
+        "t205"
+      ],
+      "hardNegatives": [
+        "t201",
+        "t105"
+      ],
+      "family": null
+    },
+    {
+      "id": "q189",
+      "query": "예약해야 하는 것들",
+      "topicTerms": [
+        "예약"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t129",
+        "t131",
+        "t156",
+        "t184",
+        "t189",
+        "t213",
+        "t214",
+        "t223",
+        "t224",
+        "t225",
+        "t085",
+        "t117",
+        "t119",
+        "t124",
+        "t107",
+        "t143"
+      ],
+      "partial": [
+        "t150",
+        "t162",
+        "t151"
+      ],
+      "hardNegatives": [],
+      "family": null
+    },
+    {
+      "id": "q190",
+      "query": "글 쓰는 일",
+      "topicTerms": [
+        "글"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t065",
+        "t077",
+        "t087",
+        "t075",
+        "t212",
+        "t194"
+      ],
+      "partial": [
+        "t071",
+        "t049",
+        "t004"
+      ],
+      "hardNegatives": [],
+      "family": null
     }
   ]
 }

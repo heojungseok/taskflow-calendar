@@ -52,6 +52,19 @@ class RetrievalMetricsTest {
     }
 
     @Test
+    @DisplayName("상위 5개 중 정답 비율을 내고 정답이 5개보다 적으면 정답 수로 나눈다")
+    void precisionAt5() {
+        List<String> ranking = List.of("t1", "t2", "t3", "t4", "t5", "t6");
+
+        assertThat(RetrievalMetrics.score(query(List.of("t1", "t3", "t6", "t7", "t8", "t9"), List.of()), ranking)
+                        .precisionAt5())
+                .isEqualTo(0.4);
+        assertThat(RetrievalMetrics.score(query(List.of("t2", "t9"), List.of()), ranking)
+                        .precisionAt5())
+                .isEqualTo(0.5);
+    }
+
+    @Test
     @DisplayName("앞부분만 자르고 길이 1로 다시 맞춘다")
     void truncatesAndNormalizes() {
         float[] truncated = RetrievalMetrics.truncate(new float[] {3, 4, 100}, 2);

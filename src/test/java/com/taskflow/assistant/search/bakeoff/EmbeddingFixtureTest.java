@@ -32,14 +32,14 @@ class EmbeddingFixtureTest {
     }
 
     @Test
-    @DisplayName("독립 검색어는 100~120개, 변형 묶음은 15개 안팎이고 묶음마다 3~5개다")
+    @DisplayName("독립 검색어는 100~140개, 변형 묶음은 15개 안팎이고 묶음마다 3~5개다")
     void querySplit() {
         List<FixtureQuery> independent = independent();
         Map<String, Long> families = fixture.queries().stream()
                 .filter(FixtureQuery::inFamily)
                 .collect(Collectors.groupingBy(FixtureQuery::family, Collectors.counting()));
 
-        assertThat(independent).hasSizeBetween(100, 120);
+        assertThat(independent).hasSizeBetween(100, 140);
         assertThat(families).hasSizeBetween(13, 17);
         assertThat(families.values()).allSatisfy(count -> assertThat(count).isBetween(3L, 5L));
         assertThat(fixture.queries().stream().map(FixtureQuery::id).collect(Collectors.toSet()))
@@ -61,10 +61,14 @@ class EmbeddingFixtureTest {
     }
 
     @Test
-    @DisplayName("정답은 1~3개이고 모든 참조가 있는 Task이며 정답·부분 정답·오답이 겹치지 않는다")
+    @DisplayName("정답은 일반 검색어 1~10개, 넓은 검색어 5~25개이고 모든 참조가 있는 Task이며 서로 겹치지 않는다")
     void labelsReferToCorpus() {
         for (FixtureQuery query : fixture.queries()) {
-            assertThat(query.relevant()).as(query.id()).hasSizeBetween(1, 3);
+            if (query.broad()) {
+                assertThat(query.relevant()).as(query.id()).hasSizeBetween(5, 25);
+            } else {
+                assertThat(query.relevant()).as(query.id()).hasSizeBetween(1, 10);
+            }
             List<String> all = new ArrayList<>(query.relevant());
             all.addAll(nullToEmpty(query.partial()));
             all.addAll(nullToEmpty(query.hardNegatives()));
