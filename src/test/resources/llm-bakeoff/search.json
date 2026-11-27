@@ -20,6 +20,22 @@
     {"id": "s17", "query": "오늘 안에 꼭 끝내야 하는 배포 점검", "targetType": "task", "timeIntent": "today", "priorityIntent": "must_do", "mainAction": "check", "statusIntents": [], "expectedTopicKeywords": ["배포"]},
     {"id": "s18", "query": "막혀서 못 하는 급한 결제 연동", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "urgent", "mainAction": "unknown", "statusIntents": ["BLOCKED"], "expectedTopicKeywords": ["결제"]},
     {"id": "s19", "query": "이번 주에 사야 하는 노트북 거치대", "targetType": "task", "timeIntent": "this_week", "priorityIntent": "none", "mainAction": "buy", "statusIntents": [], "expectedTopicKeywords": ["노트북", "거치대"]},
-    {"id": "s20", "query": "고장 난 프린터 오늘 수리 맡기기", "targetType": "task", "timeIntent": "today", "priorityIntent": "none", "mainAction": "fix", "statusIntents": [], "expectedTopicKeywords": ["프린터"]}
+    {"id": "s20", "query": "고장 난 프린터 오늘 수리 맡기기", "targetType": "task", "timeIntent": "today", "priorityIntent": "none", "mainAction": "fix", "statusIntents": [], "expectedTopicKeywords": ["프린터"]},
+    {"id": "h01", "query": "기한 넘긴 자동차 보험 갱신", "targetType": "task", "timeIntent": "overdue", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["자동차", "보험"]},
+    {"id": "h02", "query": "보류해 둔 블로그 글 쓰기", "targetType": "task", "timeIntent": ["deferred", "unspecified"], "priorityIntent": ["none", "deferred"], "mainAction": ["unknown", "prepare"], "statusIntents": [], "expectedTopicKeywords": ["블로그"]},
+    {"id": "h03", "query": "지금 하고 있는 리팩터링", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": ["unknown", "fix"], "statusIntents": ["IN_PROGRESS"], "expectedTopicKeywords": ["리팩터링"]},
+    {"id": "h04", "query": "끝난 회의록 정리", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "organize", "statusIntents": ["DONE"], "expectedTopicKeywords": ["회의록"]},
+    {"id": "h05", "query": "요즘 새로 생긴 할 일", "targetType": "task", "timeIntent": "recent", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": []},
+    {"id": "h06", "query": "곧 있을 치과 예약", "targetType": "task", "timeIntent": "upcoming", "priorityIntent": "none", "mainAction": ["visit", "unknown"], "statusIntents": [], "expectedTopicKeywords": ["치과"]},
+    {"id": "h07", "query": "반드시 오늘 처리할 은행 업무", "targetType": "task", "timeIntent": "today", "priorityIntent": "must_do", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["은행"]},
+    {"id": "h08", "query": "디자인 관련 프로젝트 뭐 있지", "targetType": "project", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["디자인"]},
+    {"id": "h09", "query": "아직 시작 안 한 요청 건", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": ["REQUESTED"], "expectedTopicKeywords": []},
+    {"id": "h10", "query": "이번 달 말까지 갱신할 여권", "targetType": "task", "timeIntent": "this_month", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": [], "expectedTopicKeywords": ["여권"]},
+    {"id": "h11", "query": "중요한 발표 자료 준비", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "important", "mainAction": "prepare", "statusIntents": [], "expectedTopicKeywords": ["발표", "자료"]},
+    {"id": "h12", "query": "택배 반품하러 우체국 가기", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "visit", "statusIntents": [], "expectedTopicKeywords": ["반품"]},
+    {"id": "h13", "query": "부모님이랑 장보기", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "none", "mainAction": "buy", "statusIntents": [], "expectedTopicKeywords": []},
+    {"id": "h14", "query": "이번 주 진행 중인 마케팅 작업", "targetType": "task", "timeIntent": "this_week", "priorityIntent": "none", "mainAction": "unknown", "statusIntents": ["IN_PROGRESS"], "expectedTopicKeywords": ["마케팅"]},
+    {"id": "h15", "query": "어제까지였던 세금 납부", "targetType": "task", "timeIntent": "overdue", "priorityIntent": "none", "mainAction": ["submit", "unknown"], "statusIntents": [], "expectedTopicKeywords": ["세금"]},
+    {"id": "h16", "query": "급하게 고쳐야 하는 로그인 버그", "targetType": "task", "timeIntent": "unspecified", "priorityIntent": "urgent", "mainAction": "fix", "statusIntents": [], "expectedTopicKeywords": ["로그인", "버그"]}
   ]
 }
