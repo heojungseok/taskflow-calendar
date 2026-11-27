@@ -24,30 +24,30 @@ class EmbeddingFixtureTest {
             fixture.tasks().stream().map(FixtureTask::id).collect(Collectors.toSet());
 
     @Test
-    @DisplayName("Task는 200~300개이고 id가 겹치지 않으며 제목이 비어 있지 않다")
+    @DisplayName("Task는 480~520개이고 id가 겹치지 않으며 제목이 비어 있지 않다")
     void corpusSize() {
-        assertThat(fixture.tasks()).hasSizeBetween(200, 300);
+        assertThat(fixture.tasks()).hasSizeBetween(480, 520);
         assertThat(taskIds).hasSize(fixture.tasks().size());
         assertThat(fixture.tasks()).allSatisfy(task -> assertThat(task.title()).isNotBlank());
     }
 
     @Test
-    @DisplayName("독립 검색어는 100~140개, 변형 묶음은 15개 안팎이고 묶음마다 3~5개다")
+    @DisplayName("독립 검색어는 320~360개, 변형 묶음은 25개 안팎이고 묶음마다 3~5개다")
     void querySplit() {
         List<FixtureQuery> independent = independent();
         Map<String, Long> families = fixture.queries().stream()
                 .filter(FixtureQuery::inFamily)
                 .collect(Collectors.groupingBy(FixtureQuery::family, Collectors.counting()));
 
-        assertThat(independent).hasSizeBetween(100, 140);
-        assertThat(families).hasSizeBetween(13, 17);
+        assertThat(independent).hasSizeBetween(320, 360);
+        assertThat(families).hasSizeBetween(23, 27);
         assertThat(families.values()).allSatisfy(count -> assertThat(count).isBetween(3L, 5L));
         assertThat(fixture.queries().stream().map(FixtureQuery::id).collect(Collectors.toSet()))
                 .hasSize(fixture.queries().size());
     }
 
     @Test
-    @DisplayName("독립 검색어는 유형마다 10개 이상이고 정해진 유형만 쓴다")
+    @DisplayName("독립 검색어는 넓은 검색어 25개, 나머지 유형 40개 이상이고 정해진 유형만 쓴다")
     void categoriesCovered() {
         Map<String, Long> byCategory =
                 independent().stream().collect(Collectors.groupingBy(FixtureQuery::category, Collectors.counting()));
@@ -55,17 +55,18 @@ class EmbeddingFixtureTest {
         assertThat(EmbeddingFixture.CATEGORIES).containsAll(byCategory.keySet());
         for (String category : EmbeddingFixture.CATEGORIES) {
             if (!category.equals("paraphrase")) {
-                assertThat(byCategory.getOrDefault(category, 0L)).as(category).isGreaterThanOrEqualTo(10);
+                long minimum = category.equals("broad") ? 25 : 40;
+                assertThat(byCategory.getOrDefault(category, 0L)).as(category).isGreaterThanOrEqualTo(minimum);
             }
         }
     }
 
     @Test
-    @DisplayName("정답은 일반 검색어 1~10개, 넓은 검색어 5~25개이고 모든 참조가 있는 Task이며 서로 겹치지 않는다")
+    @DisplayName("정답은 일반 검색어 1~10개, 넓은 검색어 5~80개이고 모든 참조가 있는 Task이며 서로 겹치지 않는다")
     void labelsReferToCorpus() {
         for (FixtureQuery query : fixture.queries()) {
             if (query.broad()) {
-                assertThat(query.relevant()).as(query.id()).hasSizeBetween(5, 25);
+                assertThat(query.relevant()).as(query.id()).hasSizeBetween(5, 80);
             } else {
                 assertThat(query.relevant()).as(query.id()).hasSizeBetween(1, 10);
             }
@@ -94,6 +95,7 @@ class EmbeddingFixtureTest {
                 .allSatisfy(query -> assertThat(FILTER_WORDS)
                         .as(query.id() + " " + query.query())
                         .noneMatch(word -> query.query().contains(word)));
+        assertThat(fixture.queries()).noneMatch(query -> query.query().matches(".*\\d+\\s*월.*"));
     }
 
     @Test

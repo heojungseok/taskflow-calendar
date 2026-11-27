@@ -4,6 +4,7 @@ import com.taskflow.assistant.search.bakeoff.EmbeddingFixture.FixtureQuery;
 import com.taskflow.assistant.search.bakeoff.RetrievalMetrics.QueryScore;
 import com.taskflow.assistant.search.bakeoff.RetrievalMetrics.Summary;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -20,6 +21,8 @@ final class BakeoffReport {
     private final EmbeddingFixture fixture;
     private final List<Row> rows = new ArrayList<>();
     private final List<String> skipped = new ArrayList<>();
+    private final Map<String, LatencyProbe.Result> latencies = new LinkedHashMap<>();
+    private String latencyNote = "";
 
     BakeoffReport(EmbeddingFixture fixture) {
         this.fixture = fixture;
@@ -31,6 +34,14 @@ final class BakeoffReport {
             List<QueryScore> raw,
             List<QueryScore> production) {
         rows.add(new Row(candidate, timed, raw, production));
+    }
+
+    void latency(EmbeddingCandidate candidate, LatencyProbe.Result result) {
+        latencies.put(candidate.name(), result);
+    }
+
+    void latencyNote(String note) {
+        latencyNote = note;
     }
 
     void skip(EmbeddingCandidate candidate, String reason) {
@@ -51,6 +62,7 @@ final class BakeoffReport {
         broad(out);
         familyConsistency(out);
         paired(out);
+        latencySection(out);
         if (!skipped.isEmpty()) {
             out.append("\n## 건너뜀\n");
             skipped.forEach(line -> out.append("- ").append(line).append('\n'));
@@ -60,8 +72,8 @@ final class BakeoffReport {
 
     private void overall(StringBuilder out) {
         out.append(
-                "## 전체(독립 검색어, 넓은 검색어 제외)\n\n| 후보 | 질의 형식 | recall@5 | recall@10 | precision@5 | hit@1 | MRR | 오답 선두 | 문서 ms/건 | 질의 p50 ms | 질의 max ms |\n");
-        out.append("|---|---|---|---|---|---|---|---|---|---|---|\n");
+                "## 전체(독립 검색어, 넓은 검색어 제외)\n\n| 후보 | 질의 형식 | recall@5 | recall@10 | precision@5 | hit@1 | MRR | 오답 선두 |\n");
+        out.append("|---|---|---|---|---|---|---|---|\n");
         for (Row row : rows) {
             line(out, row, "원문", RetrievalMetrics.summarize(independent(row.raw())));
             line(out, row, "운영(topic)", RetrievalMetrics.summarize(independent(row.production())));
@@ -69,15 +81,7 @@ final class BakeoffReport {
     }
 
     private void line(StringBuilder out, Row row, String mode, Summary s) {
-        List<Long> latencies = row.timed().queryMillis().stream().sorted().toList();
-        String p50 = latencies.isEmpty() ? "캐시" : String.valueOf(latencies.get(latencies.size() / 2));
-        String max = latencies.isEmpty() ? "캐시" : String.valueOf(latencies.get(latencies.size() - 1));
-        String perDoc = row.timed().documentMillis() == 0
-                ? "캐시"
-                : "%.0f"
-                        .formatted((double) row.timed().documentMillis()
-                                / fixture.tasks().size());
-        out.append("| %s | %s | %.3f | %.3f | %.3f | %.3f | %.3f | %.3f | %s | %s | %s |\n"
+        out.append("| %s | %s | %.3f | %.3f | %.3f | %.3f | %.3f | %.3f |\n"
                 .formatted(
                         row.candidate().name(),
                         mode,
@@ -86,10 +90,7 @@ final class BakeoffReport {
                         s.precisionAt5(),
                         s.hitAt1(),
                         s.mrr(),
-                        s.hardNegativeFirstRate(),
-                        perDoc,
-                        p50,
-                        max));
+                        s.hardNegativeFirstRate()));
     }
 
     private void categories(StringBuilder out) {
@@ -114,7 +115,7 @@ final class BakeoffReport {
     }
 
     private void broad(StringBuilder out) {
-        out.append("\n## 넓은 검색어 (정답 5~25개, 운영 질의 형식)\n\n| 후보 | precision@5 | hit@1 | 오답 선두 |\n|---|---|---|---|\n");
+        out.append("\n## 넓은 검색어 (정답 5~80개, 운영 질의 형식)\n\n| 후보 | precision@5 | hit@1 | 오답 선두 |\n|---|---|---|---|\n");
         for (Row row : rows) {
             Summary s = RetrievalMetrics.summarize(row.production().stream()
                     .filter(score -> score.query().broad())
@@ -163,6 +164,33 @@ final class BakeoffReport {
             out.append(
                     "| %s | %d | %d | %d |\n".formatted(row.candidate().name(), win, lose, base.size() - win - lose));
         }
+    }
+
+    private void latencySection(StringBuilder out) {
+        if (latencies.isEmpty()) {
+            return;
+        }
+        out.append("\n## 지연 (캐시 없음, warm-up 뒤, 질의 1건씩)\n\n").append(latencyNote).append("\n\n");
+        out.append("| 후보 | 단독 p50 | 단독 p95 | 단독 max | 생성 부하 중 p50 | 생성 부하 중 p95 | 생성 부하 중 max | 문서 ms/건(16개 배치) |\n");
+        out.append("|---|---|---|---|---|---|---|---|\n");
+        latencies.forEach((name, result) -> out.append("| %s | %s | %s | %.1f |\n"
+                .formatted(
+                        name,
+                        percentiles(result.idleMillis()),
+                        percentiles(result.loadMillis()),
+                        (double) result.documentMillis() / result.documents())));
+    }
+
+    private static String percentiles(List<Long> millis) {
+        if (millis.isEmpty()) {
+            return "- | - | -";
+        }
+        List<Long> sorted = millis.stream().sorted().toList();
+        return "%d | %d | %d"
+                .formatted(
+                        sorted.get(sorted.size() / 2),
+                        sorted.get(Math.min(sorted.size() - 1, (int) Math.ceil(sorted.size() * 0.95) - 1)),
+                        sorted.get(sorted.size() - 1));
     }
 
     private long families() {

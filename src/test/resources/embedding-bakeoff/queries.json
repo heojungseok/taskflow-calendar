@@ -12,11 +12,13 @@
         "t069"
       ],
       "partial": [
-        "t068"
+        "t068",
+        "t298"
       ],
       "hardNegatives": [
         "t073",
-        "t062"
+        "t062",
+        "t288"
       ],
       "family": null
     },
@@ -32,7 +34,8 @@
         "t129"
       ],
       "partial": [
-        "t130"
+        "t130",
+        "t331"
       ],
       "hardNegatives": [
         "t144",
@@ -52,7 +55,9 @@
         "t140"
       ],
       "partial": [
-        "t154"
+        "t154",
+        "t332",
+        "t344"
       ],
       "hardNegatives": [
         "t145",
@@ -135,7 +140,8 @@
         "t147"
       ],
       "partial": [
-        "t148"
+        "t148",
+        "t359"
       ],
       "hardNegatives": [
         "t070",
@@ -169,10 +175,13 @@
       ],
       "category": "synonym",
       "relevant": [
-        "t026"
+        "t026",
+        "t251",
+        "t252"
       ],
       "partial": [
-        "t036"
+        "t036",
+        "t253"
       ],
       "hardNegatives": [
         "t012",
@@ -209,7 +218,8 @@
       ],
       "category": "synonym",
       "relevant": [
-        "t213"
+        "t213",
+        "t410"
       ],
       "partial": [],
       "hardNegatives": [
@@ -230,7 +240,10 @@
       "relevant": [
         "t176"
       ],
-      "partial": [],
+      "partial": [
+        "t428",
+        "t367"
+      ],
       "hardNegatives": [
         "t202",
         "t170"
@@ -246,9 +259,13 @@
       ],
       "category": "synonym",
       "relevant": [
-        "t085"
+        "t085",
+        "t292",
+        "t293"
       ],
-      "partial": [],
+      "partial": [
+        "t474"
+      ],
       "hardNegatives": [
         "t184",
         "t222"
@@ -282,7 +299,8 @@
       ],
       "category": "synonym",
       "relevant": [
-        "t208"
+        "t208",
+        "t391"
       ],
       "partial": [],
       "hardNegatives": [
@@ -323,7 +341,9 @@
       "relevant": [
         "t175"
       ],
-      "partial": [],
+      "partial": [
+        "t362"
+      ],
       "hardNegatives": [
         "t141",
         "t216",
@@ -360,7 +380,8 @@
         "t001"
       ],
       "partial": [
-        "t003"
+        "t003",
+        "t231"
       ],
       "hardNegatives": [
         "t082",
@@ -399,14 +420,18 @@
       ],
       "category": "mixed_language",
       "relevant": [
-        "t026"
+        "t026",
+        "t251"
       ],
       "partial": [
-        "t036"
+        "t036",
+        "t252",
+        "t253"
       ],
       "hardNegatives": [
         "t027",
-        "t012"
+        "t012",
+        "t257"
       ],
       "family": null
     },
@@ -461,7 +486,9 @@
       "relevant": [
         "t032"
       ],
-      "partial": [],
+      "partial": [
+        "t257"
+      ],
       "hardNegatives": [
         "t215",
         "t175"
@@ -534,7 +561,8 @@
         "t147"
       ],
       "partial": [
-        "t148"
+        "t148",
+        "t359"
       ],
       "hardNegatives": [
         "t070",
@@ -594,7 +622,9 @@
       "relevant": [
         "t217"
       ],
-      "partial": [],
+      "partial": [
+        "t408"
+      ],
       "hardNegatives": [
         "t177",
         "t228"
@@ -669,7 +699,8 @@
         "t041"
       ],
       "partial": [
-        "t034"
+        "t034",
+        "t259"
       ],
       "hardNegatives": [
         "t013"
@@ -688,11 +719,13 @@
         "t069"
       ],
       "partial": [
-        "t068"
+        "t068",
+        "t298"
       ],
       "hardNegatives": [
         "t062",
-        "t073"
+        "t073",
+        "t288"
       ],
       "family": null
     },
@@ -726,7 +759,9 @@
       "relevant": [
         "t013"
       ],
-      "partial": [],
+      "partial": [
+        "t234"
+      ],
       "hardNegatives": [
         "t010",
         "t041"
@@ -744,11 +779,18 @@
         "t149",
         "t158",
         "t157",
-        "t152"
+        "t152",
+        "t350",
+        "t349",
+        "t347",
+        "t348",
+        "t339",
+        "t346"
       ],
       "partial": [
         "t159",
-        "t156"
+        "t156",
+        "t351"
       ],
       "hardNegatives": [
         "t162",
@@ -767,7 +809,11 @@
       "relevant": [
         "t225",
         "t213",
-        "t223"
+        "t223",
+        "t406",
+        "t410",
+        "t374",
+        "t299"
       ],
       "partial": [
         "t229",
@@ -775,7 +821,8 @@
       ],
       "hardNegatives": [
         "t124",
-        "t214"
+        "t214",
+        "t409"
       ],
       "family": null
     },
@@ -788,7 +835,8 @@
       "category": "hypernym",
       "relevant": [
         "t102",
-        "t128"
+        "t128",
+        "t303"
       ],
       "partial": [
         "t181",
@@ -813,7 +861,8 @@
       ],
       "partial": [
         "t129",
-        "t139"
+        "t139",
+        "t336"
       ],
       "hardNegatives": [
         "t144",
@@ -833,11 +882,16 @@
         "t183",
         "t190",
         "t185",
-        "t191"
+        "t191",
+        "t371",
+        "t377",
+        "t378",
+        "t376"
       ],
       "partial": [
         "t205",
-        "t194"
+        "t194",
+        "t381"
       ],
       "hardNegatives": [
         "t184"
@@ -855,7 +909,9 @@
         "t093",
         "t098",
         "t095",
-        "t119"
+        "t119",
+        "t305",
+        "t312"
       ],
       "partial": [
         "t091",
@@ -883,11 +939,18 @@
         "t035",
         "t036",
         "t027",
-        "t039"
+        "t039",
+        "t251",
+        "t252",
+        "t255",
+        "t254",
+        "t253"
       ],
       "partial": [
         "t028",
-        "t042"
+        "t042",
+        "t256",
+        "t262"
       ],
       "hardNegatives": [
         "t198",
@@ -914,7 +977,8 @@
       ],
       "partial": [
         "t175",
-        "t177"
+        "t177",
+        "t369"
       ],
       "hardNegatives": [
         "t169",
@@ -935,7 +999,8 @@
         "t126",
         "t127",
         "t123",
-        "t116"
+        "t116",
+        "t322"
       ],
       "partial": [
         "t117",
@@ -958,7 +1023,9 @@
         "t175",
         "t141",
         "t216",
-        "t146"
+        "t146",
+        "t362",
+        "t338"
       ],
       "partial": [],
       "hardNegatives": [
@@ -977,7 +1044,9 @@
       "category": "hypernym",
       "relevant": [
         "t055",
-        "t056"
+        "t056",
+        "t274",
+        "t283"
       ],
       "partial": [
         "t066"
@@ -997,9 +1066,13 @@
       "category": "hypernym",
       "relevant": [
         "t214",
-        "t224"
+        "t224",
+        "t409",
+        "t379"
       ],
-      "partial": [],
+      "partial": [
+        "t417"
+      ],
       "hardNegatives": [
         "t124",
         "t085",
@@ -1019,12 +1092,17 @@
         "t109",
         "t097",
         "t108",
-        "t207"
+        "t207",
+        "t302",
+        "t300",
+        "t301",
+        "t311"
       ],
       "partial": [
         "t211",
         "t153",
-        "t099"
+        "t099",
+        "t334"
       ],
       "hardNegatives": [
         "t041",
@@ -1045,7 +1123,8 @@
         "t030",
         "t031",
         "t042",
-        "t025"
+        "t025",
+        "t238"
       ],
       "partial": [
         "t057",
@@ -1067,7 +1146,8 @@
       "category": "hypernym",
       "relevant": [
         "t136",
-        "t161"
+        "t161",
+        "t335"
       ],
       "partial": [],
       "hardNegatives": [
@@ -1085,7 +1165,11 @@
       "category": "hypernym",
       "relevant": [
         "t186",
-        "t190"
+        "t190",
+        "t373",
+        "t365",
+        "t383",
+        "t472"
       ],
       "partial": [
         "t191"
@@ -1114,7 +1198,8 @@
       "partial": [
         "t069",
         "t068",
-        "t086"
+        "t086",
+        "t298"
       ],
       "hardNegatives": [
         "t065",
@@ -1133,11 +1218,15 @@
       "relevant": [
         "t032",
         "t041",
-        "t034"
+        "t034",
+        "t260",
+        "t259"
       ],
       "partial": [
         "t019",
-        "t040"
+        "t040",
+        "t258",
+        "t257"
       ],
       "hardNegatives": [
         "t083",
@@ -1156,10 +1245,15 @@
         "t206",
         "t198",
         "t207",
-        "t197"
+        "t197",
+        "t389",
+        "t395",
+        "t393",
+        "t390"
       ],
       "partial": [
-        "t211"
+        "t211",
+        "t392"
       ],
       "hardNegatives": [
         "t200"
@@ -1214,7 +1308,8 @@
         "t132"
       ],
       "partial": [
-        "t139"
+        "t139",
+        "t336"
       ],
       "hardNegatives": [
         "t144",
@@ -1234,7 +1329,8 @@
         "t142"
       ],
       "partial": [
-        "t132"
+        "t132",
+        "t342"
       ],
       "hardNegatives": [
         "t204",
@@ -1254,7 +1350,8 @@
         "t115"
       ],
       "partial": [
-        "t123"
+        "t123",
+        "t322"
       ],
       "hardNegatives": [
         "t127",
@@ -1274,7 +1371,8 @@
         "t219"
       ],
       "partial": [
-        "t177"
+        "t177",
+        "t414"
       ],
       "hardNegatives": [
         "t226",
@@ -1295,7 +1393,8 @@
         "t008"
       ],
       "partial": [
-        "t009"
+        "t009",
+        "t272"
       ],
       "hardNegatives": [
         "t058",
@@ -1408,7 +1507,8 @@
         "t055"
       ],
       "partial": [
-        "t056"
+        "t056",
+        "t283"
       ],
       "hardNegatives": [
         "t063",
@@ -1427,7 +1527,9 @@
       "relevant": [
         "t032"
       ],
-      "partial": [],
+      "partial": [
+        "t257"
+      ],
       "hardNegatives": [
         "t063",
         "t215"
@@ -1501,7 +1603,8 @@
         "t079"
       ],
       "partial": [
-        "t175"
+        "t175",
+        "t397"
       ],
       "hardNegatives": [
         "t200",
@@ -1545,7 +1648,8 @@
       ],
       "hardNegatives": [
         "t102",
-        "t165"
+        "t165",
+        "t363"
       ],
       "family": null
     },
@@ -1617,7 +1721,8 @@
       ],
       "category": "sentence",
       "relevant": [
-        "t217"
+        "t217",
+        "t408"
       ],
       "partial": [],
       "hardNegatives": [
@@ -1657,7 +1762,9 @@
         "t003"
       ],
       "partial": [
-        "t001"
+        "t001",
+        "t232",
+        "t242"
       ],
       "hardNegatives": [
         "t004",
@@ -1677,7 +1784,8 @@
         "t029"
       ],
       "partial": [
-        "t037"
+        "t037",
+        "t263"
       ],
       "hardNegatives": [
         "t028",
@@ -1697,7 +1805,8 @@
         "t152"
       ],
       "partial": [
-        "t149"
+        "t149",
+        "t354"
       ],
       "hardNegatives": [
         "t153",
@@ -1717,7 +1826,8 @@
         "t130"
       ],
       "partial": [
-        "t129"
+        "t129",
+        "t331"
       ],
       "hardNegatives": [
         "t144",
@@ -1778,7 +1888,8 @@
         "t191"
       ],
       "partial": [
-        "t194"
+        "t194",
+        "t376"
       ],
       "hardNegatives": [
         "t183",
@@ -1856,10 +1967,12 @@
       ],
       "category": "sentence",
       "relevant": [
-        "t154"
+        "t154",
+        "t344"
       ],
       "partial": [
-        "t163"
+        "t163",
+        "t353"
       ],
       "hardNegatives": [
         "t140",
@@ -1933,14 +2046,18 @@
       ],
       "category": "typo_spacing",
       "relevant": [
-        "t026"
+        "t026",
+        "t251"
       ],
       "partial": [
-        "t036"
+        "t036",
+        "t252",
+        "t253"
       ],
       "hardNegatives": [
         "t027",
-        "t012"
+        "t012",
+        "t257"
       ],
       "family": null
     },
@@ -1955,7 +2072,8 @@
         "t129"
       ],
       "partial": [
-        "t130"
+        "t130",
+        "t331"
       ],
       "hardNegatives": [
         "t144",
@@ -2016,7 +2134,8 @@
         "t008"
       ],
       "partial": [
-        "t009"
+        "t009",
+        "t272"
       ],
       "hardNegatives": [
         "t042",
@@ -2247,7 +2366,8 @@
         "t055"
       ],
       "partial": [
-        "t056"
+        "t056",
+        "t283"
       ],
       "hardNegatives": [
         "t063",
@@ -2388,7 +2508,8 @@
         "t147"
       ],
       "partial": [
-        "t148"
+        "t148",
+        "t359"
       ],
       "hardNegatives": [
         "t070",
@@ -2407,7 +2528,8 @@
         "t147"
       ],
       "partial": [
-        "t148"
+        "t148",
+        "t359"
       ],
       "hardNegatives": [
         "t070",
@@ -2427,7 +2549,8 @@
         "t147"
       ],
       "partial": [
-        "t148"
+        "t148",
+        "t359"
       ],
       "hardNegatives": [
         "t070",
@@ -2446,7 +2569,8 @@
         "t147"
       ],
       "partial": [
-        "t148"
+        "t148",
+        "t359"
       ],
       "hardNegatives": [
         "t070",
@@ -2621,14 +2745,18 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t026"
+        "t026",
+        "t251"
       ],
       "partial": [
-        "t036"
+        "t036",
+        "t252",
+        "t253"
       ],
       "hardNegatives": [
         "t012",
-        "t027"
+        "t027",
+        "t257"
       ],
       "family": "f05"
     },
@@ -2641,14 +2769,18 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t026"
+        "t026",
+        "t251"
       ],
       "partial": [
-        "t036"
+        "t036",
+        "t252",
+        "t253"
       ],
       "hardNegatives": [
         "t012",
-        "t027"
+        "t027",
+        "t257"
       ],
       "family": "f05"
     },
@@ -2662,14 +2794,18 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t026"
+        "t026",
+        "t251"
       ],
       "partial": [
-        "t036"
+        "t036",
+        "t252",
+        "t253"
       ],
       "hardNegatives": [
         "t012",
-        "t027"
+        "t027",
+        "t257"
       ],
       "family": "f05"
     },
@@ -2682,14 +2818,18 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t026"
+        "t026",
+        "t251"
       ],
       "partial": [
-        "t036"
+        "t036",
+        "t252",
+        "t253"
       ],
       "hardNegatives": [
         "t012",
-        "t027"
+        "t027",
+        "t257"
       ],
       "family": "f05"
     },
@@ -2701,14 +2841,18 @@
       ],
       "category": "paraphrase",
       "relevant": [
-        "t026"
+        "t026",
+        "t251"
       ],
       "partial": [
-        "t036"
+        "t036",
+        "t252",
+        "t253"
       ],
       "hardNegatives": [
         "t012",
-        "t027"
+        "t027",
+        "t257"
       ],
       "family": "f05"
     },
@@ -3432,7 +3576,8 @@
         "t152"
       ],
       "partial": [
-        "t149"
+        "t149",
+        "t354"
       ],
       "hardNegatives": [
         "t153",
@@ -3452,7 +3597,8 @@
         "t152"
       ],
       "partial": [
-        "t149"
+        "t149",
+        "t354"
       ],
       "hardNegatives": [
         "t153",
@@ -3472,7 +3618,8 @@
         "t152"
       ],
       "partial": [
-        "t149"
+        "t149",
+        "t354"
       ],
       "hardNegatives": [
         "t153",
@@ -3492,7 +3639,8 @@
         "t152"
       ],
       "partial": [
-        "t149"
+        "t149",
+        "t354"
       ],
       "hardNegatives": [
         "t153",
@@ -3527,7 +3675,24 @@
         "t107",
         "t108",
         "t109",
-        "t110"
+        "t110",
+        "t300",
+        "t301",
+        "t302",
+        "t303",
+        "t304",
+        "t305",
+        "t306",
+        "t307",
+        "t308",
+        "t309",
+        "t310",
+        "t311",
+        "t312",
+        "t313",
+        "t314",
+        "t315",
+        "t316"
       ],
       "partial": [],
       "hardNegatives": [],
@@ -3554,12 +3719,26 @@
         "t139",
         "t140",
         "t142",
-        "t143"
+        "t143",
+        "t331",
+        "t332",
+        "t333",
+        "t334",
+        "t335",
+        "t336",
+        "t339",
+        "t340",
+        "t341",
+        "t342",
+        "t343",
+        "t344"
       ],
       "partial": [
         "t141",
         "t146",
-        "t160"
+        "t160",
+        "t337",
+        "t338"
       ],
       "hardNegatives": [
         "t144"
@@ -3596,7 +3775,24 @@
         "t087",
         "t088",
         "t089",
-        "t090"
+        "t090",
+        "t285",
+        "t286",
+        "t287",
+        "t288",
+        "t289",
+        "t290",
+        "t291",
+        "t292",
+        "t293",
+        "t294",
+        "t295",
+        "t296",
+        "t297",
+        "t298",
+        "t299",
+        "t455",
+        "t456"
       ],
       "partial": [],
       "hardNegatives": [],
@@ -3630,12 +3826,33 @@
         "t182",
         "t102",
         "t074",
-        "t128"
+        "t128",
+        "t233",
+        "t264",
+        "t303",
+        "t323",
+        "t324",
+        "t338",
+        "t360",
+        "t361",
+        "t362",
+        "t363",
+        "t364",
+        "t365",
+        "t366",
+        "t367",
+        "t368",
+        "t369",
+        "t382",
+        "t428",
+        "t458"
       ],
       "partial": [
         "t112",
         "t120",
-        "t219"
+        "t219",
+        "t414",
+        "t370"
       ],
       "hardNegatives": [],
       "family": null
@@ -3658,12 +3875,20 @@
         "t059",
         "t060",
         "t061",
-        "t064"
+        "t064",
+        "t272",
+        "t273",
+        "t275",
+        "t277",
+        "t284",
+        "t278"
       ],
       "partial": [
         "t062",
         "t065",
-        "t009"
+        "t009",
+        "t282",
+        "t270"
       ],
       "hardNegatives": [
         "t055",
@@ -3693,12 +3918,31 @@
         "t224",
         "t225",
         "t228",
-        "t229"
+        "t229",
+        "t405",
+        "t406",
+        "t407",
+        "t408",
+        "t409",
+        "t410",
+        "t411",
+        "t413",
+        "t414",
+        "t416",
+        "t417",
+        "t418",
+        "t419",
+        "t420",
+        "t421",
+        "t422",
+        "t379"
       ],
       "partial": [
         "t226",
         "t230",
-        "t227"
+        "t227",
+        "t415",
+        "t412"
       ],
       "hardNegatives": [
         "t082"
@@ -3730,7 +3974,21 @@
         "t125",
         "t126",
         "t127",
-        "t128"
+        "t128",
+        "t317",
+        "t318",
+        "t319",
+        "t320",
+        "t321",
+        "t322",
+        "t323",
+        "t324",
+        "t325",
+        "t326",
+        "t327",
+        "t328",
+        "t329",
+        "t330"
       ],
       "partial": [],
       "hardNegatives": [
@@ -3762,10 +4020,27 @@
         "t160",
         "t161",
         "t162",
-        "t163"
+        "t163",
+        "t345",
+        "t346",
+        "t347",
+        "t348",
+        "t349",
+        "t350",
+        "t353",
+        "t354",
+        "t355",
+        "t356",
+        "t357",
+        "t358",
+        "t359",
+        "t339"
       ],
       "partial": [
-        "t164"
+        "t164",
+        "t351",
+        "t352",
+        "t344"
       ],
       "hardNegatives": [
         "t070"
@@ -3800,7 +4075,24 @@
         "t042",
         "t043",
         "t044",
-        "t045"
+        "t045",
+        "t250",
+        "t251",
+        "t252",
+        "t253",
+        "t254",
+        "t255",
+        "t256",
+        "t257",
+        "t258",
+        "t259",
+        "t260",
+        "t261",
+        "t262",
+        "t263",
+        "t264",
+        "t265",
+        "t266"
       ],
       "partial": [
         "t021",
@@ -3808,7 +4100,8 @@
         "t019"
       ],
       "hardNegatives": [
-        "t076"
+        "t076",
+        "t433"
       ],
       "family": null
     },
@@ -3833,9 +4126,28 @@
         "t193",
         "t194",
         "t195",
-        "t196"
+        "t196",
+        "t371",
+        "t372",
+        "t374",
+        "t375",
+        "t376",
+        "t377",
+        "t378",
+        "t379",
+        "t380",
+        "t381",
+        "t382",
+        "t383",
+        "t384",
+        "t386",
+        "t387",
+        "t388"
       ],
-      "partial": [],
+      "partial": [
+        "t373",
+        "t385"
+      ],
       "hardNegatives": [],
       "family": null
     },
@@ -3853,15 +4165,22 @@
         "t003",
         "t004",
         "t016",
-        "t017"
+        "t017",
+        "t232",
+        "t242",
+        "t243"
       ],
       "partial": [
         "t010",
         "t012",
-        "t011"
+        "t011",
+        "t233",
+        "t241"
       ],
       "hardNegatives": [
-        "t089"
+        "t089",
+        "t423",
+        "t441"
       ],
       "family": null
     },
@@ -3887,7 +4206,31 @@
         "t122",
         "t108",
         "t217",
-        "t066"
+        "t066",
+        "t268",
+        "t300",
+        "t301",
+        "t302",
+        "t317",
+        "t334",
+        "t335",
+        "t345",
+        "t371",
+        "t376",
+        "t389",
+        "t390",
+        "t391",
+        "t392",
+        "t393",
+        "t394",
+        "t395",
+        "t411",
+        "t424",
+        "t426",
+        "t427",
+        "t429",
+        "t431",
+        "t468"
       ],
       "partial": [
         "t198",
@@ -3898,7 +4241,8 @@
       ],
       "hardNegatives": [
         "t201",
-        "t105"
+        "t105",
+        "t401"
       ],
       "family": null
     },
@@ -3925,12 +4269,36 @@
         "t119",
         "t124",
         "t107",
-        "t143"
+        "t143",
+        "t279",
+        "t292",
+        "t293",
+        "t297",
+        "t299",
+        "t304",
+        "t305",
+        "t347",
+        "t348",
+        "t360",
+        "t372",
+        "t374",
+        "t379",
+        "t405",
+        "t406",
+        "t407",
+        "t408",
+        "t409",
+        "t410",
+        "t424",
+        "t430",
+        "t474"
       ],
       "partial": [
         "t150",
         "t162",
-        "t151"
+        "t151",
+        "t269",
+        "t331"
       ],
       "hardNegatives": [],
       "family": null
@@ -3948,15 +4316,5723 @@
         "t087",
         "t075",
         "t212",
-        "t194"
+        "t194",
+        "t250",
+        "t242",
+        "t243",
+        "t270",
+        "t277",
+        "t370",
+        "t415",
+        "t437",
+        "t465",
+        "t386"
       ],
       "partial": [
         "t071",
         "t049",
-        "t004"
+        "t004",
+        "t298"
       ],
       "hardNegatives": [],
       "family": null
+    },
+    {
+      "id": "q191",
+      "query": "게임 업데이트 내용 뭐있지",
+      "topicTerms": [
+        "게임",
+        "업데이트"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t434"
+      ],
+      "partial": [
+        "t441"
+      ],
+      "hardNegatives": [
+        "t423",
+        "t243"
+      ],
+      "family": null
+    },
+    {
+      "id": "q192",
+      "query": "게임 접속 불가 안내 확인",
+      "topicTerms": [
+        "게임",
+        "안내"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t433"
+      ],
+      "partial": [
+        "t434"
+      ],
+      "hardNegatives": [
+        "t250",
+        "t038"
+      ],
+      "family": null
+    },
+    {
+      "id": "q193",
+      "query": "플스 컨트롤러 새로 장만",
+      "topicTerms": [
+        "플스",
+        "컨트롤러"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t427"
+      ],
+      "partial": [
+        "t454"
+      ],
+      "hardNegatives": [
+        "t206",
+        "t389"
+      ],
+      "family": null
+    },
+    {
+      "id": "q194",
+      "query": "닌텐도 신작 구입",
+      "topicTerms": [
+        "닌텐도",
+        "신작"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t426"
+      ],
+      "partial": [
+        "t424",
+        "t423"
+      ],
+      "hardNegatives": [
+        "t200",
+        "t429"
+      ],
+      "family": null
+    },
+    {
+      "id": "q195",
+      "query": "블록 장난감 사기",
+      "topicTerms": [
+        "블록",
+        "장난감"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t431"
+      ],
+      "partial": [
+        "t432"
+      ],
+      "hardNegatives": [
+        "t429",
+        "t205"
+      ],
+      "family": null
+    },
+    {
+      "id": "q196",
+      "query": "게임 구독 연장",
+      "topicTerms": [
+        "게임",
+        "구독"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t428"
+      ],
+      "partial": [
+        "t450",
+        "t367",
+        "t176"
+      ],
+      "hardNegatives": [
+        "t233",
+        "t066"
+      ],
+      "family": null
+    },
+    {
+      "id": "q197",
+      "query": "면담 준비할 거",
+      "topicTerms": [
+        "면담"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t073",
+        "t285"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t139",
+        "t340"
+      ],
+      "family": null
+    },
+    {
+      "id": "q198",
+      "query": "빨래 세제 보충",
+      "topicTerms": [
+        "세제"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t300"
+      ],
+      "partial": [
+        "t091",
+        "t108"
+      ],
+      "hardNegatives": [
+        "t104",
+        "t110"
+      ],
+      "family": null
+    },
+    {
+      "id": "q199",
+      "query": "두루마리 휴지 쟁이는 거",
+      "topicTerms": [
+        "휴지"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t301"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t108",
+        "t106"
+      ],
+      "family": null
+    },
+    {
+      "id": "q200",
+      "query": "에어컨 설치 기사 부르기",
+      "topicTerms": [
+        "에어컨",
+        "기사"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t304"
+      ],
+      "partial": [
+        "t321"
+      ],
+      "hardNegatives": [
+        "t095",
+        "t106"
+      ],
+      "family": null
+    },
+    {
+      "id": "q201",
+      "query": "에어컨 이사 후 다시 달기",
+      "topicTerms": [
+        "에어컨"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t321"
+      ],
+      "partial": [
+        "t304"
+      ],
+      "hardNegatives": [
+        "t095",
+        "t117"
+      ],
+      "family": null
+    },
+    {
+      "id": "q202",
+      "query": "벽걸이 TV 달아줄 사람",
+      "topicTerms": [
+        "TV"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t320"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t200",
+        "t097"
+      ],
+      "family": null
+    },
+    {
+      "id": "q203",
+      "query": "집 열쇠 받는 거",
+      "topicTerms": [
+        "열쇠"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t319"
+      ],
+      "partial": [
+        "t327",
+        "t328"
+      ],
+      "hardNegatives": [
+        "t120",
+        "t109"
+      ],
+      "family": null
+    },
+    {
+      "id": "q204",
+      "query": "잔금 보내는 거",
+      "topicTerms": [
+        "잔금"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t323"
+      ],
+      "partial": [
+        "t324",
+        "t366",
+        "t120"
+      ],
+      "hardNegatives": [
+        "t102",
+        "t182"
+      ],
+      "family": null
+    },
+    {
+      "id": "q205",
+      "query": "보험료 내는 거",
+      "topicTerms": [
+        "보험료"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t362",
+        "t338"
+      ],
+      "partial": [
+        "t175",
+        "t141"
+      ],
+      "hardNegatives": [
+        "t146",
+        "t363"
+      ],
+      "family": null
+    },
+    {
+      "id": "q206",
+      "query": "카드 대금 날짜 뭐였지",
+      "topicTerms": [
+        "카드"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t361"
+      ],
+      "partial": [
+        "t170"
+      ],
+      "hardNegatives": [
+        "t181",
+        "t102"
+      ],
+      "family": null
+    },
+    {
+      "id": "q207",
+      "query": "대출 이자 내는 날",
+      "topicTerms": [
+        "대출",
+        "이자"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t364"
+      ],
+      "partial": [
+        "t112"
+      ],
+      "hardNegatives": [
+        "t171",
+        "t181"
+      ],
+      "family": null
+    },
+    {
+      "id": "q208",
+      "query": "월세 보내는 거",
+      "topicTerms": [
+        "월세"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t366"
+      ],
+      "partial": [
+        "t179"
+      ],
+      "hardNegatives": [
+        "t102",
+        "t120"
+      ],
+      "family": null
+    },
+    {
+      "id": "q209",
+      "query": "가스 요금 내기",
+      "topicTerms": [
+        "가스",
+        "요금"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t303"
+      ],
+      "partial": [
+        "t102",
+        "t116"
+      ],
+      "hardNegatives": [
+        "t107"
+      ],
+      "family": null
+    },
+    {
+      "id": "q210",
+      "query": "아빠 생신 식사 자리",
+      "topicTerms": [
+        "아빠",
+        "생신"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t372"
+      ],
+      "partial": [
+        "t371",
+        "t184"
+      ],
+      "hardNegatives": [
+        "t474",
+        "t085"
+      ],
+      "family": null
+    },
+    {
+      "id": "q211",
+      "query": "할머니 칠순 선물",
+      "topicTerms": [
+        "할머니",
+        "칠순"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t377"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t196",
+        "t192"
+      ],
+      "family": null
+    },
+    {
+      "id": "q212",
+      "query": "친구 결혼 축하 선물",
+      "topicTerms": [
+        "결혼",
+        "선물"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t373"
+      ],
+      "partial": [
+        "t186"
+      ],
+      "hardNegatives": [
+        "t472",
+        "t205"
+      ],
+      "family": null
+    },
+    {
+      "id": "q213",
+      "query": "러닝 모임 참석하는 거",
+      "topicTerms": [
+        "러닝",
+        "모임"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t346"
+      ],
+      "partial": [
+        "t149",
+        "t152"
+      ],
+      "hardNegatives": [
+        "t153",
+        "t349"
+      ],
+      "family": null
+    },
+    {
+      "id": "q214",
+      "query": "풋살 일정 맞추는 거",
+      "topicTerms": [
+        "풋살"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t349"
+      ],
+      "partial": [
+        "t346"
+      ],
+      "hardNegatives": [
+        "t159",
+        "t156"
+      ],
+      "family": null
+    },
+    {
+      "id": "q215",
+      "query": "테니스장 잡는 거",
+      "topicTerms": [
+        "테니스장"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t347"
+      ],
+      "partial": [
+        "t159"
+      ],
+      "hardNegatives": [
+        "t162",
+        "t348"
+      ],
+      "family": null
+    },
+    {
+      "id": "q216",
+      "query": "점심 걷기",
+      "topicTerms": [
+        "걷기"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t339"
+      ],
+      "partial": [
+        "t149",
+        "t154"
+      ],
+      "hardNegatives": [
+        "t162",
+        "t163"
+      ],
+      "family": null
+    },
+    {
+      "id": "q217",
+      "query": "사야 하는 거 장바구니 담기",
+      "topicTerms": [
+        "장바구니"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t209"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t201",
+        "t396"
+      ],
+      "family": null
+    },
+    {
+      "id": "q219",
+      "query": "동네 병원 약 타기",
+      "topicTerms": [
+        "약"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t134"
+      ],
+      "partial": [
+        "t135"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t208"
+      ],
+      "family": null
+    },
+    {
+      "id": "q220",
+      "query": "퍼즐 조각 맞추기",
+      "topicTerms": [
+        "퍼즐"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t443"
+      ],
+      "partial": [
+        "t432",
+        "t444"
+      ],
+      "hardNegatives": [
+        "t054"
+      ],
+      "family": null
+    },
+    {
+      "id": "q221",
+      "query": "Switch 신작 pre-order",
+      "topicTerms": [
+        "Switch",
+        "pre-order"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t424",
+        "t426"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t082"
+      ],
+      "family": null
+    },
+    {
+      "id": "q222",
+      "query": "PS5 controller 구매",
+      "topicTerms": [
+        "PS5",
+        "controller"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t427"
+      ],
+      "partial": [
+        "t454"
+      ],
+      "hardNegatives": [
+        "t206",
+        "t389"
+      ],
+      "family": null
+    },
+    {
+      "id": "q223",
+      "query": "steam sale wishlist 확인",
+      "topicTerms": [
+        "steam",
+        "wishlist"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t425",
+        "t452"
+      ],
+      "partial": [
+        "t449"
+      ],
+      "hardNegatives": [
+        "t209",
+        "t202"
+      ],
+      "family": null
+    },
+    {
+      "id": "q224",
+      "query": "보드게임 cafe 모임",
+      "topicTerms": [
+        "보드게임",
+        "cafe"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t430"
+      ],
+      "partial": [
+        "t456",
+        "t457"
+      ],
+      "hardNegatives": [
+        "t429",
+        "t188"
+      ],
+      "family": null
+    },
+    {
+      "id": "q225",
+      "query": "lego 조립 이어서",
+      "topicTerms": [
+        "lego"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t432"
+      ],
+      "partial": [
+        "t443",
+        "t444"
+      ],
+      "hardNegatives": [
+        "t431",
+        "t205"
+      ],
+      "family": null
+    },
+    {
+      "id": "q226",
+      "query": "game patch note 읽기",
+      "topicTerms": [
+        "game",
+        "patch note"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t434"
+      ],
+      "partial": [
+        "t441"
+      ],
+      "hardNegatives": [
+        "t423",
+        "t250"
+      ],
+      "family": null
+    },
+    {
+      "id": "q227",
+      "query": "서버 downtime 공지",
+      "topicTerms": [
+        "서버",
+        "downtime"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t250"
+      ],
+      "partial": [
+        "t265"
+      ],
+      "hardNegatives": [
+        "t433",
+        "t045"
+      ],
+      "family": null
+    },
+    {
+      "id": "q228",
+      "query": "grafana alert 채널 slack으로",
+      "topicTerms": [
+        "grafana",
+        "alert",
+        "slack"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t253"
+      ],
+      "partial": [
+        "t251",
+        "t252",
+        "t026",
+        "t045"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t433"
+      ],
+      "family": null
+    },
+    {
+      "id": "q229",
+      "query": "prometheus disk alert",
+      "topicTerms": [
+        "prometheus",
+        "disk",
+        "alert"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t252"
+      ],
+      "partial": [
+        "t251",
+        "t029",
+        "t026"
+      ],
+      "hardNegatives": [
+        "t028",
+        "t012"
+      ],
+      "family": null
+    },
+    {
+      "id": "q230",
+      "query": "CPU 사용률 alert",
+      "topicTerms": [
+        "CPU",
+        "alert"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t251"
+      ],
+      "partial": [
+        "t252",
+        "t256",
+        "t026"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t160"
+      ],
+      "family": null
+    },
+    {
+      "id": "q231",
+      "query": "메모리 leak 확인",
+      "topicTerms": [
+        "메모리"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t256"
+      ],
+      "partial": [
+        "t251",
+        "t247"
+      ],
+      "hardNegatives": [
+        "t137",
+        "t042"
+      ],
+      "family": null
+    },
+    {
+      "id": "q232",
+      "query": "ssl 만료 알림 설정",
+      "topicTerms": [
+        "ssl",
+        "만료"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t257"
+      ],
+      "partial": [
+        "t032",
+        "t252"
+      ],
+      "hardNegatives": [
+        "t215",
+        "t063"
+      ],
+      "family": null
+    },
+    {
+      "id": "q233",
+      "query": "keychain 접근 허용",
+      "topicTerms": [
+        "keychain"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t258",
+        "t245"
+      ],
+      "partial": [
+        "t041"
+      ],
+      "hardNegatives": [
+        "t013"
+      ],
+      "family": null
+    },
+    {
+      "id": "q234",
+      "query": "vpn account 정리할 거",
+      "topicTerms": [
+        "vpn",
+        "account"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t259"
+      ],
+      "partial": [
+        "t034",
+        "t088"
+      ],
+      "hardNegatives": [
+        "t041",
+        "t090"
+      ],
+      "family": null
+    },
+    {
+      "id": "q235",
+      "query": "firewall port 점검할 거",
+      "topicTerms": [
+        "firewall",
+        "port"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t260"
+      ],
+      "partial": [
+        "t034",
+        "t019"
+      ],
+      "hardNegatives": [
+        "t032",
+        "t041"
+      ],
+      "family": null
+    },
+    {
+      "id": "q236",
+      "query": "loki query로 에러 찾기",
+      "topicTerms": [
+        "loki",
+        "query"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t262"
+      ],
+      "partial": [
+        "t261",
+        "t042"
+      ],
+      "hardNegatives": [
+        "t028",
+        "t037"
+      ],
+      "family": null
+    },
+    {
+      "id": "q237",
+      "query": "cron으로 docker prune",
+      "topicTerms": [
+        "cron",
+        "docker"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t263"
+      ],
+      "partial": [
+        "t029",
+        "t030"
+      ],
+      "hardNegatives": [
+        "t043",
+        "t093"
+      ],
+      "family": null
+    },
+    {
+      "id": "q238",
+      "query": "cors origin 설정할 거",
+      "topicTerms": [
+        "cors",
+        "origin"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t235"
+      ],
+      "partial": [
+        "t234",
+        "t019"
+      ],
+      "hardNegatives": [
+        "t040",
+        "t034"
+      ],
+      "family": null
+    },
+    {
+      "id": "q239",
+      "query": "playwright 테스트 추가할 거",
+      "topicTerms": [
+        "playwright"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t236"
+      ],
+      "partial": [
+        "t014",
+        "t244"
+      ],
+      "hardNegatives": [
+        "t076",
+        "t083"
+      ],
+      "family": null
+    },
+    {
+      "id": "q240",
+      "query": "sentry 에러 모니터링",
+      "topicTerms": [
+        "sentry",
+        "에러"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t237"
+      ],
+      "partial": [
+        "t261",
+        "t262"
+      ],
+      "hardNegatives": [
+        "t160",
+        "t137"
+      ],
+      "family": null
+    },
+    {
+      "id": "q241",
+      "query": "index 추가해서 query 빠르게",
+      "topicTerms": [
+        "index",
+        "query"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t238"
+      ],
+      "partial": [
+        "t008",
+        "t042"
+      ],
+      "hardNegatives": [
+        "t046",
+        "t050"
+      ],
+      "family": null
+    },
+    {
+      "id": "q242",
+      "query": "Gemini 429 처리",
+      "topicTerms": [
+        "Gemini",
+        "429"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t239"
+      ],
+      "partial": [
+        "t020"
+      ],
+      "hardNegatives": [
+        "t013",
+        "t045"
+      ],
+      "family": null
+    },
+    {
+      "id": "q243",
+      "query": "dependabot PR 확인할 거",
+      "topicTerms": [
+        "dependabot",
+        "PR"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t240"
+      ],
+      "partial": [
+        "t005",
+        "t072"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t004"
+      ],
+      "family": null
+    },
+    {
+      "id": "q244",
+      "query": "OSS license 정리할 거",
+      "topicTerms": [
+        "OSS",
+        "license"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t241"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t018",
+        "t046"
+      ],
+      "family": null
+    },
+    {
+      "id": "q245",
+      "query": "release note 작성할 거",
+      "topicTerms": [
+        "release",
+        "note"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t243"
+      ],
+      "partial": [
+        "t242",
+        "t069"
+      ],
+      "hardNegatives": [
+        "t016",
+        "t090"
+      ],
+      "family": null
+    },
+    {
+      "id": "q246",
+      "query": "app store 설명 문구",
+      "topicTerms": [
+        "app store"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t242"
+      ],
+      "partial": [
+        "t243",
+        "t003",
+        "t012"
+      ],
+      "hardNegatives": [
+        "t004",
+        "t089"
+      ],
+      "family": null
+    },
+    {
+      "id": "q247",
+      "query": "flaky 테스트 원인 찾을 거",
+      "topicTerms": [
+        "flaky",
+        "테스트"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t244"
+      ],
+      "partial": [
+        "t014",
+        "t236"
+      ],
+      "hardNegatives": [
+        "t015",
+        "t083"
+      ],
+      "family": null
+    },
+    {
+      "id": "q248",
+      "query": "apple developer 연회비",
+      "topicTerms": [
+        "apple developer"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t233"
+      ],
+      "partial": [
+        "t001",
+        "t003"
+      ],
+      "hardNegatives": [
+        "t066",
+        "t176"
+      ],
+      "family": null
+    },
+    {
+      "id": "q249",
+      "query": "conference 티켓 신청",
+      "topicTerms": [
+        "conference",
+        "티켓"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t269"
+      ],
+      "partial": [
+        "t278"
+      ],
+      "hardNegatives": [
+        "t213",
+        "t446"
+      ],
+      "family": null
+    },
+    {
+      "id": "q250",
+      "query": "SQLD 접수",
+      "topicTerms": [
+        "SQLD"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t278"
+      ],
+      "partial": [
+        "t063"
+      ],
+      "hardNegatives": [
+        "t057",
+        "t052"
+      ],
+      "family": null
+    },
+    {
+      "id": "q251",
+      "query": "pgvector docs 읽을 거",
+      "topicTerms": [
+        "pgvector"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t272"
+      ],
+      "partial": [
+        "t051",
+        "t008"
+      ],
+      "hardNegatives": [
+        "t052",
+        "t046"
+      ],
+      "family": null
+    },
+    {
+      "id": "q252",
+      "query": "kafka 입문",
+      "topicTerms": [
+        "kafka"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t273"
+      ],
+      "partial": [
+        "t053"
+      ],
+      "hardNegatives": [
+        "t057",
+        "t061"
+      ],
+      "family": null
+    },
+    {
+      "id": "q253",
+      "query": "mentor coffee chat",
+      "topicTerms": [
+        "mentor",
+        "coffee chat"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t276",
+        "t479"
+      ],
+      "partial": [
+        "t463",
+        "t285"
+      ],
+      "hardNegatives": [
+        "t073",
+        "t062"
+      ],
+      "family": null
+    },
+    {
+      "id": "q254",
+      "query": "onboarding 문구 수정",
+      "topicTerms": [
+        "onboarding",
+        "문구"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t248"
+      ],
+      "partial": [
+        "t012",
+        "t242"
+      ],
+      "hardNegatives": [
+        "t004",
+        "t090"
+      ],
+      "family": null
+    },
+    {
+      "id": "q255",
+      "query": "push 알림 permission 타이밍",
+      "topicTerms": [
+        "push",
+        "permission"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t249"
+      ],
+      "partial": [
+        "t012"
+      ],
+      "hardNegatives": [
+        "t090",
+        "t253"
+      ],
+      "family": null
+    },
+    {
+      "id": "q256",
+      "query": "취미 할 거들",
+      "topicTerms": [
+        "취미"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t432",
+        "t443",
+        "t444",
+        "t448",
+        "t447"
+      ],
+      "partial": [
+        "t445",
+        "t446",
+        "t437"
+      ],
+      "hardNegatives": [
+        "t054",
+        "t055"
+      ],
+      "family": null
+    },
+    {
+      "id": "q257",
+      "query": "게임기 관련 거들",
+      "topicTerms": [
+        "게임기"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t427",
+        "t454",
+        "t426",
+        "t450",
+        "t449",
+        "t451"
+      ],
+      "partial": [
+        "t428",
+        "t424"
+      ],
+      "hardNegatives": [
+        "t206",
+        "t200"
+      ],
+      "family": null
+    },
+    {
+      "id": "q258",
+      "query": "게임 출시들",
+      "topicTerms": [
+        "출시"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t423",
+        "t424",
+        "t441",
+        "t442"
+      ],
+      "partial": [
+        "t440",
+        "t439"
+      ],
+      "hardNegatives": [
+        "t232",
+        "t082",
+        "t445"
+      ],
+      "family": null
+    },
+    {
+      "id": "q259",
+      "query": "게임 할인하는 거들",
+      "topicTerms": [
+        "할인"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t425",
+        "t449"
+      ],
+      "partial": [
+        "t452",
+        "t209"
+      ],
+      "hardNegatives": [
+        "t202",
+        "t399"
+      ],
+      "family": null
+    },
+    {
+      "id": "q260",
+      "query": "컴퓨터 게임 할 거들",
+      "topicTerms": [
+        "컴퓨터",
+        "게임"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t425",
+        "t436",
+        "t438",
+        "t434",
+        "t452"
+      ],
+      "partial": [
+        "t440",
+        "t442"
+      ],
+      "hardNegatives": [
+        "t206",
+        "t198"
+      ],
+      "family": null
+    },
+    {
+      "id": "q261",
+      "query": "보드게임 관련 거들",
+      "topicTerms": [
+        "보드게임"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t429",
+        "t430",
+        "t456"
+      ],
+      "partial": [
+        "t431",
+        "t443"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t457"
+      ],
+      "family": null
+    },
+    {
+      "id": "q262",
+      "query": "독서 관련 거들",
+      "topicTerms": [
+        "독서"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t464",
+        "t465",
+        "t281",
+        "t049",
+        "t060",
+        "t064",
+        "t284",
+        "t067"
+      ],
+      "partial": [
+        "t268",
+        "t051"
+      ],
+      "hardNegatives": [
+        "t065",
+        "t212"
+      ],
+      "family": null
+    },
+    {
+      "id": "q263",
+      "query": "네트워킹 같은 거들",
+      "topicTerms": [
+        "네트워킹"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t461",
+        "t462",
+        "t477",
+        "t479",
+        "t276"
+      ],
+      "partial": [
+        "t463",
+        "t457"
+      ],
+      "hardNegatives": [
+        "t085",
+        "t073"
+      ],
+      "family": null
+    },
+    {
+      "id": "q264",
+      "query": "화상 회의들",
+      "topicTerms": [
+        "화상",
+        "회의"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t296",
+        "t470",
+        "t056"
+      ],
+      "partial": [
+        "t231",
+        "t297"
+      ],
+      "hardNegatives": [
+        "t069",
+        "t073"
+      ],
+      "family": null
+    },
+    {
+      "id": "q265",
+      "query": "사내 행사들 뭐있지",
+      "topicTerms": [
+        "사내",
+        "행사"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t286",
+        "t287",
+        "t295",
+        "t293",
+        "t292",
+        "t085",
+        "t294"
+      ],
+      "partial": [
+        "t455",
+        "t456",
+        "t083"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t088"
+      ],
+      "family": null
+    },
+    {
+      "id": "q266",
+      "query": "회사 회의들 뭐있지",
+      "topicTerms": [
+        "회사",
+        "회의"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t288",
+        "t289",
+        "t290",
+        "t291",
+        "t296",
+        "t081",
+        "t073"
+      ],
+      "partial": [
+        "t297",
+        "t298",
+        "t069",
+        "t285",
+        "t286"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t188"
+      ],
+      "family": null
+    },
+    {
+      "id": "q267",
+      "query": "회의 준비",
+      "topicTerms": [
+        "회의",
+        "준비"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t297",
+        "t289",
+        "t290",
+        "t287",
+        "t073"
+      ],
+      "partial": [
+        "t288",
+        "t298",
+        "t069"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t188"
+      ],
+      "family": null
+    },
+    {
+      "id": "q268",
+      "query": "사야 할 전자제품",
+      "topicTerms": [
+        "전자제품"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t390",
+        "t392",
+        "t393",
+        "t389",
+        "t395",
+        "t207",
+        "t206"
+      ],
+      "partial": [
+        "t200",
+        "t198",
+        "t427",
+        "t436"
+      ],
+      "hardNegatives": [
+        "t394",
+        "t208"
+      ],
+      "family": null
+    },
+    {
+      "id": "q269",
+      "query": "소모성 생활용품 살 거들",
+      "topicTerms": [
+        "생활용품"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t300",
+        "t301",
+        "t302",
+        "t108"
+      ],
+      "partial": [
+        "t106",
+        "t109",
+        "t311"
+      ],
+      "hardNegatives": [
+        "t391",
+        "t203"
+      ],
+      "family": null
+    },
+    {
+      "id": "q270",
+      "query": "반려견 용품",
+      "topicTerms": [
+        "반려견"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t391",
+        "t208"
+      ],
+      "partial": [
+        "t337",
+        "t144"
+      ],
+      "hardNegatives": [
+        "t203",
+        "t134"
+      ],
+      "family": null
+    },
+    {
+      "id": "q271",
+      "query": "겨울 대비할 거들",
+      "topicTerms": [
+        "겨울"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t394",
+        "t104",
+        "t315",
+        "t107"
+      ],
+      "partial": [
+        "t193",
+        "t135"
+      ],
+      "hardNegatives": [
+        "t095",
+        "t149"
+      ],
+      "family": null
+    },
+    {
+      "id": "q272",
+      "query": "입주 후 할 일",
+      "topicTerms": [
+        "입주"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t328",
+        "t326",
+        "t322",
+        "t115",
+        "t123"
+      ],
+      "partial": [
+        "t125",
+        "t327",
+        "t320",
+        "t321"
+      ],
+      "hardNegatives": [
+        "t113",
+        "t114",
+        "t120"
+      ],
+      "family": null
+    },
+    {
+      "id": "q273",
+      "query": "이사 돈 나갈 거들",
+      "topicTerms": [
+        "비용"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t324",
+        "t114"
+      ],
+      "partial": [
+        "t323",
+        "t122",
+        "t112",
+        "t120"
+      ],
+      "hardNegatives": [
+        "t195",
+        "t165"
+      ],
+      "family": null
+    },
+    {
+      "id": "q274",
+      "query": "치과 관련 거들",
+      "topicTerms": [
+        "치과"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t129",
+        "t130",
+        "t331"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t145",
+        "t144"
+      ],
+      "family": null
+    },
+    {
+      "id": "q275",
+      "query": "강의 들을 거들",
+      "topicTerms": [
+        "강의"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t053",
+        "t275",
+        "t273"
+      ],
+      "partial": [
+        "t066",
+        "t282",
+        "t055"
+      ],
+      "hardNegatives": [
+        "t150",
+        "t159"
+      ],
+      "family": null
+    },
+    {
+      "id": "q276",
+      "query": "정산하는 거들",
+      "topicTerms": [
+        "정산"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t074",
+        "t128",
+        "t458"
+      ],
+      "partial": [
+        "t141",
+        "t169"
+      ],
+      "hardNegatives": [
+        "t102",
+        "t181"
+      ],
+      "family": null
+    },
+    {
+      "id": "q277",
+      "query": "세금 내는 거들",
+      "topicTerms": [
+        "세금",
+        "납부"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t181",
+        "t363"
+      ],
+      "partial": [
+        "t172",
+        "t165"
+      ],
+      "hardNegatives": [
+        "t102",
+        "t365"
+      ],
+      "family": null
+    },
+    {
+      "id": "q278",
+      "query": "구독 서비스들",
+      "topicTerms": [
+        "구독"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t176",
+        "t367",
+        "t428",
+        "t450"
+      ],
+      "partial": [
+        "t233",
+        "t264"
+      ],
+      "hardNegatives": [
+        "t066",
+        "t136"
+      ],
+      "family": null
+    },
+    {
+      "id": "q279",
+      "query": "계정 관리할 거들",
+      "topicTerms": [
+        "계정"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t088",
+        "t259",
+        "t041",
+        "t034"
+      ],
+      "partial": [
+        "t233",
+        "t013"
+      ],
+      "hardNegatives": [
+        "t090",
+        "t012"
+      ],
+      "family": null
+    },
+    {
+      "id": "q280",
+      "query": "발표 준비할 거들",
+      "topicTerms": [
+        "발표"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t062",
+        "t070",
+        "t287",
+        "t477"
+      ],
+      "partial": [
+        "t289",
+        "t465"
+      ],
+      "hardNegatives": [
+        "t065",
+        "t089"
+      ],
+      "family": null
+    },
+    {
+      "id": "q281",
+      "query": "야외 활동들 뭐있지",
+      "topicTerms": [
+        "야외"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t158",
+        "t224",
+        "t350",
+        "t349",
+        "t347",
+        "t348",
+        "t478"
+      ],
+      "partial": [
+        "t482",
+        "t149",
+        "t157",
+        "t339"
+      ],
+      "hardNegatives": [
+        "t156",
+        "t151"
+      ],
+      "family": null
+    },
+    {
+      "id": "q282",
+      "query": "스트레칭 같은 거들",
+      "topicTerms": [
+        "스트레칭"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t154",
+        "t353",
+        "t344",
+        "t342"
+      ],
+      "partial": [
+        "t163",
+        "t339"
+      ],
+      "hardNegatives": [
+        "t155",
+        "t162"
+      ],
+      "family": null
+    },
+    {
+      "id": "q283",
+      "query": "동호회 활동",
+      "topicTerms": [
+        "동호회"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t457",
+        "t458",
+        "t478",
+        "t486",
+        "t350",
+        "t346",
+        "t349"
+      ],
+      "partial": [
+        "t469",
+        "t464"
+      ],
+      "hardNegatives": [
+        "t062"
+      ],
+      "family": null
+    },
+    {
+      "id": "q284",
+      "query": "도서 구매",
+      "topicTerms": [
+        "도서"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t268"
+      ],
+      "partial": [
+        "t284",
+        "t060"
+      ],
+      "hardNegatives": [
+        "t067",
+        "t049"
+      ],
+      "family": null
+    },
+    {
+      "id": "q285",
+      "query": "사진 정리할 거들",
+      "topicTerms": [
+        "사진",
+        "정리"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t227",
+        "t485"
+      ],
+      "partial": [
+        "t189",
+        "t388",
+        "t384"
+      ],
+      "hardNegatives": [
+        "t016",
+        "t017"
+      ],
+      "family": null
+    },
+    {
+      "id": "q286",
+      "query": "최신 발매 게임",
+      "topicTerms": [
+        "발매",
+        "게임"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t423",
+        "t424",
+        "t426"
+      ],
+      "partial": [
+        "t441",
+        "t439",
+        "t442"
+      ],
+      "hardNegatives": [
+        "t232",
+        "t082",
+        "t445"
+      ],
+      "family": null
+    },
+    {
+      "id": "q287",
+      "query": "게임 환불",
+      "topicTerms": [
+        "환불",
+        "게임"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t438"
+      ],
+      "partial": [
+        "t396"
+      ],
+      "hardNegatives": [
+        "t105",
+        "t201"
+      ],
+      "family": null
+    },
+    {
+      "id": "q288",
+      "query": "스트리밍 방송",
+      "topicTerms": [
+        "스트리밍"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t453"
+      ],
+      "partial": [
+        "t437"
+      ],
+      "hardNegatives": [
+        "t176",
+        "t089"
+      ],
+      "family": null
+    },
+    {
+      "id": "q289",
+      "query": "조이콘 드리프트",
+      "topicTerms": [
+        "조이콘",
+        "드리프트"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t454"
+      ],
+      "partial": [
+        "t427"
+      ],
+      "hardNegatives": [
+        "t206",
+        "t207"
+      ],
+      "family": null
+    },
+    {
+      "id": "q290",
+      "query": "퍼즐",
+      "topicTerms": [
+        "퍼즐"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t443"
+      ],
+      "partial": [
+        "t432",
+        "t444"
+      ],
+      "hardNegatives": [
+        "t054"
+      ],
+      "family": null
+    },
+    {
+      "id": "q291",
+      "query": "건프라",
+      "topicTerms": [
+        "건프라"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t444"
+      ],
+      "partial": [
+        "t432",
+        "t443"
+      ],
+      "hardNegatives": [
+        "t431"
+      ],
+      "family": null
+    },
+    {
+      "id": "q292",
+      "query": "기타 연습",
+      "topicTerms": [
+        "기타"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t448"
+      ],
+      "partial": [],
+      "hardNegatives": [],
+      "family": null
+    },
+    {
+      "id": "q293",
+      "query": "필름 카메라",
+      "topicTerms": [
+        "필름",
+        "카메라"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t447"
+      ],
+      "partial": [
+        "t227"
+      ],
+      "hardNegatives": [
+        "t189"
+      ],
+      "family": null
+    },
+    {
+      "id": "q294",
+      "query": "그래픽카드",
+      "topicTerms": [
+        "그래픽카드"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t436"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t198",
+        "t206"
+      ],
+      "family": null
+    },
+    {
+      "id": "q295",
+      "query": "킥오프 뭐였지",
+      "topicTerms": [
+        "킥오프"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t288"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t076",
+        "t077"
+      ],
+      "family": null
+    },
+    {
+      "id": "q296",
+      "query": "고객사 미팅",
+      "topicTerms": [
+        "고객사",
+        "미팅"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t289"
+      ],
+      "partial": [
+        "t086",
+        "t290"
+      ],
+      "hardNegatives": [
+        "t079",
+        "t082"
+      ],
+      "family": null
+    },
+    {
+      "id": "q297",
+      "query": "팀 회고",
+      "topicTerms": [
+        "회고"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t291"
+      ],
+      "partial": [
+        "t077"
+      ],
+      "hardNegatives": [
+        "t087",
+        "t069"
+      ],
+      "family": null
+    },
+    {
+      "id": "q298",
+      "query": "송년회 뭐있지",
+      "topicTerms": [
+        "송년회"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t293",
+        "t471"
+      ],
+      "partial": [
+        "t474",
+        "t085"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t194"
+      ],
+      "family": null
+    },
+    {
+      "id": "q299",
+      "query": "신입 환영",
+      "topicTerms": [
+        "환영",
+        "신입"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t292"
+      ],
+      "partial": [
+        "t486",
+        "t085"
+      ],
+      "hardNegatives": [
+        "t088",
+        "t078"
+      ],
+      "family": null
+    },
+    {
+      "id": "q300",
+      "query": "회의실",
+      "topicTerms": [
+        "회의실"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t297"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t085",
+        "t124"
+      ],
+      "family": null
+    },
+    {
+      "id": "q301",
+      "query": "팀 점심",
+      "topicTerms": [
+        "점심",
+        "팀"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t294"
+      ],
+      "partial": [
+        "t085"
+      ],
+      "hardNegatives": [
+        "t101",
+        "t203"
+      ],
+      "family": null
+    },
+    {
+      "id": "q302",
+      "query": "밋업들",
+      "topicTerms": [
+        "밋업"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t461",
+        "t477"
+      ],
+      "partial": [
+        "t479",
+        "t457"
+      ],
+      "hardNegatives": [
+        "t056",
+        "t062"
+      ],
+      "family": null
+    },
+    {
+      "id": "q303",
+      "query": "동창회 뭐있지",
+      "topicTerms": [
+        "동창회"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t469",
+        "t460"
+      ],
+      "partial": [
+        "t471"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t188"
+      ],
+      "family": null
+    },
+    {
+      "id": "q304",
+      "query": "독서 모임들",
+      "topicTerms": [
+        "독서",
+        "모임"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t464",
+        "t465"
+      ],
+      "partial": [
+        "t281",
+        "t049"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t056"
+      ],
+      "family": null
+    },
+    {
+      "id": "q305",
+      "query": "생일 파티 할 거",
+      "topicTerms": [
+        "생일",
+        "파티"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t467",
+        "t468"
+      ],
+      "partial": [
+        "t183",
+        "t184"
+      ],
+      "hardNegatives": [
+        "t191",
+        "t194"
+      ],
+      "family": null
+    },
+    {
+      "id": "q306",
+      "query": "집들이 할 거",
+      "topicTerms": [
+        "집들이"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t466"
+      ],
+      "partial": [
+        "t205"
+      ],
+      "hardNegatives": [
+        "t113",
+        "t121"
+      ],
+      "family": null
+    },
+    {
+      "id": "q307",
+      "query": "노래방 갈 거",
+      "topicTerms": [
+        "노래방"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t475"
+      ],
+      "partial": [
+        "t474"
+      ],
+      "hardNegatives": [
+        "t085"
+      ],
+      "family": null
+    },
+    {
+      "id": "q308",
+      "query": "사진 동호회",
+      "topicTerms": [
+        "사진",
+        "동호회"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t478",
+        "t485"
+      ],
+      "partial": [
+        "t457"
+      ],
+      "hardNegatives": [
+        "t189",
+        "t227"
+      ],
+      "family": null
+    },
+    {
+      "id": "q309",
+      "query": "결혼식 참석",
+      "topicTerms": [
+        "결혼식"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t472"
+      ],
+      "partial": [
+        "t186",
+        "t385",
+        "t373"
+      ],
+      "hardNegatives": [
+        "t190",
+        "t191"
+      ],
+      "family": null
+    },
+    {
+      "id": "q310",
+      "query": "돌잔치 갈 거",
+      "topicTerms": [
+        "돌잔치"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t383"
+      ],
+      "partial": [
+        "t190"
+      ],
+      "hardNegatives": [
+        "t186",
+        "t189"
+      ],
+      "family": null
+    },
+    {
+      "id": "q311",
+      "query": "가족 앨범 만들 거",
+      "topicTerms": [
+        "앨범"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t384"
+      ],
+      "partial": [
+        "t189",
+        "t388",
+        "t227"
+      ],
+      "hardNegatives": [
+        "t222"
+      ],
+      "family": null
+    },
+    {
+      "id": "q312",
+      "query": "추석 기차표",
+      "topicTerms": [
+        "추석",
+        "기차표"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t374"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t225",
+        "t185",
+        "t213"
+      ],
+      "family": null
+    },
+    {
+      "id": "q313",
+      "query": "포켓 와이파이",
+      "topicTerms": [
+        "와이파이"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t408"
+      ],
+      "partial": [
+        "t217"
+      ],
+      "hardNegatives": [
+        "t090",
+        "t117"
+      ],
+      "family": null
+    },
+    {
+      "id": "q314",
+      "query": "유니버설",
+      "topicTerms": [
+        "유니버설"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t405"
+      ],
+      "partial": [
+        "t218",
+        "t213"
+      ],
+      "hardNegatives": [
+        "t224"
+      ],
+      "family": null
+    },
+    {
+      "id": "q315",
+      "query": "이코카",
+      "topicTerms": [
+        "이코카"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t414"
+      ],
+      "partial": [
+        "t219",
+        "t220"
+      ],
+      "hardNegatives": [
+        "t177"
+      ],
+      "family": null
+    },
+    {
+      "id": "q316",
+      "query": "변환 플러그 살 거",
+      "topicTerms": [
+        "변환",
+        "플러그"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t411"
+      ],
+      "partial": [
+        "t207"
+      ],
+      "hardNegatives": [
+        "t217",
+        "t228"
+      ],
+      "family": null
+    },
+    {
+      "id": "q317",
+      "query": "온라인 체크인 할 거",
+      "topicTerms": [
+        "체크인"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t413"
+      ],
+      "partial": [
+        "t229",
+        "t221"
+      ],
+      "hardNegatives": [
+        "t214"
+      ],
+      "family": null
+    },
+    {
+      "id": "q318",
+      "query": "여행 경비 뭐였지",
+      "topicTerms": [
+        "경비"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t418"
+      ],
+      "partial": [
+        "t219",
+        "t218"
+      ],
+      "hardNegatives": [
+        "t074",
+        "t169"
+      ],
+      "family": null
+    },
+    {
+      "id": "q319",
+      "query": "짐 무게",
+      "topicTerms": [
+        "짐",
+        "무게"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t419"
+      ],
+      "partial": [
+        "t221"
+      ],
+      "hardNegatives": [
+        "t113",
+        "t122"
+      ],
+      "family": null
+    },
+    {
+      "id": "q320",
+      "query": "날씨 확인할 거",
+      "topicTerms": [
+        "날씨"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t422"
+      ],
+      "partial": [
+        "t221"
+      ],
+      "hardNegatives": [],
+      "family": null
+    },
+    {
+      "id": "q321",
+      "query": "오프라인 지도",
+      "topicTerms": [
+        "지도"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t228"
+      ],
+      "partial": [
+        "t421",
+        "t222"
+      ],
+      "hardNegatives": [
+        "t218"
+      ],
+      "family": null
+    },
+    {
+      "id": "q322",
+      "query": "서버 점검 공지",
+      "topicTerms": [
+        "서버",
+        "공지"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t250"
+      ],
+      "partial": [
+        "t265"
+      ],
+      "hardNegatives": [
+        "t433",
+        "t045"
+      ],
+      "family": null
+    },
+    {
+      "id": "q323",
+      "query": "팀 모임이 뭐있지",
+      "topicTerms": [
+        "팀",
+        "모임"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t085",
+        "t286",
+        "t294",
+        "t295",
+        "t293",
+        "t292",
+        "t455",
+        "t456"
+      ],
+      "partial": [
+        "t287",
+        "t291",
+        "t288"
+      ],
+      "hardNegatives": [
+        "t188",
+        "t457",
+        "t375"
+      ],
+      "family": null
+    },
+    {
+      "id": "q324",
+      "query": "미팅들 뭐 있는지",
+      "topicTerms": [
+        "미팅"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t073",
+        "t081",
+        "t288",
+        "t289",
+        "t290",
+        "t296",
+        "t291",
+        "t285"
+      ],
+      "partial": [
+        "t286",
+        "t297",
+        "t298",
+        "t069",
+        "t078"
+      ],
+      "hardNegatives": [
+        "t188",
+        "t375",
+        "t267"
+      ],
+      "family": null
+    },
+    {
+      "id": "q325",
+      "query": "맥미니 관련 할 거",
+      "topicTerms": [
+        "맥미니"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t033",
+        "t044",
+        "t265"
+      ],
+      "partial": [
+        "t038",
+        "t258",
+        "t030"
+      ],
+      "hardNegatives": [
+        "t207",
+        "t198"
+      ],
+      "family": null
+    },
+    {
+      "id": "q326",
+      "query": "그라파나 뭐 바꾸기로 한 거",
+      "topicTerms": [
+        "그라파나"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t254",
+        "t253",
+        "t027"
+      ],
+      "partial": [
+        "t026",
+        "t255"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t257"
+      ],
+      "family": null
+    },
+    {
+      "id": "q327",
+      "query": "게임 중에 사야 하는 거 뭐였지",
+      "topicTerms": [
+        "게임"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t424",
+        "t426",
+        "t427",
+        "t429"
+      ],
+      "partial": [
+        "t431",
+        "t436",
+        "t428",
+        "t452"
+      ],
+      "hardNegatives": [
+        "t206",
+        "t207"
+      ],
+      "family": null
+    },
+    {
+      "id": "q328",
+      "query": "게임 나오는 날 챙기는 거",
+      "topicTerms": [
+        "게임"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t423",
+        "t424"
+      ],
+      "partial": [
+        "t441",
+        "t439"
+      ],
+      "hardNegatives": [
+        "t232",
+        "t082"
+      ],
+      "family": null
+    },
+    {
+      "id": "q329",
+      "query": "친구들이랑 보드게임 하기로 한 거",
+      "topicTerms": [
+        "보드게임",
+        "친구"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t430"
+      ],
+      "partial": [
+        "t456",
+        "t429"
+      ],
+      "hardNegatives": [
+        "t188",
+        "t472"
+      ],
+      "family": null
+    },
+    {
+      "id": "q330",
+      "query": "스팀에서 환불 받아야 하는 거",
+      "topicTerms": [
+        "스팀",
+        "환불"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t438"
+      ],
+      "partial": [
+        "t396",
+        "t425"
+      ],
+      "hardNegatives": [
+        "t105",
+        "t201"
+      ],
+      "family": null
+    },
+    {
+      "id": "q331",
+      "query": "서버 점검한다고 알려야 하는 거",
+      "topicTerms": [
+        "서버",
+        "점검"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t250"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t433",
+        "t039",
+        "t107"
+      ],
+      "family": null
+    },
+    {
+      "id": "q332",
+      "query": "게임 서버 점검 언제 하는지 보는 거",
+      "topicTerms": [
+        "게임",
+        "서버"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t433"
+      ],
+      "partial": [
+        "t434"
+      ],
+      "hardNegatives": [
+        "t250",
+        "t038",
+        "t039"
+      ],
+      "family": null
+    },
+    {
+      "id": "q333",
+      "query": "사람들 앞에서 발표할 거",
+      "topicTerms": [
+        "발표"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t062",
+        "t070",
+        "t287",
+        "t477"
+      ],
+      "partial": [
+        "t289"
+      ],
+      "hardNegatives": [
+        "t065",
+        "t089"
+      ],
+      "family": null
+    },
+    {
+      "id": "q334",
+      "query": "퇴근하고 친구 만나는 거",
+      "topicTerms": [
+        "친구"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t459",
+        "t460",
+        "t402"
+      ],
+      "partial": [
+        "t481",
+        "t457"
+      ],
+      "hardNegatives": [
+        "t085",
+        "t380"
+      ],
+      "family": null
+    },
+    {
+      "id": "q335",
+      "query": "한 달에 한 번 모이는 모임들",
+      "topicTerms": [
+        "모임"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t457",
+        "t460",
+        "t469",
+        "t346"
+      ],
+      "partial": [
+        "t464",
+        "t267",
+        "t056"
+      ],
+      "hardNegatives": [
+        "t188",
+        "t294"
+      ],
+      "family": null
+    },
+    {
+      "id": "q336",
+      "query": "새 집 가기 전에 사야 하는 것들",
+      "topicTerms": [
+        "새 집"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t317",
+        "t113"
+      ],
+      "partial": [
+        "t118",
+        "t122",
+        "t325"
+      ],
+      "hardNegatives": [
+        "t116",
+        "t128"
+      ],
+      "family": null
+    },
+    {
+      "id": "q337",
+      "query": "부모님 용돈 보내는 거",
+      "topicTerms": [
+        "부모님",
+        "용돈"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t382"
+      ],
+      "partial": [
+        "t365"
+      ],
+      "hardNegatives": [
+        "t187",
+        "t102"
+      ],
+      "family": null
+    },
+    {
+      "id": "q338",
+      "query": "할머니 뵈러 가는 거",
+      "topicTerms": [
+        "할머니"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t196",
+        "t192"
+      ],
+      "partial": [
+        "t387",
+        "t377"
+      ],
+      "hardNegatives": [
+        "t187",
+        "t145"
+      ],
+      "family": null
+    },
+    {
+      "id": "q339",
+      "query": "병원 영수증 모아서 보험사에 보내는 거",
+      "topicTerms": [
+        "영수증",
+        "보험"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t141"
+      ],
+      "partial": [
+        "t165",
+        "t338"
+      ],
+      "hardNegatives": [
+        "t173",
+        "t181"
+      ],
+      "family": null
+    },
+    {
+      "id": "q340",
+      "query": "세무사 만나서 물어볼 거",
+      "topicTerms": [
+        "세무사"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t360"
+      ],
+      "partial": [
+        "t172",
+        "t165"
+      ],
+      "hardNegatives": [
+        "t175",
+        "t146"
+      ],
+      "family": null
+    },
+    {
+      "id": "q341",
+      "query": "출장 갈 때 기차 예매하는 거",
+      "topicTerms": [
+        "출장",
+        "기차"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t299"
+      ],
+      "partial": [
+        "t225",
+        "t374",
+        "t074"
+      ],
+      "hardNegatives": [
+        "t213",
+        "t229"
+      ],
+      "family": null
+    },
+    {
+      "id": "q342",
+      "query": "새 모니터 사고 쓰던 거 파는 거",
+      "topicTerms": [
+        "모니터"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t401"
+      ],
+      "partial": [
+        "t198"
+      ],
+      "hardNegatives": [
+        "t200",
+        "t201"
+      ],
+      "family": null
+    },
+    {
+      "id": "q343",
+      "query": "택배 언제 오는지 보는 거",
+      "topicTerms": [
+        "택배"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t400"
+      ],
+      "partial": [
+        "t105"
+      ],
+      "hardNegatives": [
+        "t092",
+        "t229"
+      ],
+      "family": null
+    },
+    {
+      "id": "q344",
+      "query": "쿠폰 만료되기 전에 쓸 거",
+      "topicTerms": [
+        "쿠폰"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t399",
+        "t202"
+      ],
+      "partial": [
+        "t209"
+      ],
+      "hardNegatives": [
+        "t176",
+        "t170"
+      ],
+      "family": null
+    },
+    {
+      "id": "q345",
+      "query": "비싸서 가격 따져 보는 거",
+      "topicTerms": [
+        "가격"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t397",
+        "t198",
+        "t200"
+      ],
+      "partial": [
+        "t209",
+        "t199"
+      ],
+      "hardNegatives": [
+        "t170"
+      ],
+      "family": null
+    },
+    {
+      "id": "q346",
+      "query": "거절당한 앱 심사 다시 준비하는 거",
+      "topicTerms": [
+        "앱",
+        "심사"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t232"
+      ],
+      "partial": [
+        "t003",
+        "t242"
+      ],
+      "hardNegatives": [
+        "t004",
+        "t082"
+      ],
+      "family": null
+    },
+    {
+      "id": "q347",
+      "query": "출시 앞두고 앱에서 점검할 거",
+      "topicTerms": [
+        "앱",
+        "출시"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t232",
+        "t242",
+        "t243"
+      ],
+      "partial": [
+        "t003",
+        "t001",
+        "t236",
+        "t233",
+        "t241"
+      ],
+      "hardNegatives": [
+        "t423",
+        "t089"
+      ],
+      "family": null
+    },
+    {
+      "id": "q348",
+      "query": "서버에서 알림 오게 만드는 거",
+      "topicTerms": [
+        "서버",
+        "알림"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t251",
+        "t252",
+        "t026"
+      ],
+      "partial": [
+        "t253",
+        "t036",
+        "t045",
+        "t257"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t433"
+      ],
+      "family": null
+    },
+    {
+      "id": "q349",
+      "query": "동기화 버그 같이 봐줄 사람 만나는 거",
+      "topicTerms": [
+        "동기화",
+        "버그"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t246"
+      ],
+      "partial": [
+        "t023"
+      ],
+      "hardNegatives": [
+        "t077",
+        "t073"
+      ],
+      "family": null
+    },
+    {
+      "id": "q350",
+      "query": "독서 모임 때 읽어 갈 책",
+      "topicTerms": [
+        "독서",
+        "책"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t464"
+      ],
+      "partial": [
+        "t284",
+        "t060"
+      ],
+      "hardNegatives": [
+        "t064",
+        "t067"
+      ],
+      "family": null
+    },
+    {
+      "id": "q351",
+      "query": "여행 가서 쓸 돈 정리하는 거",
+      "topicTerms": [
+        "여행",
+        "돈"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t418"
+      ],
+      "partial": [
+        "t219",
+        "t218"
+      ],
+      "hardNegatives": [
+        "t169",
+        "t074"
+      ],
+      "family": null
+    },
+    {
+      "id": "q352",
+      "query": "오사카에서 밥 먹을 곳 정해 두는 거",
+      "topicTerms": [
+        "오사카",
+        "밥"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t407",
+        "t222"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t184",
+        "t085"
+      ],
+      "family": null
+    },
+    {
+      "id": "q353",
+      "query": "공항 갈 때 택시 잡아 놓는 거",
+      "topicTerms": [
+        "공항",
+        "택시"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t406"
+      ],
+      "partial": [
+        "t229"
+      ],
+      "hardNegatives": [
+        "t225",
+        "t126"
+      ],
+      "family": null
+    },
+    {
+      "id": "q354",
+      "query": "보드겜카페",
+      "topicTerms": [
+        "보드겜카페"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t430"
+      ],
+      "partial": [
+        "t456"
+      ],
+      "hardNegatives": [
+        "t429",
+        "t188"
+      ],
+      "family": null
+    },
+    {
+      "id": "q355",
+      "query": "레고사기",
+      "topicTerms": [
+        "레고사기"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t431"
+      ],
+      "partial": [
+        "t432"
+      ],
+      "hardNegatives": [
+        "t429"
+      ],
+      "family": null
+    },
+    {
+      "id": "q356",
+      "query": "게임서버점검공지",
+      "topicTerms": [
+        "게임서버점검공지"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t433"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t250",
+        "t038"
+      ],
+      "family": null
+    },
+    {
+      "id": "q357",
+      "query": "그라파나 알림 채널 슬랙으롶",
+      "topicTerms": [
+        "그라파나",
+        "슬랙"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t253"
+      ],
+      "partial": [
+        "t251",
+        "t252",
+        "t045"
+      ],
+      "hardNegatives": [
+        "t012"
+      ],
+      "family": null
+    },
+    {
+      "id": "q358",
+      "query": "프로메테우스 디스크알림",
+      "topicTerms": [
+        "프로메테우스",
+        "디스크알림"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t252"
+      ],
+      "partial": [
+        "t251",
+        "t029",
+        "t026"
+      ],
+      "hardNegatives": [
+        "t028"
+      ],
+      "family": null
+    },
+    {
+      "id": "q359",
+      "query": "씨피유 사용률 알림",
+      "topicTerms": [
+        "씨피유"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t251"
+      ],
+      "partial": [
+        "t252",
+        "t256",
+        "t026"
+      ],
+      "hardNegatives": [
+        "t012"
+      ],
+      "family": null
+    },
+    {
+      "id": "q360",
+      "query": "메모리 부족 원이 확인",
+      "topicTerms": [
+        "메모리",
+        "원이"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t256"
+      ],
+      "partial": [
+        "t251",
+        "t247"
+      ],
+      "hardNegatives": [
+        "t137",
+        "t042"
+      ],
+      "family": null
+    },
+    {
+      "id": "q361",
+      "query": "인증서만료알림",
+      "topicTerms": [
+        "인증서만료알림"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t257"
+      ],
+      "partial": [
+        "t032"
+      ],
+      "hardNegatives": [
+        "t215",
+        "t063"
+      ],
+      "family": null
+    },
+    {
+      "id": "q362",
+      "query": "킹체인 접근 허용",
+      "topicTerms": [
+        "킹체인"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t258",
+        "t245"
+      ],
+      "partial": [
+        "t041"
+      ],
+      "hardNegatives": [
+        "t013"
+      ],
+      "family": null
+    },
+    {
+      "id": "q363",
+      "query": "방화벽 포트 점거",
+      "topicTerms": [
+        "방화벽",
+        "포트"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t260"
+      ],
+      "partial": [
+        "t034",
+        "t019"
+      ],
+      "hardNegatives": [
+        "t032"
+      ],
+      "family": null
+    },
+    {
+      "id": "q364",
+      "query": "브이피엔 계정 정리",
+      "topicTerms": [
+        "브이피엔",
+        "계정"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t259"
+      ],
+      "partial": [
+        "t034",
+        "t088"
+      ],
+      "hardNegatives": [
+        "t041",
+        "t090"
+      ],
+      "family": null
+    },
+    {
+      "id": "q365",
+      "query": "로키 쿼리로 에러 찿기",
+      "topicTerms": [
+        "로키",
+        "쿼리"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t262"
+      ],
+      "partial": [
+        "t261",
+        "t042"
+      ],
+      "hardNegatives": [
+        "t028",
+        "t037"
+      ],
+      "family": null
+    },
+    {
+      "id": "q366",
+      "query": "도커 정리 크론",
+      "topicTerms": [
+        "도커",
+        "크론"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t263"
+      ],
+      "partial": [
+        "t029",
+        "t030"
+      ],
+      "hardNegatives": [
+        "t043",
+        "t093"
+      ],
+      "family": null
+    },
+    {
+      "id": "q367",
+      "query": "코스 설정 정리",
+      "topicTerms": [
+        "코스"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t235"
+      ],
+      "partial": [
+        "t234"
+      ],
+      "hardNegatives": [
+        "t040",
+        "t034"
+      ],
+      "family": null
+    },
+    {
+      "id": "q368",
+      "query": "플레이라이트 테스트",
+      "topicTerms": [
+        "플레이라이트"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t236"
+      ],
+      "partial": [
+        "t014",
+        "t244"
+      ],
+      "hardNegatives": [
+        "t076",
+        "t083"
+      ],
+      "family": null
+    },
+    {
+      "id": "q369",
+      "query": "센트리 에러 추적",
+      "topicTerms": [
+        "센트리",
+        "에러"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t237"
+      ],
+      "partial": [
+        "t261"
+      ],
+      "hardNegatives": [
+        "t160",
+        "t137"
+      ],
+      "family": null
+    },
+    {
+      "id": "q370",
+      "query": "릴리즈노트 작성",
+      "topicTerms": [
+        "릴리즈노트"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t243"
+      ],
+      "partial": [
+        "t242"
+      ],
+      "hardNegatives": [
+        "t016",
+        "t090"
+      ],
+      "family": null
+    },
+    {
+      "id": "q371",
+      "query": "개발자계정 연회비",
+      "topicTerms": [
+        "개발자계정",
+        "연회비"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t233"
+      ],
+      "partial": [
+        "t001"
+      ],
+      "hardNegatives": [
+        "t066",
+        "t176"
+      ],
+      "family": null
+    },
+    {
+      "id": "q372",
+      "query": "세무사 상담 예약ㅇ",
+      "topicTerms": [
+        "세무사",
+        "상담"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t360"
+      ],
+      "partial": [
+        "t172"
+      ],
+      "hardNegatives": [
+        "t175",
+        "t146"
+      ],
+      "family": null
+    },
+    {
+      "id": "q373",
+      "query": "카드값 결제일 확잉",
+      "topicTerms": [
+        "카드값",
+        "결제일"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t361"
+      ],
+      "partial": [
+        "t170"
+      ],
+      "hardNegatives": [
+        "t181"
+      ],
+      "family": null
+    },
+    {
+      "id": "q374",
+      "query": "종합소득새 납부",
+      "topicTerms": [
+        "종합소득새",
+        "납부"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t363"
+      ],
+      "partial": [
+        "t172"
+      ],
+      "hardNegatives": [
+        "t181",
+        "t102"
+      ],
+      "family": null
+    },
+    {
+      "id": "q375",
+      "query": "월세이체",
+      "topicTerms": [
+        "월세이체"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t366"
+      ],
+      "partial": [
+        "t179"
+      ],
+      "hardNegatives": [
+        "t102",
+        "t120"
+      ],
+      "family": null
+    },
+    {
+      "id": "q376",
+      "query": "경조사비 이체",
+      "topicTerms": [
+        "경조사비"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t365"
+      ],
+      "partial": [
+        "t186"
+      ],
+      "hardNegatives": [
+        "t102",
+        "t182"
+      ],
+      "family": null
+    },
+    {
+      "id": "q377",
+      "query": "구독 갱신 확인ㅂ",
+      "topicTerms": [
+        "구독",
+        "갱신"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t367"
+      ],
+      "partial": [
+        "t176",
+        "t428"
+      ],
+      "hardNegatives": [
+        "t170",
+        "t066"
+      ],
+      "family": null
+    },
+    {
+      "id": "q378",
+      "query": "아빠 생신 식당 예야",
+      "topicTerms": [
+        "아빠",
+        "생신"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t372"
+      ],
+      "partial": [
+        "t371",
+        "t184"
+      ],
+      "hardNegatives": [
+        "t474",
+        "t085"
+      ],
+      "family": null
+    },
+    {
+      "id": "q379",
+      "query": "꽃바구니 주문",
+      "topicTerms": [
+        "꽃바구니"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t376",
+        "t191"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t185",
+        "t205"
+      ],
+      "family": null
+    },
+    {
+      "id": "q380",
+      "query": "할머니 안부전화 하ㄱ",
+      "topicTerms": [
+        "할머니",
+        "안부"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t387"
+      ],
+      "partial": [
+        "t187"
+      ],
+      "hardNegatives": [
+        "t196",
+        "t192"
+      ],
+      "family": null
+    },
+    {
+      "id": "q381",
+      "query": "유니버셜 입장권 예매",
+      "topicTerms": [
+        "유니버셜"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t405"
+      ],
+      "partial": [
+        "t213",
+        "t218"
+      ],
+      "hardNegatives": [
+        "t224",
+        "t225"
+      ],
+      "family": null
+    },
+    {
+      "id": "q382",
+      "query": "오사카 맛집 예약ㅇ",
+      "topicTerms": [
+        "오사카",
+        "맛집"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t407"
+      ],
+      "partial": [
+        "t222"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t085"
+      ],
+      "family": null
+    },
+    {
+      "id": "q383",
+      "query": "공항 택시 예약",
+      "topicTerms": [
+        "공항",
+        "택시"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t406"
+      ],
+      "partial": [
+        "t229"
+      ],
+      "hardNegatives": [
+        "t225",
+        "t126"
+      ],
+      "family": null
+    },
+    {
+      "id": "q384",
+      "query": "포켓와이파이 대여",
+      "topicTerms": [
+        "포켓와이파이"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t408"
+      ],
+      "partial": [
+        "t217"
+      ],
+      "hardNegatives": [
+        "t090",
+        "t117"
+      ],
+      "family": null
+    },
+    {
+      "id": "q385",
+      "query": "제주 항공권 예매",
+      "topicTerms": [
+        "제주",
+        "항공권"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t410"
+      ],
+      "partial": [
+        "t223"
+      ],
+      "hardNegatives": [
+        "t213",
+        "t225"
+      ],
+      "family": null
+    },
+    {
+      "id": "q386",
+      "query": "부산 숙소 예약ㅇ",
+      "topicTerms": [
+        "부산",
+        "숙소"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t409"
+      ],
+      "partial": [
+        "t225"
+      ],
+      "hardNegatives": [
+        "t214",
+        "t224"
+      ],
+      "family": null
+    },
+    {
+      "id": "q387",
+      "query": "가족 여행 숙소",
+      "topicTerms": [
+        "가족",
+        "여행",
+        "숙소"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t379"
+      ],
+      "partial": [
+        "t409"
+      ],
+      "hardNegatives": [
+        "t188",
+        "t184"
+      ],
+      "family": null
+    },
+    {
+      "id": "q388",
+      "query": "풋살 모임 일정짭기",
+      "topicTerms": [
+        "풋살"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t349"
+      ],
+      "partial": [
+        "t346"
+      ],
+      "hardNegatives": [
+        "t159"
+      ],
+      "family": null
+    },
+    {
+      "id": "q389",
+      "query": "산악회 등반 모임",
+      "topicTerms": [
+        "산악회"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t350"
+      ],
+      "partial": [
+        "t158"
+      ],
+      "hardNegatives": [
+        "t149",
+        "t156"
+      ],
+      "family": null
+    },
+    {
+      "id": "q390",
+      "query": "골프 래슨 예약",
+      "topicTerms": [
+        "골프",
+        "래슨"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t348"
+      ],
+      "partial": [
+        "t159"
+      ],
+      "hardNegatives": [
+        "t147",
+        "t150"
+      ],
+      "family": null
+    },
+    {
+      "id": "q391",
+      "query": "요가매트 사기",
+      "topicTerms": [
+        "요가매트"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t345"
+      ],
+      "partial": [
+        "t151"
+      ],
+      "hardNegatives": [
+        "t153"
+      ],
+      "family": null
+    },
+    {
+      "id": "q392",
+      "query": "인공눈물 살기",
+      "topicTerms": [
+        "인공눈물"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t334"
+      ],
+      "partial": [
+        "t142"
+      ],
+      "hardNegatives": [
+        "t132",
+        "t208"
+      ],
+      "family": null
+    },
+    {
+      "id": "q393",
+      "query": "유산균 주뭉",
+      "topicTerms": [
+        "유산균"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t335"
+      ],
+      "partial": [
+        "t136"
+      ],
+      "hardNegatives": [
+        "t161",
+        "t134"
+      ],
+      "family": null
+    },
+    {
+      "id": "q394",
+      "query": "도수치료 예약",
+      "topicTerms": [
+        "도수치료"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t332"
+      ],
+      "partial": [
+        "t140"
+      ],
+      "hardNegatives": [
+        "t129",
+        "t143"
+      ],
+      "family": null
+    },
+    {
+      "id": "q395",
+      "query": "코로나 백신 예약",
+      "topicTerms": [
+        "코로나",
+        "백신"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t333"
+      ],
+      "partial": [
+        "t135"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t134"
+      ],
+      "family": null
+    },
+    {
+      "id": "q396",
+      "query": "거북목 스트레칭",
+      "topicTerms": [
+        "거북목"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t344"
+      ],
+      "partial": [
+        "t154",
+        "t140"
+      ],
+      "hardNegatives": [
+        "t155",
+        "t163"
+      ],
+      "family": null
+    },
+    {
+      "id": "q397",
+      "query": "입주민 회의 참석",
+      "topicTerms": [
+        "입주민",
+        "회의"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t310"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t069",
+        "t073"
+      ],
+      "family": null
+    },
+    {
+      "id": "q398",
+      "query": "방충망 교체 업체",
+      "topicTerms": [
+        "방충망"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t309"
+      ],
+      "partial": [
+        "t097"
+      ],
+      "hardNegatives": [
+        "t096",
+        "t106"
+      ],
+      "family": null
+    },
+    {
+      "id": "q399",
+      "query": "소화기 점검",
+      "topicTerms": [
+        "소화기"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t307"
+      ],
+      "partial": [
+        "t107"
+      ],
+      "hardNegatives": [
+        "t095",
+        "t106"
+      ],
+      "family": null
+    },
+    {
+      "id": "q400",
+      "query": "신발장 정리",
+      "topicTerms": [
+        "신발장"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t308"
+      ],
+      "partial": [
+        "t094",
+        "t104"
+      ],
+      "hardNegatives": [
+        "t153",
+        "t204"
+      ],
+      "family": null
+    },
+    {
+      "id": "q401",
+      "query": "정기 청소 서비스 예야",
+      "topicTerms": [
+        "정기",
+        "청소"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t305"
+      ],
+      "partial": [
+        "t119"
+      ],
+      "hardNegatives": [
+        "t098",
+        "t095"
+      ],
+      "family": null
+    },
+    {
+      "id": "q402",
+      "query": "독서모임 책 정하기",
+      "topicTerms": [
+        "독서모임"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t464"
+      ],
+      "partial": [
+        "t465"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t056"
+      ],
+      "family": null
+    },
+    {
+      "id": "q403",
+      "query": "동창회 장소 정하기",
+      "topicTerms": [
+        "동창회",
+        "장소"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t469",
+        "t460"
+      ],
+      "partial": [
+        "t474"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t188"
+      ],
+      "family": null
+    },
+    {
+      "id": "q404",
+      "query": "사아할 물품",
+      "topicTerms": [
+        "사아할",
+        "물품"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t066",
+        "t108",
+        "t122",
+        "t136",
+        "t153",
+        "t161",
+        "t163",
+        "t185",
+        "t191",
+        "t197",
+        "t207",
+        "t208",
+        "t210",
+        "t211",
+        "t217",
+        "t268",
+        "t300",
+        "t301",
+        "t302",
+        "t317",
+        "t334",
+        "t335",
+        "t345",
+        "t371",
+        "t376",
+        "t389",
+        "t390",
+        "t391",
+        "t392",
+        "t393",
+        "t394",
+        "t395",
+        "t411",
+        "t424",
+        "t426",
+        "t427",
+        "t429",
+        "t431",
+        "t468"
+      ],
+      "partial": [
+        "t198",
+        "t199",
+        "t200",
+        "t206",
+        "t205"
+      ],
+      "hardNegatives": [
+        "t201",
+        "t105",
+        "t401"
+      ],
+      "family": null
+    },
+    {
+      "id": "q405",
+      "query": "회사 사람들이랑 하는 거 뭐있지",
+      "topicTerms": [
+        "회사",
+        "사람들"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t073",
+        "t085",
+        "t081",
+        "t078",
+        "t285",
+        "t286",
+        "t287",
+        "t288",
+        "t291",
+        "t292",
+        "t293",
+        "t294",
+        "t295",
+        "t296",
+        "t455",
+        "t456"
+      ],
+      "partial": [
+        "t289",
+        "t290",
+        "t069",
+        "t297",
+        "t298"
+      ],
+      "hardNegatives": [
+        "t188",
+        "t460",
+        "t459"
+      ],
+      "family": null
+    },
+    {
+      "id": "q406",
+      "query": "병원 가는 일",
+      "topicTerms": [
+        "병원"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t129",
+        "t130",
+        "t131",
+        "t132",
+        "t133",
+        "t135",
+        "t139",
+        "t140",
+        "t192",
+        "t332",
+        "t331",
+        "t333"
+      ],
+      "partial": [
+        "t134",
+        "t143",
+        "t144",
+        "t145",
+        "t343"
+      ],
+      "hardNegatives": [
+        "t146",
+        "t338"
+      ],
+      "family": null
+    },
+    {
+      "id": "q407",
+      "query": "게임 관련 할 거",
+      "topicTerms": [
+        "게임"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t423",
+        "t424",
+        "t425",
+        "t426",
+        "t427",
+        "t428",
+        "t429",
+        "t430",
+        "t433",
+        "t434",
+        "t435",
+        "t436",
+        "t437",
+        "t438",
+        "t439",
+        "t440",
+        "t441",
+        "t442",
+        "t449",
+        "t450",
+        "t451",
+        "t452",
+        "t453",
+        "t454",
+        "t456"
+      ],
+      "partial": [
+        "t431",
+        "t432",
+        "t443",
+        "t444"
+      ],
+      "hardNegatives": [
+        "t232",
+        "t445",
+        "t082"
+      ],
+      "family": null
+    },
+    {
+      "id": "q408",
+      "query": "돈 나가는 거들",
+      "topicTerms": [
+        "돈"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t066",
+        "t102",
+        "t152",
+        "t166",
+        "t181",
+        "t233",
+        "t264",
+        "t303",
+        "t323",
+        "t324",
+        "t338",
+        "t361",
+        "t362",
+        "t363",
+        "t364",
+        "t365",
+        "t366",
+        "t367",
+        "t382",
+        "t428",
+        "t458",
+        "t108",
+        "t122",
+        "t136",
+        "t153",
+        "t161",
+        "t163",
+        "t185",
+        "t191",
+        "t197",
+        "t207",
+        "t208",
+        "t210",
+        "t211",
+        "t217",
+        "t268",
+        "t300",
+        "t301",
+        "t302",
+        "t317",
+        "t334",
+        "t335",
+        "t345",
+        "t371",
+        "t376",
+        "t389",
+        "t390",
+        "t391",
+        "t392",
+        "t393",
+        "t394",
+        "t395",
+        "t411",
+        "t424",
+        "t426",
+        "t427",
+        "t429",
+        "t431",
+        "t468"
+      ],
+      "partial": [
+        "t168",
+        "t175",
+        "t120"
+      ],
+      "hardNegatives": [
+        "t074",
+        "t165"
+      ],
+      "family": null
+    },
+    {
+      "id": "q409",
+      "query": "친구들이랑 노는 거 뭐있지",
+      "topicTerms": [
+        "친구들"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t459",
+        "t460",
+        "t469",
+        "t481",
+        "t471",
+        "t467",
+        "t466",
+        "t482",
+        "t474",
+        "t475",
+        "t478",
+        "t430",
+        "t402",
+        "t412",
+        "t457"
+      ],
+      "partial": [
+        "t463",
+        "t472",
+        "t416"
+      ],
+      "hardNegatives": [
+        "t085",
+        "t380",
+        "t294"
+      ],
+      "family": null
+    },
+    {
+      "id": "q410",
+      "query": "읽을 거들",
+      "topicTerms": [
+        "읽"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t051",
+        "t059",
+        "t060",
+        "t064",
+        "t164",
+        "t272",
+        "t274",
+        "t284"
+      ],
+      "partial": [
+        "t058",
+        "t277",
+        "t281",
+        "t067",
+        "t049"
+      ],
+      "hardNegatives": [
+        "t055",
+        "t065",
+        "t212"
+      ],
+      "family": null
+    },
+    {
+      "id": "q411",
+      "query": "알림 관련된 거들",
+      "topicTerms": [
+        "알림"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t026",
+        "t012",
+        "t045",
+        "t251",
+        "t252",
+        "t253",
+        "t257",
+        "t249"
+      ],
+      "partial": [
+        "t036",
+        "t254",
+        "t250",
+        "t483",
+        "t433"
+      ],
+      "hardNegatives": [
+        "t138",
+        "t054"
+      ],
+      "family": null
+    },
+    {
+      "id": "q412",
+      "query": "사진 관련된 거들",
+      "topicTerms": [
+        "사진"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t189",
+        "t227",
+        "t447",
+        "t478",
+        "t485",
+        "t388",
+        "t384",
+        "t125"
+      ],
+      "partial": [
+        "t445"
+      ],
+      "hardNegatives": [
+        "t016",
+        "t017"
+      ],
+      "family": null
+    },
+    {
+      "id": "q413",
+      "query": "밥 약속들 뭐 있지",
+      "topicTerms": [
+        "밥",
+        "약속"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t085",
+        "t184",
+        "t292",
+        "t293",
+        "t474",
+        "t459",
+        "t481",
+        "t372",
+        "t380",
+        "t294",
+        "t407",
+        "t330"
+      ],
+      "partial": [
+        "t188",
+        "t482",
+        "t469",
+        "t460"
+      ],
+      "hardNegatives": [
+        "t203",
+        "t101"
+      ],
+      "family": null
+    },
+    {
+      "id": "q414",
+      "query": "수리나 설치 기사님 부르는 거들",
+      "topicTerms": [
+        "기사님"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t096",
+        "t107",
+        "t304",
+        "t320",
+        "t321",
+        "t117",
+        "t309"
+      ],
+      "partial": [
+        "t116",
+        "t305",
+        "t119",
+        "t106"
+      ],
+      "hardNegatives": [
+        "t095",
+        "t097"
+      ],
+      "family": null
+    },
+    {
+      "id": "q415",
+      "query": "스터디 관련 거들",
+      "topicTerms": [
+        "스터디"
+      ],
+      "category": "broad",
+      "relevant": [
+        "t056",
+        "t062",
+        "t267",
+        "t470",
+        "t279"
+      ],
+      "partial": [
+        "t464",
+        "t457",
+        "t276"
+      ],
+      "hardNegatives": [
+        "t053",
+        "t054"
+      ],
+      "family": null
+    },
+    {
+      "id": "q416",
+      "query": "신작 게임 발매일",
+      "topicTerms": [
+        "게임",
+        "발매일"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t423"
+      ],
+      "partial": [
+        "t441",
+        "t439"
+      ],
+      "hardNegatives": [
+        "t232",
+        "t082",
+        "t445"
+      ],
+      "family": "f16"
+    },
+    {
+      "id": "q417",
+      "query": "새 게임 언제 나오는지",
+      "topicTerms": [
+        "게임"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t423"
+      ],
+      "partial": [
+        "t441",
+        "t439"
+      ],
+      "hardNegatives": [
+        "t232",
+        "t082",
+        "t445"
+      ],
+      "family": "f16"
+    },
+    {
+      "id": "q418",
+      "query": "게임 출시일 확인하기",
+      "topicTerms": [
+        "게임",
+        "출시일"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t423"
+      ],
+      "partial": [
+        "t441",
+        "t439"
+      ],
+      "hardNegatives": [
+        "t232",
+        "t082",
+        "t445"
+      ],
+      "family": "f16"
+    },
+    {
+      "id": "q419",
+      "query": "곧 나올 게임 뭐있지",
+      "topicTerms": [
+        "게임"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t423"
+      ],
+      "partial": [
+        "t441",
+        "t439"
+      ],
+      "hardNegatives": [
+        "t232",
+        "t082",
+        "t445"
+      ],
+      "family": "f16"
+    },
+    {
+      "id": "q420",
+      "query": "게임 예약구매",
+      "topicTerms": [
+        "게임",
+        "예약구매"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t424"
+      ],
+      "partial": [
+        "t426",
+        "t423"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t189"
+      ],
+      "family": "f17"
+    },
+    {
+      "id": "q421",
+      "query": "특전 한정판 선주문",
+      "topicTerms": [
+        "특전",
+        "한정판"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t424"
+      ],
+      "partial": [
+        "t426",
+        "t423"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t189"
+      ],
+      "family": "f17"
+    },
+    {
+      "id": "q422",
+      "query": "preorder 게임",
+      "topicTerms": [
+        "preorder",
+        "게임"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t424"
+      ],
+      "partial": [
+        "t426",
+        "t423"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t189"
+      ],
+      "family": "f17"
+    },
+    {
+      "id": "q423",
+      "query": "게임 사전 예약 주문",
+      "topicTerms": [
+        "게임",
+        "사전 예약"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t424"
+      ],
+      "partial": [
+        "t426",
+        "t423"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t189"
+      ],
+      "family": "f17"
+    },
+    {
+      "id": "q424",
+      "query": "스팀 세일 확인",
+      "topicTerms": [
+        "스팀",
+        "세일"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t425"
+      ],
+      "partial": [
+        "t452",
+        "t449"
+      ],
+      "hardNegatives": [
+        "t202",
+        "t438"
+      ],
+      "family": "f18"
+    },
+    {
+      "id": "q425",
+      "query": "steam 할인 위시리스트",
+      "topicTerms": [
+        "steam",
+        "할인",
+        "위시리스트"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t425"
+      ],
+      "partial": [
+        "t452",
+        "t449"
+      ],
+      "hardNegatives": [
+        "t202",
+        "t438"
+      ],
+      "family": "f18"
+    },
+    {
+      "id": "q426",
+      "query": "스팀 할인 뭐 하는지",
+      "topicTerms": [
+        "스팀",
+        "할인"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t425"
+      ],
+      "partial": [
+        "t452",
+        "t449"
+      ],
+      "hardNegatives": [
+        "t202",
+        "t438"
+      ],
+      "family": "f18"
+    },
+    {
+      "id": "q427",
+      "query": "스팀 세일 뭐있지",
+      "topicTerms": [
+        "스팀",
+        "세일"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t425"
+      ],
+      "partial": [
+        "t452",
+        "t449"
+      ],
+      "hardNegatives": [
+        "t202",
+        "t438"
+      ],
+      "family": "f18"
+    },
+    {
+      "id": "q428",
+      "query": "팀 회식 장소 예약",
+      "topicTerms": [
+        "팀",
+        "회식",
+        "장소"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t085",
+        "t292",
+        "t293"
+      ],
+      "partial": [
+        "t474"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t188"
+      ],
+      "family": "f19"
+    },
+    {
+      "id": "q429",
+      "query": "회식 식당 잡기",
+      "topicTerms": [
+        "회식",
+        "식당"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t085",
+        "t292",
+        "t293"
+      ],
+      "partial": [
+        "t474"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t188"
+      ],
+      "family": "f19"
+    },
+    {
+      "id": "q430",
+      "query": "부서 회식 어디서 하지",
+      "topicTerms": [
+        "부서",
+        "회식"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t085",
+        "t292",
+        "t293"
+      ],
+      "partial": [
+        "t474"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t188"
+      ],
+      "family": "f19"
+    },
+    {
+      "id": "q431",
+      "query": "회식장소예약",
+      "topicTerms": [
+        "회식장소예약"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t085",
+        "t292",
+        "t293"
+      ],
+      "partial": [
+        "t474"
+      ],
+      "hardNegatives": [
+        "t184",
+        "t188"
+      ],
+      "family": "f19"
+    },
+    {
+      "id": "q432",
+      "query": "팀 워크숍 준비",
+      "topicTerms": [
+        "팀",
+        "워크숍"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t286",
+        "t287"
+      ],
+      "partial": [
+        "t295",
+        "t083"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t053"
+      ],
+      "family": "f20"
+    },
+    {
+      "id": "q433",
+      "query": "워크숍 일정 잡기",
+      "topicTerms": [
+        "워크숍",
+        "일정"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t286",
+        "t287"
+      ],
+      "partial": [
+        "t295",
+        "t083"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t053"
+      ],
+      "family": "f20"
+    },
+    {
+      "id": "q434",
+      "query": "workshop 발표 준비",
+      "topicTerms": [
+        "workshop",
+        "발표"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t286",
+        "t287"
+      ],
+      "partial": [
+        "t295",
+        "t083"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t053"
+      ],
+      "family": "f20"
+    },
+    {
+      "id": "q435",
+      "query": "워크숍 뭐 하기로 했더라",
+      "topicTerms": [
+        "워크숍"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t286",
+        "t287"
+      ],
+      "partial": [
+        "t295",
+        "t083"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t053"
+      ],
+      "family": "f20"
+    },
+    {
+      "id": "q436",
+      "query": "운영 서버 점검 공지",
+      "topicTerms": [
+        "서버",
+        "점검",
+        "공지"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t250"
+      ],
+      "partial": [
+        "t265"
+      ],
+      "hardNegatives": [
+        "t433",
+        "t045"
+      ],
+      "family": "f21"
+    },
+    {
+      "id": "q437",
+      "query": "서버 점검 안내문 올리기",
+      "topicTerms": [
+        "서버",
+        "점검",
+        "안내문"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t250"
+      ],
+      "partial": [
+        "t265"
+      ],
+      "hardNegatives": [
+        "t433",
+        "t045"
+      ],
+      "family": "f21"
+    },
+    {
+      "id": "q438",
+      "query": "maintenance 공지 작성",
+      "topicTerms": [
+        "maintenance",
+        "공지"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t250"
+      ],
+      "partial": [
+        "t265"
+      ],
+      "hardNegatives": [
+        "t433",
+        "t045"
+      ],
+      "family": "f21"
+    },
+    {
+      "id": "q439",
+      "query": "서버 점검 공지 올릴 거",
+      "topicTerms": [
+        "서버",
+        "점검",
+        "공지"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t250"
+      ],
+      "partial": [
+        "t265"
+      ],
+      "hardNegatives": [
+        "t433",
+        "t045"
+      ],
+      "family": "f21"
+    },
+    {
+      "id": "q440",
+      "query": "건전지 사기",
+      "topicTerms": [
+        "건전지"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t302"
+      ],
+      "partial": [
+        "t109"
+      ],
+      "hardNegatives": [
+        "t207",
+        "t392"
+      ],
+      "family": "f22"
+    },
+    {
+      "id": "q441",
+      "query": "AA 배터리 주문",
+      "topicTerms": [
+        "AA",
+        "배터리"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t302"
+      ],
+      "partial": [
+        "t109"
+      ],
+      "hardNegatives": [
+        "t207",
+        "t392"
+      ],
+      "family": "f22"
+    },
+    {
+      "id": "q442",
+      "query": "건전지 여분 사 놓기",
+      "topicTerms": [
+        "건전지"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t302"
+      ],
+      "partial": [
+        "t109"
+      ],
+      "hardNegatives": [
+        "t207",
+        "t392"
+      ],
+      "family": "f22"
+    },
+    {
+      "id": "q443",
+      "query": "베터리 사야 하는 거",
+      "topicTerms": [
+        "베터리"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t302"
+      ],
+      "partial": [
+        "t109"
+      ],
+      "hardNegatives": [
+        "t207",
+        "t392"
+      ],
+      "family": "f22"
+    },
+    {
+      "id": "q444",
+      "query": "아빠 생신 선물",
+      "topicTerms": [
+        "아빠",
+        "생신",
+        "선물"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t371"
+      ],
+      "partial": [
+        "t372",
+        "t376"
+      ],
+      "hardNegatives": [
+        "t183",
+        "t205"
+      ],
+      "family": "f23"
+    },
+    {
+      "id": "q445",
+      "query": "아버지 생신 뭐 사드리지",
+      "topicTerms": [
+        "아버지",
+        "생신"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t371"
+      ],
+      "partial": [
+        "t372",
+        "t376"
+      ],
+      "hardNegatives": [
+        "t183",
+        "t205"
+      ],
+      "family": "f23"
+    },
+    {
+      "id": "q446",
+      "query": "dad birthday gift",
+      "topicTerms": [
+        "dad",
+        "birthday",
+        "gift"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t371"
+      ],
+      "partial": [
+        "t372",
+        "t376"
+      ],
+      "hardNegatives": [
+        "t183",
+        "t205"
+      ],
+      "family": "f23"
+    },
+    {
+      "id": "q447",
+      "query": "아빠 생일 선물 정한거",
+      "topicTerms": [
+        "아빠",
+        "생일"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t371"
+      ],
+      "partial": [
+        "t372",
+        "t376"
+      ],
+      "hardNegatives": [
+        "t183",
+        "t205"
+      ],
+      "family": "f23"
+    },
+    {
+      "id": "q448",
+      "query": "JWT 만료 점검",
+      "topicTerms": [
+        "JWT",
+        "만료"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t234"
+      ],
+      "partial": [
+        "t013"
+      ],
+      "hardNegatives": [
+        "t041",
+        "t010"
+      ],
+      "family": "f24"
+    },
+    {
+      "id": "q449",
+      "query": "토큰 만료시간 확인",
+      "topicTerms": [
+        "토큰",
+        "만료시간"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t234"
+      ],
+      "partial": [
+        "t013"
+      ],
+      "hardNegatives": [
+        "t041",
+        "t010"
+      ],
+      "family": "f24"
+    },
+    {
+      "id": "q450",
+      "query": "jwt expiry 설정",
+      "topicTerms": [
+        "jwt",
+        "expiry"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t234"
+      ],
+      "partial": [
+        "t013"
+      ],
+      "hardNegatives": [
+        "t041",
+        "t010"
+      ],
+      "family": "f24"
+    },
+    {
+      "id": "q451",
+      "query": "제이더블유티 유효기간",
+      "topicTerms": [
+        "제이더블유티"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t234"
+      ],
+      "partial": [
+        "t013"
+      ],
+      "hardNegatives": [
+        "t041",
+        "t010"
+      ],
+      "family": "f24"
+    },
+    {
+      "id": "q452",
+      "query": "친척 모임 날짜",
+      "topicTerms": [
+        "친척",
+        "모임"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t375"
+      ],
+      "partial": [
+        "t188",
+        "t380"
+      ],
+      "hardNegatives": [
+        "t085",
+        "t471"
+      ],
+      "family": "f25"
+    },
+    {
+      "id": "q453",
+      "query": "친척들 언제 모이지",
+      "topicTerms": [
+        "친척"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t375"
+      ],
+      "partial": [
+        "t188",
+        "t380"
+      ],
+      "hardNegatives": [
+        "t085",
+        "t471"
+      ],
+      "family": "f25"
+    },
+    {
+      "id": "q454",
+      "query": "family reunion 일정",
+      "topicTerms": [
+        "family reunion"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t375"
+      ],
+      "partial": [
+        "t188",
+        "t380"
+      ],
+      "hardNegatives": [
+        "t085",
+        "t471"
+      ],
+      "family": "f25"
+    },
+    {
+      "id": "q455",
+      "query": "친척모임 날짜잡기",
+      "topicTerms": [
+        "친척모임"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t375"
+      ],
+      "partial": [
+        "t188",
+        "t380"
+      ],
+      "hardNegatives": [
+        "t085",
+        "t471"
+      ],
+      "family": "f25"
     }
   ]
 }

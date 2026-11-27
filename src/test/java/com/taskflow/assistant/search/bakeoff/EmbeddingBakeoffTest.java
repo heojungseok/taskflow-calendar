@@ -27,6 +27,7 @@ import tools.jackson.databind.ObjectMapper;
 class EmbeddingBakeoffTest {
 
     private static final Path OUT = Path.of("build/embedding-bakeoff");
+    private static final String DEFAULT_LOAD_MODEL = "hf.co/unsloth/gemma-4-E2B-it-GGUF:Q4_K_M";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -47,6 +48,20 @@ class EmbeddingBakeoffTest {
         }
 
         BakeoffReport report = new BakeoffReport(fixture);
+        int latencyRounds = Integer.parseInt(env("EMBEDDING_BAKEOFF_LATENCY_ROUNDS", "3"));
+        String loadModel = env("EMBEDDING_BAKEOFF_LOAD_MODEL", DEFAULT_LOAD_MODEL);
+        if (!installed.contains("\"" + loadModel)) {
+            loadModel = "";
+        }
+        LatencyProbe probe = new LatencyProbe(ollamaBaseUrl);
+        report.latencyNote("질의 %d개 × %d회, 생성 부하 모델: %s, 측정 기기: %s"
+                .formatted(
+                        fixture.queries().size(),
+                        latencyRounds,
+                        loadModel.isBlank() ? "없음" : loadModel,
+                        env(
+                                "EMBEDDING_BAKEOFF_MACHINE",
+                                System.getProperty("os.name") + " " + System.getProperty("os.arch"))));
         for (EmbeddingCandidate candidate : EmbeddingCandidate.select(System.getenv("EMBEDDING_BAKEOFF_CANDIDATES"))) {
             if (!candidate.gemini() && !installed.contains("\"" + candidate.ollamaModel())) {
                 report.skip(candidate, "Ollama에 모델이 없음(자동으로 받지 않는다)");
@@ -59,6 +74,20 @@ class EmbeddingBakeoffTest {
             }
             System.out.println("[embedding-bakeoff] " + candidate.name());
             EmbeddingVectors.Timed timed = vectors.embed(candidate, documents, queryTexts);
+            if (!candidate.gemini() && latencyRounds > 0) {
+                report.latency(
+                        candidate,
+                        probe.measure(
+                                vectors.model(candidate),
+                                fixture.queries().stream()
+                                        .map(query -> candidate.queryPrefix() + query.productionText())
+                                        .toList(),
+                                documents.stream()
+                                        .map(document -> candidate.documentPrefix() + document)
+                                        .toList(),
+                                latencyRounds,
+                                loadModel));
+            }
             vectors.unload(candidate);
             report.add(
                     candidate,

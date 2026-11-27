@@ -98,7 +98,7 @@ final class EmbeddingVectors {
         }
     }
 
-    private EmbeddingModel model(EmbeddingCandidate candidate) {
+    EmbeddingModel model(EmbeddingCandidate candidate) {
         if (candidate.gemini()) {
             if (geminiApiKey.isBlank()) {
                 throw new IllegalStateException("EMBEDDING_BAKEOFF_GEMINI_API_KEY is required for " + candidate.name());
