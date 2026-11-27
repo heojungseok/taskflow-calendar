@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.engine.jdbc.spi.SQLExceptionLogging;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
@@ -132,14 +133,16 @@ class GrafanaProvisioningConfigTest {
     }
 
     @Test
-    void backendErrorAlertMatchesTheSyslogLevelPrefixAndIgnoresLokiOutages() throws Exception {
+    void backendErrorAlertCountsErrorsAndHibernateJdbcErrorWarningsAndIgnoresLokiOutages() throws Exception {
         String errorRule = rule("taskflow-backend-error-logs");
         String logback = Files.readString(Path.of("src/main/resources/logback-spring.xml"));
+        String jdbcErrorLogger = SQLExceptionLogging.ERROR_NAME;
 
         assertThat(logback).contains("<suffixPattern>backend: %-5level %logger{36} : %msg");
+        assertThat(jdbcErrorLogger).hasSizeLessThan(36);
         assertThat(errorRule)
-                .contains("summary: Backend ERROR 로그 발생")
-                .contains("|~ \"^ERROR \" [5m]")
+                .contains("summary: Backend ERROR·DB 오류 로그 발생")
+                .contains("|~ `^(ERROR |WARN +" + jdbcErrorLogger.replace(".", "\\.") + " )` [5m]")
                 .contains("execErrState: OK")
                 .doesNotContain("execErrState: Error");
     }

@@ -569,15 +569,15 @@ groups:
           service: backend
           severity: warning
         annotations:
-          summary: Backend ERROR 로그 발생
-          impact: 최근 5분 동안 Backend가 ERROR 로그를 남겼습니다. 사용자 요청이나 Worker가 실패하고 있을 수 있습니다.
-          action: 'Grafana Explore에서 {service="backend"} |~ "^ERROR " 로 메시지를 확인하고, 요청 중 오류면 메시지 뒤 traceId= 값으로 {service="backend"} |= "traceId=<값>" 을 검색해 같은 요청의 로그를 보세요. 예외 원인은 같은 줄의 " | " 뒤에 있습니다. Loki 장애는 로그 수집 끊김 알림이 알립니다.'
+          summary: Backend ERROR·DB 오류 로그 발생
+          impact: 최근 5분 동안 Backend가 ERROR 로그나 DB(JDBC) 오류 로그를 남겼습니다. 사용자 요청이나 Worker가 실패하고 있을 수 있습니다.
+          action: 'Grafana Explore에서 {service="backend"} |~ "^(ERROR |WARN +org.hibernate.orm.jdbc.error )" 로 메시지를 확인하고, 요청 중 오류면 메시지 뒤 traceId= 값으로 {service="backend"} |= "traceId=<값>" 을 검색해 같은 요청의 로그를 보세요. 예외 원인은 같은 줄의 " | " 뒤에 있습니다. Loki 장애는 로그 수집 끊김 알림이 알립니다.'
           check_url: /api/auth/session
         data:
           - refId: A
             datasourceUid: loki
             relativeTimeRange: {from: 300, to: 0}
-            model: {refId: A, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ "^ERROR " [5m])) or vector(0)'}
+            model: {refId: A, queryType: instant, expr: 'sum(count_over_time({service="backend"} |~ `^(ERROR |WARN +org\.hibernate\.orm\.jdbc\.error )` [5m])) or vector(0)'}
           - refId: B
             datasourceUid: __expr__
             model: {refId: B, type: reduce, expression: A, reducer: last}

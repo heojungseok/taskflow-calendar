@@ -204,7 +204,7 @@ Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림�
 | gemini repeated failures | 10분간 Gemini 호출 실패 3건 초과 (기능별) | warning |
 | local llm repeated failures | 10분간 로컬 모델(Ollama) 호출 실패 3건 초과 (기능별) | warning |
 | backend log pipeline silent | 15분간 Loki에 Backend heartbeat 0건 (데이터가 없어도 발생) | warning |
-| backend error logs | 5분간 Backend ERROR 로그 1건 이상 | warning |
+| backend error logs | 5분간 Backend ERROR 로그 또는 DB(JDBC) 오류 WARN 1건 이상 | warning |
 
 </details>
 
