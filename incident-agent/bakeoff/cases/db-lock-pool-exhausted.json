@@ -1,0 +1,1554 @@
+{
+  "name": "db-lock-pool-exhausted",
+  "origin": "재현: 긴 트랜잭션이 tasks 테이블을 90초 잠가 요청이 연결을 붙잡고 연결 풀이 고갈됐다(부하 20 VU)",
+  "alert": {
+    "name": "backend error logs",
+    "service": "backend",
+    "starts_at_unix": 1795706289
+  },
+  "now_unix": 1795706409,
+  "logs": [
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=9dbefac1aeb0fb78"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=8c2202dc23532102"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=526368533e7de2ac"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=dee7f5af08ccf893"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6) traceId=8c2202dc23532102"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=42f743d6948de096"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6) traceId=526368533e7de2ac"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=16240d327f84c078"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6) traceId=dee7f5af08ccf893"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=885c400c1db48d30"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30017ms (total=10, active=10, idle=0, waiting=6) traceId=42f743d6948de096"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6) traceId=16240d327f84c078"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=56e2253b1c600996"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6) traceId=885c400c1db48d30"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30020ms (total=10, active=10, idle=0, waiting=6) traceId=56e2253b1c600996"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=bf19bb2c0182b6a9"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30022ms (total=10, active=10, idle=0, waiting=6) traceId=bf19bb2c0182b6a9"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=ca5d299f5fdaa510"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=915ea3416708eba3"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6) traceId=ca5d299f5fdaa510"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6) traceId=915ea3416708eba3"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30017ms (total=10, active=10, idle=0, waiting=6) traceId=9dbefac1aeb0fb78"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30018ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30017ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30017ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30019ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30017ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30017ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30020ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30020ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706260,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30022ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30022ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706263,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706263,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30004ms (total=10, active=10, idle=0, waiting=16)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706263,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706268,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706268,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30008ms (total=10, active=10, idle=0, waiting=16)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706268,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706273,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706273,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=16)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706273,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706278,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706278,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30009ms (total=10, active=10, idle=0, waiting=16)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706278,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706283,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706283,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30007ms (total=10, active=10, idle=0, waiting=16)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706283,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706288,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706288,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30006ms (total=10, active=10, idle=0, waiting=16)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706288,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=df6b29b48c5a6c43"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=dfa640047eebd271"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=6cc0ebaa4d555ad3"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=5f683006f8187a39"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30004ms (total=10, active=10, idle=0, waiting=10) traceId=5f683006f8187a39"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) traceId=dfa640047eebd271"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=6863d35a4b47c686"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=26fa5f8b2ef1239e"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) traceId=6863d35a4b47c686"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) traceId=26fa5f8b2ef1239e"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=14a6b46cbe6fa521"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=11) traceId=14a6b46cbe6fa521"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=2b115412581522ee"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=7) traceId=2b115412581522ee"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=7c7f7c12efe18057"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=7) traceId=7c7f7c12efe18057"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=d29b0cf738611d35"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30004ms (total=10, active=10, idle=0, waiting=9) traceId=d29b0cf738611d35"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null traceId=3e646965daf110cb"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=6) traceId=df6b29b48c5a6c43"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) traceId=6cc0ebaa4d555ad3"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) traceId=3e646965daf110cb"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=7) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=7)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlE"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlE"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlE"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30004ms (total=10, active=10, idle=0, waiting=9) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30004ms (total=10, active=10, idle=0, waiting=9)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlE"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30004ms (total=10, active=10, idle=0, waiting=10) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30004ms (total=10, active=10, idle=0, waiting=10)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlE"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=11) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=11)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlE"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=6) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=6)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=12)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlE"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706290,
+      "text": "ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception | java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=7) | at com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:714) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:184) | at com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:142) | at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:127) | at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:126) | at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:126) | at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:156) | at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:164) | at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:421) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:532) | at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405) | Wrapped by: org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection [HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=7)] [n/a] | at org.hibernate.exception.internal.SQLExceptionTypeDelegate.convert(SQLExceptionTypeDelegate.java:51) | at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) | at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExc"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706293,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706293,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30005ms (total=10, active=10, idle=0, waiting=26)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706293,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706298,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706298,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30006ms (total=10, active=10, idle=0, waiting=26)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706298,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706303,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706303,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30006ms (total=10, active=10, idle=0, waiting=26)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706303,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706308,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706308,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30006ms (total=10, active=10, idle=0, waiting=26)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706308,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706313,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706313,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30006ms (total=10, active=10, idle=0, waiting=26)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706313,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706318,
+      "text": "WARN  o.h.e.jdbc.spi.SqlExceptionHelper : SQL Error: 0, SQLState: null"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706318,
+      "text": "ERROR o.h.e.jdbc.spi.SqlExceptionHelper : HikariPool-1 - Connection is not available, request timed out after 30003ms (total=10, active=10, idle=0, waiting=26)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795706318,
+      "text": "WARN  c.t.c.worker.OutboxBacklogGauge : Outbox backlog gauge query failed. errorType=DataAccessResourceFailureException"
+    }
+  ],
+  "baseline_logs": [
+    {
+      "service": "backend",
+      "at_unix": 1795704339,
+      "text": "WARN  org.hibernate.orm.deprecation : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)"
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795704340,
+      "text": "ERROR c.t.a.s.TaskSearchEmbeddingStore : Task search embedding schema missing. Run the deployment migration first."
+    },
+    {
+      "service": "backend",
+      "at_unix": 1795704340,
+      "text": "WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning"
+    }
+  ],
+  "commits": [],
+  "metrics": [
+    {
+      "name": "backend_up",
+      "baseline": 1,
+      "floor": 1.0,
+      "points": [
+        [
+          1795705389,
+          1
+        ],
+        [
+          1795705419,
+          1
+        ],
+        [
+          1795705449,
+          1
+        ],
+        [
+          1795705479,
+          1
+        ],
+        [
+          1795705509,
+          1
+        ],
+        [
+          1795705539,
+          1
+        ],
+        [
+          1795705569,
+          1
+        ],
+        [
+          1795705599,
+          1
+        ],
+        [
+          1795705629,
+          1
+        ],
+        [
+          1795705659,
+          1
+        ],
+        [
+          1795705689,
+          1
+        ],
+        [
+          1795705719,
+          1
+        ],
+        [
+          1795705749,
+          1
+        ],
+        [
+          1795705779,
+          1
+        ],
+        [
+          1795705809,
+          1
+        ],
+        [
+          1795705839,
+          1
+        ],
+        [
+          1795705869,
+          1
+        ],
+        [
+          1795705899,
+          1
+        ],
+        [
+          1795705929,
+          1
+        ],
+        [
+          1795705959,
+          1
+        ],
+        [
+          1795705989,
+          1
+        ],
+        [
+          1795706019,
+          1
+        ],
+        [
+          1795706049,
+          1
+        ],
+        [
+          1795706079,
+          1
+        ],
+        [
+          1795706109,
+          1
+        ],
+        [
+          1795706139,
+          1
+        ],
+        [
+          1795706169,
+          1
+        ],
+        [
+          1795706199,
+          1
+        ],
+        [
+          1795706229,
+          1
+        ],
+        [
+          1795706259,
+          0
+        ],
+        [
+          1795706289,
+          0
+        ],
+        [
+          1795706319,
+          1
+        ],
+        [
+          1795706349,
+          1
+        ],
+        [
+          1795706379,
+          1
+        ],
+        [
+          1795706409,
+          1
+        ]
+      ]
+    },
+    {
+      "name": "outbox_oldest_age_seconds",
+      "baseline": 0,
+      "floor": 60.0,
+      "points": [
+        [
+          1795705389,
+          0
+        ],
+        [
+          1795705419,
+          0
+        ],
+        [
+          1795705449,
+          0
+        ],
+        [
+          1795705479,
+          0
+        ],
+        [
+          1795705509,
+          0
+        ],
+        [
+          1795705539,
+          0
+        ],
+        [
+          1795705569,
+          0
+        ],
+        [
+          1795705599,
+          0
+        ],
+        [
+          1795705629,
+          0
+        ],
+        [
+          1795705659,
+          0
+        ],
+        [
+          1795705689,
+          0
+        ],
+        [
+          1795705719,
+          0
+        ],
+        [
+          1795705749,
+          0
+        ],
+        [
+          1795705779,
+          0
+        ],
+        [
+          1795705809,
+          0
+        ],
+        [
+          1795705839,
+          0
+        ],
+        [
+          1795705869,
+          0
+        ],
+        [
+          1795705899,
+          0
+        ],
+        [
+          1795705929,
+          0
+        ],
+        [
+          1795705959,
+          0
+        ],
+        [
+          1795705989,
+          0
+        ],
+        [
+          1795706019,
+          0
+        ],
+        [
+          1795706049,
+          0
+        ],
+        [
+          1795706079,
+          0
+        ],
+        [
+          1795706109,
+          0
+        ],
+        [
+          1795706139,
+          0
+        ],
+        [
+          1795706169,
+          0
+        ],
+        [
+          1795706199,
+          0
+        ],
+        [
+          1795706229,
+          0
+        ],
+        [
+          1795706319,
+          0
+        ],
+        [
+          1795706349,
+          0
+        ],
+        [
+          1795706379,
+          0
+        ],
+        [
+          1795706409,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "pg_connection_ratio",
+      "baseline": 0.11,
+      "floor": 0.1,
+      "points": [
+        [
+          1795705389,
+          0.11
+        ],
+        [
+          1795705419,
+          0.11
+        ],
+        [
+          1795705449,
+          0.11
+        ],
+        [
+          1795705479,
+          0.11
+        ],
+        [
+          1795705509,
+          0.11
+        ],
+        [
+          1795705539,
+          0.11
+        ],
+        [
+          1795705569,
+          0.11
+        ],
+        [
+          1795705599,
+          0.11
+        ],
+        [
+          1795705629,
+          0.11
+        ],
+        [
+          1795705659,
+          0.11
+        ],
+        [
+          1795705689,
+          0.11
+        ],
+        [
+          1795705719,
+          0.11
+        ],
+        [
+          1795705749,
+          0.11
+        ],
+        [
+          1795705779,
+          0.11
+        ],
+        [
+          1795705809,
+          0.11
+        ],
+        [
+          1795705839,
+          0.61
+        ],
+        [
+          1795705869,
+          0.11
+        ],
+        [
+          1795705899,
+          0.11
+        ],
+        [
+          1795705929,
+          0.11
+        ],
+        [
+          1795705959,
+          0.11
+        ],
+        [
+          1795705989,
+          0.11
+        ],
+        [
+          1795706019,
+          0.11
+        ],
+        [
+          1795706049,
+          0.11
+        ],
+        [
+          1795706079,
+          0.11
+        ],
+        [
+          1795706109,
+          0.11
+        ],
+        [
+          1795706139,
+          0.11
+        ],
+        [
+          1795706169,
+          0.11
+        ],
+        [
+          1795706199,
+          0.11
+        ],
+        [
+          1795706229,
+          0.11
+        ],
+        [
+          1795706319,
+          0.2
+        ],
+        [
+          1795706349,
+          0.11
+        ],
+        [
+          1795706379,
+          0.11
+        ],
+        [
+          1795706409,
+          0.11
+        ]
+      ]
+    },
+    {
+      "name": "demo_cleanup_failures_15m",
+      "baseline": 0,
+      "floor": 1.0,
+      "points": [
+        [
+          1795705389,
+          0
+        ],
+        [
+          1795705419,
+          0
+        ],
+        [
+          1795705449,
+          0
+        ],
+        [
+          1795705479,
+          0
+        ],
+        [
+          1795705509,
+          0
+        ],
+        [
+          1795705539,
+          0
+        ],
+        [
+          1795705569,
+          0
+        ],
+        [
+          1795705599,
+          0
+        ],
+        [
+          1795705629,
+          0
+        ],
+        [
+          1795705659,
+          0
+        ],
+        [
+          1795705689,
+          0
+        ],
+        [
+          1795705719,
+          0
+        ],
+        [
+          1795705749,
+          0
+        ],
+        [
+          1795705779,
+          0
+        ],
+        [
+          1795705809,
+          0
+        ],
+        [
+          1795705839,
+          0
+        ],
+        [
+          1795705869,
+          0
+        ],
+        [
+          1795705899,
+          0
+        ],
+        [
+          1795705929,
+          0
+        ],
+        [
+          1795705959,
+          0
+        ],
+        [
+          1795705989,
+          0
+        ],
+        [
+          1795706019,
+          0
+        ],
+        [
+          1795706049,
+          0
+        ],
+        [
+          1795706079,
+          0
+        ],
+        [
+          1795706109,
+          0
+        ],
+        [
+          1795706139,
+          0
+        ],
+        [
+          1795706169,
+          0
+        ],
+        [
+          1795706199,
+          0
+        ],
+        [
+          1795706229,
+          0
+        ],
+        [
+          1795706259,
+          0
+        ],
+        [
+          1795706289,
+          0
+        ],
+        [
+          1795706319,
+          0
+        ],
+        [
+          1795706349,
+          0
+        ],
+        [
+          1795706379,
+          0
+        ],
+        [
+          1795706409,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "http_p95_seconds",
+      "baseline": 0.010455647883225108,
+      "floor": 1.0,
+      "points": [
+        [
+          1795705389,
+          0.022338530669679987
+        ],
+        [
+          1795705419,
+          0.022351436315276644
+        ],
+        [
+          1795705449,
+          0.02256233225337836
+        ],
+        [
+          1795705479,
+          0.020382845539473685
+        ],
+        [
+          1795705509,
+          0.01959244028571428
+        ],
+        [
+          1795705539,
+          0.014392217176470578
+        ],
+        [
+          1795705569,
+          0.011077262769230769
+        ],
+        [
+          1795705599,
+          0.010485758499999996
+        ],
+        [
+          1795705629,
+          0.010651782993749996
+        ],
+        [
+          1795705659,
+          0.010685487214285708
+        ],
+        [
+          1795705689,
+          0.010802661393333331
+        ],
+        [
+          1795705719,
+          0.010455647883225108
+        ],
+        [
+          1795705749,
+          0.010455647883225108
+        ],
+        [
+          1795705779,
+          0.010455647883225108
+        ],
+        [
+          1795705809,
+          0.010455647883225108
+        ],
+        [
+          1795705839,
+          0.010455647883225108
+        ],
+        [
+          1795705869,
+          0.010455647883225108
+        ],
+        [
+          1795705899,
+          0.010455647883225108
+        ],
+        [
+          1795705929,
+          0.010455647883225108
+        ],
+        [
+          1795705959,
+          0.010455647883225108
+        ],
+        [
+          1795705989,
+          0.010455647883225108
+        ],
+        [
+          1795706019,
+          0.010455647883225108
+        ],
+        [
+          1795706049,
+          0.010455647883225108
+        ],
+        [
+          1795706079,
+          0.011001308243749999
+        ],
+        [
+          1795706109,
+          0.012834568179999992
+        ],
+        [
+          1795706139,
+          0.013747994166666673
+        ],
+        [
+          1795706169,
+          0.011175488326666663
+        ],
+        [
+          1795706199,
+          0.014260631199999986
+        ],
+        [
+          1795706229,
+          0.036210823374999916
+        ],
+        [
+          1795706259,
+          0.03756232124999994
+        ],
+        [
+          1795706289,
+          0.03896042249999997
+        ],
+        [
+          1795706319,
+          0.10551004671666658
+        ],
+        [
+          1795706349,
+          0.05200936749999986
+        ],
+        [
+          1795706379,
+          0.05301600040000005
+        ],
+        [
+          1795706409,
+          0.06375341919999933
+        ]
+      ]
+    },
+    {
+      "name": "hikari_pending",
+      "baseline": 0,
+      "floor": 1.0,
+      "points": [
+        [
+          1795705389,
+          0
+        ],
+        [
+          1795705419,
+          0
+        ],
+        [
+          1795705449,
+          0
+        ],
+        [
+          1795705479,
+          0
+        ],
+        [
+          1795705509,
+          0
+        ],
+        [
+          1795705539,
+          0
+        ],
+        [
+          1795705569,
+          0
+        ],
+        [
+          1795705599,
+          0
+        ],
+        [
+          1795705629,
+          0
+        ],
+        [
+          1795705659,
+          0
+        ],
+        [
+          1795705689,
+          0
+        ],
+        [
+          1795705719,
+          0
+        ],
+        [
+          1795705749,
+          0
+        ],
+        [
+          1795705779,
+          0
+        ],
+        [
+          1795705809,
+          0
+        ],
+        [
+          1795705839,
+          0
+        ],
+        [
+          1795705869,
+          0
+        ],
+        [
+          1795705899,
+          0
+        ],
+        [
+          1795705929,
+          0
+        ],
+        [
+          1795705959,
+          0
+        ],
+        [
+          1795705989,
+          0
+        ],
+        [
+          1795706019,
+          0
+        ],
+        [
+          1795706049,
+          0
+        ],
+        [
+          1795706079,
+          0
+        ],
+        [
+          1795706109,
+          0
+        ],
+        [
+          1795706139,
+          0
+        ],
+        [
+          1795706169,
+          0
+        ],
+        [
+          1795706199,
+          0
+        ],
+        [
+          1795706229,
+          0
+        ],
+        [
+          1795706319,
+          26
+        ],
+        [
+          1795706349,
+          0
+        ],
+        [
+          1795706379,
+          0
+        ],
+        [
+          1795706409,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "jvm_heap_ratio",
+      "baseline": 0.0322271511108741,
+      "floor": 0.8,
+      "points": [
+        [
+          1795705389,
+          0.0322271511108741
+        ],
+        [
+          1795705419,
+          0.0322271511108741
+        ],
+        [
+          1795705449,
+          0.0371026639068046
+        ],
+        [
+          1795705479,
+          0.04247375765930571
+        ],
+        [
+          1795705509,
+          0.0322271511108741
+        ],
+        [
+          1795705539,
+          0.0322271511108741
+        ],
+        [
+          1795705569,
+          0.0322271511108741
+        ],
+        [
+          1795705599,
+          0.03516141699401728
+        ],
+        [
+          1795705629,
+          0.04053251074651839
+        ],
+        [
+          1795705659,
+          0.0322271511108741
+        ],
+        [
+          1795705689,
+          0.0322271511108741
+        ],
+        [
+          1795705719,
+          0.0322271511108741
+        ],
+        [
+          1795705749,
+          0.03369607964237038
+        ],
+        [
+          1795705779,
+          0.03906717339487149
+        ],
+        [
+          1795705809,
+          0.0322271511108741
+        ],
+        [
+          1795705839,
+          0.0322271511108741
+        ],
+        [
+          1795705869,
+          0.0322271511108741
+        ],
+        [
+          1795705899,
+          0.03274672107433282
+        ],
+        [
+          1795705929,
+          0.03811781482683393
+        ],
+        [
+          1795705959,
+          0.04348890857933504
+        ],
+        [
+          1795705989,
+          0.0322271511108741
+        ],
+        [
+          1795706019,
+          0.0322271511108741
+        ],
+        [
+          1795706049,
+          0.0322271511108741
+        ],
+        [
+          1795706079,
+          0.03677264230175532
+        ],
+        [
+          1795706109,
+          0.042143736054256434
+        ],
+        [
+          1795706139,
+          0.0322271511108741
+        ],
+        [
+          1795706169,
+          0.0322271511108741
+        ],
+        [
+          1795706199,
+          0.0322271511108741
+        ],
+        [
+          1795706229,
+          0.0322271511108741
+        ],
+        [
+          1795706319,
+          0.04419270346136424
+        ],
+        [
+          1795706349,
+          0.03997363151981199
+        ],
+        [
+          1795706379,
+          0.03997363151981199
+        ],
+        [
+          1795706409,
+          0.03997363151981199
+        ]
+      ]
+    }
+  ],
+  "answer": {
+    "suspect": {
+      "new_error": "o.h.e.jdbc.spi.SqlExceptionHelper"
+    },
+    "line": "Connection is not available",
+    "keywords": [
+      "풀",
+      "pool",
+      "hikari",
+      "커넥션",
+      "연결",
+      "잠금",
+      "lock"
+    ]
+  }
+}

@@ -1,9 +1,11 @@
+mod cases;
 mod report;
 mod run;
 mod scenarios;
 mod score;
 
 use std::env;
+use std::path::Path;
 use std::process::ExitCode;
 
 const DEFAULT_URL: &str = "http://127.0.0.1:11434";
@@ -22,7 +24,14 @@ fn main() -> ExitCode {
     } else {
         args
     };
-    let scenarios = scenarios::all();
+    let mut scenarios = scenarios::all();
+    match cases::load(Path::new(cases::CASES_DIR)) {
+        Ok(cases) => scenarios.extend(cases),
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    }
     let results: Vec<run::ModelRun> = models
         .iter()
         .map(|model| {
