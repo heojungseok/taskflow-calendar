@@ -34,7 +34,13 @@ final class SearchIntentRequest {
                사람/장소/행동 조건이 함께 드러나는 복합 질의만 RELATIONAL_SEARCH로 두고, 애매하면 TOPIC_SEARCH를 우선하라.
                막연한 탐색 질의만 BROAD_SEARCH다.
                relationPolicy는 같은 일정 안에서 조건이 함께 성립해야 함이 분명할 때만 PREFER_ALL로 두고, 그 외에는 ALLOW_PARTIAL로 둬라.
-               suggestedQueries는 질의가 애매할 때 더 구체적인 재검색 문구를 최대 3개 작성하라.\
+               suggestedQueries는 질의가 애매할 때 더 구체적인 재검색 문구를 최대 3개 작성하라.
+               아래 필드는 질의에 해당 표현이 있을 때만 값을 정하고, 없으면 기본값을 둬라.
+               timeIntent(기본 unspecified): today=오늘, this_week=이번 주(까지·안에 포함), this_month=이번 달(말까지 포함), upcoming=곧·다가오는·앞으로, recent=최근·요즘, overdue=마감·기한이 이미 지난 것이나 이미 했어야 하는 것('오늘 마감'처럼 마감일만 말하면 그 시간 값), deferred=미루거나 보류한 것. '이번 주'는 upcoming이 아니라 this_week다.
+               statusIntents(기본 []): REQUESTED=아직 시작 안 한·요청된, IN_PROGRESS=진행 중·하고 있는, BLOCKED=막힌·못 하고 있는, DONE=완료한·끝난. 상태 표현이 있으면 반드시 넣어라.
+               priorityIntent(기본 none): urgent=급한, important=중요한, must_do=꼭·반드시, deferred=나중에 해도 되는. '~해야 하는'만으로는 none이다.
+               targetType(기본 task): 질의가 프로젝트 자체를 찾으면 project, '일정·할 일·작업·건'처럼 Task를 가리키면 task, 무엇을 찾는지 전혀 말하지 않으면 mixed.
+               mainAction(기본 unknown): 행동을 뜻하는 동사나 동작 명사('~하다'를 붙일 수 있는 명사)가 enum 행동에 해당할 때만 고르고, 대상 명사만 있거나 enum에 없는 행동이면 unknown.\
                """;
     }
 
@@ -50,7 +56,7 @@ final class SearchIntentRequest {
                 + "fieldConfidence는 targetType, domainType, mainAction, topicTerms, participantTerms, locationTerms, genericCompanionRequired, timeIntent, priorityIntent, syncIntent 각 항목의 0~1 신뢰도를 넣어라.\n"
                 + "예시 1\n"
                 + "query: 화상 회의 일정들\n"
-                + "{\"queryType\":\"TOPIC_SEARCH\",\"targetType\":\"task\",\"domainType\":\"work\",\"mainAction\":\"meet\",\"secondaryActions\":[],\"topicTerms\":[\"화상 회의\"],\"participantTerms\":[],\"locationTerms\":[],\"genericCompanionRequired\":false,\"timeIntent\":\"upcoming\",\"priorityIntent\":\"none\",\"statusIntents\":[],\"syncIntent\":\"any\",\"relationPolicy\":\"ALLOW_PARTIAL\",\"overallConfidence\":0.9,\"fieldConfidence\":{\"targetType\":0.9,\"domainType\":0.8,\"mainAction\":0.9,\"topicTerms\":1.0,\"participantTerms\":0.5,\"locationTerms\":0.5,\"genericCompanionRequired\":0.2,\"timeIntent\":0.7,\"priorityIntent\":0.5,\"syncIntent\":0.5},\"suggestedQueries\":[]}\n"
+                + "{\"queryType\":\"TOPIC_SEARCH\",\"targetType\":\"task\",\"domainType\":\"work\",\"mainAction\":\"meet\",\"secondaryActions\":[],\"topicTerms\":[\"화상 회의\"],\"participantTerms\":[],\"locationTerms\":[],\"genericCompanionRequired\":false,\"timeIntent\":\"unspecified\",\"priorityIntent\":\"none\",\"statusIntents\":[],\"syncIntent\":\"any\",\"relationPolicy\":\"ALLOW_PARTIAL\",\"overallConfidence\":0.9,\"fieldConfidence\":{\"targetType\":0.9,\"domainType\":0.8,\"mainAction\":0.9,\"topicTerms\":1.0,\"participantTerms\":0.5,\"locationTerms\":0.5,\"genericCompanionRequired\":0.2,\"timeIntent\":0.7,\"priorityIntent\":0.5,\"syncIntent\":0.5},\"suggestedQueries\":[]}\n"
                 + "예시 2\n"
                 + "query: 친구 만나서 병원 가는 거\n"
                 + "{\"queryType\":\"RELATIONAL_SEARCH\",\"targetType\":\"task\",\"domainType\":\"personal\",\"mainAction\":\"visit\",\"secondaryActions\":[\"meet\"],\"topicTerms\":[],\"participantTerms\":[\"친구\"],\"locationTerms\":[\"병원\"],\"genericCompanionRequired\":false,\"timeIntent\":\"unspecified\",\"priorityIntent\":\"none\",\"statusIntents\":[],\"syncIntent\":\"any\",\"relationPolicy\":\"PREFER_ALL\",\"overallConfidence\":0.92,\"fieldConfidence\":{\"targetType\":0.9,\"domainType\":0.8,\"mainAction\":0.9,\"topicTerms\":0.5,\"participantTerms\":1.0,\"locationTerms\":1.0,\"genericCompanionRequired\":0.2,\"timeIntent\":0.5,\"priorityIntent\":0.5,\"syncIntent\":0.5},\"suggestedQueries\":[]}\n"
@@ -59,7 +65,13 @@ final class SearchIntentRequest {
                 + "{\"queryType\":\"RELATIONAL_SEARCH\",\"targetType\":\"task\",\"domainType\":\"life\",\"mainAction\":\"visit\",\"secondaryActions\":[],\"topicTerms\":[],\"participantTerms\":[],\"locationTerms\":[\"병원\"],\"genericCompanionRequired\":true,\"timeIntent\":\"unspecified\",\"priorityIntent\":\"none\",\"statusIntents\":[],\"syncIntent\":\"any\",\"relationPolicy\":\"PREFER_ALL\",\"overallConfidence\":0.86,\"fieldConfidence\":{\"targetType\":0.9,\"domainType\":0.8,\"mainAction\":0.9,\"topicTerms\":0.3,\"participantTerms\":0.2,\"locationTerms\":1.0,\"genericCompanionRequired\":1.0,\"timeIntent\":0.5,\"priorityIntent\":0.5,\"syncIntent\":0.5},\"suggestedQueries\":[]}\n"
                 + "예시 4\n"
                 + "query: 중요한 일정\n"
-                + "{\"queryType\":\"BROAD_SEARCH\",\"targetType\":\"mixed\",\"domainType\":\"unknown\",\"mainAction\":\"unknown\",\"secondaryActions\":[],\"topicTerms\":[],\"participantTerms\":[],\"locationTerms\":[],\"genericCompanionRequired\":false,\"timeIntent\":\"unspecified\",\"priorityIntent\":\"important\",\"statusIntents\":[],\"syncIntent\":\"any\",\"relationPolicy\":\"ALLOW_PARTIAL\",\"overallConfidence\":0.45,\"fieldConfidence\":{\"targetType\":0.8,\"domainType\":0.4,\"mainAction\":0.2,\"topicTerms\":0.2,\"participantTerms\":0.2,\"locationTerms\":0.2,\"genericCompanionRequired\":0.2,\"timeIntent\":0.4,\"priorityIntent\":0.9,\"syncIntent\":0.5},\"suggestedQueries\":[\"이번 주 마감 일정\",\"차단된 일정\",\"캘린더 반영 안 된 일정\"]}\n"
+                + "{\"queryType\":\"BROAD_SEARCH\",\"targetType\":\"task\",\"domainType\":\"unknown\",\"mainAction\":\"unknown\",\"secondaryActions\":[],\"topicTerms\":[],\"participantTerms\":[],\"locationTerms\":[],\"genericCompanionRequired\":false,\"timeIntent\":\"unspecified\",\"priorityIntent\":\"important\",\"statusIntents\":[],\"syncIntent\":\"any\",\"relationPolicy\":\"ALLOW_PARTIAL\",\"overallConfidence\":0.45,\"fieldConfidence\":{\"targetType\":0.8,\"domainType\":0.4,\"mainAction\":0.2,\"topicTerms\":0.2,\"participantTerms\":0.2,\"locationTerms\":0.2,\"genericCompanionRequired\":0.2,\"timeIntent\":0.4,\"priorityIntent\":0.9,\"syncIntent\":0.5},\"suggestedQueries\":[\"이번 주 마감 일정\",\"차단된 일정\",\"캘린더 반영 안 된 일정\"]}\n"
+                + "예시 5\n"
+                + "query: 어제 끝냈어야 했는데 막힌 견적서\n"
+                + "{\"queryType\":\"TOPIC_SEARCH\",\"targetType\":\"task\",\"domainType\":\"work\",\"mainAction\":\"unknown\",\"secondaryActions\":[],\"topicTerms\":[\"견적서\"],\"participantTerms\":[],\"locationTerms\":[],\"genericCompanionRequired\":false,\"timeIntent\":\"overdue\",\"priorityIntent\":\"none\",\"statusIntents\":[\"BLOCKED\"],\"syncIntent\":\"any\",\"relationPolicy\":\"ALLOW_PARTIAL\",\"overallConfidence\":0.85,\"fieldConfidence\":{\"targetType\":0.9,\"domainType\":0.6,\"mainAction\":0.6,\"topicTerms\":0.9,\"participantTerms\":0.5,\"locationTerms\":0.5,\"genericCompanionRequired\":0.2,\"timeIntent\":0.9,\"priorityIntent\":0.6,\"syncIntent\":0.5},\"suggestedQueries\":[]}\n"
+                + "예시 6\n"
+                + "query: 앱 리뉴얼 관련 프로젝트\n"
+                + "{\"queryType\":\"TOPIC_SEARCH\",\"targetType\":\"project\",\"domainType\":\"work\",\"mainAction\":\"unknown\",\"secondaryActions\":[],\"topicTerms\":[\"앱\",\"리뉴얼\"],\"participantTerms\":[],\"locationTerms\":[],\"genericCompanionRequired\":false,\"timeIntent\":\"unspecified\",\"priorityIntent\":\"none\",\"statusIntents\":[],\"syncIntent\":\"any\",\"relationPolicy\":\"ALLOW_PARTIAL\",\"overallConfidence\":0.85,\"fieldConfidence\":{\"targetType\":0.9,\"domainType\":0.6,\"mainAction\":0.5,\"topicTerms\":0.9,\"participantTerms\":0.5,\"locationTerms\":0.5,\"genericCompanionRequired\":0.2,\"timeIntent\":0.5,\"priorityIntent\":0.5,\"syncIntent\":0.5},\"suggestedQueries\":[]}\n"
                 + "query: " + query;
     }
 
