@@ -1,0 +1,3468 @@
+{
+  "queries": [
+    {
+      "id": "q001",
+      "query": "미팅 내용 기록",
+      "topicTerms": [
+        "미팅",
+        "기록"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t069"
+      ],
+      "partial": [
+        "t068"
+      ],
+      "hardNegatives": [
+        "t073",
+        "t062"
+      ],
+      "family": null
+    },
+    {
+      "id": "q002",
+      "query": "이빨 청소 잡기",
+      "topicTerms": [
+        "이빨",
+        "청소"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t129"
+      ],
+      "partial": [
+        "t130"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t093"
+      ],
+      "family": null
+    },
+    {
+      "id": "q003",
+      "query": "척추 통증 치료받기",
+      "topicTerms": [
+        "척추",
+        "통증"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t140"
+      ],
+      "partial": [
+        "t154"
+      ],
+      "hardNegatives": [
+        "t145",
+        "t144"
+      ],
+      "family": null
+    },
+    {
+      "id": "q004",
+      "query": "짐 옮겨줄 곳 비용 비교",
+      "topicTerms": [
+        "짐",
+        "비용"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t114"
+      ],
+      "partial": [
+        "t117"
+      ],
+      "hardNegatives": [
+        "t119",
+        "t195",
+        "t079"
+      ],
+      "family": null
+    },
+    {
+      "id": "q005",
+      "query": "세금 환급 증빙 모으기",
+      "topicTerms": [
+        "세금",
+        "환급",
+        "증빙"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t165"
+      ],
+      "partial": [
+        "t179",
+        "t180"
+      ],
+      "hardNegatives": [
+        "t172",
+        "t181"
+      ],
+      "family": null
+    },
+    {
+      "id": "q006",
+      "query": "쓰레기 배출",
+      "topicTerms": [
+        "쓰레기",
+        "배출"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t092"
+      ],
+      "partial": [
+        "t122"
+      ],
+      "hardNegatives": [
+        "t103",
+        "t094"
+      ],
+      "family": null
+    },
+    {
+      "id": "q007",
+      "query": "운동 코치 붙이기",
+      "topicTerms": [
+        "운동",
+        "코치"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t147"
+      ],
+      "partial": [
+        "t148"
+      ],
+      "hardNegatives": [
+        "t070",
+        "t164"
+      ],
+      "family": null
+    },
+    {
+      "id": "q008",
+      "query": "패스포트 새로 받기",
+      "topicTerms": [
+        "패스포트"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t215"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t216",
+        "t126"
+      ],
+      "family": null
+    },
+    {
+      "id": "q009",
+      "query": "모니터링 경고 통보 세팅",
+      "topicTerms": [
+        "모니터링",
+        "경고"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t026"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t027",
+        "t045"
+      ],
+      "family": null
+    },
+    {
+      "id": "q010",
+      "query": "수도 누수 수리",
+      "topicTerms": [
+        "수도",
+        "누수",
+        "수리"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t096"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t128",
+        "t106"
+      ],
+      "family": null
+    },
+    {
+      "id": "q011",
+      "query": "비행기 표 끊기",
+      "topicTerms": [
+        "비행기",
+        "표"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t213"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t225",
+        "t229",
+        "t230"
+      ],
+      "family": null
+    },
+    {
+      "id": "q012",
+      "query": "월정액 결제 취소",
+      "topicTerms": [
+        "월정액",
+        "결제"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t176"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t202",
+        "t170"
+      ],
+      "family": null
+    },
+    {
+      "id": "q013",
+      "query": "부서 술자리 자리 잡기",
+      "topicTerms": [
+        "부서",
+        "술자리"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t085"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t184",
+        "t222"
+      ],
+      "family": null
+    },
+    {
+      "id": "q014",
+      "query": "인플루엔자 백신",
+      "topicTerms": [
+        "인플루엔자",
+        "백신"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t135"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t144",
+        "t134"
+      ],
+      "family": null
+    },
+    {
+      "id": "q015",
+      "query": "반려견 먹이 사기",
+      "topicTerms": [
+        "반려견",
+        "먹이"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t208"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t144",
+        "t203"
+      ],
+      "family": null
+    },
+    {
+      "id": "q016",
+      "query": "서버 데이터 복원 연습",
+      "topicTerms": [
+        "서버",
+        "데이터",
+        "복원"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t031"
+      ],
+      "partial": [
+        "t030"
+      ],
+      "hardNegatives": [
+        "t050",
+        "t007"
+      ],
+      "family": null
+    },
+    {
+      "id": "q017",
+      "query": "차량 보장 재가입 알아보기",
+      "topicTerms": [
+        "차량",
+        "보장"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t175"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t141",
+        "t216",
+        "t126"
+      ],
+      "family": null
+    },
+    {
+      "id": "q018",
+      "query": "휴가 올리기",
+      "topicTerms": [
+        "휴가"
+      ],
+      "category": "synonym",
+      "relevant": [
+        "t084"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t218",
+        "t074"
+      ],
+      "family": null
+    },
+    {
+      "id": "q019",
+      "query": "iOS 테스터용 업로드",
+      "topicTerms": [
+        "iOS",
+        "테스터"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t001"
+      ],
+      "partial": [
+        "t003"
+      ],
+      "hardNegatives": [
+        "t082",
+        "t076",
+        "t002"
+      ],
+      "family": null
+    },
+    {
+      "id": "q020",
+      "query": "github 풀리퀘 피드백",
+      "topicTerms": [
+        "github",
+        "풀리퀘"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t005"
+      ],
+      "partial": [
+        "t006"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t072"
+      ],
+      "family": null
+    },
+    {
+      "id": "q021",
+      "query": "그라파나 alert rule 만들기",
+      "topicTerms": [
+        "그라파나",
+        "alert",
+        "rule"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t026"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t027",
+        "t012"
+      ],
+      "family": null
+    },
+    {
+      "id": "q022",
+      "query": "도커 image cleanup",
+      "topicTerms": [
+        "도커",
+        "image"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t029"
+      ],
+      "partial": [
+        "t043"
+      ],
+      "hardNegatives": [
+        "t093",
+        "t098"
+      ],
+      "family": null
+    },
+    {
+      "id": "q023",
+      "query": "디비 backup cron",
+      "topicTerms": [
+        "디비",
+        "backup",
+        "cron"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t030"
+      ],
+      "partial": [
+        "t031"
+      ],
+      "hardNegatives": [
+        "t050",
+        "t042"
+      ],
+      "family": null
+    },
+    {
+      "id": "q024",
+      "query": "certificate renew",
+      "topicTerms": [
+        "certificate"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t032"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t215",
+        "t175"
+      ],
+      "family": null
+    },
+    {
+      "id": "q025",
+      "query": "refactoring 코드 정리",
+      "topicTerms": [
+        "refactoring",
+        "코드"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t022"
+      ],
+      "partial": [
+        "t014"
+      ],
+      "hardNegatives": [
+        "t060"
+      ],
+      "family": null
+    },
+    {
+      "id": "q026",
+      "query": "유닛테스트 coverage 올리기",
+      "topicTerms": [
+        "유닛테스트",
+        "coverage"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t014"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t025",
+        "t083"
+      ],
+      "family": null
+    },
+    {
+      "id": "q027",
+      "query": "OpenAPI 문서화",
+      "topicTerms": [
+        "OpenAPI",
+        "문서화"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t018"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t081",
+        "t046"
+      ],
+      "family": null
+    },
+    {
+      "id": "q028",
+      "query": "personal training 신청",
+      "topicTerms": [
+        "personal training"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t147"
+      ],
+      "partial": [
+        "t148"
+      ],
+      "hardNegatives": [
+        "t070",
+        "t164"
+      ],
+      "family": null
+    },
+    {
+      "id": "q029",
+      "query": "개인종합자산관리계좌 maturity",
+      "topicTerms": [
+        "개인종합자산관리계좌",
+        "maturity"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t167"
+      ],
+      "partial": [
+        "t171"
+      ],
+      "hardNegatives": [
+        "t166",
+        "t174"
+      ],
+      "family": null
+    },
+    {
+      "id": "q030",
+      "query": "목표 핵심결과 draft",
+      "topicTerms": [
+        "목표",
+        "핵심결과",
+        "draft"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t075"
+      ],
+      "partial": [
+        "t087"
+      ],
+      "hardNegatives": [
+        "t071",
+        "t065"
+      ],
+      "family": null
+    },
+    {
+      "id": "q031",
+      "query": "유심 roaming",
+      "topicTerms": [
+        "유심",
+        "roaming"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t217"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t177",
+        "t228"
+      ],
+      "family": null
+    },
+    {
+      "id": "q032",
+      "query": "scrape 주기 늘리기",
+      "topicTerms": [
+        "scrape",
+        "주기"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t035"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t027",
+        "t036"
+      ],
+      "family": null
+    },
+    {
+      "id": "q033",
+      "query": "핫픽스 production push",
+      "topicTerms": [
+        "핫픽스",
+        "production"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t021"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t076",
+        "t038"
+      ],
+      "family": null
+    },
+    {
+      "id": "q034",
+      "query": "로키 log retention",
+      "topicTerms": [
+        "로키",
+        "log",
+        "retention"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t028"
+      ],
+      "partial": [
+        "t037"
+      ],
+      "hardNegatives": [
+        "t029"
+      ],
+      "family": null
+    },
+    {
+      "id": "q035",
+      "query": "접속용 key rotate",
+      "topicTerms": [
+        "key",
+        "rotate"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t041"
+      ],
+      "partial": [
+        "t034"
+      ],
+      "hardNegatives": [
+        "t013"
+      ],
+      "family": null
+    },
+    {
+      "id": "q036",
+      "query": "meeting minutes",
+      "topicTerms": [
+        "meeting",
+        "minutes"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t069"
+      ],
+      "partial": [
+        "t068"
+      ],
+      "hardNegatives": [
+        "t062",
+        "t073"
+      ],
+      "family": null
+    },
+    {
+      "id": "q037",
+      "query": "스키마 migrate",
+      "topicTerms": [
+        "스키마",
+        "migrate"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t007"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t025",
+        "t042"
+      ],
+      "family": null
+    },
+    {
+      "id": "q038",
+      "query": "구글 auth 토큰 재발급",
+      "topicTerms": [
+        "구글",
+        "auth",
+        "토큰"
+      ],
+      "category": "mixed_language",
+      "relevant": [
+        "t013"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t010",
+        "t041"
+      ],
+      "family": null
+    },
+    {
+      "id": "q039",
+      "query": "야외 운동",
+      "topicTerms": [
+        "운동"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t149",
+        "t158",
+        "t157"
+      ],
+      "partial": [
+        "t152"
+      ],
+      "hardNegatives": [
+        "t162",
+        "t151"
+      ],
+      "family": null
+    },
+    {
+      "id": "q040",
+      "query": "교통편 예약",
+      "topicTerms": [
+        "교통편"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t225",
+        "t213"
+      ],
+      "partial": [
+        "t229",
+        "t220"
+      ],
+      "hardNegatives": [
+        "t124",
+        "t214"
+      ],
+      "family": null
+    },
+    {
+      "id": "q041",
+      "query": "공과금 처리",
+      "topicTerms": [
+        "공과금"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t102",
+        "t128"
+      ],
+      "partial": [
+        "t181"
+      ],
+      "hardNegatives": [
+        "t106",
+        "t170"
+      ],
+      "family": null
+    },
+    {
+      "id": "q042",
+      "query": "정기 검진",
+      "topicTerms": [
+        "검진"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t131",
+        "t132"
+      ],
+      "partial": [
+        "t139"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t145"
+      ],
+      "family": null
+    },
+    {
+      "id": "q043",
+      "query": "가족 선물",
+      "topicTerms": [
+        "가족",
+        "선물"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t183",
+        "t190",
+        "t185"
+      ],
+      "partial": [
+        "t205"
+      ],
+      "hardNegatives": [
+        "t194",
+        "t184"
+      ],
+      "family": null
+    },
+    {
+      "id": "q044",
+      "query": "청소",
+      "topicTerms": [
+        "청소"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t093",
+        "t098",
+        "t095"
+      ],
+      "partial": [
+        "t119"
+      ],
+      "hardNegatives": [
+        "t091",
+        "t099"
+      ],
+      "family": null
+    },
+    {
+      "id": "q045",
+      "query": "모니터링",
+      "topicTerms": [
+        "모니터링"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t026",
+        "t035",
+        "t036"
+      ],
+      "partial": [
+        "t028",
+        "t027"
+      ],
+      "hardNegatives": [
+        "t137",
+        "t138"
+      ],
+      "family": null
+    },
+    {
+      "id": "q046",
+      "query": "금융 상품",
+      "topicTerms": [
+        "금융",
+        "상품"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t167",
+        "t171",
+        "t174"
+      ],
+      "partial": [
+        "t168",
+        "t166"
+      ],
+      "hardNegatives": [
+        "t169",
+        "t170",
+        "t175"
+      ],
+      "family": null
+    },
+    {
+      "id": "q047",
+      "query": "이사 행정 처리",
+      "topicTerms": [
+        "이사",
+        "행정"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t115",
+        "t126",
+        "t127"
+      ],
+      "partial": [
+        "t123"
+      ],
+      "hardNegatives": [
+        "t113",
+        "t195"
+      ],
+      "family": null
+    },
+    {
+      "id": "q048",
+      "query": "보험 관련",
+      "topicTerms": [
+        "보험"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t175",
+        "t141",
+        "t216"
+      ],
+      "partial": [
+        "t146"
+      ],
+      "hardNegatives": [
+        "t079",
+        "t173"
+      ],
+      "family": null
+    },
+    {
+      "id": "q049",
+      "query": "영어 공부",
+      "topicTerms": [
+        "영어",
+        "공부"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t055",
+        "t056"
+      ],
+      "partial": [
+        "t066"
+      ],
+      "hardNegatives": [
+        "t228",
+        "t054"
+      ],
+      "family": null
+    },
+    {
+      "id": "q050",
+      "query": "숙소 예약",
+      "topicTerms": [
+        "숙소"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t214",
+        "t224"
+      ],
+      "partial": [
+        "t223"
+      ],
+      "hardNegatives": [
+        "t124",
+        "t085"
+      ],
+      "family": null
+    },
+    {
+      "id": "q051",
+      "query": "소모품 교체",
+      "topicTerms": [
+        "소모품"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t106",
+        "t109",
+        "t097"
+      ],
+      "partial": [
+        "t108"
+      ],
+      "hardNegatives": [
+        "t211",
+        "t207"
+      ],
+      "family": null
+    },
+    {
+      "id": "q052",
+      "query": "데이터베이스 작업",
+      "topicTerms": [
+        "데이터베이스"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t007",
+        "t008",
+        "t030"
+      ],
+      "partial": [
+        "t031",
+        "t042"
+      ],
+      "hardNegatives": [
+        "t057",
+        "t080"
+      ],
+      "family": null
+    },
+    {
+      "id": "q053",
+      "query": "영양 보충",
+      "topicTerms": [
+        "영양",
+        "보충"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t136",
+        "t161"
+      ],
+      "partial": [
+        "t163"
+      ],
+      "hardNegatives": [
+        "t101",
+        "t203"
+      ],
+      "family": null
+    },
+    {
+      "id": "q054",
+      "query": "경조사 준비",
+      "topicTerms": [
+        "경조사"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t186",
+        "t190"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t194",
+        "t187"
+      ],
+      "family": null
+    },
+    {
+      "id": "q055",
+      "query": "회사 문서 작성",
+      "topicTerms": [
+        "회사",
+        "문서"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t087",
+        "t077",
+        "t075"
+      ],
+      "partial": [
+        "t071"
+      ],
+      "hardNegatives": [
+        "t065",
+        "t086"
+      ],
+      "family": null
+    },
+    {
+      "id": "q056",
+      "query": "서버 보안",
+      "topicTerms": [
+        "서버",
+        "보안"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t032",
+        "t041",
+        "t034"
+      ],
+      "partial": [
+        "t040"
+      ],
+      "hardNegatives": [
+        "t083",
+        "t090"
+      ],
+      "family": null
+    },
+    {
+      "id": "q057",
+      "query": "컴퓨터 주변기기",
+      "topicTerms": [
+        "주변기기"
+      ],
+      "category": "hypernym",
+      "relevant": [
+        "t206",
+        "t198",
+        "t207"
+      ],
+      "partial": [
+        "t197"
+      ],
+      "hardNegatives": [
+        "t211",
+        "t200"
+      ],
+      "family": null
+    },
+    {
+      "id": "q058",
+      "query": "형광등",
+      "topicTerms": [
+        "형광등"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t097"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t211",
+        "t109"
+      ],
+      "family": null
+    },
+    {
+      "id": "q059",
+      "query": "식물 옮겨심기",
+      "topicTerms": [
+        "식물",
+        "옮겨심기"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t100"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t110",
+        "t094"
+      ],
+      "family": null
+    },
+    {
+      "id": "q060",
+      "query": "건강 체크",
+      "topicTerms": [
+        "건강",
+        "체크"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t131",
+        "t132"
+      ],
+      "partial": [
+        "t139"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t135"
+      ],
+      "family": null
+    },
+    {
+      "id": "q061",
+      "query": "시력 교정",
+      "topicTerms": [
+        "시력",
+        "교정"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t142"
+      ],
+      "partial": [
+        "t132"
+      ],
+      "hardNegatives": [
+        "t204",
+        "t210"
+      ],
+      "family": null
+    },
+    {
+      "id": "q062",
+      "query": "주소 등록",
+      "topicTerms": [
+        "주소",
+        "등록"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t115"
+      ],
+      "partial": [
+        "t123"
+      ],
+      "hardNegatives": [
+        "t127",
+        "t126"
+      ],
+      "family": null
+    },
+    {
+      "id": "q063",
+      "query": "일본 돈 바꾸기",
+      "topicTerms": [
+        "일본",
+        "돈"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t219"
+      ],
+      "partial": [
+        "t177"
+      ],
+      "hardNegatives": [
+        "t226",
+        "t169"
+      ],
+      "family": null
+    },
+    {
+      "id": "q064",
+      "query": "벡터 DB 성능",
+      "topicTerms": [
+        "벡터",
+        "DB",
+        "성능"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t008"
+      ],
+      "partial": [
+        "t009"
+      ],
+      "hardNegatives": [
+        "t058",
+        "t042"
+      ],
+      "family": null
+    },
+    {
+      "id": "q065",
+      "query": "세액 환급",
+      "topicTerms": [
+        "세액",
+        "환급"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t165"
+      ],
+      "partial": [
+        "t179",
+        "t180"
+      ],
+      "hardNegatives": [
+        "t172",
+        "t173"
+      ],
+      "family": null
+    },
+    {
+      "id": "q066",
+      "query": "달리기 신발",
+      "topicTerms": [
+        "달리기",
+        "신발"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t153"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t149",
+        "t204"
+      ],
+      "family": null
+    },
+    {
+      "id": "q067",
+      "query": "블라인드",
+      "topicTerms": [
+        "블라인드"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t118"
+      ],
+      "partial": [
+        "t110"
+      ],
+      "hardNegatives": [
+        "t211",
+        "t121"
+      ],
+      "family": null
+    },
+    {
+      "id": "q068",
+      "query": "자유형 배우기",
+      "topicTerms": [
+        "자유형"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t150"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t156",
+        "t151"
+      ],
+      "family": null
+    },
+    {
+      "id": "q069",
+      "query": "담그기 일손",
+      "topicTerms": [
+        "담그기",
+        "일손"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t193"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t101",
+        "t203"
+      ],
+      "family": null
+    },
+    {
+      "id": "q070",
+      "query": "TOEIC",
+      "topicTerms": [
+        "TOEIC"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t055"
+      ],
+      "partial": [
+        "t056"
+      ],
+      "hardNegatives": [
+        "t063",
+        "t066"
+      ],
+      "family": null
+    },
+    {
+      "id": "q071",
+      "query": "HTTPS 만료",
+      "topicTerms": [
+        "HTTPS",
+        "만료"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t032"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t063",
+        "t215"
+      ],
+      "family": null
+    },
+    {
+      "id": "q072",
+      "query": "여행 가방 챙기기",
+      "topicTerms": [
+        "여행",
+        "가방"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t221"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t210",
+        "t113"
+      ],
+      "family": null
+    },
+    {
+      "id": "q073",
+      "query": "구글 로그인 연동",
+      "topicTerms": [
+        "구글",
+        "로그인"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t013"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t010",
+        "t041"
+      ],
+      "family": null
+    },
+    {
+      "id": "q074",
+      "query": "온수 난방",
+      "topicTerms": [
+        "온수",
+        "난방"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t107"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t116",
+        "t095"
+      ],
+      "family": null
+    },
+    {
+      "id": "q075",
+      "query": "가격 문의",
+      "topicTerms": [
+        "가격",
+        "문의"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t114",
+        "t079"
+      ],
+      "partial": [
+        "t175"
+      ],
+      "hardNegatives": [
+        "t200",
+        "t198"
+      ],
+      "family": null
+    },
+    {
+      "id": "q076",
+      "query": "풀 리퀘스트",
+      "topicTerms": [
+        "풀 리퀘스트"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t005"
+      ],
+      "partial": [
+        "t006"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t070",
+        "t004"
+      ],
+      "family": null
+    },
+    {
+      "id": "q077",
+      "query": "부동산 세금",
+      "topicTerms": [
+        "부동산",
+        "세금"
+      ],
+      "category": "keyword",
+      "relevant": [
+        "t181"
+      ],
+      "partial": [
+        "t172"
+      ],
+      "hardNegatives": [
+        "t102",
+        "t165"
+      ],
+      "family": null
+    },
+    {
+      "id": "q078",
+      "query": "엄마 생일에 뭐 사드릴지 정한 거",
+      "topicTerms": [
+        "엄마",
+        "생일",
+        "선물"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t183"
+      ],
+      "partial": [
+        "t184"
+      ],
+      "hardNegatives": [
+        "t194",
+        "t205"
+      ],
+      "family": null
+    },
+    {
+      "id": "q079",
+      "query": "집에서 물이 새서 기사님 불렀던 거",
+      "topicTerms": [
+        "물",
+        "기사님"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t096"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t106",
+        "t107"
+      ],
+      "family": null
+    },
+    {
+      "id": "q080",
+      "query": "새 집으로 가기 전에 도시가스 옮기는 일",
+      "topicTerms": [
+        "도시가스"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t116"
+      ],
+      "partial": [
+        "t117"
+      ],
+      "hardNegatives": [
+        "t107",
+        "t128"
+      ],
+      "family": null
+    },
+    {
+      "id": "q081",
+      "query": "해외 나가기 전에 휴대폰 데이터 쓸 방법",
+      "topicTerms": [
+        "해외",
+        "휴대폰",
+        "데이터"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t217"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t228",
+        "t177"
+      ],
+      "family": null
+    },
+    {
+      "id": "q082",
+      "query": "회사 장애 난 거 돌아보면서 쓴 글",
+      "topicTerms": [
+        "장애",
+        "회사"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t077"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t065",
+        "t086",
+        "t039"
+      ],
+      "family": null
+    },
+    {
+      "id": "q083",
+      "query": "앱 업데이트 심사 맡기는 거",
+      "topicTerms": [
+        "앱",
+        "심사"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t003"
+      ],
+      "partial": [
+        "t001"
+      ],
+      "hardNegatives": [
+        "t004",
+        "t002"
+      ],
+      "family": null
+    },
+    {
+      "id": "q084",
+      "query": "서버 디스크 꽉 차서 치운 작업",
+      "topicTerms": [
+        "서버",
+        "디스크"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t029"
+      ],
+      "partial": [
+        "t037"
+      ],
+      "hardNegatives": [
+        "t028",
+        "t033"
+      ],
+      "family": null
+    },
+    {
+      "id": "q085",
+      "query": "달리기 대회 나가려고 신청하는 거",
+      "topicTerms": [
+        "달리기",
+        "대회"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t152"
+      ],
+      "partial": [
+        "t149"
+      ],
+      "hardNegatives": [
+        "t153",
+        "t063"
+      ],
+      "family": null
+    },
+    {
+      "id": "q086",
+      "query": "치과에서 사랑니 뽑을지 물어보기",
+      "topicTerms": [
+        "사랑니",
+        "치과"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t130"
+      ],
+      "partial": [
+        "t129"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t140"
+      ],
+      "family": null
+    },
+    {
+      "id": "q087",
+      "query": "월세 낸 거로 세금 돌려받을 서류",
+      "topicTerms": [
+        "월세",
+        "세금",
+        "서류"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t179"
+      ],
+      "partial": [
+        "t165"
+      ],
+      "hardNegatives": [
+        "t102",
+        "t120"
+      ],
+      "family": null
+    },
+    {
+      "id": "q088",
+      "query": "이삿날 짐 옮길 때 엘리베이터 쓰게 잡아두기",
+      "topicTerms": [
+        "이삿날",
+        "엘리베이터"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t124"
+      ],
+      "partial": [
+        "t114"
+      ],
+      "hardNegatives": [
+        "t113",
+        "t122"
+      ],
+      "family": null
+    },
+    {
+      "id": "q089",
+      "query": "부모님 결혼 기념일에 드릴 거",
+      "topicTerms": [
+        "부모님",
+        "결혼기념일"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t191"
+      ],
+      "partial": [
+        "t194"
+      ],
+      "hardNegatives": [
+        "t183",
+        "t186"
+      ],
+      "family": null
+    },
+    {
+      "id": "q090",
+      "query": "새 의자 사기 전에 사람들 평가 찾기",
+      "topicTerms": [
+        "의자",
+        "평가"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t199"
+      ],
+      "partial": [
+        "t212"
+      ],
+      "hardNegatives": [
+        "t210",
+        "t200",
+        "t201"
+      ],
+      "family": null
+    },
+    {
+      "id": "q091",
+      "query": "내 앱이 캘린더 동기화를 늦게 하는 이유 분석",
+      "topicTerms": [
+        "앱",
+        "동기화"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t023"
+      ],
+      "partial": [
+        "t024"
+      ],
+      "hardNegatives": [
+        "t042",
+        "t021"
+      ],
+      "family": null
+    },
+    {
+      "id": "q092",
+      "query": "혈압 수치 매일 적는 습관",
+      "topicTerms": [
+        "혈압",
+        "수치"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t138"
+      ],
+      "partial": [
+        "t137"
+      ],
+      "hardNegatives": [
+        "t160",
+        "t134"
+      ],
+      "family": null
+    },
+    {
+      "id": "q093",
+      "query": "퇴근하고 어깨 푸는 간단한 동작",
+      "topicTerms": [
+        "어깨",
+        "동작"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t154"
+      ],
+      "partial": [
+        "t163"
+      ],
+      "hardNegatives": [
+        "t140",
+        "t155"
+      ],
+      "family": null
+    },
+    {
+      "id": "q094",
+      "query": "채용 면접에 들어갈 사람 시간 맞추기",
+      "topicTerms": [
+        "채용",
+        "면접"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t078"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t073",
+        "t085"
+      ],
+      "family": null
+    },
+    {
+      "id": "q095",
+      "query": "오사카에서 전철 자주 탈 때 쓸 승차권",
+      "topicTerms": [
+        "오사카",
+        "전철",
+        "승차권"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t220"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t225",
+        "t229"
+      ],
+      "family": null
+    },
+    {
+      "id": "q096",
+      "query": "전세 집 하자 생기면 책임이 누구한테 있는지 읽어보기",
+      "topicTerms": [
+        "전세",
+        "책임"
+      ],
+      "category": "sentence",
+      "relevant": [
+        "t111"
+      ],
+      "partial": [
+        "t125"
+      ],
+      "hardNegatives": [
+        "t112",
+        "t120"
+      ],
+      "family": null
+    },
+    {
+      "id": "q097",
+      "query": "그라파나 알림 설저",
+      "topicTerms": [
+        "그라파나",
+        "알림"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t026"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t027",
+        "t012"
+      ],
+      "family": null
+    },
+    {
+      "id": "q098",
+      "query": "치과예약",
+      "topicTerms": [
+        "치과예약"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t129"
+      ],
+      "partial": [
+        "t130"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t145"
+      ],
+      "family": null
+    },
+    {
+      "id": "q099",
+      "query": "깃헙 피알 리뷰 반영",
+      "topicTerms": [
+        "깃헙",
+        "피알",
+        "리뷰"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t005"
+      ],
+      "partial": [
+        "t006"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t072"
+      ],
+      "family": null
+    },
+    {
+      "id": "q100",
+      "query": "독커 이미지 청소",
+      "topicTerms": [
+        "독커",
+        "이미지"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t029"
+      ],
+      "partial": [
+        "t043"
+      ],
+      "hardNegatives": [
+        "t093",
+        "t098"
+      ],
+      "family": null
+    },
+    {
+      "id": "q101",
+      "query": "pgvecter 인덱스",
+      "topicTerms": [
+        "pgvecter",
+        "인덱스"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t008"
+      ],
+      "partial": [
+        "t009"
+      ],
+      "hardNegatives": [
+        "t042",
+        "t046"
+      ],
+      "family": null
+    },
+    {
+      "id": "q102",
+      "query": "연말졍산 서류",
+      "topicTerms": [
+        "연말졍산",
+        "서류"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t165"
+      ],
+      "partial": [
+        "t179",
+        "t180"
+      ],
+      "hardNegatives": [
+        "t172",
+        "t173"
+      ],
+      "family": null
+    },
+    {
+      "id": "q103",
+      "query": "펄라테스 체험",
+      "topicTerms": [
+        "펄라테스",
+        "체험"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t162"
+      ],
+      "partial": [
+        "t151"
+      ],
+      "hardNegatives": [
+        "t156",
+        "t147"
+      ],
+      "family": null
+    },
+    {
+      "id": "q104",
+      "query": "전입신구 하기",
+      "topicTerms": [
+        "전입신구"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t115"
+      ],
+      "partial": [
+        "t123"
+      ],
+      "hardNegatives": [
+        "t127",
+        "t126"
+      ],
+      "family": null
+    },
+    {
+      "id": "q105",
+      "query": "헬스장 회원권연장",
+      "topicTerms": [
+        "헬스장",
+        "회원권연장"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t148"
+      ],
+      "partial": [
+        "t147"
+      ],
+      "hardNegatives": [
+        "t070",
+        "t164"
+      ],
+      "family": null
+    },
+    {
+      "id": "q106",
+      "query": "여행자보험가입",
+      "topicTerms": [
+        "여행자보험가입"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t216"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t141",
+        "t175",
+        "t218"
+      ],
+      "family": null
+    },
+    {
+      "id": "q107",
+      "query": "플라이웨이 마이그레이션",
+      "topicTerms": [
+        "플라이웨이",
+        "마이그레이션"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t007"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t025",
+        "t042"
+      ],
+      "family": null
+    },
+    {
+      "id": "q108",
+      "query": "프로메테우스 스크레입 간격",
+      "topicTerms": [
+        "프로메테우스",
+        "스크레입"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t035"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t027",
+        "t028"
+      ],
+      "family": null
+    },
+    {
+      "id": "q109",
+      "query": "엄마생일선믈",
+      "topicTerms": [
+        "엄마생일선믈"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t183"
+      ],
+      "partial": [
+        "t184"
+      ],
+      "hardNegatives": [
+        "t194",
+        "t205"
+      ],
+      "family": null
+    },
+    {
+      "id": "q110",
+      "query": "안과 검진 예약ㅇ",
+      "topicTerms": [
+        "안과",
+        "검진"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t132"
+      ],
+      "partial": [
+        "t131"
+      ],
+      "hardNegatives": [
+        "t142",
+        "t144"
+      ],
+      "family": null
+    },
+    {
+      "id": "q111",
+      "query": "겅강검진",
+      "topicTerms": [
+        "겅강검진"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t131"
+      ],
+      "partial": [
+        "t139"
+      ],
+      "hardNegatives": [
+        "t146",
+        "t132"
+      ],
+      "family": null
+    },
+    {
+      "id": "q112",
+      "query": "에어컨필터청소",
+      "topicTerms": [
+        "에어컨필터청소"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t095"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t106",
+        "t098"
+      ],
+      "family": null
+    },
+    {
+      "id": "q113",
+      "query": "토잌 단어",
+      "topicTerms": [
+        "토잌",
+        "단어"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t055"
+      ],
+      "partial": [
+        "t056"
+      ],
+      "hardNegatives": [
+        "t063",
+        "t067"
+      ],
+      "family": null
+    },
+    {
+      "id": "q114",
+      "query": "오싸카 항공권",
+      "topicTerms": [
+        "오싸카",
+        "항공권"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t213"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t214",
+        "t225",
+        "t230"
+      ],
+      "family": null
+    },
+    {
+      "id": "q115",
+      "query": "테스트플라이트 빌드올리기",
+      "topicTerms": [
+        "테스트플라이트",
+        "빌드올리기"
+      ],
+      "category": "typo_spacing",
+      "relevant": [
+        "t001"
+      ],
+      "partial": [
+        "t002"
+      ],
+      "hardNegatives": [
+        "t082",
+        "t076"
+      ],
+      "family": null
+    },
+    {
+      "id": "q116",
+      "query": "TestFlight 빌드 업로드",
+      "topicTerms": [
+        "TestFlight",
+        "빌드"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t001"
+      ],
+      "partial": [
+        "t003"
+      ],
+      "hardNegatives": [
+        "t082",
+        "t076",
+        "t002"
+      ],
+      "family": "f01"
+    },
+    {
+      "id": "q117",
+      "query": "베타 빌드 deploy",
+      "topicTerms": [
+        "베타",
+        "deploy"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t001"
+      ],
+      "partial": [
+        "t003"
+      ],
+      "hardNegatives": [
+        "t082",
+        "t076",
+        "t002"
+      ],
+      "family": "f01"
+    },
+    {
+      "id": "q118",
+      "query": "테스트 앱 올려서 사람들한테 돌리기",
+      "topicTerms": [
+        "테스트",
+        "앱"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t001"
+      ],
+      "partial": [
+        "t003"
+      ],
+      "hardNegatives": [
+        "t082",
+        "t076",
+        "t002"
+      ],
+      "family": "f01"
+    },
+    {
+      "id": "q119",
+      "query": "테플 업로드",
+      "topicTerms": [
+        "테플"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t001"
+      ],
+      "partial": [
+        "t003"
+      ],
+      "hardNegatives": [
+        "t082",
+        "t076",
+        "t002"
+      ],
+      "family": "f01"
+    },
+    {
+      "id": "q120",
+      "query": "PT 등록",
+      "topicTerms": [
+        "PT"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t147"
+      ],
+      "partial": [
+        "t148"
+      ],
+      "hardNegatives": [
+        "t070",
+        "t164"
+      ],
+      "family": "f02"
+    },
+    {
+      "id": "q121",
+      "query": "트레이너 붙이는 거",
+      "topicTerms": [
+        "트레이너"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t147"
+      ],
+      "partial": [
+        "t148"
+      ],
+      "hardNegatives": [
+        "t070",
+        "t164"
+      ],
+      "family": "f02"
+    },
+    {
+      "id": "q122",
+      "query": "헬스장에서 개인 레슨 신청하기",
+      "topicTerms": [
+        "헬스장",
+        "개인 레슨"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t147"
+      ],
+      "partial": [
+        "t148"
+      ],
+      "hardNegatives": [
+        "t070",
+        "t164"
+      ],
+      "family": "f02"
+    },
+    {
+      "id": "q123",
+      "query": "피티등록",
+      "topicTerms": [
+        "피티등록"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t147"
+      ],
+      "partial": [
+        "t148"
+      ],
+      "hardNegatives": [
+        "t070",
+        "t164"
+      ],
+      "family": "f02"
+    },
+    {
+      "id": "q124",
+      "query": "PR 리뷰 반영",
+      "topicTerms": [
+        "PR",
+        "리뷰"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t005"
+      ],
+      "partial": [
+        "t006"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t072"
+      ],
+      "family": "f03"
+    },
+    {
+      "id": "q125",
+      "query": "풀리퀘 코멘트 수정",
+      "topicTerms": [
+        "풀리퀘",
+        "코멘트"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t005"
+      ],
+      "partial": [
+        "t006"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t072"
+      ],
+      "family": "f03"
+    },
+    {
+      "id": "q126",
+      "query": "깃허브에서 리뷰어 의견 고치기",
+      "topicTerms": [
+        "깃허브",
+        "리뷰어"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t005"
+      ],
+      "partial": [
+        "t006"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t072"
+      ],
+      "family": "f03"
+    },
+    {
+      "id": "q127",
+      "query": "피알 리뷰반영",
+      "topicTerms": [
+        "피알"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t005"
+      ],
+      "partial": [
+        "t006"
+      ],
+      "hardNegatives": [
+        "t089",
+        "t072"
+      ],
+      "family": "f03"
+    },
+    {
+      "id": "q128",
+      "query": "치과 스케일링",
+      "topicTerms": [
+        "치과",
+        "스케일링"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t129"
+      ],
+      "partial": [
+        "t130"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t145"
+      ],
+      "family": "f04"
+    },
+    {
+      "id": "q129",
+      "query": "이빨 클리닝 예약",
+      "topicTerms": [
+        "이빨",
+        "클리닝"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t129"
+      ],
+      "partial": [
+        "t130"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t145"
+      ],
+      "family": "f04"
+    },
+    {
+      "id": "q130",
+      "query": "치아 청소하러 가기",
+      "topicTerms": [
+        "치아",
+        "청소"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t129"
+      ],
+      "partial": [
+        "t130"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t145"
+      ],
+      "family": "f04"
+    },
+    {
+      "id": "q131",
+      "query": "스켈링예약",
+      "topicTerms": [
+        "스켈링예약"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t129"
+      ],
+      "partial": [
+        "t130"
+      ],
+      "hardNegatives": [
+        "t144",
+        "t145"
+      ],
+      "family": "f04"
+    },
+    {
+      "id": "q132",
+      "query": "Grafana alert 설정",
+      "topicTerms": [
+        "Grafana",
+        "alert"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t026"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t027"
+      ],
+      "family": "f05"
+    },
+    {
+      "id": "q133",
+      "query": "그라파나 알림 규칙",
+      "topicTerms": [
+        "그라파나",
+        "알림"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t026"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t027"
+      ],
+      "family": "f05"
+    },
+    {
+      "id": "q134",
+      "query": "모니터링 경고를 슬랙으로 받기",
+      "topicTerms": [
+        "모니터링",
+        "경고",
+        "슬랙"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t026"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t027"
+      ],
+      "family": "f05"
+    },
+    {
+      "id": "q135",
+      "query": "경보 룰 만들기",
+      "topicTerms": [
+        "경보",
+        "룰"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t026"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t027"
+      ],
+      "family": "f05"
+    },
+    {
+      "id": "q136",
+      "query": "grafana 알람설정",
+      "topicTerms": [
+        "grafana"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t026"
+      ],
+      "partial": [
+        "t036"
+      ],
+      "hardNegatives": [
+        "t012",
+        "t027"
+      ],
+      "family": "f05"
+    },
+    {
+      "id": "q137",
+      "query": "이사 업체 견적",
+      "topicTerms": [
+        "이사",
+        "견적"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t114"
+      ],
+      "partial": [
+        "t117"
+      ],
+      "hardNegatives": [
+        "t119",
+        "t195",
+        "t079"
+      ],
+      "family": "f06"
+    },
+    {
+      "id": "q138",
+      "query": "포장이사 가격 비교",
+      "topicTerms": [
+        "포장이사",
+        "가격"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t114"
+      ],
+      "partial": [
+        "t117"
+      ],
+      "hardNegatives": [
+        "t119",
+        "t195",
+        "t079"
+      ],
+      "family": "f06"
+    },
+    {
+      "id": "q139",
+      "query": "이삿짐센터 세 군데 물어보기",
+      "topicTerms": [
+        "이삿짐센터"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t114"
+      ],
+      "partial": [
+        "t117"
+      ],
+      "hardNegatives": [
+        "t119",
+        "t195",
+        "t079"
+      ],
+      "family": "f06"
+    },
+    {
+      "id": "q140",
+      "query": "moving 견적",
+      "topicTerms": [
+        "moving",
+        "견적"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t114"
+      ],
+      "partial": [
+        "t117"
+      ],
+      "hardNegatives": [
+        "t119",
+        "t195",
+        "t079"
+      ],
+      "family": "f06"
+    },
+    {
+      "id": "q141",
+      "query": "연말정산 서류",
+      "topicTerms": [
+        "연말정산",
+        "서류"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t165"
+      ],
+      "partial": [
+        "t179",
+        "t180"
+      ],
+      "hardNegatives": [
+        "t172",
+        "t173"
+      ],
+      "family": "f07"
+    },
+    {
+      "id": "q142",
+      "query": "세금 환급 준비",
+      "topicTerms": [
+        "세금",
+        "환급"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t165"
+      ],
+      "partial": [
+        "t179",
+        "t180"
+      ],
+      "hardNegatives": [
+        "t172",
+        "t173"
+      ],
+      "family": "f07"
+    },
+    {
+      "id": "q143",
+      "query": "year-end tax 자료",
+      "topicTerms": [
+        "year-end",
+        "tax"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t165"
+      ],
+      "partial": [
+        "t179",
+        "t180"
+      ],
+      "hardNegatives": [
+        "t172",
+        "t173"
+      ],
+      "family": "f07"
+    },
+    {
+      "id": "q144",
+      "query": "연말정산 챙길 것",
+      "topicTerms": [
+        "연말정산"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t165"
+      ],
+      "partial": [
+        "t179",
+        "t180"
+      ],
+      "hardNegatives": [
+        "t172",
+        "t173"
+      ],
+      "family": "f07"
+    },
+    {
+      "id": "q145",
+      "query": "오사카 항공권",
+      "topicTerms": [
+        "오사카",
+        "항공권"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t213"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t225",
+        "t214",
+        "t230"
+      ],
+      "family": "f08"
+    },
+    {
+      "id": "q146",
+      "query": "오사카 비행기 티켓 사기",
+      "topicTerms": [
+        "오사카",
+        "비행기",
+        "티켓"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t213"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t225",
+        "t214",
+        "t230"
+      ],
+      "family": "f08"
+    },
+    {
+      "id": "q147",
+      "query": "Osaka flight 예매",
+      "topicTerms": [
+        "Osaka",
+        "flight"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t213"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t225",
+        "t214",
+        "t230"
+      ],
+      "family": "f08"
+    },
+    {
+      "id": "q148",
+      "query": "일본 가는 비행기표",
+      "topicTerms": [
+        "일본",
+        "비행기표"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t213"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t225",
+        "t214",
+        "t230"
+      ],
+      "family": "f08"
+    },
+    {
+      "id": "q149",
+      "query": "Loki 로그 보존 기간",
+      "topicTerms": [
+        "Loki",
+        "로그",
+        "보존"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t028"
+      ],
+      "partial": [
+        "t037"
+      ],
+      "hardNegatives": [
+        "t029"
+      ],
+      "family": "f09"
+    },
+    {
+      "id": "q150",
+      "query": "로그 저장 기간 줄이기",
+      "topicTerms": [
+        "로그",
+        "저장"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t028"
+      ],
+      "partial": [
+        "t037"
+      ],
+      "hardNegatives": [
+        "t029"
+      ],
+      "family": "f09"
+    },
+    {
+      "id": "q151",
+      "query": "log retention 설정",
+      "topicTerms": [
+        "log",
+        "retention"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t028"
+      ],
+      "partial": [
+        "t037"
+      ],
+      "hardNegatives": [
+        "t029"
+      ],
+      "family": "f09"
+    },
+    {
+      "id": "q152",
+      "query": "오래된 로그 얼마나 둘지",
+      "topicTerms": [
+        "로그"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t028"
+      ],
+      "partial": [
+        "t037"
+      ],
+      "hardNegatives": [
+        "t029"
+      ],
+      "family": "f09"
+    },
+    {
+      "id": "q153",
+      "query": "엄마 생일 선물",
+      "topicTerms": [
+        "엄마",
+        "생일",
+        "선물"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t183"
+      ],
+      "partial": [
+        "t184"
+      ],
+      "hardNegatives": [
+        "t194",
+        "t205"
+      ],
+      "family": "f10"
+    },
+    {
+      "id": "q154",
+      "query": "어머니 생신 뭐 사드리지",
+      "topicTerms": [
+        "어머니",
+        "생신"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t183"
+      ],
+      "partial": [
+        "t184"
+      ],
+      "hardNegatives": [
+        "t194",
+        "t205"
+      ],
+      "family": "f10"
+    },
+    {
+      "id": "q155",
+      "query": "mom birthday gift",
+      "topicTerms": [
+        "mom",
+        "birthday",
+        "gift"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t183"
+      ],
+      "partial": [
+        "t184"
+      ],
+      "hardNegatives": [
+        "t194",
+        "t205"
+      ],
+      "family": "f10"
+    },
+    {
+      "id": "q156",
+      "query": "엄마 생일 선물 정한거",
+      "topicTerms": [
+        "엄마",
+        "생일"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t183"
+      ],
+      "partial": [
+        "t184"
+      ],
+      "hardNegatives": [
+        "t194",
+        "t205"
+      ],
+      "family": "f10"
+    },
+    {
+      "id": "q157",
+      "query": "Postgres 백업 점검",
+      "topicTerms": [
+        "Postgres",
+        "백업"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t030"
+      ],
+      "partial": [
+        "t031"
+      ],
+      "hardNegatives": [
+        "t050",
+        "t042"
+      ],
+      "family": "f11"
+    },
+    {
+      "id": "q158",
+      "query": "DB 백업 스크립트 확인",
+      "topicTerms": [
+        "DB",
+        "백업"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t030"
+      ],
+      "partial": [
+        "t031"
+      ],
+      "hardNegatives": [
+        "t050",
+        "t042"
+      ],
+      "family": "f11"
+    },
+    {
+      "id": "q159",
+      "query": "데이터베이스 복사본 만드는 스크립트 잘 도는지",
+      "topicTerms": [
+        "데이터베이스",
+        "스크립트"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t030"
+      ],
+      "partial": [
+        "t031"
+      ],
+      "hardNegatives": [
+        "t050",
+        "t042"
+      ],
+      "family": "f11"
+    },
+    {
+      "id": "q160",
+      "query": "pg 백업 체크",
+      "topicTerms": [
+        "pg",
+        "백업"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t030"
+      ],
+      "partial": [
+        "t031"
+      ],
+      "hardNegatives": [
+        "t050",
+        "t042"
+      ],
+      "family": "f11"
+    },
+    {
+      "id": "q161",
+      "query": "여권 갱신",
+      "topicTerms": [
+        "여권",
+        "갱신"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t215"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t216",
+        "t126"
+      ],
+      "family": "f12"
+    },
+    {
+      "id": "q162",
+      "query": "패스포트 재발급",
+      "topicTerms": [
+        "패스포트",
+        "재발급"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t215"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t216",
+        "t126"
+      ],
+      "family": "f12"
+    },
+    {
+      "id": "q163",
+      "query": "여권 만료돼서 새로 만들기",
+      "topicTerms": [
+        "여권",
+        "만료"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t215"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t216",
+        "t126"
+      ],
+      "family": "f12"
+    },
+    {
+      "id": "q164",
+      "query": "여권갱신",
+      "topicTerms": [
+        "여권갱신"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t215"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t216",
+        "t126"
+      ],
+      "family": "f12"
+    },
+    {
+      "id": "q165",
+      "query": "보일러 점검",
+      "topicTerms": [
+        "보일러",
+        "점검"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t107"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t116",
+        "t095"
+      ],
+      "family": "f13"
+    },
+    {
+      "id": "q166",
+      "query": "난방기 기사 방문 예약",
+      "topicTerms": [
+        "난방기",
+        "기사"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t107"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t116",
+        "t095"
+      ],
+      "family": "f13"
+    },
+    {
+      "id": "q167",
+      "query": "boiler 점검 예약",
+      "topicTerms": [
+        "boiler",
+        "점검"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t107"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t116",
+        "t095"
+      ],
+      "family": "f13"
+    },
+    {
+      "id": "q168",
+      "query": "보일러 점검예약",
+      "topicTerms": [
+        "보일러"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t107"
+      ],
+      "partial": [],
+      "hardNegatives": [
+        "t116",
+        "t095"
+      ],
+      "family": "f13"
+    },
+    {
+      "id": "q169",
+      "query": "임베딩 모델 비교",
+      "topicTerms": [
+        "임베딩",
+        "모델"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t009"
+      ],
+      "partial": [
+        "t008"
+      ],
+      "hardNegatives": [
+        "t058",
+        "t059"
+      ],
+      "family": "f14"
+    },
+    {
+      "id": "q170",
+      "query": "embedding 모델 벤치마크",
+      "topicTerms": [
+        "embedding",
+        "모델",
+        "벤치마크"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t009"
+      ],
+      "partial": [
+        "t008"
+      ],
+      "hardNegatives": [
+        "t058",
+        "t059"
+      ],
+      "family": "f14"
+    },
+    {
+      "id": "q171",
+      "query": "벡터 변환 모델 성능 비교 실험",
+      "topicTerms": [
+        "벡터",
+        "모델",
+        "성능"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t009"
+      ],
+      "partial": [
+        "t008"
+      ],
+      "hardNegatives": [
+        "t058",
+        "t059"
+      ],
+      "family": "f14"
+    },
+    {
+      "id": "q172",
+      "query": "임베딩 모델비교",
+      "topicTerms": [
+        "임베딩"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t009"
+      ],
+      "partial": [
+        "t008"
+      ],
+      "hardNegatives": [
+        "t058",
+        "t059"
+      ],
+      "family": "f14"
+    },
+    {
+      "id": "q173",
+      "query": "10km 대회 신청",
+      "topicTerms": [
+        "10km",
+        "대회"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t152"
+      ],
+      "partial": [
+        "t149"
+      ],
+      "hardNegatives": [
+        "t153",
+        "t063"
+      ],
+      "family": "f15"
+    },
+    {
+      "id": "q174",
+      "query": "마라톤 참가 접수",
+      "topicTerms": [
+        "마라톤",
+        "참가"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t152"
+      ],
+      "partial": [
+        "t149"
+      ],
+      "hardNegatives": [
+        "t153",
+        "t063"
+      ],
+      "family": "f15"
+    },
+    {
+      "id": "q175",
+      "query": "달리기 대회 등록",
+      "topicTerms": [
+        "달리기",
+        "대회"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t152"
+      ],
+      "partial": [
+        "t149"
+      ],
+      "hardNegatives": [
+        "t153",
+        "t063"
+      ],
+      "family": "f15"
+    },
+    {
+      "id": "q176",
+      "query": "10k race 신청",
+      "topicTerms": [
+        "10k",
+        "race"
+      ],
+      "category": "paraphrase",
+      "relevant": [
+        "t152"
+      ],
+      "partial": [
+        "t149"
+      ],
+      "hardNegatives": [
+        "t153",
+        "t063"
+      ],
+      "family": "f15"
+    }
+  ]
+}
