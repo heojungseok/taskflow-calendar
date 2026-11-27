@@ -8,8 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import com.taskflow.assistant.GeminiClient;
-import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
+import com.taskflow.assistant.llm.FakeLlmProvider;
 import com.taskflow.assistant.recommendation.ProjectTaskRecommendationService;
 import com.taskflow.assistant.recommendation.cache.TaskRecommendationCacheService;
 import com.taskflow.assistant.recommendation.dto.TaskRecommendationCacheStatus;
@@ -20,7 +19,6 @@ import com.taskflow.assistant.search.SemanticSearchStatus;
 import com.taskflow.assistant.search.TaskSearchEmbeddingService;
 import com.taskflow.assistant.search.TaskSearchEmbeddingStore;
 import com.taskflow.assistant.search.generator.TaskSearchIntentParser;
-import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.ProjectWeeklySummaryService;
 import com.taskflow.assistant.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.assistant.summary.dto.WeeklySummaryCacheStatus;
@@ -42,9 +40,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import tools.jackson.databind.ObjectMapper;
 
 class DemoAiIsolationTest {
 
@@ -83,7 +81,7 @@ class DemoAiIsolationTest {
                 generator,
                 sync,
                 cache,
-                new GeminiSummaryProperties(),
+                FakeLlmProvider.returning("{}").client(),
                 users,
                 Clock.system(TimeZones.SERVICE_ZONE));
 
@@ -111,7 +109,7 @@ class DemoAiIsolationTest {
                 sync,
                 generator,
                 cache,
-                new GeminiRecommendationProperties(),
+                FakeLlmProvider.returning("{}").client(),
                 users,
                 Clock.system(TimeZones.SERVICE_ZONE));
 
@@ -150,18 +148,14 @@ class DemoAiIsolationTest {
         Task task = Task.createTask(project, "Demo", null, null, null, null, false);
         given(store.isAvailable()).willReturn(true);
         given(users.findById(userId)).willReturn(Optional.of(demo));
+        EmbeddingModel embeddingModel = mock(EmbeddingModel.class);
 
         TaskSearchEmbeddingService service = new TaskSearchEmbeddingService(
-                properties,
-                mock(ObjectMapper.class),
-                store,
-                tasks,
-                users,
-                new TaskFlowMetrics(new SimpleMeterRegistry()),
-                mock(GeminiClient.class));
+                properties, store, tasks, users, new TaskFlowMetrics(new SimpleMeterRegistry()), embeddingModel);
 
         service.ensureEmbeddings(List.of(task));
 
         verify(store, never()).findHashesByTaskIds(anyList());
+        verifyNoInteractions(embeddingModel);
     }
 }

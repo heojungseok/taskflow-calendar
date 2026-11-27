@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.engine.jdbc.spi.SQLExceptionLogging;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -27,8 +28,7 @@ class GrafanaProvisioningConfigTest {
 
         assertThat(rows)
                 .extracting(row -> row.path("title").asString())
-                .containsExactly(
-                        "운영 요약", "사용자·이용", "Calendar·Outbox", "Gemini·Cache", "Backend runtime", "DB·자원", "보안");
+                .containsExactly("운영 요약", "사용자·이용", "Calendar·Outbox", "LLM·Cache", "Backend runtime", "DB·자원", "보안");
         assertThat(rows)
                 .extracting(row -> row.path("collapsed").asBoolean())
                 .containsExactly(false, false, true, true, true, true, true);
@@ -40,8 +40,8 @@ class GrafanaProvisioningConfigTest {
                         "Google 가입 사용자",
                         "Google 신규 사용자 (24h)",
                         "활성 DEMO 세션",
-                        "Gemini 호출",
-                        "Gemini p95",
+                        "LLM 호출",
+                        "LLM p95",
                         "Cache 처리율",
                         "JVM heap",
                         "Hikari pending",
@@ -55,7 +55,7 @@ class GrafanaProvisioningConfigTest {
                         "컨테이너 CPU",
                         "컨테이너 메모리",
                         "자원 수집 지연");
-        assertThat(List.of("HTTP p95", "HTTP 5xx", "Gemini 실패 (10m)"))
+        assertThat(List.of("HTTP p95", "HTTP 5xx", "LLM 실패 (10m)"))
                 .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title)
                                 .path("type")
                                 .asString())
@@ -72,6 +72,7 @@ class GrafanaProvisioningConfigTest {
                 .contains("group_by: [environment]", ".Alerts.Firing", ".Alerts.Resolved")
                 .doesNotContain(".CommonAnnotations")
                 .contains("uid: taskflow-gemini-quota-exhausted", "uid: taskflow-gemini-repeated-failures")
+                .contains("uid: taskflow-local-llm-repeated-failures")
                 .contains("summary: DEMO 트래픽 급증", "summary: Backend 메트릭 수집 중단")
                 .contains("uid: taskflow-database-metrics-down", "summary: DB 메트릭 수집 중단")
                 .contains("uid: taskflow-database-connections-high", "summary: DB 연결 수 한도 근접")
@@ -87,7 +88,36 @@ class GrafanaProvisioningConfigTest {
         assertThat(alerts.lines()
                         .filter(line -> line.startsWith("      - uid: taskflow-") && !line.contains("discord"))
                         .count())
-                .isEqualTo(15);
+                .isEqualTo(16);
+    }
+
+    @Test
+    @DisplayName("Gemini 알림은 Gemini 호출만, 로컬 모델 알림은 Ollama 호출만 세고 LLM 패널은 제공자별로 나눈다")
+    void llmAlertsAndPanelsSplitByProvider() throws Exception {
+        assertThat(rule("taskflow-gemini-quota-exhausted"))
+                .contains(
+                        "gemini_calls_total{provider=\"gemini\",outcome=\"failure\",error_code=\"LLM_QUOTA_EXHAUSTED\"}");
+        assertThat(rule("taskflow-gemini-repeated-failures"))
+                .contains("gemini_calls_total{provider=\"gemini\",outcome=\"failure\"}");
+        assertThat(rule("taskflow-local-llm-repeated-failures"))
+                .contains("gemini_calls_total{provider=\"ollama\",outcome=\"failure\"}")
+                .contains("service: ollama");
+
+        JsonNode dashboard =
+                new ObjectMapper().readTree(Files.readString(Path.of("deploy/grafana/dashboards/taskflow.json")));
+        assertThat(List.of("LLM 호출", "LLM 성공·실패", "LLM p95", "LLM 실패 (10m)"))
+                .allSatisfy(title -> assertThat(findPanel(dashboard.path("panels"), title)
+                                .path("targets")
+                                .get(0)
+                                .path("expr")
+                                .asString())
+                        .contains("provider"));
+        assertThat(findPanel(dashboard.path("panels"), "Gemini 429 분류 (1h)")
+                        .path("targets")
+                        .get(0)
+                        .path("expr")
+                        .asString())
+                .contains("provider=\"gemini\"");
     }
 
     @Test

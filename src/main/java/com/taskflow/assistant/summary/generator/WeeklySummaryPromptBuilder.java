@@ -1,6 +1,7 @@
 package com.taskflow.assistant.summary.generator;
 
-import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.llm.LlmFeature;
+import com.taskflow.assistant.llm.LlmRequest;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.SummaryBucket;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
@@ -15,10 +16,9 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
-/** 주간 요약 Gemini 요청 본문(시스템 지시, 입력 JSON, 생성 설정)과 그 지표를 만든다. */
+/** 주간 요약 LLM 요청(시스템 지시, 입력 JSON, 생성 설정)과 그 지표를 만든다. */
 final class WeeklySummaryPromptBuilder {
 
     private final GeminiSummaryProperties properties;
@@ -40,43 +40,19 @@ final class WeeklySummaryPromptBuilder {
             int unsyncedTotalTaskCount,
             LocalDate weekStart,
             LocalDate weekEnd) {
-        try {
-            Map<String, Object> requestBody = new LinkedHashMap<>();
-            requestBody.put("system_instruction", createContent(systemInstruction()));
-            requestBody.put(
-                    "contents",
-                    List.of(createContent(userPrompt(
-                            project,
-                            syncedTasks,
-                            syncedTotalTaskCount,
-                            unsyncedTasks,
-                            unsyncedTotalTaskCount,
-                            weekStart,
-                            weekEnd))));
-
-            Map<String, Object> generationConfig = new LinkedHashMap<>();
-            generationConfig.put("temperature", properties.getTemperature());
-            if (effectiveTopK() != null) {
-                generationConfig.put("topK", effectiveTopK());
-            }
-            if (effectiveTopP() != null) {
-                generationConfig.put("topP", effectiveTopP());
-            }
-            generationConfig.put("responseMimeType", "application/json");
-            generationConfig.put("responseJsonSchema", WeeklySummaryResponseFormat.responseJsonSchema());
-            generationConfig.put("thinkingConfig", GeminiClient.MINIMAL_THINKING);
-            requestBody.put("generationConfig", generationConfig);
-
-            String serializedRequestBody = objectMapper.writeValueAsString(requestBody);
-            return new PreparedRequest(
-                    serializedRequestBody, buildPromptMetrics(serializedRequestBody, syncedTasks, unsyncedTasks));
-        } catch (JacksonException e) {
-            throw new IllegalStateException("Failed to build Gemini request body", e);
-        }
-    }
-
-    private Map<String, Object> createContent(String text) {
-        return Map.of("parts", List.of(Map.of("text", text)));
+        String systemInstruction = systemInstruction();
+        String userPrompt = userPrompt(
+                project, syncedTasks, syncedTotalTaskCount, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd);
+        LlmRequest request = new LlmRequest(
+                LlmFeature.WEEKLY_SUMMARY,
+                systemInstruction,
+                userPrompt,
+                WeeklySummaryResponseFormat.responseJsonSchema(),
+                properties.getTemperature(),
+                effectiveTopK(),
+                effectiveTopP());
+        return new PreparedRequest(
+                request, buildPromptMetrics(systemInstruction + userPrompt, syncedTasks, unsyncedTasks));
     }
 
     private String systemInstruction() {
@@ -206,10 +182,10 @@ final class WeeklySummaryPromptBuilder {
     }
 
     private PromptMetrics buildPromptMetrics(
-            String requestBody, List<TaskSyncSnapshot> syncedTasks, List<TaskSyncSnapshot> unsyncedTasks) {
+            String promptText, List<TaskSyncSnapshot> syncedTasks, List<TaskSyncSnapshot> unsyncedTasks) {
         return new PromptMetrics(
-                requestBody.getBytes(StandardCharsets.UTF_8).length,
-                sha256(requestBody),
+                promptText.getBytes(StandardCharsets.UTF_8).length,
+                sha256(promptText),
                 syncedTasks.size(),
                 unsyncedTasks.size(),
                 totalDescBriefChars(syncedTasks),
@@ -234,16 +210,16 @@ final class WeeklySummaryPromptBuilder {
     }
 
     static final class PreparedRequest {
-        private final String requestBody;
+        private final LlmRequest request;
         private final PromptMetrics metrics;
 
-        private PreparedRequest(String requestBody, PromptMetrics metrics) {
-            this.requestBody = requestBody;
+        private PreparedRequest(LlmRequest request, PromptMetrics metrics) {
+            this.request = request;
             this.metrics = metrics;
         }
 
-        String getRequestBody() {
-            return requestBody;
+        LlmRequest getRequest() {
+            return request;
         }
 
         PromptMetrics getMetrics() {

@@ -6,18 +6,55 @@ pub(crate) const ALERT_AT: u64 = 1_000;
 pub(crate) const NOW: u64 = 1_200;
 
 pub(crate) struct Scenario {
-    pub(crate) name: &'static str,
-    pub(crate) alert: &'static str,
+    pub(crate) name: String,
+    pub(crate) alert: String,
+    pub(crate) alert_at: u64,
+    pub(crate) service: Service,
+    pub(crate) now: u64,
     pub(crate) evidence: Evidence,
     pub(crate) expect: Expect,
+    pub(crate) suspect: Option<SuspectAnswer>,
+    pub(crate) known_gap: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum SuspectAnswer {
+    NewError { logger: String, contains: String },
+    Metric(String),
+    Commit(String),
+}
+
+impl SuspectAnswer {
+    pub(crate) fn is_in(&self, suspects: &[analyzer::Suspect]) -> bool {
+        suspects.iter().any(|suspect| match (self, suspect) {
+            (
+                Self::NewError { logger, contains },
+                analyzer::Suspect::NewError {
+                    first,
+                    most_frequent,
+                },
+            ) => [Some(first), most_frequent.as_ref()]
+                .into_iter()
+                .flatten()
+                .any(|group| {
+                    group.logger == *logger && group.fingerprint.contains(contains.as_str())
+                }),
+            (Self::Metric(name), analyzer::Suspect::FirstChangedMetric { name: other, .. }) => {
+                name == other
+            }
+            (Self::Commit(sha), analyzer::Suspect::RelatedCommit { sha: other }) => sha == other,
+            _ => false,
+        })
+    }
 }
 
 impl Scenario {
     pub(crate) fn alerts(&self) -> Vec<Alert> {
         vec![Alert {
-            name: self.alert.to_owned(),
-            service: Service::new("backend"),
-            starts_at_unix: ALERT_AT,
+            name: self.alert.clone(),
+            service: self.service.clone(),
+            starts_at_unix: self.alert_at,
         }]
     }
 }
@@ -57,8 +94,11 @@ fn baseline_noise() -> Vec<LogLine> {
     ]
 }
 
-fn cause(line: &'static str, keywords: &'static [&'static str]) -> Expect {
-    Expect::Cause { line, keywords }
+fn cause(line: &str, keywords: &[&str]) -> Expect {
+    Expect::Cause {
+        line: line.to_owned(),
+        keywords: keywords.iter().map(|k| (*k).to_owned()).collect(),
+    }
 }
 
 pub(crate) fn all() -> Vec<Scenario> {
@@ -82,8 +122,13 @@ fn db_pool() -> Scenario {
     );
     logs.extend(baseline_noise());
     Scenario {
-        name: "db-pool-exhausted",
-        alert: "backend error logs",
+        name: "db-pool-exhausted".to_owned(),
+        alert: "backend error logs".to_owned(),
+        alert_at: ALERT_AT,
+        service: Service::new("backend"),
+        now: NOW,
+        suspect: None,
+        known_gap: None,
         evidence: Evidence {
             logs,
             baseline_logs: baseline_noise(),
@@ -107,8 +152,13 @@ fn deploy_npe() -> Scenario {
     );
     logs.extend(baseline_noise());
     Scenario {
-        name: "deploy-npe",
-        alert: "backend error logs",
+        name: "deploy-npe".to_owned(),
+        alert: "backend error logs".to_owned(),
+        alert_at: ALERT_AT,
+        service: Service::new("backend"),
+        now: NOW,
+        suspect: None,
+        known_gap: None,
         evidence: Evidence {
             logs,
             baseline_logs: baseline_noise(),
@@ -135,8 +185,13 @@ fn gemini_quota() -> Scenario {
     );
     logs.extend(baseline_noise());
     Scenario {
-        name: "gemini-quota",
-        alert: "backend error logs",
+        name: "gemini-quota".to_owned(),
+        alert: "backend error logs".to_owned(),
+        alert_at: ALERT_AT,
+        service: Service::new("backend"),
+        now: NOW,
+        suspect: None,
+        known_gap: None,
         evidence: Evidence {
             logs,
             baseline_logs: baseline_noise(),
@@ -165,8 +220,13 @@ fn heap_oom() -> Scenario {
     )];
     logs.extend(baseline_noise());
     Scenario {
-        name: "heap-oom",
-        alert: "backend down",
+        name: "heap-oom".to_owned(),
+        alert: "backend down".to_owned(),
+        alert_at: ALERT_AT,
+        service: Service::new("backend"),
+        now: NOW,
+        suspect: None,
+        known_gap: None,
         evidence: Evidence {
             logs,
             baseline_logs: baseline_noise(),
@@ -193,8 +253,13 @@ fn disk_full() -> Scenario {
     );
     logs.extend(baseline_noise());
     Scenario {
-        name: "disk-full",
-        alert: "backend error logs",
+        name: "disk-full".to_owned(),
+        alert: "backend error logs".to_owned(),
+        alert_at: ALERT_AT,
+        service: Service::new("backend"),
+        now: NOW,
+        suspect: None,
+        known_gap: None,
         evidence: Evidence {
             logs,
             baseline_logs: baseline_noise(),
@@ -214,8 +279,13 @@ fn flyway_checksum() -> Scenario {
     )];
     logs.extend(baseline_noise());
     Scenario {
-        name: "flyway-checksum",
-        alert: "backend down",
+        name: "flyway-checksum".to_owned(),
+        alert: "backend down".to_owned(),
+        alert_at: ALERT_AT,
+        service: Service::new("backend"),
+        now: NOW,
+        suspect: None,
+        known_gap: None,
         evidence: Evidence {
             logs,
             baseline_logs: baseline_noise(),
@@ -235,8 +305,13 @@ fn broken_pipe_latency() -> Scenario {
     )];
     logs.extend(baseline_noise());
     Scenario {
-        name: "unknown-latency-broken-pipe",
-        alert: "backend latency high",
+        name: "unknown-latency-broken-pipe".to_owned(),
+        alert: "backend latency high".to_owned(),
+        alert_at: ALERT_AT,
+        service: Service::new("backend"),
+        now: NOW,
+        suspect: None,
+        known_gap: None,
         evidence: Evidence {
             logs,
             baseline_logs: baseline_noise(),
@@ -254,8 +329,13 @@ fn broken_pipe_latency() -> Scenario {
 
 fn metric_only_cpu() -> Scenario {
     Scenario {
-        name: "unknown-cpu-no-logs",
-        alert: "backend cpu high",
+        name: "unknown-cpu-no-logs".to_owned(),
+        alert: "backend cpu high".to_owned(),
+        alert_at: ALERT_AT,
+        service: Service::new("backend"),
+        now: NOW,
+        suspect: None,
+        known_gap: None,
         evidence: Evidence {
             missing: vec![Missing::Logs],
             metrics: vec![metric(

@@ -5,7 +5,7 @@ import com.taskflow.planning.task.TaskStatus;
 import java.util.*;
 import tools.jackson.databind.JsonNode;
 
-/** Gemini가 돌려준 검색 의도 JSON을 허용 값·개수·신뢰도 범위 안으로 정규화한다. */
+/** 모델이 돌려준 검색 의도 JSON을 허용 값·개수·신뢰도 범위 안으로 정규화한다. */
 final class SearchIntentPayloadNormalizer {
 
     private static final int MAX_TOPIC_TERMS = 5;
@@ -14,6 +14,18 @@ final class SearchIntentPayloadNormalizer {
     private static final int MAX_SUGGESTED_QUERIES = 3;
     private static final Set<String> TOPIC_STOPWORDS = Set.of("일정", "작업", "업무", "할일", "할 일", "것");
     private static final Set<String> LEISURE_TERMS = Set.of("놀기", "놀이", "놀", "나들이", "여가", "데이트");
+
+    private static final Set<String> FIELD_CONFIDENCE_KEYS = Set.of(
+            "targetType",
+            "domainType",
+            "mainAction",
+            "topicTerms",
+            "participantTerms",
+            "locationTerms",
+            "genericCompanionRequired",
+            "timeIntent",
+            "priorityIntent",
+            "syncIntent");
 
     private SearchIntentPayloadNormalizer() {}
 
@@ -148,8 +160,11 @@ final class SearchIntentPayloadNormalizer {
         if (!node.isObject()) {
             return confidence;
         }
+        // Spring AI의 Gemini 스키마 변환이 additionalProperties:false를 버려 모델이 허용 목록 밖 키를 보낼 수 있다.
         for (String field : node.propertyNames()) {
-            confidence.put(field, clampConfidence(node.path(field).asDouble(0.0d)));
+            if (FIELD_CONFIDENCE_KEYS.contains(field)) {
+                confidence.put(field, clampConfidence(node.path(field).asDouble(0.0d)));
+            }
         }
         return confidence;
     }

@@ -68,7 +68,7 @@ public class TaskFlowMetrics {
                 .increment();
     }
 
-    public <T> T observeGeminiCall(String feature, Supplier<T> call) {
+    public <T> T observeGeminiCall(String feature, String provider, Supplier<T> call) {
         long startedAt = System.nanoTime();
         String outcome = "success";
         String errorCode = "none";
@@ -83,9 +83,18 @@ public class TaskFlowMetrics {
             errorCode = "UNCLASSIFIED";
             throw e;
         } finally {
-            registry.counter("gemini_calls_total", "feature", feature, "outcome", outcome, "error_code", errorCode)
+            registry.counter(
+                            "gemini_calls_total",
+                            "feature",
+                            feature,
+                            "provider",
+                            provider,
+                            "outcome",
+                            outcome,
+                            "error_code",
+                            errorCode)
                     .increment();
-            registry.timer("gemini_calls", "feature", feature)
+            registry.timer("gemini_calls", "feature", feature, "provider", provider)
                     .record(System.nanoTime() - startedAt, TimeUnit.NANOSECONDS);
         }
     }

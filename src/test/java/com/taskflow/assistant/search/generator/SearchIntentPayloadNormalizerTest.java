@@ -22,4 +22,19 @@ class SearchIntentPayloadNormalizerTest {
 
         assertThat(intent.getTargetType()).isEqualTo(SearchTargetType.MIXED);
     }
+
+    @Test
+    @DisplayName("fieldConfidence는 스키마에 있는 키만 남기고 모델이 덧붙인 키는 버린다")
+    void fieldConfidenceKeepsOnlySchemaKeys() {
+        String payload = """
+                {"fieldConfidence":{"targetType":0.9,"syncIntent":0.4,"unknownKey":0.7,"queryType":0.5}}""";
+
+        SearchIntent intent = SearchIntentPayloadNormalizer.normalize(
+                "배포", JsonMapper.builder().build().readTree(payload));
+
+        assertThat(intent.getFieldConfidence())
+                .containsEntry("targetType", 0.9d)
+                .containsEntry("syncIntent", 0.4d);
+        assertThat(intent.getFieldConfidence()).doesNotContainKeys("unknownKey", "queryType");
+    }
 }

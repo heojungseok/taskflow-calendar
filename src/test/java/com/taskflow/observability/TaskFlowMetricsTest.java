@@ -17,29 +17,46 @@ class TaskFlowMetricsTest {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
         TaskFlowMetrics metrics = new TaskFlowMetrics(registry);
 
-        assertThat(metrics.observeGeminiCall("weekly_summary", () -> "ok")).isEqualTo("ok");
-        assertThatThrownBy(() -> metrics.observeGeminiCall("embedding", () -> {
+        assertThat(metrics.observeGeminiCall("weekly_summary", "gemini", () -> "ok"))
+                .isEqualTo("ok");
+        assertThatThrownBy(() -> metrics.observeGeminiCall("embedding", "ollama", () -> {
                     throw new TaskSearchGenerationException(ErrorCode.LLM_QUOTA_EXHAUSTED, "quota");
                 }))
                 .isInstanceOf(TaskSearchGenerationException.class);
 
         assertThat(registry.get("gemini_calls_total")
-                        .tags("feature", "weekly_summary", "outcome", "success", "error_code", "none")
+                        .tags(
+                                "feature",
+                                "weekly_summary",
+                                "provider",
+                                "gemini",
+                                "outcome",
+                                "success",
+                                "error_code",
+                                "none")
                         .counter()
                         .count())
                 .isEqualTo(1);
         assertThat(registry.get("gemini_calls_total")
-                        .tags("feature", "embedding", "outcome", "failure", "error_code", "LLM_QUOTA_EXHAUSTED")
+                        .tags(
+                                "feature",
+                                "embedding",
+                                "provider",
+                                "ollama",
+                                "outcome",
+                                "failure",
+                                "error_code",
+                                "LLM_QUOTA_EXHAUSTED")
                         .counter()
                         .count())
                 .isEqualTo(1);
         assertThat(registry.get("gemini_calls")
-                        .tag("feature", "weekly_summary")
+                        .tags("feature", "weekly_summary", "provider", "gemini")
                         .timer()
                         .count())
                 .isEqualTo(1);
         assertThat(registry.get("gemini_calls")
-                        .tag("feature", "embedding")
+                        .tags("feature", "embedding", "provider", "ollama")
                         .timer()
                         .count())
                 .isEqualTo(1);

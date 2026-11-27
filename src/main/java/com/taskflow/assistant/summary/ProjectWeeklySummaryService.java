@@ -1,5 +1,7 @@
 package com.taskflow.assistant.summary;
 
+import com.taskflow.assistant.llm.LlmClient;
+import com.taskflow.assistant.llm.LlmFeature;
 import com.taskflow.assistant.summary.cache.WeeklySummaryCacheService;
 import com.taskflow.assistant.summary.dto.WeeklySummaryCacheStatus;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResponse;
@@ -42,7 +44,7 @@ public class ProjectWeeklySummaryService {
     private final WeeklySummaryGenerator weeklySummaryGenerator;
     private final TaskSyncStateResolver taskSyncStateResolver;
     private final WeeklySummaryCacheService weeklySummaryCacheService;
-    private final GeminiSummaryProperties geminiProperties;
+    private final LlmClient llmClient;
     private final UserRepository userRepository;
     private final Clock clock;
     private final SummaryTaskSelector taskSelector = new SummaryTaskSelector();
@@ -79,7 +81,7 @@ public class ProjectWeeklySummaryService {
             return buildDemoResponse(project, weekStart, weekEnd, generatedAt, syncedTasks, unsyncedTasks);
         }
 
-        String modelName = geminiProperties.getModel();
+        String modelName = llmClient.modelId(LlmFeature.WEEKLY_SUMMARY);
         String fingerprint =
                 WeeklySummaryCacheKeys.summaryFingerprint(project, weekStart, weekEnd, prioritizedTasks, modelName);
         String exactCacheKey =

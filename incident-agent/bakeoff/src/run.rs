@@ -9,7 +9,7 @@ use analyzer::{
 use ollama::{Ollama, Reply};
 use serde_json::json;
 
-use crate::scenarios::{NOW, Scenario};
+use crate::scenarios::Scenario;
 use crate::score::{Outcome, score};
 
 const RUN_TIMEOUT: Duration = Duration::from_secs(60);
@@ -35,11 +35,11 @@ impl EvidenceSource for Fixed {
     }
 }
 
-struct At;
+struct At(u64);
 
 impl Clock for At {
     fn now_unix(&self) -> u64 {
-        NOW
+        self.0
     }
 }
 
@@ -88,11 +88,20 @@ fn run_one(model: &Ollama, scenario: &Scenario) -> Row {
         &scenario.alerts(),
         &Knowledge::default(),
         &Fixed(scenario.evidence.clone()),
-        &At,
+        &At(scenario.now),
         &recorder,
     )
     .remove(0);
     let wall_ms = started.elapsed().as_millis();
+    if let Some(answer) = &scenario.suspect
+        && !answer.is_in(&report.suspects)
+    {
+        let gap = scenario
+            .known_gap
+            .as_ref()
+            .map_or_else(String::new, |gap| format!(" (알려진 약점: {gap})"));
+        eprintln!("{}: 코드가 고른 의심에 {answer:?} 없음{gap}", scenario.name);
+    }
     let prompt = recorder.prompt.borrow();
     let outcome = score(&scenario.expect, &report.analysis, &prompt);
     let answer = match &report.analysis {

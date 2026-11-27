@@ -1,26 +1,29 @@
 package com.taskflow.assistant.search.generator;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import com.taskflow.assistant.llm.LlmFeature;
+import com.taskflow.assistant.llm.LlmRequest;
 import com.taskflow.assistant.search.GeminiSearchProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 class SearchIntentRequestTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
     @Test
-    @DisplayName("Gemini 3 계열이 받는 thinkingLevel minimal을 보내고 거부되는 thinkingBudget은 보내지 않는다")
-    void requestsMinimalThinkingLevel() throws Exception {
-        String body = SearchIntentRequest.buildRequestBody(new GeminiSearchProperties(), objectMapper, "이번 주 배포");
+    @DisplayName("검색 의도 요청은 기능, 온도, 시스템 지시, 질의가 담긴 프롬프트, 스키마를 담는다")
+    void buildsSearchIntentRequest() {
+        GeminiSearchProperties properties = new GeminiSearchProperties();
 
-        JsonNode thinkingConfig =
-                objectMapper.readTree(body).path("generationConfig").path("thinkingConfig");
-        assertEquals("minimal", thinkingConfig.path("thinkingLevel").asString());
-        assertTrue(thinkingConfig.path("thinkingBudget").isMissingNode());
+        LlmRequest request = SearchIntentRequest.build(properties, "이번 주 배포");
+
+        assertThat(request.feature()).isEqualTo(LlmFeature.SEARCH_INTENT);
+        assertThat(request.temperature()).isEqualTo(properties.getTemperature());
+        assertThat(request.topK()).isNull();
+        assertThat(request.topP()).isNull();
+        assertThat(request.systemInstruction()).startsWith("당신은 자연어 Task 검색 질의를 구조화하는 intent parsing 보조자다.");
+        assertThat(request.userPrompt()).startsWith("아래 자연어 검색 질의를 Task 검색 intent로 구조화하라.");
+        assertThat(request.userPrompt()).endsWith("query: 이번 주 배포");
+        assertThat(request.responseSchema()).containsKeys("properties", "required");
     }
 }

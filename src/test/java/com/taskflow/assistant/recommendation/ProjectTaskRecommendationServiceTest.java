@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.taskflow.assistant.llm.FakeLlmProvider;
 import com.taskflow.assistant.recommendation.cache.TaskRecommendationCacheService;
 import com.taskflow.assistant.recommendation.dto.ProjectTaskRecommendationResponse;
 import com.taskflow.assistant.recommendation.dto.TaskRecommendationCacheStatus;
@@ -93,7 +94,7 @@ class ProjectTaskRecommendationServiceTest {
                 taskSyncStateResolver,
                 taskRecommendationGenerator,
                 taskRecommendationCacheService,
-                geminiProperties,
+                FakeLlmProvider.returning("{}").client(),
                 userRepository,
                 Clock.system(TimeZones.SERVICE_ZONE));
         project = Project.of("TaskFlow", 1L);
