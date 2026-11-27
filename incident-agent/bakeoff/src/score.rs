@@ -1,10 +1,7 @@
 use analyzer::{Analysis, SkipReason};
 
 pub(crate) enum Expect {
-    Cause {
-        line: &'static str,
-        keywords: &'static [&'static str],
-    },
+    Cause { line: String, keywords: Vec<String> },
     Unknown,
 }
 
@@ -61,9 +58,11 @@ pub(crate) fn score(expect: &Expect, analysis: &Analysis, prompt: &str) -> Outco
         .cited_lines()
         .iter()
         .filter_map(|n| cited_line(prompt, *n))
-        .any(|text| text.contains(line));
+        .any(|text| text.contains(line.as_str()));
     let cause = guess.cause().to_lowercase();
-    let names_cause = keywords.iter().any(|keyword| cause.contains(keyword));
+    let names_cause = keywords
+        .iter()
+        .any(|keyword| cause.contains(keyword.as_str()));
     if cites_cause && names_cause {
         Outcome::Correct
     } else {
@@ -197,7 +196,7 @@ mod tests {
         for scenario in all() {
             let result = outcome(&scenario, low);
             assert_ne!(result, Outcome::NoModelCall, "{}", scenario.name);
-            if let Expect::Cause { line, .. } = scenario.expect {
+            if let Expect::Cause { line, .. } = &scenario.expect {
                 assert_eq!(
                     outcome(&scenario, &guess(line)),
                     Outcome::Correct,
