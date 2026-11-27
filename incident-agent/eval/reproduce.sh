@@ -86,13 +86,13 @@ case "$case_name" in
       -c "BEGIN; LOCK TABLE tasks IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(90); COMMIT;" >/dev/null 2>&1 &
     alert_at=$((t0 + 90))
     origin="재현: 긴 트랜잭션이 tasks 테이블을 90초 잠가 요청이 연결을 붙잡고 연결 풀이 고갈됐다(부하 20 VU)"
-    answer='{"suspect":{"new_error":{"logger":"o.h.e.jdbc.spi.SqlExceptionHelper","contains":"Connection is not available"}},"line":"Connection is not available","keywords":["풀","pool","hikari","커넥션","연결","잠금","lock"]}' ;;
+    answer='{"suspect":{"new_error":{"logger":"org.hibernate.orm.jdbc.error","contains":"Connection is not available"}},"line":"Connection is not available","keywords":["풀","pool","hikari","커넥션","연결","잠금","lock"],"known_gap":"Spring Boot 4.1·Hibernate 7부터 JDBC 오류를 org.hibernate.orm.jdbc.error가 WARN으로 남겨 새 오류 의심(ERROR만 본다)에 들어가지 않는다. ERROR로 남는 것은 dispatcherServlet의 일반 문구뿐이다"}' ;;
   db-down)
     docker stop taskflow-postgres >/dev/null
     (sleep 60 && docker start taskflow-postgres >/dev/null) &
     alert_at=$((t0 + 60))
     origin="재현: DB 컨테이너가 60초 내려갔다(재시작·OOM 상황)"
-    answer='{"suspect":{"new_error":{"logger":"o.h.e.jdbc.spi.SqlExceptionHelper","contains":"refused"}},"line":"refused","keywords":["db","데이터베이스","postgres","postgresql","거부","refused","중단","다운","접속"]}' ;;
+    answer='{"suspect":{"new_error":{"logger":"org.hibernate.orm.jdbc.error","contains":"Connection is not available"}},"line":"Connection is not available","keywords":["db","데이터베이스","postgres","postgresql","연결","접속","중단","다운","hikari","pool","풀"],"known_gap":"Spring Boot 4.1·Hibernate 7부터 JDBC 오류를 org.hibernate.orm.jdbc.error가 WARN으로 남겨 새 오류 의심(ERROR만 본다)에 들어가지 않는다. ERROR로 남는 것은 dispatcherServlet의 일반 문구뿐이다"}' ;;
   backend-down)
     stop_backend
     alert="backend metrics collection down"
