@@ -1,4 +1,4 @@
-package com.taskflow.assistant;
+package com.taskflow.assistant.llm;
 
 import lombok.Getter;
 import lombok.Setter;

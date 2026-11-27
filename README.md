@@ -58,7 +58,7 @@ Google 계정으로 로그인하면 Task가 Google Calendar 일정으로 생성�
 - 계정 없이 데모 로그인으로 둘러볼 수 있습니다. 데모 데이터는 방문자별로 격리되고 24시간 뒤 삭제됩니다
 - Google 연결은 언제든 해제·재연결할 수 있고, 해제할 때 저장된 토큰을 폐기합니다
 - 동기화가 어디까지 갔는지 Task별로, Outbox 단위로 확인합니다
-- 한 주의 업무를 요약하고 다음에 할 일을 추천합니다 (Gemini)
+- 한 주의 업무를 요약하고 다음에 할 일을 추천합니다 (기능별로 Gemini 또는 로컬 모델)
 - "이번 주 안 끝난 거"처럼 말로 Task를 찾습니다
 - 운영 상태를 대시보드와 알림으로 확인합니다 (Prometheus / Grafana)
 
@@ -183,14 +183,14 @@ Google OAuth 또는 데모 로그인 후 JWT를 HttpOnly 세션 쿠키로 전달
 
 ## 관측과 장애 대응
 
-Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림을 담당합니다. 대시보드는 다섯 묶음으로 나뉩니다 — 운영 요약, 사용자·이용, Calendar·Outbox, Gemini·Cache, Backend runtime. 위에서부터 "지금 쓸 수 있는가 → 실제로 쓰이고 있는가 → 동기화는 밀리지 않는가 → AI 기능은 성공하는가 → 런타임에 병목 신호가 있는가" 순으로 읽습니다.
+Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림을 담당합니다. 대시보드는 다섯 묶음으로 나뉩니다 — 운영 요약, 사용자·이용, Calendar·Outbox, LLM·Cache, Backend runtime. 위에서부터 "지금 쓸 수 있는가 → 실제로 쓰이고 있는가 → 동기화는 밀리지 않는가 → AI 기능은 성공하는가 → 런타임에 병목 신호가 있는가" 순으로 읽습니다.
 
 2026-08-27에는 알림 규칙 8종을 구성하고 그중 backend 중단 알림의 Discord 발생·복구 전달을 검증했습니다. demo usage와 traffic spike 알림은 메트릭이 없을 때 0으로 평가해 No data 오탐을 방지합니다.
 
 2026-11-25에는 로그 수집 끊김과 Backend ERROR 로그 알림을 더했습니다. 공개 데모는 요청이 하루 몇 건뿐이라 Loki에 로그가 없을 때 조용한 것인지 수집이 끊긴 것인지 구분할 수 없어, Backend가 5분마다 남기는 heartbeat로 수집 경로를 확인합니다.
 
 <details>
-<summary>알림 10종의 조건</summary>
+<summary>주요 알림의 조건</summary>
 
 | 알림 | 조건 | severity |
 |---|---|---|
@@ -200,8 +200,9 @@ Prometheus가 backend metric을 수집하고 Grafana가 대시보드와 알림�
 | cleanup overdue | 만료 데모 데이터 최고 연령 > 600초, 5분 지속 | warning |
 | demo usage | 1시간 데모 세션 3건 이상 + `SKIPPED` Outbox 5건 이상 | warning |
 | demo traffic spike | 10분간 데모 세션 20건 또는 `SKIPPED` Outbox 50건 | warning |
-| gemini quota exhausted | 5분간 `LLM_QUOTA_EXHAUSTED` 발생 (기능별) | warning |
-| gemini repeated failures | 10분간 Gemini 실패 3건 초과 (기능별) | warning |
+| gemini quota exhausted | 5분간 Gemini 호출에서 `LLM_QUOTA_EXHAUSTED` 발생 (기능별) | critical |
+| gemini repeated failures | 10분간 Gemini 호출 실패 3건 초과 (기능별) | warning |
+| local llm repeated failures | 10분간 로컬 모델(Ollama) 호출 실패 3건 초과 (기능별) | warning |
 | backend log pipeline silent | 15분간 Loki에 Backend heartbeat 0건 (데이터가 없어도 발생) | warning |
 | backend error logs | 5분간 Backend ERROR 로그 1건 이상 | warning |
 

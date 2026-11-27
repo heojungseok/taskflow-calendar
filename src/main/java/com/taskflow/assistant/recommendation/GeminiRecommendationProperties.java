@@ -1,6 +1,6 @@
 package com.taskflow.assistant.recommendation;
 
-import com.taskflow.assistant.GeminiProperties;
+import com.taskflow.assistant.llm.GeminiProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 

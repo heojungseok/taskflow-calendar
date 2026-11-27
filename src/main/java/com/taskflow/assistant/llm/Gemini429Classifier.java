@@ -1,4 +1,4 @@
-package com.taskflow.assistant;
+package com.taskflow.assistant.llm;
 
 import com.taskflow.common.ErrorCode;
 import java.util.LinkedHashSet;
@@ -72,9 +72,9 @@ final class Gemini429Classifier {
         try {
             JsonNode root = objectMapper.readTree(body);
             JsonNode error = root.path("error");
-            String message = GeminiClient.firstNonBlank(
+            String message = firstNonBlank(
                     error.path("message").asString(null), root.path("message").asString(null), body);
-            String status = GeminiClient.firstNonBlank(
+            String status = firstNonBlank(
                     error.path("status").asString(null), root.path("status").asString(null));
             JsonNode retryDelay = error.findValue("retryDelay");
             return new ParsedUpstream(
@@ -167,6 +167,15 @@ final class Gemini429Classifier {
         return false;
     }
 
+    static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     private static String normalize(String value) {
         return value == null
                 ? ""
@@ -187,7 +196,7 @@ final class Gemini429Classifier {
             List<String> hints,
             String retryDelay) {
 
-        static Classified429 quota(String source, ParsedUpstream parsed) {
+        private static Classified429 quota(String source, ParsedUpstream parsed) {
             return new Classified429(
                     ErrorCode.LLM_QUOTA_EXHAUSTED,
                     "Gemini quota exhausted",
@@ -197,7 +206,7 @@ final class Gemini429Classifier {
                     parsed.retryDelay());
         }
 
-        static Classified429 rateLimit(String source, ParsedUpstream parsed) {
+        private static Classified429 rateLimit(String source, ParsedUpstream parsed) {
             return new Classified429(
                     ErrorCode.LLM_RATE_LIMITED_TEMPORARY,
                     "Gemini rate limit is temporary",

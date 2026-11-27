@@ -1,7 +1,6 @@
 package com.taskflow.assistant.search;
 
-import com.taskflow.assistant.GeminiCallException;
-import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.llm.LlmCallException;
 import com.taskflow.assistant.search.exception.TaskSearchGenerationException;
 import com.taskflow.common.ErrorCode;
 import com.taskflow.identity.user.Provider;
@@ -17,11 +16,12 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.embedding.Embedding;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingRequest;
+import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -30,12 +30,11 @@ public class TaskSearchEmbeddingService {
     private static final Logger log = LoggerFactory.getLogger(TaskSearchEmbeddingService.class);
 
     private final GeminiSearchProperties properties;
-    private final ObjectMapper objectMapper;
     private final TaskSearchEmbeddingStore embeddingStore;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final TaskFlowMetrics metrics;
-    private final GeminiClient geminiClient;
+    private final EmbeddingModel embeddingModel;
 
     /**
      * 의미 검색이 왜 안 도는지까지 알려준다.
@@ -145,7 +144,7 @@ public class TaskSearchEmbeddingService {
         }
 
         try {
-            return metrics.observeGeminiCall("embedding", () -> requestEmbeddings(documents));
+            return metrics.observeGeminiCall("embedding", "gemini", () -> requestEmbeddings(documents));
         } catch (TaskSearchGenerationException e) {
             log.warn(
                     "Task search embedding request failed. errorCode={}",
@@ -155,53 +154,29 @@ public class TaskSearchEmbeddingService {
     }
 
     private List<List<Double>> requestEmbeddings(List<String> documents) {
-
-        Map<String, Object> requestBody = new LinkedHashMap<>();
-        requestBody.put(
-                "requests",
-                documents.stream()
-                        .map(document -> {
-                            Map<String, Object> request = new LinkedHashMap<>();
-                            request.put("model", "models/" + properties.getEmbeddingModel());
-                            request.put("taskType", "RETRIEVAL_DOCUMENT");
-                            request.put("content", Map.of("parts", List.of(Map.of("text", document))));
-                            return request;
-                        })
-                        .collect(Collectors.toList()));
-
         try {
-            String responseBody = geminiClient.post(
-                    properties,
-                    properties.getEmbeddingModel() + ":batchEmbedContents",
-                    objectMapper.writeValueAsString(requestBody));
-            return parseEmbeddings(objectMapper.readTree(responseBody), documents.size());
-        } catch (GeminiCallException e) {
+            return toVectors(embeddingModel.call(new EmbeddingRequest(documents, null)), documents.size());
+        } catch (LlmCallException e) {
             throw new TaskSearchGenerationException(
                     e.getErrorCode(), "Gemini embedding request failed: " + e.getMessage());
-        } catch (JacksonException e) {
-            throw new TaskSearchGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini embedding request failed");
         }
     }
 
-    List<List<Double>> parseEmbeddings(JsonNode root, int expectedCount) {
-        JsonNode embeddings = root.path("embeddings");
-        if (!embeddings.isArray() || embeddings.size() != expectedCount) {
+    List<List<Double>> toVectors(EmbeddingResponse response, int expectedCount) {
+        List<Embedding> embeddings = response.getResults();
+        if (embeddings.size() != expectedCount) {
             throw invalidEmbeddingResponse();
         }
 
-        List<List<Double>> vectors = new ArrayList<>();
-        for (JsonNode embeddingNode : embeddings) {
-            JsonNode values = embeddingNode.path("values");
-            if (!values.isArray() || values.size() != properties.getEmbeddingDimensions()) {
+        List<List<Double>> vectors = new ArrayList<>(embeddings.size());
+        for (Embedding embedding : embeddings) {
+            float[] values = embedding.getOutput();
+            if (values.length != properties.getEmbeddingDimensions()) {
                 throw invalidEmbeddingResponse();
             }
-            List<Double> vector = new ArrayList<>(values.size());
-            for (JsonNode value : values) {
-                if (!value.isNumber()) {
-                    throw invalidEmbeddingResponse();
-                }
-                vector.add(value.asDouble());
+            List<Double> vector = new ArrayList<>(values.length);
+            for (float value : values) {
+                vector.add((double) value);
             }
             vectors.add(vector);
         }

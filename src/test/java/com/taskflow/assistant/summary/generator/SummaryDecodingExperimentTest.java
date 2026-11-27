@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.llm.GeminiLlmProvider;
+import com.taskflow.assistant.llm.LlmClient;
+import com.taskflow.assistant.llm.LlmFeature;
+import com.taskflow.assistant.llm.LlmRoutingProperties;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.dto.WeeklySummaryResult;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
@@ -44,12 +47,14 @@ class SummaryDecodingExperimentTest {
     @DisplayName("summary decoding 조합별 live 실험 결과를 자동 보고서로 저장한다")
     void generateExperimentReport() throws IOException {
         GeminiSummaryProperties properties = createProperties();
-        GeminiWeeklySummaryGenerator generator = new GeminiWeeklySummaryGenerator(
+        LlmWeeklySummaryGenerator generator = new LlmWeeklySummaryGenerator(
                 properties,
                 objectMapper,
                 new TaskFlowMetrics(new SimpleMeterRegistry()),
                 Clock.system(TimeZones.SERVICE_ZONE),
-                new GeminiClient(objectMapper));
+                new LlmClient(
+                        List.of(new GeminiLlmProvider(Map.of(LlmFeature.WEEKLY_SUMMARY, properties), objectMapper)),
+                        new LlmRoutingProperties(Map.of())));
         List<ExperimentScenario> scenarios = List.of(releaseScenario(), onboardingScenario());
         List<Map<String, Object>> scenarioReports = new ArrayList<>();
 

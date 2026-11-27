@@ -30,6 +30,10 @@ dependencies {
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     testImplementation 'io.micrometer:micrometer-registry-prometheus'
 
+    implementation platform('org.springframework.ai:spring-ai-bom:2.1.0')
+    implementation 'org.springframework.ai:spring-ai-google-genai'
+    implementation 'org.springframework.ai:spring-ai-ollama'
+
     // Database
     runtimeOnly 'org.postgresql:postgresql'
 

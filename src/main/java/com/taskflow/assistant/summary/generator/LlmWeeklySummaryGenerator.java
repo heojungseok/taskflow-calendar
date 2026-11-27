@@ -1,12 +1,13 @@
 package com.taskflow.assistant.summary.generator;
 
-import com.taskflow.assistant.GeminiCallException;
-import com.taskflow.assistant.GeminiClient;
+import com.taskflow.assistant.llm.LlmCallException;
+import com.taskflow.assistant.llm.LlmClient;
+import com.taskflow.assistant.llm.LlmFeature;
+import com.taskflow.assistant.llm.LlmResponse;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import com.taskflow.assistant.summary.dto.WeeklySummarySectionsResult;
 import com.taskflow.assistant.summary.exception.WeeklySummaryGenerationException;
 import com.taskflow.calendarsync.outbox.TaskSyncSnapshot;
-import com.taskflow.common.ErrorCode;
 import com.taskflow.observability.TaskFlowMetrics;
 import com.taskflow.planning.project.Project;
 import java.time.Clock;
@@ -14,34 +15,30 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
-public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
+public class LlmWeeklySummaryGenerator implements WeeklySummaryGenerator {
 
     private final GeminiSummaryProperties properties;
-    private final ObjectMapper objectMapper;
     private final TaskFlowMetrics metrics;
-    private final GeminiClient geminiClient;
+    private final LlmClient llmClient;
 
     private final WeeklySummaryPromptBuilder promptBuilder;
     private final WeeklySummaryResponseFormat responseFormat;
 
-    public GeminiWeeklySummaryGenerator(
+    public LlmWeeklySummaryGenerator(
             GeminiSummaryProperties properties,
             ObjectMapper objectMapper,
             TaskFlowMetrics metrics,
             Clock clock,
-            GeminiClient geminiClient) {
+            LlmClient llmClient) {
         this.properties = properties;
-        this.objectMapper = objectMapper;
         this.metrics = metrics;
-        this.geminiClient = geminiClient;
+        this.llmClient = llmClient;
         this.promptBuilder = new WeeklySummaryPromptBuilder(properties, objectMapper, clock);
-        this.responseFormat = new WeeklySummaryResponseFormat(properties, objectMapper);
+        this.responseFormat = new WeeklySummaryResponseFormat(objectMapper);
     }
 
     @Override
@@ -74,6 +71,7 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             LocalDate weekEnd) {
         return metrics.observeGeminiCall(
                 "weekly_summary",
+                llmClient.providerName(LlmFeature.WEEKLY_SUMMARY),
                 () -> generateUnobserved(
                         project,
                         syncedTasks,
@@ -92,51 +90,32 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             int unsyncedTotalTaskCount,
             LocalDate weekStart,
             LocalDate weekEnd) {
-        validateConfiguration();
-
         WeeklySummaryPromptBuilder.PreparedRequest preparedRequest = promptBuilder.prepareRequest(
                 project, syncedTasks, syncedTotalTaskCount, unsyncedTasks, unsyncedTotalTaskCount, weekStart, weekEnd);
         long startedAt = System.currentTimeMillis();
-        String responseBody;
+        LlmResponse response;
         try {
-            responseBody = geminiClient.post(
-                    properties, properties.getModel() + ":generateContent", preparedRequest.getRequestBody());
-        } catch (GeminiCallException e) {
+            response = llmClient.generate(preparedRequest.getRequest());
+        } catch (LlmCallException e) {
             throw upstreamFailure(project, weekStart, weekEnd, e, preparedRequest.getMetrics());
         }
         long latencyMs = System.currentTimeMillis() - startedAt;
 
-        try {
-            JsonNode root = objectMapper.readTree(responseBody);
-            WeeklySummaryResponseFormat.UsageMetrics usageMetrics = responseFormat.usageMetrics(root);
-            logUsage(project, weekStart, weekEnd, latencyMs, preparedRequest.getMetrics(), usageMetrics);
-            return SummaryGenerationTelemetry.of(
-                    responseFormat.parseResponse(root, syncedTotalTaskCount, unsyncedTotalTaskCount),
-                    preparedRequest.getMetrics().getRequestBodyLength(),
-                    usageMetrics.promptTokens,
-                    usageMetrics.candidateTokens,
-                    usageMetrics.totalTokens);
-        } catch (JacksonException e) {
-            throw new WeeklySummaryGenerationException(
-                    ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE,
-                    "Gemini response was not readable: " + e.getMessage(),
-                    true);
-        }
-    }
-
-    private void validateConfiguration() {
-        if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
-            throw new WeeklySummaryGenerationException(
-                    ErrorCode.LLM_API_KEY_MISSING, "GEMINI_SUMMARY_API_KEY is not configured", false);
-        }
+        logUsage(project, weekStart, weekEnd, latencyMs, preparedRequest.getMetrics(), response);
+        return SummaryGenerationTelemetry.of(
+                responseFormat.parseResponse(response, syncedTotalTaskCount, unsyncedTotalTaskCount),
+                preparedRequest.getMetrics().getRequestBodyLength(),
+                response.promptTokens(),
+                response.outputTokens(),
+                response.totalTokens());
     }
 
     private WeeklySummaryGenerationException upstreamFailure(
-            Project project, LocalDate weekStart, LocalDate weekEnd, GeminiCallException e, PromptMetrics metrics) {
+            Project project, LocalDate weekStart, LocalDate weekEnd, LlmCallException e, PromptMetrics metrics) {
         log.warn(
                 "Gemini summary request failed. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, statusCode={}, errorCode={}, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, classificationSource={}, retryAfter={}, upstreamStatus={}, upstreamReasonHints={}, message={}",
                 project.getId(),
-                properties.getModel(),
+                llmClient.modelId(LlmFeature.WEEKLY_SUMMARY),
                 weekStart,
                 weekEnd,
                 e.getStatusCode(),
@@ -172,11 +151,11 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
             LocalDate weekEnd,
             long latencyMs,
             PromptMetrics metrics,
-            WeeklySummaryResponseFormat.UsageMetrics usageMetrics) {
+            LlmResponse response) {
         log.info(
                 "Gemini summary request succeeded. projectId={}, model={}, weekStart={}, weekEnd={}, cacheStatus=LIVE, latencyMs={}, temperature={}, topK={}, topP={}, requestBodyLength={}, promptInputFingerprint={}, syncedIncludedTasks={}, unsyncedIncludedTasks={}, syncedDescBriefChars={}, unsyncedDescBriefChars={}, promptTokens={}, candidateTokens={}, totalTokens={}",
                 project.getId(),
-                properties.getModel(),
+                response.model(),
                 weekStart,
                 weekEnd,
                 latencyMs,
@@ -189,9 +168,9 @@ public class GeminiWeeklySummaryGenerator implements WeeklySummaryGenerator {
                 metrics.getUnsyncedIncludedTaskCount(),
                 metrics.getSyncedDescBriefChars(),
                 metrics.getUnsyncedDescBriefChars(),
-                usageMetrics.promptTokens,
-                usageMetrics.candidateTokens,
-                usageMetrics.totalTokens);
+                response.promptTokens(),
+                response.outputTokens(),
+                response.totalTokens());
     }
 
     private String abbreviate(String value) {
