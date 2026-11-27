@@ -20,7 +20,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * 임베딩 후보를 같은 픽스처로 비교한다. 실제 모델을 부르므로 EMBEDDING_BAKEOFF_ENABLED=true일 때만 돈다.
+ * 실제 모델을 부르므로 EMBEDDING_BAKEOFF_ENABLED=true일 때만 돈다. Gemini 후보는 EMBEDDING_BAKEOFF_CANDIDATES로 고를 때만 쓴다.
  * 결과: build/embedding-bakeoff/report.md
  */
 @EnabledIfEnvironmentVariable(named = "EMBEDDING_BAKEOFF_ENABLED", matches = "true")

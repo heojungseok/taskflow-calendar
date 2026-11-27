@@ -7,7 +7,9 @@ record EmbeddingCandidate(String name, String base, int dimensions, String query
 
     static final String GEMINI = "gemini";
 
-    static final List<EmbeddingCandidate> DEFAULTS = List.of(
+    static final List<String> DEFAULT_NAMES = List.of("bge-m3", "qwen3-embedding-0.6b", "embeddinggemma");
+
+    static final List<EmbeddingCandidate> ALL = List.of(
             new EmbeddingCandidate("gemini-3072", GEMINI, 0, "", ""),
             new EmbeddingCandidate("gemini-1536", GEMINI, 1536, "", ""),
             new EmbeddingCandidate("gemini-768", GEMINI, 768, "", ""),
@@ -38,12 +40,10 @@ record EmbeddingCandidate(String name, String base, int dimensions, String query
     }
 
     static List<EmbeddingCandidate> select(String names) {
-        if (names == null || names.isBlank()) {
-            return DEFAULTS;
-        }
+        List<String> requested = names == null || names.isBlank() ? DEFAULT_NAMES : List.of(names.split(","));
         List<EmbeddingCandidate> selected = new ArrayList<>();
-        for (String name : names.split(",")) {
-            DEFAULTS.stream()
+        for (String name : requested) {
+            ALL.stream()
                     .filter(candidate -> candidate.name().equals(name.trim()))
                     .findFirst()
                     .ifPresentOrElse(selected::add, () -> {
