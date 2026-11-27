@@ -40,6 +40,20 @@ public final class GeminiErrorClassifier {
         return failure(ErrorCode.LLM_CONFIG_INVALID, "Gemini request failed", statusCode, retryAfter, latencyMs);
     }
 
+    public LlmCallException classify(Throwable error, long latencyMs) {
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            if (cause instanceof GeminiHttpException http) {
+                return classify(http.statusCode(), http.retryAfter(), http.body(), latencyMs);
+            }
+            if (cause instanceof IllegalArgumentException) {
+                return LlmCallException.of(
+                        ErrorCode.LLM_CONFIG_INVALID, "Gemini request is invalid: " + cause.getMessage(), 0, latencyMs);
+            }
+        }
+        return LlmCallException.of(
+                ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini request failed: " + error.getMessage(), 0, latencyMs);
+    }
+
     private static LlmCallException failure(
             ErrorCode errorCode, String message, int statusCode, String retryAfter, long latencyMs) {
         return new LlmCallException(errorCode, message, statusCode, latencyMs, null, retryAfter, null, List.of());

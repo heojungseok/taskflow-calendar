@@ -15,6 +15,7 @@ final class FakeUpstreamServer implements AutoCloseable {
     private final HttpServer server;
     private final AtomicInteger hits = new AtomicInteger();
     private final AtomicReference<String> lastPath = new AtomicReference<>();
+    private final AtomicReference<String> lastBody = new AtomicReference<>();
     private final AtomicReference<String> lastApiKey = new AtomicReference<>();
     private volatile Reply reply = new Reply(200, Map.of(), "{}", 0);
 
@@ -25,7 +26,7 @@ final class FakeUpstreamServer implements AutoCloseable {
             hits.incrementAndGet();
             lastPath.set(exchange.getRequestURI().getPath());
             lastApiKey.set(exchange.getRequestHeaders().getFirst("x-goog-api-key"));
-            exchange.getRequestBody().readAllBytes();
+            lastBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             Reply current = reply;
             sleep(current.delayMillis());
             current.headers().forEach(exchange.getResponseHeaders()::add);
@@ -65,6 +66,10 @@ final class FakeUpstreamServer implements AutoCloseable {
 
     String lastPath() {
         return lastPath.get();
+    }
+
+    String lastBody() {
+        return lastBody.get();
     }
 
     String lastApiKey() {

@@ -1,15 +1,8 @@
 package com.taskflow.assistant.llm;
 
-import com.google.genai.Client;
-import com.google.genai.types.ClientOptions;
-import com.google.genai.types.HttpOptions;
-import com.google.genai.types.HttpRetryOptions;
 import com.taskflow.common.ErrorCode;
-import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import okhttp3.OkHttpClient;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.ai.google.genai.common.GoogleGenAiThinkingLevel;
@@ -50,7 +43,7 @@ public class GeminiLlmProvider implements LlmProvider {
             GoogleGenAiChatModel model = models.computeIfAbsent(request.feature(), feature -> createModel(properties));
             return SpringAiChat.call(model, request, options(request));
         } catch (RuntimeException e) {
-            throw classify(e, System.currentTimeMillis() - startedAt);
+            throw errorClassifier.classify(e, System.currentTimeMillis() - startedAt);
         }
     }
 
@@ -73,47 +66,9 @@ public class GeminiLlmProvider implements LlmProvider {
         return builder.build();
     }
 
-    LlmCallException classify(Throwable error, long latencyMs) {
-        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
-            if (cause instanceof GeminiHttpException http) {
-                return errorClassifier.classify(http.statusCode(), http.retryAfter(), http.body(), latencyMs);
-            }
-            if (cause instanceof IllegalArgumentException) {
-                return LlmCallException.of(
-                        ErrorCode.LLM_CONFIG_INVALID, "Gemini request is invalid: " + cause.getMessage(), 0, latencyMs);
-            }
-        }
-        return LlmCallException.of(
-                ErrorCode.LLM_UPSTREAM_TEMPORARY_FAILURE, "Gemini request failed: " + error.getMessage(), 0, latencyMs);
-    }
-
     private static GoogleGenAiChatModel createModel(GeminiProperties properties) {
-        Duration timeout = Duration.ofSeconds(properties.getTimeoutSeconds());
-        OkHttpClient httpClient = new OkHttpClient.Builder()
-                .connectTimeout(timeout)
-                .readTimeout(timeout)
-                .writeTimeout(timeout)
-                .callTimeout(timeout)
-                .addInterceptor(new GeminiHttpErrorInterceptor())
-                .build();
-        String baseUrl = properties.getBaseUrl().replaceAll("/+$", "");
-        int versionStart = baseUrl.lastIndexOf('/');
-        Client client = Client.builder()
-                .apiKey(properties.getApiKey())
-                .clientOptions(
-                        ClientOptions.builder().customHttpClient(httpClient).build())
-                .httpOptions(HttpOptions.builder()
-                        .baseUrl(baseUrl.substring(0, versionStart))
-                        .apiVersion(baseUrl.substring(versionStart + 1))
-                        .timeout((int) timeout.toMillis())
-                        .retryOptions(HttpRetryOptions.builder()
-                                .attempts(1)
-                                .httpStatusCodes(List.of())
-                                .build())
-                        .build())
-                .build();
         return GoogleGenAiChatModel.builder()
-                .genAiClient(client)
+                .genAiClient(GeminiGenAiClient.create(properties))
                 .retryTemplate(NoRetry.template())
                 .build();
     }

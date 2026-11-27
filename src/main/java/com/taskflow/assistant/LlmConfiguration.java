@@ -1,5 +1,6 @@
 package com.taskflow.assistant;
 
+import com.taskflow.assistant.llm.GeminiEmbeddingModel;
 import com.taskflow.assistant.llm.GeminiLlmProvider;
 import com.taskflow.assistant.llm.LlmFeature;
 import com.taskflow.assistant.llm.LlmRoutingProperties;
@@ -9,6 +10,7 @@ import com.taskflow.assistant.recommendation.GeminiRecommendationProperties;
 import com.taskflow.assistant.search.GeminiSearchProperties;
 import com.taskflow.assistant.summary.GeminiSummaryProperties;
 import java.util.Map;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +32,11 @@ class LlmConfiguration {
                         LlmFeature.RECOMMENDATION, recommendation,
                         LlmFeature.SEARCH_INTENT, search),
                 objectMapper);
+    }
+
+    @Bean
+    EmbeddingModel searchEmbeddingModel(GeminiSearchProperties search, ObjectMapper objectMapper) {
+        return new GeminiEmbeddingModel(search, search.getEmbeddingModel(), objectMapper);
     }
 
     @Bean
