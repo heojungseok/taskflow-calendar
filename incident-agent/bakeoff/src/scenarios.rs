@@ -20,7 +20,7 @@ pub(crate) struct Scenario {
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum SuspectAnswer {
-    NewError(String),
+    NewError { logger: String, contains: String },
     Metric(String),
     Commit(String),
 }
@@ -29,17 +29,17 @@ impl SuspectAnswer {
     pub(crate) fn is_in(&self, suspects: &[analyzer::Suspect]) -> bool {
         suspects.iter().any(|suspect| match (self, suspect) {
             (
-                Self::NewError(logger),
+                Self::NewError { logger, contains },
                 analyzer::Suspect::NewError {
                     first,
                     most_frequent,
                 },
-            ) => {
-                first.logger == *logger
-                    || most_frequent
-                        .as_ref()
-                        .is_some_and(|group| group.logger == *logger)
-            }
+            ) => [Some(first), most_frequent.as_ref()]
+                .into_iter()
+                .flatten()
+                .any(|group| {
+                    group.logger == *logger && group.fingerprint.contains(contains.as_str())
+                }),
             (Self::Metric(name), analyzer::Suspect::FirstChangedMetric { name: other, .. }) => {
                 name == other
             }

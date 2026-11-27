@@ -1,6 +1,6 @@
 {
   "name": "gemini-quota-exhausted",
-  "origin": "재현: Gemini 무료 쿼터가 바닥나 작업 추천 API가 429 RESOURCE_EXHAUSTED를 받는다(Google 사용자 3명). logger·예외 이름은 Spring AI 전환(#101) 전 기준",
+  "origin": "재현: Gemini 무료 쿼터가 바닥나 작업 추천 API가 429 RESOURCE_EXHAUSTED를 받는다(Google 사용자 3명). logger·예외 이름은 Spring AI 전환(#101) 전 기준 (1차 녹화: 사례를 연달아 녹화한 공용 환경, scrape 5초. 증거 구간 로그·의심 판정은 오염의 영향을 받지 않는다)",
   "alert": {
     "name": "gemini quota exhausted",
     "service": "backend",

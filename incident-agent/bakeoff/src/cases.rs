@@ -10,8 +10,11 @@ use crate::score::Expect;
 pub(crate) const CASES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/cases");
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct CaseFile {
     name: String,
+    #[serde(rename = "origin")]
+    _origin: String,
     alert: AlertFile,
     now_unix: u64,
     logs: Vec<LogFile>,
@@ -22,6 +25,7 @@ struct CaseFile {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AlertFile {
     name: String,
     service: String,
@@ -29,6 +33,7 @@ struct AlertFile {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct LogFile {
     service: String,
     at_unix: u64,
@@ -36,12 +41,14 @@ struct LogFile {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct CommitFile {
     sha: String,
     files: Vec<String>,
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct MetricFile {
     name: String,
     baseline: f64,
@@ -50,8 +57,8 @@ struct MetricFile {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AnswerFile {
-    #[serde(default)]
     known_gap: Option<String>,
     suspect: SuspectAnswer,
     line: String,
@@ -66,7 +73,7 @@ fn log_line(file: LogFile) -> LogLine {
     }
 }
 
-pub(crate) fn parse(file_name: &str, json: &str) -> Result<Scenario, String> {
+fn parse(file_name: &str, json: &str) -> Result<Scenario, String> {
     let case: CaseFile =
         serde_json::from_str(json).map_err(|error| format!("{file_name}: {error}"))?;
     let evidence = Evidence {
@@ -139,8 +146,6 @@ pub(crate) fn load(dir: &Path) -> Result<Vec<Scenario>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::scenarios::SuspectAnswer;
-    use crate::score::Expect;
 
     const SAMPLE: &str = r#"{
       "name": "db-pool",
@@ -151,7 +156,7 @@ mod tests {
       "baseline_logs": [],
       "commits": [{"sha": "abc", "files": ["src/main/java/A.java"]}],
       "metrics": [{"name": "backend_up", "baseline": 1.0, "floor": 1.0, "points": [[990, 1.0]]}],
-      "answer": {"suspect": {"new_error": "c.t.p.TaskService"}, "line": "HikariPool", "keywords": ["풀", "pool"]}
+      "answer": {"suspect": {"new_error": {"logger": "c.t.p.TaskService", "contains": "Connection is not available"}}, "line": "HikariPool", "keywords": ["풀", "pool"]}
     }"#;
 
     #[test]
@@ -169,8 +174,87 @@ mod tests {
         );
         assert_eq!(
             scenario.suspect,
-            Some(SuspectAnswer::NewError("c.t.p.TaskService".to_owned()))
+            Some(SuspectAnswer::NewError {
+                logger: "c.t.p.TaskService".to_owned(),
+                contains: "Connection is not available".to_owned(),
+            })
         );
+    }
+
+    #[test]
+    fn 모르는_필드가_있는_사례는_오타로_보고_오류다() {
+        let typo = SAMPLE.replace("\"answer\"", "\"answers\"");
+        let error = parse("typo.json", &typo).err().unwrap();
+        assert!(error.contains("answers"), "{error}");
+    }
+
+    fn block<'a>(text: &'a str, name: &str) -> &'a str {
+        let start = text
+            .find(&format!("name: \"{name}\""))
+            .unwrap_or_else(|| panic!("{name} 없음"));
+        let rest = &text[start..];
+        &rest[..rest.find("MetricSpec {").unwrap_or(rest.len())]
+    }
+
+    #[test]
+    fn 캡처_스크립트가_운영_분석기와_같은_지표_질의와_시간_창을_쓴다() {
+        let capture = include_str!("../../eval/capture.sh");
+        let metrics = include_str!("../../agent/src/metrics.rs");
+        let specs: Vec<&str> = capture
+            .split("<<'SPECS'\n")
+            .nth(1)
+            .and_then(|rest| rest.split("\nSPECS").next())
+            .unwrap()
+            .lines()
+            .collect();
+        assert_eq!(specs.len(), metrics.matches("MetricSpec {").count());
+        for spec in specs {
+            let parts: Vec<&str> = spec.splitn(4, '|').collect();
+            let [name, floor, rises, query] = parts[..] else {
+                panic!("{spec}")
+            };
+            let spec_block = block(metrics, name);
+            assert!(spec_block.contains(query), "{name} 질의가 다르다");
+            assert!(
+                spec_block.contains(&format!("floor: {floor},")),
+                "{name} floor가 다르다"
+            );
+            assert!(
+                spec_block.contains(&format!("rises_only: {rises},")),
+                "{name} rises_only가 다르다"
+            );
+        }
+        let agent_rules = [
+            (
+                include_str!("../../analyzer/src/triage.rs"),
+                "LOOKBACK_SECS: u64 = 900;",
+                "alert_at - 900",
+            ),
+            (
+                include_str!("../../agent/src/evidence.rs"),
+                "BASELINE_LOG_SECS: u64 = 24 * 3600;",
+                "from - 86400",
+            ),
+            (
+                include_str!("../../agent/src/prometheus.rs"),
+                "BASELINE_SECS: u64 = 3600;",
+                "from - 3600",
+            ),
+            (
+                include_str!("../../agent/src/prometheus.rs"),
+                "STEP_SECS: u64 = 30;",
+                "step=30",
+            ),
+            (
+                include_str!("../../agent/src/loki.rs"),
+                "MAX_LINES: u32 = 5000;",
+                "5000",
+            ),
+        ];
+        for (source, rule, copied) in agent_rules {
+            assert!(source.contains(rule), "운영 규칙이 바뀌었다: {rule}");
+            assert!(capture.contains(copied), "캡처가 {rule}을 따르지 않는다");
+        }
     }
 
     #[test]
@@ -221,6 +305,15 @@ mod tests {
             )
             .remove(0);
             let Some(answer) = &scenario.suspect else {
+                assert!(
+                    !report
+                        .suspects
+                        .iter()
+                        .any(|s| matches!(s, analyzer::Suspect::NewError { .. })),
+                    "{}: 장애가 아닌데 새 오류 의심이 있다. 재현 환경 오염을 확인한다 {:?}",
+                    scenario.name,
+                    report.suspects
+                );
                 continue;
             };
             let found = answer.is_in(&report.suspects);

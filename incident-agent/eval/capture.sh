@@ -8,17 +8,19 @@ set -eu
 name=$1 alert=$2 alert_at=$3 now=$4 answer=$5
 log_file=${LOG_FILE:?LOG_FILE is required}
 prom=${PROM_URL:-http://127.0.0.1:9090}
-origin=${ORIGIN:-}
+origin=${ORIGIN:?ORIGIN is required}
 commits=${COMMITS_JSON:-[]}
 
 from=$((alert_at - 900))
 baseline_from=$((from - 86400))
 
 logs_between() {
-  jq -R -s --argjson from "$1" --argjson to "$2" '
-    [split("\n")[] | capture("^(?<at>\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ) (?<text>(ERROR|WARN) .*)$")?
+  jq -R -s --argjson from "$1" --argjson to "$2" --arg keep "$3" '
+    [split("\n")[] | capture("^(?<at>\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ) (?<text>.*)$")?
+      | select(.text | test("ERROR|WARN"))
       | {service: "backend", at_unix: (.at | fromdateiso8601), text: .text}
-      | select(.at_unix >= $from and .at_unix < $to)]' "$log_file"
+      | select(.at_unix >= $from and .at_unix < $to)]
+    | if $keep == "first" then .[:5000] else .[-5000:] end' "$log_file"
 }
 
 range() {
@@ -28,12 +30,14 @@ range() {
 }
 
 metric() {
-  window=$(range "$4" "$from" "$now")
-  baseline=$(range "$4" "$((from - 3600))" "$from")
+  window=$(range "$4" "$from" "$now") && baseline=$(range "$4" "$((from - 3600))" "$from") || {
+    echo "skip metric $1" >&2
+    return 0
+  }
   jq -n --arg name "$1" --argjson floor "$2" --argjson rises "$3" \
     --argjson window "$window" --argjson baseline "$baseline" '
-    def points($r): [$r.data.result[0].values[]? | [(.[0] | floor), (.[1] | tonumber? // empty)]
-      | select(.[1] | isinfinite or isnan | not)];
+    def points($r): [$r.data.result[0].values[]? | (.[1] | tonumber?) as $v
+      | select($v != null and ($v | isinfinite or isnan | not)) | [(.[0] | floor), $v]];
     def median: sort | if length % 2 == 1 then .[length / 2 | floor]
       else (.[length / 2 - 1] + .[length / 2]) / 2 end;
     points($window) as $w | points($baseline) as $b |
@@ -63,8 +67,8 @@ SPECS
 
 jq -n --arg name "$name" --arg origin "$origin" --arg alert "$alert" \
   --argjson alert_at "$alert_at" --argjson now "$now" \
-  --argjson logs "$(logs_between "$from" "$now")" \
-  --argjson baseline_logs "$(logs_between "$baseline_from" "$from")" \
+  --argjson logs "$(logs_between "$from" "$now" first)" \
+  --argjson baseline_logs "$(logs_between "$baseline_from" "$from" last)" \
   --argjson commits "$commits" \
   --argjson metrics "$(metrics | jq -s .)" \
   --argjson answer "$answer" '

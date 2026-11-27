@@ -1,6 +1,6 @@
 {
   "name": "backend-down",
-  "origin": "재현: backend 프로세스가 갑자기 종료됐다(OOM kill 상황). 내려가 있는 동안 로그가 없다",
+  "origin": "재현: backend 프로세스가 갑자기 종료됐다(OOM kill 상황). 내려가 있는 동안 로그가 없다 (1차 녹화: 사례를 연달아 녹화한 공용 환경, scrape 5초. 증거 구간 로그·의심 판정은 오염의 영향을 받지 않는다)",
   "alert": {
     "name": "backend metrics collection down",
     "service": "backend",
