@@ -24,6 +24,11 @@ final class MeteredLlmProvider implements LlmProvider {
         return response == null ? null : response.outputTokens();
     }
 
+    static Integer lastPromptTokens() {
+        LlmResponse response = LAST_RESPONSE.get();
+        return response == null ? null : response.promptTokens();
+    }
+
     static String lastText() {
         LlmResponse response = LAST_RESPONSE.get();
         return response == null ? null : response.text();

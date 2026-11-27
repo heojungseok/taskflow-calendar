@@ -21,6 +21,7 @@ final class RawWriter {
             line.put("latencyMs", result.latencyMs());
             line.put("cold", result.cold());
             line.put("outputTokens", result.outputTokens());
+            line.put("promptTokens", result.promptTokens());
             line.put("errorCode", result.errorCode());
             line.put("errorMessage", result.errorMessage());
             line.put("metrics", result.metrics());

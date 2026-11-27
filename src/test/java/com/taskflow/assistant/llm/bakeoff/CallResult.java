@@ -11,6 +11,7 @@ record CallResult(
         long latencyMs,
         boolean cold,
         Integer outputTokens,
+        Integer promptTokens,
         String errorCode,
         String errorMessage,
         Map<String, Object> output,
